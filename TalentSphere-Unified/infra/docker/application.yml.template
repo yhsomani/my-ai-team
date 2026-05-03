@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: ${SERVICE_NAME}
+  datasource:
+    url: jdbc:postgresql://ts-postgres:5432/${DB_NAME}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  data:
+    redis:
+      host: ts-redis
+      port: 6379
+      password: ${REDIS_PASSWORD}
+    rabbitmq:
+      host: ts-rabbitmq
+      username: ${RABBITMQ_USER}
+      password: ${RABBITMQ_PASSWORD}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus

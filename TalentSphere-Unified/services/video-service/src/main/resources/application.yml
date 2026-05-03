@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:8093}
+
+spring:
+  application:
+    name: video-service
+  datasource:
+    url: jdbc:postgresql://ts-postgres:5432/video_db
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:talentsphere}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+talentsphere:
+  outbox:
+    enabled: false

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.talentsphere</groupId>
+  <artifactId>talentsphere-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>TalentSphere Platform</name>
+  <description>Unified TalentSphere Platform - LinkedIn + Coursera + HackerRank</description>
+
+  <modules>
+    <module>services/service-parent</module>
+    <module>services/bom</module>
+    <module>services/shared</module>
+    <module>services/contracts</module>
+    <module>services/schemas</module>
+    <module>services/auth-service</module>
+    <module>services/user-service</module>
+    <module>services/profile-service</module>
+    <module>services/job-service</module>
+    <module>services/application-service</module>
+    <module>services/company-service</module>
+    <module>services/notification-service</module>
+    <module>services/search-service</module>
+    <module>services/gamification-service</module>
+    <module>services/challenge-service</module>
+    <module>services/lms-service</module>
+    <module>services/video-service</module>
+    <module>services/file-service</module>
+    <module>services/messaging-service</module>
+    <module>services/networking-service</module>
+    <module>services/payment-service</module>
+    <module>services/ai-service</module>
+    <module>services/api-gateway</module>
+    <module>apps/backend</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

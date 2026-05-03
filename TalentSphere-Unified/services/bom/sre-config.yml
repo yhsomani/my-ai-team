@@ -1,0 +1,89 @@
+# TalentSphere SRE Configuration
+# Version: 1.0.0
+
+slo:
+  auth_service:
+    availability: 99.95
+    latency_p95_ms: 100
+    error_budget_monthly_minutes: 43
+    
+  api_service:
+    availability: 99.9
+    latency_p95_ms: 200
+    error_budget_monthly_minutes: 43
+    
+  payment_service:
+    availability: 99.95
+    latency_p95_ms: 150
+    error_budget_monthly_minutes: 43
+    
+  core_services:
+    # user, job, profile, company
+    availability: 99.9
+    latency_p95_ms: 200
+    error_budget_monthly_minutes: 43
+    
+  platform_services:
+    # gamification, lms, messaging, networking
+    availability: 99.5
+    latency_p95_ms: 500
+    error_budget_monthly_minutes: 216
+
+dr:
+  rto_hours: 4
+  rpo_hours: 1
+  backup_schedule: "0 2 * * *"  # Daily at 2 AM
+  backup_retention_days: 30
+  monthly_restore_test: true
+  weekly_chaos_engineering: true
+
+observability:
+  prometheus:
+    scrape_interval: 15s
+    retention: 15d
+    
+  grafana:
+    default_dashboard: "TalentSphere Overview"
+    
+  jaeger:
+    sampling_rate: 0.1  # 10% of traces
+    agent_port: 6831
+    
+  correlation_id_header: "X-Correlation-ID"
+  
+metrics:
+  # Key metrics to track per service
+  auth_service:
+    - auth_login_success_total
+    - auth_login_failure_total
+    - auth_token_refresh_total
+    - auth_logout_total
+    
+  api_gateway:
+    - request_total
+    - request_duration_seconds
+    - request_5xx_total
+    
+  payment_service:
+    - payment_total
+    - payment_failure_total
+    - payment_refund_total
+    
+alerting:
+  pagerduty_integration: true
+  
+  rules:
+    - name: "High Error Rate"
+      metric: request_5xx_total
+      threshold: "ratie > 0.01"  # > 1% errors
+      severity: critical
+      
+    - name: "High Latency"
+      metric: request_duration_seconds
+      threshold: "histogram_quantile(0.95) > 0.5"
+      severity: warning
+      
+    - name: "Service Down"
+      metric: up
+      threshold: "== 0"
+      severity: critical

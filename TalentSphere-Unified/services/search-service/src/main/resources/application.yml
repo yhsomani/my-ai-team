@@ -1,0 +1,41 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: search-service
+  elasticsearch:
+    uris: http://${ES_HOST:-elasticsearch}:9200
+  rabbitmq:
+    host: ${RABBITMQ_HOST:-rabbitmq}
+    port: ${RABBIT_PORT:-5672}
+    username: ${RABBITMQ_USER:-admin}
+    password: ${RABBITMQ_PASSWORD:-admin}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      searchService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      searchService:
+        max-attempts: 3
+        wait-duration: 1s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

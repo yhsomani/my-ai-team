@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: company-service
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_USER:admin}:${MONGO_PASSWORD:admin123}@${DB_HOST:-localhost}:27017/talentsphere_company
+      auto-index-creation: true
+
+server:
+  port: 8088
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

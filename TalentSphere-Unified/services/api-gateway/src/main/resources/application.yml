@@ -1,0 +1,164 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    discovery:
+      enabled: true
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      redis:
+        filter:
+          RequestRateLimiter:
+            redis-rate-limiter:
+              replenishRate: 100
+              burstCapacity: 100
+              requestedTokens: 1
+      default-filters:
+        - RequestRateLimiter=redis-rate-limiter,replenishRate=100,burstCapacity=100
+        - DedupeResponseHeader=Access-Control-Allow-Credentials,Access-Control-Allow-Origin
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - AuthenticationFilter
+        - id: admin-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/admin/**
+          filters:
+            - AuthenticationFilter
+        - id: profile-service
+          uri: lb://profile-service
+          predicates:
+            - Path=/api/v1/profile/**
+          filters:
+            - AuthenticationFilter
+        - id: job-service
+          uri: lb://job-service
+          predicates:
+            - Path=/api/v1/jobs/**
+          filters:
+            - AuthenticationFilter
+        - id: lms-service
+          uri: lb://lms-service
+          predicates:
+            - Path=/api/v1/lms/**
+          filters:
+            - AuthenticationFilter
+        - id: application-service
+          uri: lb://application-service
+          predicates:
+            - Path=/api/v1/applications/**
+          filters:
+            - AuthenticationFilter
+        - id: recruiter-service
+          uri: lb://application-service
+          predicates:
+            - Path=/api/v1/recruiter/**
+          filters:
+            - AuthenticationFilter
+        - id: challenge-service
+          uri: lb://challenge-service
+          predicates:
+            - Path=/api/v1/challenges/**
+          filters:
+            - AuthenticationFilter
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - AuthenticationFilter
+        - id: company-service
+          uri: lb://company-service
+          predicates:
+            - Path=/api/v1/companies/**
+          filters:
+            - AuthenticationFilter
+        - id: search-service
+          uri: lb://search-service
+          predicates:
+            - Path=/api/v1/search/**
+          filters:
+            - AuthenticationFilter
+        - id: gamification-service
+          uri: lb://gamification-service
+          predicates:
+            - Path=/api/v1/gamification/**
+          filters:
+            - AuthenticationFilter
+        - id: messaging-service
+          uri: lb://messaging-service
+          predicates:
+            - Path=/api/v1/messages/**
+          filters:
+            - AuthenticationFilter
+        - id: networking-service
+          uri: lb://networking-service
+          predicates:
+            - Path=/api/v1/networking/**
+          filters:
+            - AuthenticationFilter
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - AuthenticationFilter
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/v1/chat/**
+          filters:
+            - AuthenticationFilter
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payments/**
+          filters:
+            - AuthenticationFilter
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/v1/files/**
+          filters:
+            - AuthenticationFilter
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      default-zone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  jwk-set-uri: https://hfeijxjwmegsrpvnfsce.supabase.co/auth/v1/.well-known/jwks.json
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "connect-mcp-server": {
+      "source": "ronnycoding/.claude",
+      "sourceType": "github",
+      "computedHash": "4136435508322d2d0652be5a87c4fd8ff38ef206d3a5a867500c560f7974c2f7"
+    }
+  }
+}

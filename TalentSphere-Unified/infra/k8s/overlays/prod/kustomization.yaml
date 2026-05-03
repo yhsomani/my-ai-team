@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- infrastructure.yaml
+- auth-service.yaml
+- job-service.yaml
+- lms-service.yaml
+- company-service.yaml
+- api-gateway.yaml
+
+commonLabels:
+  app: talentsphere
+  environment: production

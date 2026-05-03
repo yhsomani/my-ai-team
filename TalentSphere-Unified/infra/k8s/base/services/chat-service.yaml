@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+  labels:
+    app: chat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+      - name: chat-service
+        image: talentsphere/chat-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8097
+        envFrom:
+        - configMapRef:
+            name: talentsphere-config
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8097
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8097
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+  labels:
+    app: chat-service
+spec:
+  selector:
+    app: chat-service
+  ports:
+  - port: 8097
+    targetPort: 8097

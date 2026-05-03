@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamification-service
+  labels:
+    app: gamification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gamification-service
+  template:
+    metadata:
+      labels:
+        app: gamification-service
+    spec:
+      containers:
+      - name: gamification-service
+        image: talentsphere/gamification-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8092
+        envFrom:
+        - configMapRef:
+            name: talentsphere-config
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8092
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8092
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gamification-service
+  labels:
+    app: gamification-service
+spec:
+  selector:
+    app: gamification-service
+  ports:
+  - port: 8092
+    targetPort: 8092

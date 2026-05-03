@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: challenge-service
+  datasource:
+    url: jdbc:postgresql://ts-postgres:5432/challenge_db
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:talentsphere}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+judge0:
+  url: ${JUDGE0_URL:http://localhost:2358}
+
+server:
+  port: 8087
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

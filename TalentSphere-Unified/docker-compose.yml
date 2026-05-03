@@ -1,0 +1,615 @@
+# --------------------------------------------------
+# TalentSphere — Docker Compose (Development)
+# --------------------------------------------------
+version: '3.9'
+
+services:
+  # ── Frontend (Vite Dev Server) ──
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    depends_on:
+      - gateway
+
+  # ── API Gateway (Nginx) ──
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - user-service
+
+  # ── User Service ──
+  user-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: user-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/user_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/auth/.well-known/jwks.json
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Auth Service ──
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Profile Service ──
+  profile-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: profile-service
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/profile_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Job Service (Careers & Hiring) ──
+  job-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: job-service
+    ports:
+      - "8084:8084"
+    environment:
+      PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/job_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/v1/auth/.well-known/jwks.json
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Application Service ──
+  application-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: application-service
+    ports:
+      - "8086:8086"
+    environment:
+      PORT: 8086
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/application_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Company Service ──
+  company-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: company-service
+    ports:
+      - "8088:8088"
+    environment:
+      PORT: 8088
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@ts-mongodb:27017/talentsphere_company
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      ts-mongodb:
+        condition: service_healthy
+
+  # ── Notification Service ──
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: notification-service
+    ports:
+      - "8089:8089"
+    environment:
+      PORT: 8089
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@ts-mongodb:27017/talentsphere_notification
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/auth/.well-known/jwks.json
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      ts-mongodb:
+        condition: service_healthy
+
+  # ── LMS Service ──
+  lms-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: lms-service
+    ports:
+      - "8085:8085"
+    environment:
+      PORT: 8085
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@ts-mongodb:27017/talentsphere_lms
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/auth/.well-known/jwks.json
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      ts-mongodb:
+        condition: service_healthy
+
+  # ── Search Service ──
+  search-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: search-service
+    ports:
+      - "8091:8091"
+    environment:
+      PORT: 8091
+      ES_HOST: elasticsearch
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ── Gamification Service ──
+  gamification-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: gamification-service
+    ports:
+      - "8092:8092"
+    environment:
+      PORT: 8092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/gamification_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Challenge Service ──
+  challenge-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: challenge-service
+    ports:
+      - "8087:8087"
+    environment:
+      PORT: 8087
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/challenge_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      NODE_ENV: ${NODE_ENV}
+      PISTON_API_URL: https://emkc.org/api/v2/piston
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Messaging Service ──
+  messaging-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: messaging-service
+    ports:
+      - "8094:8094"
+    environment:
+      PORT: 8094
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/messaging_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Networking Service ──
+  networking-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: networking-service
+    ports:
+      - "8095:8095"
+    environment:
+      PORT: 8095
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/networking_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── AI Service ──
+  ai-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: ai-service
+    ports:
+      - "8096:8096"
+    environment:
+      PORT: 8096
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/ai_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Chat Service ──
+  chat-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: chat-service
+    ports:
+      - "8097:8097"
+    environment:
+      PORT: 8097
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/chat_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Payment Service ──
+  payment-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: payment-service
+    ports:
+      - "8098:8098"
+    environment:
+      PORT: 8098
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/payment_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── File Service ──
+  file-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: file-service
+    ports:
+      - "8100:8100"
+    environment:
+      PORT: 8100
+      NODE_ENV: ${NODE_ENV}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:15-alpine
+    container_name: ts-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: talentsphere
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── PgBouncer ──
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: ts-pgbouncer
+    ports:
+      - "6432:5432"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/talentsphere
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── MongoDB ──
+  ts-mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: talentsphere
+    volumes:
+      - mongodb_data:/data/db
+      - ./infra/docker/init-mongodb/js:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MongoDB Express (Web UI) ──
+  mongo-express:
+    image: mongo-express:1.0.2
+    ports:
+      - "8099:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@ts-mongodb:27017/?authSource=admin
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      - ts-mongodb
+
+  # ── Redis (Dragonfly-compatible) ──
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── RabbitMQ ──
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ts-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Elasticsearch ──
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Prometheus ──
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    profiles:
+      - monitoring
+
+  # ── Grafana ──
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/overview.json
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+  # ── Apicurio Registry (Schema Registry) ──
+  # NOTE: Port changed from 8081 → 8180 to avoid collision with auth-service
+  apicurio-registry:
+    image: apicurio/apicurio-registry-mem:2.6.5.Final
+    container_name: ts-apicurio
+    ports:
+      - "8180:8080"
+    environment:
+      QUARKUS_HTTP_CORS_ORIGINS: "*"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - infra
+
+  # ── Pathway Service (Career Pathway Analyzer) ──
+  pathway-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_NAME: pathway-service
+    ports:
+      - "8101:8101"
+    environment:
+      PORT: 8101
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/pathway_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/auth/.well-known/jwks.json
+      AI_SERVICE_URL: http://ai-service:8096
+      LMS_SERVICE_URL: http://lms-service:8085
+      GAMIFICATION_SERVICE_URL: http://gamification-service:8092
+      APICURIO_REGISTRY_URL: http://apicurio-registry:8080
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - ai-features
+
+  # ── Grafana Tempo (Distributed Tracing) ──
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: ts-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    profiles:
+      - monitoring
+
+  # ── OpenTelemetry Collector ──
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: ts-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4319:4317"   # OTLP gRPC (external → internal 4317)
+      - "4320:4318"   # OTLP HTTP (external → internal 4318)
+      - "8888:8888"   # Prometheus metrics for the collector itself
+    depends_on:
+      - tempo
+    profiles:
+      - monitoring
+
+  # ── Loki ──
+  loki:
+    image: grafana/loki:latest
+    container_name: ts-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    profiles:
+      - monitoring
+
+  # ── Promtail ──
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ts-promtail
+    volumes:
+      - ./logs:/var/log
+      - ./docker/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  es_data:
+  tempo_data:
+  loki_data:

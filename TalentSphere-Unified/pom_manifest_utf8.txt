@@ -1,0 +1,17 @@
+﻿services\ai-service\pom.xml
+services\api-gateway\pom.xml
+services\application-service\pom.xml
+services\auth-service\pom.xml
+services\challenge-service\pom.xml
+services\chat-service\pom.xml
+services\company-service\pom.xml
+services\gamification-service\pom.xml
+services\job-service\pom.xml
+services\lms-service\pom.xml
+services\messaging-service\pom.xml
+services\networking-service\pom.xml
+services\notification-service\pom.xml
+services\profile-service\pom.xml
+services\search-service\pom.xml
+services\shared\pom.xml
+services\user-service\pom.xml

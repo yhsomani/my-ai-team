@@ -1,0 +1,16 @@
+{
+  "name": "talentsphere-unified",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace talentsphere-web",
+    "build": "npm run build --workspace talentsphere-web",
+    "lint": "npm run lint --workspace talentsphere-web",
+    "preview": "npm run preview --workspace talentsphere-web",
+    "backend:package": "mvn package"
+  }
+}

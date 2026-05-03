@@ -1,0 +1,138 @@
+# TalentSphere Service Configuration Template
+# Copy this file to src/main/resources/application.yml for each service
+# Replace ${SERVICE_NAME} with the actual service name
+
+spring:
+  application:
+    name: ${SERVICE_NAME}
+
+# Database configuration (for PostgreSQL services)
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:5432/${DB_NAME:talentsphere_${SERVICE_NAME}}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:talentsphere}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# MongoDB configuration (for MongoDB services)
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_USER:admin}:${MONGO_PASSWORD:admin123}@${DB_HOST:-localhost}:27017/talentsphere_${SERVICE_NAME}
+      auto-index-creation: true
+
+# Redis configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: 2000ms
+
+# RabbitMQ configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: 5672
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    virtual-host: /
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-attempts: 3
+          max-interval: 10000ms
+          multiplier: 2.0
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,application/javascript,application/json
+    min-response-size: 1024
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers,loggers
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        # Resilience4j configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      ${SERVICE_NAME}:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        slow-call-duration-threshold: 2000ms
+        slow-call-rate-threshold: 50
+  retry:
+    instances:
+      ${SERVICE_NAME}:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  ratelimiter:
+    instances:
+      ${SERVICE_NAME}:
+        limit-for-period: 100
+        limit-refresh-period: 1s
+        timeout-duration: 0ms
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.talentsphere: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/${spring.application.name}.log
+    max-size: 10MB
+    max-history: 30
+
+# Security configuration
+security:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-replace-me}
+    expiration: 86400000 # 24 hours

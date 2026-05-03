@@ -1,0 +1,39 @@
+# ── Build Stage ──
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+WORKDIR /app
+
+# Copy root pom and install it
+COPY pom.xml .
+RUN mvn install -N -DskipTests
+
+# Copy BOM and shared library
+COPY services/bom/pom.xml services/bom/
+COPY services/contracts/pom.xml services/contracts/
+COPY services/shared/pom.xml services/shared/
+RUN mvn install -pl services/bom,services/contracts,services/shared -am -DskipTests
+
+# Copy target service and build
+ARG SERVICE_NAME
+COPY services/${SERVICE_NAME}/pom.xml services/${SERVICE_NAME}/
+COPY services/${SERVICE_NAME}/src services/${SERVICE_NAME}/src
+RUN mvn package -pl services/${SERVICE_NAME} -am -DskipTests
+
+# Extract layers for optimization
+WORKDIR /app/services/${SERVICE_NAME}/target
+RUN java -Djarmode=layertools -jar *.jar extract
+
+# ── Runtime Stage ──
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+ARG SERVICE_NAME
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copy layers from the build stage
+COPY --from=build /app/services/${SERVICE_NAME}/target/dependencies/ ./
+COPY --from=build /app/services/${SERVICE_NAME}/target/spring-boot-loader/ ./
+COPY --from=build /app/services/${SERVICE_NAME}/target/snapshot-dependencies/ ./
+COPY --from=build /app/services/${SERVICE_NAME}/target/application/ ./
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

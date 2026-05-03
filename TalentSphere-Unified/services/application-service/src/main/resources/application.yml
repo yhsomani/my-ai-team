@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: application-service
+  datasource:
+    url: jdbc:postgresql://ts-postgres:5432/application_db
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:talentsphere}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  cloud:
+    rabbitmq:
+      host: ${RABBITMQ_HOST:localhost}
+      port: 5672
+      username: ${RABBITMQ_USER:guest}
+      password: ${RABBITMQ_PASSWORD:guest}
+
+server:
+  port: 8086
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

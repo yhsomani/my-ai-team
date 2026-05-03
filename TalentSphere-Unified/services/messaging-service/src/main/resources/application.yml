@@ -1,0 +1,28 @@
+server:
+  port: 8094
+
+spring:
+  application:
+    name: messaging-service
+  datasource:
+    url: jdbc:postgresql://ts-postgres:5432/messaging_db
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:talentsphere}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
