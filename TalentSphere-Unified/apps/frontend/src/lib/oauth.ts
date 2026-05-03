@@ -1,21 +1,31 @@
 import { useCallback } from 'react';
-import axios from 'axios';
-
-const AUTH_SERVICE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:8081';
+import { supabase } from './supabaseClient';
 
 export const getOAuthLoginUrl = (provider: 'google' | 'github'): string => {
-  return `${AUTH_SERVICE_URL}/auth/oauth2/authorization/${provider}`;
+  return `${window.location.origin}/auth/callback`;
 };
 
-export const initiateOAuthLogin = (provider: 'google' | 'github'): void => {
-  window.location.href = getOAuthLoginUrl(provider);
+export const initiateOAuthLogin = async (provider: 'google' | 'github'): Promise<void> => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+  
+  if (error) {
+    throw error;
+  }
 };
 
-export const handleOAuthCallback = async (token: string): Promise<boolean> => {
+export const handleOAuthCallback = async (): Promise<boolean> => {
   try {
-    const response = await axios.get(`${AUTH_SERVICE_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      return false;
+    }
+    
     return true;
   } catch {
     return false;
@@ -23,5 +33,33 @@ export const handleOAuthCallback = async (token: string): Promise<boolean> => {
 };
 
 export const isOAuthConfigured = (): boolean => {
-  return !!(import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GITHUB_CLIENT_ID);
+  return true; // Supabase handles OAuth configuration
+};
+
+export const signInWithGoogle = async (): Promise<any> => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
+    }
+  });
+  
+  if (error) throw error;
+  return data;
+};
+
+export const signInWithGitHub = async (): Promise<any> => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'github',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+  
+  if (error) throw error;
+  return data;
 };
