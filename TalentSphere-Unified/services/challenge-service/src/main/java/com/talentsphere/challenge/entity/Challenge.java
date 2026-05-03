@@ -5,12 +5,19 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "challenges")
+@Table(name = "challenges",
+    indexes = {
+        @Index(name = "idx_challenge_category", columnList = "category"),
+        @Index(name = "idx_challenge_difficulty", columnList = "difficulty")
+    })
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class Challenge {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private String id;
+
+  @Version
+  private Long version;
 
   private String title;
 

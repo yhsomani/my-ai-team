@@ -8,9 +8,15 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "connections", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"requester_id", "receiver_id"})
-})
+@Table(name = "connections", 
+    indexes = {
+        @Index(name = "idx_conn_requester", columnList = "requester_id"),
+        @Index(name = "idx_conn_receiver", columnList = "receiver_id"),
+        @Index(name = "idx_conn_status", columnList = "status")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"requester_id", "receiver_id"})
+    })
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,6 +25,9 @@ public class Connection {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+    
+    @Version
+    private Long version;
     
     @Column(name = "requester_id")
     private String requesterId;

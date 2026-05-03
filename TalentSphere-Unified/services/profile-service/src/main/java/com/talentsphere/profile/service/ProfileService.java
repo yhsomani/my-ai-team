@@ -34,9 +34,12 @@ public class ProfileService {
     private final SkillRepository skillRepository;
     private final ExperienceRepository experienceRepository;
     private final EducationRepository educationRepository;
-    private final GamificationService gamificationService;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    
+    @lombok.Getter(lombok.AccessLevel.PACKAGE)
+    @org.springframework.beans.factory.annotation.Lazy
+    private final GamificationService gamificationService;
 
     // =============================================================================
     // Profile Response DTO

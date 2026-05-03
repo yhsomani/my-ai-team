@@ -8,7 +8,12 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "messages")
+@Table(name = "messages",
+    indexes = {
+        @Index(name = "idx_msg_sender", columnList = "senderId"),
+        @Index(name = "idx_msg_receiver", columnList = "receiverId"),
+        @Index(name = "idx_msg_timestamp", columnList = "timestamp")
+    })
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,6 +22,9 @@ public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+    
+    @Version
+    private Long version;
     
     private String senderId;
     private String receiverId;

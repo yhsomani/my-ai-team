@@ -6,12 +6,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+    indexes = {
+        @Index(name = "idx_user_email", columnList = "email")
+    })
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private String id;
+
+  @Version
+  private Long version;
 
   @Column(unique = true, nullable = false)
   private String email;
