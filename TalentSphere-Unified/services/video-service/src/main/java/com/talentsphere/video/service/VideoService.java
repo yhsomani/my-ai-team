@@ -5,6 +5,7 @@ import com.talentsphere.video.repository.VideoSessionRepository;
 import com.talentsphere.contracts.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Optional;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class VideoService {
     private final VideoSessionRepository repository;
 
     @Transactional
+    @CircuitBreaker(name = "scheduleInterview", fallbackMethod = "scheduleInterviewFallback")
     public ApiResponse<Map<String, Object>> scheduleInterview(String jobId, String applicantId, String interviewerId, LocalDateTime scheduledAt) {
         log.info("Scheduling video interview for job: {}, applicant: {}, interviewer: {}", jobId, applicantId, interviewerId);
 
@@ -48,6 +51,15 @@ public class VideoService {
         return ApiResponse.ok(response);
     }
 
+    public ApiResponse<Map<String, Object>> scheduleInterviewFallback(String jobId, String applicantId, String interviewerId, LocalDateTime scheduledAt, Throwable t) {
+        log.error("Failed to schedule video interview for job {}: {}", jobId, t.getMessage());
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", "Interview scheduling temporarily unavailable");
+        response.put("retryAfter", 300); // seconds
+        return ApiResponse.error("Interview scheduling service unavailable. Please try again later.");
+    }
+
+    @CircuitBreaker(name = "getSession", fallbackMethod = "getSessionFallback")
     public ApiResponse<Map<String, Object>> getSession(String sessionId) {
         log.info("Getting video session: {}", sessionId);
 
@@ -66,7 +78,13 @@ public class VideoService {
         return ApiResponse.ok(response);
     }
 
+    public ApiResponse<Map<String, Object>> getSessionFallback(String sessionId, Throwable t) {
+        log.error("Failed to retrieve video session {}: {}", sessionId, t.getMessage());
+        return ApiResponse.error("Session retrieval temporarily unavailable");
+    }
+
     @Transactional
+    @CircuitBreaker(name = "startSession", fallbackMethod = "startSessionFallback")
     public ApiResponse<Map<String, Object>> startSession(String sessionId) {
         log.info("Starting video session: {}", sessionId);
 
@@ -93,7 +111,13 @@ public class VideoService {
         return ApiResponse.ok(response);
     }
 
+    public ApiResponse<Map<String, Object>> startSessionFallback(String sessionId, Throwable t) {
+        log.error("Failed to start video session {}: {}", sessionId, t.getMessage());
+        return ApiResponse.error("Unable to start session. Please try again.");
+    }
+
     @Transactional
+    @CircuitBreaker(name = "endSession", fallbackMethod = "endSessionFallback")
     public ApiResponse<Map<String, Object>> endSession(String sessionId, String recordingUrl) {
         log.info("Ending video session: {}", sessionId);
 
@@ -121,6 +145,12 @@ public class VideoService {
         return ApiResponse.ok(response);
     }
 
+    public ApiResponse<Map<String, Object>> endSessionFallback(String sessionId, String recordingUrl, Throwable t) {
+        log.error("Failed to end video session {}: {}", sessionId, t.getMessage());
+        return ApiResponse.error("Unable to end session. Recording may be processed later.");
+    }
+
+    @CircuitBreaker(name = "getRoomToken", fallbackMethod = "getRoomTokenFallback")
     public ApiResponse<Map<String, Object>> getRoomToken(String sessionId) {
         log.info("Generating room token for session: {}", sessionId);
 
@@ -139,5 +169,10 @@ public class VideoService {
         token.put("expiresIn", 3600);
 
         return ApiResponse.ok(token);
+    }
+
+    public ApiResponse<Map<String, Object>> getRoomTokenFallback(String sessionId, Throwable t) {
+        log.error("Failed to generate room token for session {}: {}", sessionId, t.getMessage());
+        return ApiResponse.error("Token generation temporarily unavailable");
     }
 }

@@ -1,27 +1,34 @@
-# API Keys and Credentials
-notebooklm_cookies.txt
-opencode.json
-*.key
-*.pem
-.env
-.env.local
-.env.*.local
-.env.production
-
-# IDE and OS
-.vscode/
-.idea/
-.DS_Store
-*.swp
-*.swo
-*~
+```
+# Compiled and build artifacts
+*.class
+*.o
+*.obj
+*.out
+target/
+build/
 
 # Dependencies
-node_modules/
-__pycache__/
-*.pyc
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
 
-# Build outputs
-dist/
-build/
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+```

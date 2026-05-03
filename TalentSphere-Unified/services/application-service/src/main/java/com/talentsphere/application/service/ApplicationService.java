@@ -38,14 +38,17 @@ public class ApplicationService {
   }
 
   public ApiResponse<JobApplication> applyFallback(JobApplication application, Throwable t) {
-    log.error("Neural Signal transmission failed for application {}: {}", application.getJobId(), t.getMessage());
+    log.error("Application submission failed for job {}: {}", application.getJobId(), t.getMessage());
     application.setAppliedAt(LocalDateTime.now());
     application.setStatus("LOCAL_PENDING");
     JobApplication saved = applicationRepository.save(application);
-    return ApiResponse.success(saved, "WARNING: Pulse Signal failed. Application stored in Local Buffer.");
+    // Mark for retry - in production this would be picked up by a scheduled job
+    log.warn("Application {} stored with LOCAL_PENDING status for retry", saved.getId());
+    return ApiResponse.success(saved, "WARNING: Event publishing failed. Application stored for retry.");
   }
 
   @SuppressWarnings("null")
+  @CircuitBreaker(name = "updateStatus", fallbackMethod = "updateStatusFallback")
   public ApiResponse<JobApplication> updateApplicationStatus(String id, String newStatus) {
     return applicationRepository.findById(id)
         .map(app -> {
@@ -64,11 +67,34 @@ public class ApplicationService {
         .orElse(ApiResponse.error("Application not found"));
   }
 
+  public ApiResponse<JobApplication> updateStatusFallback(String id, String newStatus, Throwable t) {
+    log.error("Failed to update application {} status to {}: {}", id, newStatus, t.getMessage());
+    return applicationRepository.findById(id)
+        .map(app -> {
+            app.setStatus(newStatus);
+            JobApplication saved = applicationRepository.save(app);
+            return ApiResponse.success(saved, "Status updated but notification failed");
+        })
+        .orElse(ApiResponse.error("Application not found"));
+  }
+
+  @CircuitBreaker(name = "getByUserId", fallbackMethod = "getApplicationsByUserIdFallback")
   public ApiResponse<List<JobApplication>> getApplicationsByUserId(String userId) {
     return ApiResponse.ok(applicationRepository.findByUserId(userId));
   }
 
+  public ApiResponse<List<JobApplication>> getApplicationsByUserIdFallback(String userId, Throwable t) {
+    log.warn("Unable to fetch applications for user {}: {}", userId, t.getMessage());
+    return ApiResponse.ok(List.of());
+  }
+
+  @CircuitBreaker(name = "getByJobId", fallbackMethod = "getApplicationsByJobIdFallback")
   public ApiResponse<List<JobApplication>> getApplicationsByJobId(String jobId) {
     return ApiResponse.ok(applicationRepository.findByJobId(jobId));
+  }
+
+  public ApiResponse<List<JobApplication>> getApplicationsByJobIdFallback(String jobId, Throwable t) {
+    log.warn("Unable to fetch applications for job {}: {}", jobId, t.getMessage());
+    return ApiResponse.ok(List.of());
   }
 }

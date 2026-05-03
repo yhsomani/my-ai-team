@@ -9,7 +9,11 @@ import java.time.Period;
 import java.time.temporal.ChronoUnit;
 
 @Entity
-@Table(name = "profiles")
+@Table(name = "profiles",
+    indexes = {
+        @Index(name = "idx_profile_user", columnList = "userId"),
+        @Index(name = "idx_profile_location", columnList = "location")
+    })
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class Profile {
 

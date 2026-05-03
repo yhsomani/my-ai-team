@@ -4,14 +4,12 @@ server:
 spring:
   application:
     name: chat-service
-  datasource:
-    url: jdbc:postgresql://ts-postgres:5432/chat_db
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/chatservice
+      database: chatservice
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
 eureka:
   client:

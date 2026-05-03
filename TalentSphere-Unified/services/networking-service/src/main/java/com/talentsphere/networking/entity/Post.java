@@ -8,7 +8,11 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "posts")
+@Table(name = "posts",
+    indexes = {
+        @Index(name = "idx_post_author", columnList = "author_id"),
+        @Index(name = "idx_post_created", columnList = "createdAt")
+    })
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,6 +21,9 @@ public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+    
+    @Version
+    private Long version;
     
     @Column(name = "author_id", nullable = false)
     private String authorId;

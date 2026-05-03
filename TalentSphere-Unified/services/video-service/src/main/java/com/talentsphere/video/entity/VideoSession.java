@@ -5,12 +5,22 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "video_sessions")
+@Table(name = "video_sessions",
+    indexes = {
+        @Index(name = "idx_vid_job", columnList = "jobId"),
+        @Index(name = "idx_vid_applicant", columnList = "applicantId"),
+        @Index(name = "idx_vid_interviewer", columnList = "interviewerId"),
+        @Index(name = "idx_vid_status", columnList = "status"),
+        @Index(name = "idx_vid_scheduled", columnList = "scheduledAt")
+    })
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class VideoSession {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     private String jobId;
