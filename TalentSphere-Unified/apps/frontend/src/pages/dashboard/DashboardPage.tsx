@@ -15,7 +15,13 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    // Analytics tracking could go here
+  }, []);
+
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   
   // User Data

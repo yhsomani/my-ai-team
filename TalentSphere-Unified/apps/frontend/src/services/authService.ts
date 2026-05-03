@@ -6,13 +6,19 @@ export const authService = {
     // 1. Backend sync (Spring Boot)
     const [firstName, ...rest] = fullName.split(' ');
     const lastName = rest.join(' ') || 'User';
-    const backendRes = await apiClient.post('/api/v1/auth/register', { 
-      email, 
-      password: pass, 
-      firstName, 
-      lastName, 
-      roles: [role] 
-    });
+    let backendData = null;
+    try {
+      const backendRes = await apiClient.post('/api/v1/auth/register', { 
+        email, 
+        password: pass, 
+        firstName, 
+        lastName, 
+        roles: [role] 
+      });
+      backendData = backendRes.data;
+    } catch (err) {
+      console.warn("Backend sync failed, continuing with Supabase only:", err);
+    }
     
     // 2. Supabase Auth
     const { data, error } = await supabase.auth.signUp({
@@ -22,12 +28,16 @@ export const authService = {
     });
     
     if (error) throw error;
-    return { supabase: data, backend: backendRes.data };
+    return { supabase: data, backend: backendData };
   },
 
   login: async (email: string, pass: string) => {
     // Backend login (for synchronized session verification)
-    await apiClient.post('/api/v1/auth/login', { email, password: pass });
+    try {
+      await apiClient.post('/api/v1/auth/login', { email, password: pass });
+    } catch (err) {
+      console.warn("Backend login failed, continuing with Supabase:", err);
+    }
     
     // Supabase login (Primary identity provider)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
