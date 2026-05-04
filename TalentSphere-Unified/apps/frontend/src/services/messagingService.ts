@@ -48,9 +48,10 @@ export const messagingService = {
         id: conv.messages[0].id,
         content: conv.messages[0].content,
         senderId: conv.messages[0].sender_id,
-        timestamp: conv.messages[0].created_at
+        timestamp: conv.messages[0].created_at,
+        status: 'SENT'
       } : null
-    }));
+    })) as Conversation[];
   },
 
   getMessages: async (conversationId: string, userId: string): Promise<Message[]> => {
@@ -75,16 +76,17 @@ export const messagingService = {
       senderId: msg.sender_id,
       content: msg.content,
       messageType: (msg.message_type as 'TEXT' | 'IMAGE' | 'FILE' | 'VIDEO') || 'TEXT',
-      attachmentUrl: msg.attachment_url,
+      attachmentUrl: msg.attachment_url || undefined,
       status: (msg.status as 'SENT' | 'DELIVERED' | 'READ') || 'SENT',
       timestamp: msg.created_at,
-      readAt: msg.read_at,
+      readAt: msg.read_at || undefined,
       sender: msg.profiles ? {
         id: msg.profiles.id,
         fullName: msg.profiles.full_name,
-        avatarUrl: msg.profiles.avatar_url
+        avatarUrl: msg.profiles.avatar_url,
+        status: 'offline' as const
       } : undefined
-    }));
+    })) as Message[];
   },
 
   sendMessage: async (message: Partial<Message>): Promise<Message> => {
@@ -95,7 +97,7 @@ export const messagingService = {
         sender_id: message.senderId,
         content: message.content,
         message_type: message.messageType || 'TEXT',
-        attachment_url: message.attachmentUrl,
+        attachment_url: message.attachmentUrl || null,
         status: 'SENT'
       })
       .select(`
@@ -118,14 +120,15 @@ export const messagingService = {
       senderId: data.sender_id,
       content: data.content,
       messageType: (data.message_type as 'TEXT' | 'IMAGE' | 'FILE' | 'VIDEO') || 'TEXT',
-      attachmentUrl: data.attachment_url,
+      attachmentUrl: data.attachment_url || undefined,
       status: (data.status as 'SENT' | 'DELIVERED' | 'READ') || 'SENT',
       timestamp: data.created_at,
-      readAt: data.read_at,
+      readAt: data.read_at || undefined,
       sender: data.profiles ? {
         id: data.profiles.id,
         fullName: data.profiles.full_name,
-        avatarUrl: data.profiles.avatar_url
+        avatarUrl: data.profiles.avatar_url,
+        status: 'offline' as const
       } : undefined
     };
   },
