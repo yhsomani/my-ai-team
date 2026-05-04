@@ -1,10 +1,70 @@
 ```
+# Dependencies
+node_modules/
+**/node_modules/
+
 # Environment variables
 .env
 .env.local
-*.env.*
+.env.*
 
-# Documentation
-SUPABASE_MIGRATION_FINAL.md
-SUPABASE_SETUP_INSTRUCTIONS.md
+# Build outputs
+dist/
+build/
+target/
+**/dist/
+**/build/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+**/__pycache__/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Temporary files
+*.tmp
+*.temp
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

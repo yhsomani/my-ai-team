@@ -30,21 +30,20 @@ export const lmsService = {
     const { data, error } = await query;
     
     if (error) throw error;
+    if (!data) return [];
     
     return data.map(course => ({
       id: course.id,
       title: course.title,
+      provider: course.profiles?.full_name || 'Unknown',
+      status: 'NOT_STARTED',
+      progress: 0,
       description: course.description,
-      instructorId: course.instructor_id,
-      instructorName: course.profiles?.full_name,
-      instructorAvatar: course.profiles?.avatar_url,
+      xp: course.xp_reward,
       category: course.category,
-      price: parseFloat(course.price?.toString() || '0'),
-      thumbnailUrl: course.thumbnail_url,
-      durationHours: course.duration_hours,
-      level: course.level,
-      isPublished: course.is_published,
-      createdAt: course.created_at
+      duration: `${course.duration_hours} hours`,
+      difficulty: course.level as 'Beginner' | 'Normal' | 'Advanced' | 'Expert',
+      lessons: []
     }));
   },
 
@@ -74,18 +73,15 @@ export const lmsService = {
     return {
       id: data.id,
       title: data.title,
+      provider: data.profiles?.full_name || 'Unknown',
+      status: 'NOT_STARTED',
+      progress: 0,
       description: data.description,
-      instructorId: data.instructor_id,
-      instructorName: data.profiles?.full_name,
-      instructorAvatar: data.profiles?.avatar_url,
+      xp: data.xp_reward,
       category: data.category,
-      price: parseFloat(data.price?.toString() || '0'),
-      thumbnailUrl: data.thumbnail_url,
-      durationHours: data.duration_hours,
-      level: data.level,
-      isPublished: data.is_published,
-      createdAt: data.created_at,
-      lessons: data.lessons
+      duration: `${data.duration_hours} hours`,
+      difficulty: data.level as 'Beginner' | 'Normal' | 'Advanced' | 'Expert',
+      lessons: data.lessons || []
     };
   },
 
@@ -111,13 +107,15 @@ export const lmsService = {
     
     return {
       id: data.id,
-      courseId: data.course_id,
       userId: data.user_id,
+      courseId: data.course_id,
       status: data.status,
-      progressPercentage: data.progress_percentage,
+      progress: data.progress_percentage || 0,
       enrolledAt: data.enrolled_at,
+      startedAt: data.started_at,
       completedAt: data.completed_at,
-      course: data.courses
+      completedLessonIds: [],
+      certificateUrl: data.certificate_url
     };
   },
 
@@ -137,16 +135,19 @@ export const lmsService = {
       .order('enrolled_at', { ascending: false });
     
     if (error) throw error;
+    if (!data) return [];
     
     return data.map(enrollment => ({
       id: enrollment.id,
-      courseId: enrollment.course_id,
       userId: enrollment.user_id,
+      courseId: enrollment.course_id,
       status: enrollment.status,
-      progressPercentage: enrollment.progress_percentage,
+      progress: enrollment.progress_percentage || 0,
       enrolledAt: enrollment.enrolled_at,
+      startedAt: enrollment.started_at,
       completedAt: enrollment.completed_at,
-      course: enrollment.courses
+      completedLessonIds: [],
+      certificateUrl: enrollment.certificate_url
     }));
   },
 
@@ -165,7 +166,7 @@ export const lmsService = {
     
     if (error) throw error;
     
-    return data;
+    return data || [];
   },
 
   markLessonComplete: async (enrollmentId: string, lessonId: string): Promise<void> => {
@@ -202,20 +203,26 @@ export const lmsService = {
     }
     
     // Update enrollment progress percentage
-    const { data: totalLessons } = await supabase
-      .from('lessons')
-      .select('*', { count: 'exact' })
-      .eq('course_id', 
-        supabase.from('enrollments').select('course_id').eq('id', enrollmentId).single()
-      );
+    const { data: enrollmentData } = await supabase
+      .from('enrollments')
+      .select('course_id')
+      .eq('id', enrollmentId)
+      .single();
     
-    const { data: completedLessons } = await supabase
+    if (!enrollmentData) return;
+    
+    const { count: totalLessons } = await supabase
+      .from('lessons')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', enrollmentData.course_id);
+    
+    const { count: completedLessons } = await supabase
       .from('lesson_progress')
-      .select('*', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
       .eq('enrollment_id', enrollmentId)
       .eq('completed', true);
     
-    const progress = totalLessons?.count ? Math.round((completedLessons?.count || 0) / totalLessons.count * 100) : 0;
+    const progress = totalLessons ? Math.round((completedLessons || 0) / totalLessons * 100) : 0;
     
     await supabase
       .from('enrollments')
@@ -235,10 +242,10 @@ export const lmsService = {
         description: course.description,
         instructor_id: instructorId,
         category: course.category,
-        price: course.price || 0,
-        thumbnail_url: course.thumbnailUrl,
-        duration_hours: course.durationHours,
-        level: course.level,
+        price: 0,
+        thumbnail_url: null,
+        duration_hours: parseInt(course.duration || '0'),
+        level: course.difficulty,
         is_published: false
       })
       .select()
@@ -249,15 +256,14 @@ export const lmsService = {
     return {
       id: data.id,
       title: data.title,
+      provider: 'Unknown',
+      status: 'NOT_STARTED',
+      progress: 0,
       description: data.description,
-      instructorId: data.instructor_id,
+      xp: data.xp_reward,
       category: data.category,
-      price: parseFloat(data.price?.toString() || '0'),
-      thumbnailUrl: data.thumbnail_url,
-      durationHours: data.duration_hours,
-      level: data.level,
-      isPublished: data.is_published,
-      createdAt: data.created_at
+      duration: `${data.duration_hours} hours`,
+      difficulty: data.level as 'Beginner' | 'Normal' | 'Advanced' | 'Expert'
     };
   }
 };
