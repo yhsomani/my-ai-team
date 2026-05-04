@@ -54,11 +54,11 @@ export const networkingService = {
       if (profile.experiences && profile.experiences.length > 0) {
         profile.experiences.forEach(exp => {
           feedItems.push({
-            type: 'JOB_CHANGE',
+            type: 'JOB_CHANGE' as const,
             userId: profile.user_id,
             userName: profile.full_name,
-            userAvatar: profile.avatar_url,
-            headline: profile.headline,
+            userAvatar: (profile as any).profiles?.avatar_url || undefined,
+            headline: profile.headline || undefined,
             content: `Started new position as ${exp.title} at ${exp.company}`,
             timestamp: exp.created_at
           });
@@ -68,11 +68,11 @@ export const networkingService = {
       if (profile.skills && profile.skills.length > 0) {
         profile.skills.slice(0, 3).forEach(skill => {
           feedItems.push({
-            type: 'SKILL_ADDED',
+            type: 'SKILL_ADDED' as const,
             userId: profile.user_id,
             userName: profile.full_name,
-            userAvatar: profile.avatar_url,
-            headline: profile.headline,
+            userAvatar: (profile as any).profiles?.avatar_url || undefined,
+            headline: profile.headline || undefined,
             content: `Added new skill: ${skill.name}`,
             timestamp: skill.created_at
           });
@@ -81,7 +81,7 @@ export const networkingService = {
     });
     
     return feedItems.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      new Date(b.timestamp || b.createdAt || 0).getTime() - new Date(a.timestamp || a.createdAt || 0).getTime()
     );
   },
 
@@ -113,6 +113,7 @@ export const networkingService = {
       status: data.status,
       message: data.message,
       createdAt: data.created_at,
+      updatedAt: data.updated_at,
       requester: data.profiles
     };
   },
@@ -147,12 +148,14 @@ export const networkingService = {
     
     return data.map(p => ({
       id: p.id,
-      email: p.email,
-      fullName: p.full_name,
-      avatarUrl: p.avatar_url,
-      headline: p.user_profiles?.headline,
-      currentRole: p.user_profiles?.current_role,
-      location: p.user_profiles?.location
+      userId: p.id,
+      fullName: p.full_name || undefined,
+      firstName: p.full_name?.split(' ')[0] || undefined,
+      lastName: p.full_name?.split(' ').slice(1).join(' ') || undefined,
+      headline: p.user_profiles?.[0]?.headline || undefined,
+      currentRole: p.user_profiles?.[0]?.current_role || undefined,
+      location: p.user_profiles?.[0]?.location || undefined,
+      avatarUrl: p.avatar_url || undefined
     }));
   },
 
@@ -197,6 +200,7 @@ export const networkingService = {
       receiverId: c.receiver_id,
       status: c.status,
       createdAt: c.created_at,
+      updatedAt: c.updated_at,
       requester: c.profiles
     }));
   }

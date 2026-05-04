@@ -10,22 +10,23 @@ import { Skeleton } from '../../components/shared/Skeleton';
 
 const MessagingPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const conversations = useAppSelector(selectAllConversations);
   const { activeConversationId, messages, status } = useAppSelector((state) => state.messaging);
   const [messageText, setMessageText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchConversations());
+    if (status === 'idle' && user) {
+      dispatch(fetchConversations(user.id));
     }
-  }, [dispatch, status]);
+  }, [dispatch, status, user]);
 
   useEffect(() => {
-    if (activeConversationId) {
-      dispatch(fetchMessages(activeConversationId));
+    if (activeConversationId && user) {
+      dispatch(fetchMessages({ conversationId: activeConversationId, userId: user.id }));
     }
-  }, [dispatch, activeConversationId]);
+  }, [dispatch, activeConversationId, user]);
 
   const filteredConvos = conversations.filter(c =>
     c.participant?.fullName.toLowerCase().includes(searchTerm.toLowerCase())

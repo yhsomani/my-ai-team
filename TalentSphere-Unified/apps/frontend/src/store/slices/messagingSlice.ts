@@ -7,15 +7,15 @@ const conversationsAdapter = createEntityAdapter<Conversation>();
 
 export const fetchConversations = createAsyncThunk(
   'messaging/fetchConversations',
-  async () => {
-    return await messagingService.getConversations();
+  async (userId: string) => {
+    return await messagingService.getConversations(userId);
   }
 );
 
 export const fetchMessages = createAsyncThunk(
   'messaging/fetchMessages',
-  async (convId: string) => {
-    return await messagingService.getMessages(convId);
+  async ({ conversationId, userId }: { conversationId: string; userId: string }) => {
+    return await messagingService.getMessages(conversationId, userId);
   }
 );
 
