@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../store/hooks';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -8,18 +9,21 @@ import { jobService } from '../../services/jobService';
 
 const PostJobPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAppSelector((state: any) => state.auth);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     location: '',
-    salaryRange: '',
-    jobType: 'Full-time',
-    category: 'Engineering',
+    salaryMin: '',
+    salaryMax: '',
+    requirements: '',
+    jobType: 'FULL_TIME',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) return;
     setLoading(true);
     try {
       await jobService.postJob({
@@ -27,9 +31,11 @@ const PostJobPage: React.FC = () => {
         description: formData.description,
         location: formData.location,
         jobType: formData.jobType,
-        companyName: "TalentSphere Partner", // Default for now
-        postedAt: new Date().toISOString()
-      });
+        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
+        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
+        requirements: formData.requirements.split('\n').filter(r => r.trim()),
+        status: 'DRAFT'
+      }, user.id);
       navigate('/jobs');
     } catch (err) {
       console.error('Failed to post job:', err);
