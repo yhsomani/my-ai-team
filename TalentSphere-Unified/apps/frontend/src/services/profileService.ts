@@ -45,12 +45,19 @@ export const profileService = {
   },
 
   getSkills: async (userId: string) => {
+    // First get the profile_id
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!profileData) return [];
+
     const { data, error } = await supabase
       .from('skills')
       .select('*')
-      .in('profile_id', 
-        supabase.from('user_profiles').select('id').eq('user_id', userId)
-      );
+      .eq('profile_id', profileData.id);
     
     if (error) throw error;
     return data;

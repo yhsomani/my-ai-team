@@ -60,16 +60,27 @@ export const dashboardService = {
           .limit(5),
         
         // Count unread messages
-        supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .in('conversation_id', 
-            supabase
-              .from('conversation_participants')
-              .select('conversation_id')
-              .eq('user_id', userId)
-          )
-          .is('read_at', null)
+        (async () => {
+          // First get conversation IDs for the user
+          const convResult = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', userId);
+          
+          if (convResult.error || !convResult.data) return { count: 0 };
+          
+          const conversationIds = convResult.data.map(c => c.conversation_id);
+          if (conversationIds.length === 0) return { count: 0 };
+          
+          // Then count unread messages in those conversations
+          const msgResult = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .in('conversation_id', conversationIds)
+            .is('read_at', null);
+          
+          return { count: msgResult.count || 0 };
+        })()
       ]);
 
       const stats: DashboardStats = {

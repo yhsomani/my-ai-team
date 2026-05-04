@@ -24,14 +24,14 @@ const NetworkingPage: React.FC = () => {
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchSuggestions());
+    if (status === 'idle' && user) {
+      dispatch(fetchSuggestions(user.id));
     }
-  }, [dispatch, status]);
+  }, [dispatch, status, user]);
 
   const filtered = profiles.filter(p =>
-    p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.currentRole && p.currentRole.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.currentRole || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleConnect = async (id: string) => {
@@ -41,7 +41,7 @@ const NetworkingPage: React.FC = () => {
     }
     
     try {
-        await networkingService.sendConnectionRequest(id);
+        await networkingService.sendConnectionRequest(id, user.id);
         setPendingRequests(prev => new Set(prev).add(id));
         addToast({ type: 'success', title: 'Request Sent', message: 'Connection request has been sent.' });
     } catch (error) {

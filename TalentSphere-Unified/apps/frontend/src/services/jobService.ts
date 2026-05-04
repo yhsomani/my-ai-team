@@ -136,8 +136,8 @@ export const jobService = {
     if (error) throw error;
     
     // Simple client-side matching (can be improved with full-text search)
-    const matchedJobs = data.filter(job => 
-      job.requirements?.some(req => 
+    const matchedJobs = (data || []).filter((job: any) => 
+      job.requirements?.some((req: string) => 
         skillNames.some(skill => 
           req.toLowerCase().includes(skill.toLowerCase())
         )

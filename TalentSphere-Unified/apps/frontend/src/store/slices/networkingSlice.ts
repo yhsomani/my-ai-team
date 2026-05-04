@@ -7,8 +7,8 @@ const networkingAdapter = createEntityAdapter<PublicProfile>();
 
 export const fetchSuggestions = createAsyncThunk(
   'networking/fetchSuggestions',
-  async () => {
-    return await networkingService.getSuggestions();
+  async (userId: string) => {
+    return await networkingService.getSuggestions(userId);
   }
 );
 

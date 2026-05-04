@@ -1,53 +1,95 @@
 ```
 # Dependencies
 node_modules/
-**/node_modules/
+.pnpm-store/
+.yarn/
+.yarn-cache/
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+out/
+public/build/
+webpack.config.js.bak
+
+# TypeScript/JavaScript
+*.tsbuildinfo
+*.js.map
+*.ts.map
 
 # Environment variables
 .env
 .env.local
 .env.*
-
-# Build outputs
-dist/
-build/
-target/
-**/dist/
-**/build/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-**/__pycache__/
+!.env.example
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# IDE
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.swp
+.swo
+
+# IDE specific
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
+# Python (if any Python files exist in project)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
 .coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.db
+*.db-journal
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
 
-# Temporary files
-*.tmp
-*.temp
+# Compiled and binary files
+*.exe
+*.dll
+*.so
+*.dylib
+*.class
+*.o
+*.a
+*.obj
+*.out
 
-# Compressed files
+# Compression and archives
 *.zip
-*.gz
 *.tar
+*.gz
 *.tgz
 *.bz2
 *.xz
@@ -67,4 +109,23 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+
+# Testing
+coverage/
+htmlcov/
+.coverage
+.jest/
+jest/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Authentication and security
+id_rsa
+id_rsa.pub
+config/keys/
+config/secrets/
+secrets/
 ```
