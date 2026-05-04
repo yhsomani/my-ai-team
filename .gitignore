@@ -1,1 +1,10 @@
-Nothing should be ignored based on the provided file changes, as they only include markdown documentation files (.md) which are source/config files.
+```
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# Documentation
+SUPABASE_MIGRATION_FINAL.md
+SUPABASE_SETUP_INSTRUCTIONS.md
+```
