@@ -37,13 +37,13 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!user?.id) return;
       setLoading(true);
       try {
         if (isRecruiter) {
           const [s, a] = await Promise.all([
-            recruiterService.getStats(),
-            recruiterService.getRecentApplications()
+            recruiterService.getStats(user.id),
+            recruiterService.getRecentApplications(user.id)
           ]);
           setRecruiterStats(s);
           setRecentApplications(a);

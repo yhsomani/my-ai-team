@@ -1,100 +1,78 @@
 ```
 # Dependencies
 node_modules/
-.pnpm-store/
-.yarn/
-.yarn-cache/
 
-# Build outputs
+# Build artifacts
 dist/
 build/
-.next/
-.nuxt/
-out/
-public/build/
-webpack.config.js.bak
-
-# TypeScript/JavaScript
-*.tsbuildinfo
-*.js.map
-*.ts.map
 
 # Environment variables
 .env
 .env.local
-.env.*
-!.env.example
+*.env.*
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS generated files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Icon?
-desktop.ini
-
-# Temporary files
-*.tmp
-*.temp
-*~
-.swp
-.swo
-
-# IDE specific
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# Python (if any Python files exist in project)
+# Logs
+*.log
+
+# Python cache
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
+*.pyc
+*.pyo
+*.pyd
+
+# Coverage reports
+coverage/
+htmlcov/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Testing
+.nyc_output/
+coverage/
+junit.xml
+*.gcda
+*.gcno
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+tmp/
+temp/
+
+# Local configuration
+.settings/
+config/local.*
+!config/default.*
+
+# Database
 *.db
 *.db-journal
-.hypothesis/
-.pytest_cache/
-.mypy_cache/
 
-# Compiled and binary files
-*.exe
-*.dll
-*.so
-*.dylib
-*.class
-*.o
-*.a
-*.obj
-*.out
-
-# Compression and archives
+# Packaging
+*.tar*
+*.jar
+*.war
+*.ear
 *.zip
-*.tar
+*.rar
+*.7z
 *.gz
-*.tgz
 *.bz2
 *.xz
-*.7z
-*.rar
 *.zst
 *.lz4
 *.lzh
@@ -105,27 +83,493 @@ coverage.xml
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 
-# Testing
-coverage/
-htmlcov/
-.coverage
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+
+# Bower
+bower_components/
+
+# Grunt
+.grunt
+
+# Gulp
+.gulp-cache/
+
+# Jspm
+jspm_packages/
+
+# SASS
+.sass-cache/
+
+# Yarn
+.yarn/
+pnp-*
+
+# Webpack
+.webpack/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierrc.js
+.prettierignore
+
+# Jest
 .jest/
-jest/
+jest.config.js
+jest.setup.js
 
-# Database
-*.sqlite
-*.sqlite3
-*.db
+# Cypress
+cypress/videos/
+cypress/screenshots/
 
-# Authentication and security
-id_rsa
-id_rsa.pub
-config/keys/
-config/secrets/
-secrets/
+# Vitest
+.vitest/
+
+# Turborepo
+.turbo/
+
+# Prisma
+prisma/migrations/
+
+# Supabase
+supabase/
+
+# Docker
+.docker/
+
+# Kubernetes
+.kube/
+
+# AWS
+.aws/
+
+# Google Cloud
+.gcloud/
+
+# Azure
+.azure/
+
+# Heroku
+.heroku/
+
+# Netlify
+.netlify/
+
+# Vite
+.vite/
+
+# Astro
+.astroturf/
+
+# Remix
+.remix/
+
+# Redwood
+.redwood/
+
+# Blitz
+.blitz/
+
+# Keystone
+.keystone/
+
+# Payload
+.payload/
+
+# Strapi
+.strapi/
+
+# Directus
+.directus/
+
+# Sanity
+.sanity/
+
+# Contentful
+.contentful/
+
+# Shopify
+.shopify/
+
+# Magento
+.magento/
+
+# WooCommerce
+.woocommerce/
+
+# Drupal
+.drupal/
+
+# Joomla
+.joomla/
+
+# WordPress
+.wordpress/
+
+# Laravel
+.laravel/
+
+# Symfony
+.symfony/
+
+# Django
+django_migrations/
+*.pot
+*.po
+
+# Flask
+instance/
+.webassets-cache
+
+# Ruby
+.bundle/
+Gemfile.lock
+.ruby-version
+
+# Go
+*.mod
+*.sum
+*.exe
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+.recommenders
+
+# C#
+*.sln
+*.csproj
+*.user
+*.userosscache
+*.suo
+*.cache
+*.ilk
+*.meta
+*.pidb
+*.pdb
+*.mdb
+*.prof
+*.pyc
+*.pyo
+*.rsp
+*.sublime-workspace
+
+# C++
+*.i
+*.ii
+*.o
+*.os
+*.a
+*.dylib
+*.so
+*.so.*
+*.dll
+*.obj
+*.lib
+*.la
+*.lai
+*.lo
+*.gmo
+*.mo
+*.toc
+
+# Objective-C
+*.gch
+*.xcodeproj
+*.xcworkspace
+*.framework
+*.gdb_history
+
+# Swift
+*.xcodeproj
+*.xcworkspace
+*.swiftmodule
+*.swiftdoc
+.deriveddata
+
+# Qt
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.moc.cpp
+*.qm
+
+# Visual Studio Code
+.vscode-test/
+
+# Vim
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Atom
+.atom/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# Gradle
+.gradle/
+build/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Android
+/build/
+/captures/
+*.keystore
+
+# iOS
+*.xcodeproj/
+*.xcworkspace/
+*.framework
+*.app
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+Assets/AssetStoreTools*
+
+# Unreal Engine
+Binaries/
+Build/
+Saved/
+Intermediate/
+*.uasset
+*.uplugin
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+ExternalBuild/
+*.cmake
+.libs
+.libs/*
+*.o
+*.os
+*.a
+*.so
+*.so.*
+*.dylib*
+*.dll
+*.lib
+*.exe
+*.out
+*.app
+*.ipa
+*.apk
+*.ap_
+*.aab
+
+# Autotools
+autom4te.cache/
+config.h*
+config.log
+config.status
+config.cache
+aclocal.m4
+ltmain.sh
+depcomp
+install-sh
+missing
+mkinstalldirs
+configure
+.libs
+.libs/*
+
+# Compiler output
+*.o
+*.a
+*.so
+*.so.*
+*.dylib*
+*.dll
+*.lib
+*.exe
+*.out
+*.app
+*.ipa
+*.apk
+*.ap_
+*.aab
+*.jar
+*.class
+*.obj
+*.elf
+*.ilk
+*.map
+*.pdb
+*.stP
+*.lst
+*.su
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.filters
+*.VC.db
+*.VC.VC.opendb
+*.ncb
+*.aps
+*.ilk
+*.iobj
+*.ipdb
+*.tpf
+*.tlog
+*.metagen
+*.opendb
+*.opensdf
+*.sdf
+*.sln.cache
+*.VC.VXDB
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock
+*.VC.VXDB.lock
+*.VC.db.lock
+*.VC.VC.opendb.lock......
 ```
