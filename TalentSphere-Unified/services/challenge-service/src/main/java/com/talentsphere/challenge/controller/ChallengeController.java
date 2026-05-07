@@ -22,7 +22,7 @@ public class ChallengeController {
 
     @GetMapping("/trending")
     public ApiResponse<List<Challenge>> getTrendingChallenges() {
-        return challengeService.getAllChallenges(); // Fallback to all for now
+        return challengeService.getTrendingChallenges();
     }
 
     @PostMapping("/submit")

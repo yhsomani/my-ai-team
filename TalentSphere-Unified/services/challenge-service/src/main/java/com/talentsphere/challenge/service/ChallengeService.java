@@ -37,6 +37,11 @@ public class ChallengeService {
         return ApiResponse.ok(challengeRepository.findAll());
     }
 
+    @CircuitBreaker(name = "neuralTrendingList", fallbackMethod = "getAllChallengesFallback")
+    public ApiResponse<List<Challenge>> getTrendingChallenges() {
+        return ApiResponse.ok(challengeRepository.findTop10ByOrderByXpRewardDesc());
+    }
+
     public ApiResponse<List<Challenge>> getAllChallengesFallback(Throwable t) {
         log.error("Neural Challenge Node congestion: {}. Reverting to static competition list.", t.getMessage());
         return ApiResponse.ok(List.of());
