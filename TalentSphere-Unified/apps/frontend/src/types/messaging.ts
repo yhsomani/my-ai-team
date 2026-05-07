@@ -10,13 +10,22 @@ export interface Message {
     conversationId?: string;
     senderId: string;
     content: string;
-    timestamp: Date;
+    timestamp: string | Date;
+    messageType?: 'TEXT' | 'IMAGE' | 'FILE' | 'VIDEO';
+    attachmentUrl?: string;
+    status?: 'SENT' | 'DELIVERED' | 'READ';
+    readAt?: string;
+    sender?: Participant;
 }
 
 export interface Conversation {
     id: string;
-    participant: Participant;
+    participant?: Participant;
+    participants?: string[];
+    isGroup?: boolean;
     lastMessage?: Message;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface Socket {

@@ -24,12 +24,14 @@ const SettingsPage: React.FC = () => {
     const [profileData, setProfileData] = useState<any>(null);
     const [billingData, setBillingData] = useState<any>(null);
     
-    const [notifications, setNotifications] = useState({
-        jobAlerts: true,
-        connectionRequests: true,
-        challenges: false,
-        systemUpdates: true,
-    });
+    const [notifications, setNotifications] = useState<{
+        job_alerts: boolean;
+        email_notifications: boolean;
+        push_notifications: boolean;
+        sms_notifications: boolean;
+        message_notifications: boolean;
+        newsletter: boolean;
+    } | null>(null);
 
     useEffect(() => {
         const fetchSettingsData = async () => {

@@ -5,6 +5,7 @@ import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
 import { Search, Filter, User, Mail, Download, ExternalLink, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { recruiterService, Application } from '../../services/recruiterService';
+import { useAppSelector } from '../../store/hooks';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Skeleton } from '../../components/shared/Skeleton';
 
@@ -18,15 +19,17 @@ const statusVariant = (status: string) => {
 };
 
 const CandidatesPage: React.FC = () => {
+  const { user } = useAppSelector((state: any) => state.auth);
   const [candidates, setCandidates] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchCandidates = useCallback(async () => {
+    if (!user?.id) return;
     try {
       setLoading(true);
-      const data = await recruiterService.getRecentApplications();
+      const data = await recruiterService.getRecentApplications(user.id);
       setCandidates(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch candidates:', err);
@@ -34,7 +37,7 @@ const CandidatesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { fetchCandidates(); }, [fetchCandidates]);
 

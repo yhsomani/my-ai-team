@@ -1,45 +1,29 @@
 import { supabase } from '../lib/supabaseClient';
-import { apiClient } from '../api/axios';
 
 export const authService = {
   register: async (email: string, pass: string, fullName: string, role: string) => {
-    // 1. Backend sync (Spring Boot)
     const [firstName, ...rest] = fullName.split(' ');
     const lastName = rest.join(' ') || 'User';
-    let backendData = null;
-    try {
-      const backendRes = await apiClient.post('/api/v1/auth/register', { 
-        email, 
-        password: pass, 
-        firstName, 
-        lastName, 
-        roles: [role] 
-      });
-      backendData = backendRes.data;
-    } catch (err) {
-      console.warn("Backend sync failed, continuing with Supabase only:", err);
-    }
     
-    // 2. Supabase Auth
+    // Supabase Auth signup
     const { data, error } = await supabase.auth.signUp({
       email,
       password: pass,
-      options: { data: { role, full_name: fullName } }
+      options: { 
+        data: { 
+          role, 
+          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName
+        } 
+      }
     });
     
     if (error) throw error;
-    return { supabase: data, backend: backendData };
+    return data;
   },
 
   login: async (email: string, pass: string) => {
-    // Backend login (for synchronized session verification)
-    try {
-      await apiClient.post('/api/v1/auth/login', { email, password: pass });
-    } catch (err) {
-      console.warn("Backend login failed, continuing with Supabase:", err);
-    }
-    
-    // Supabase login (Primary identity provider)
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
     return data;
@@ -53,5 +37,23 @@ export const authService = {
   getCurrentUser: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
+  },
+
+  getSession: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  },
+
+  resetPassword: async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  },
+
+  updateUser: async (updates: { email?: string; password?: string; full_name?: string; avatar_url?: string }) => {
+    const { data, error } = await supabase.auth.updateUser(updates);
+    if (error) throw error;
+    return data;
   }
 };

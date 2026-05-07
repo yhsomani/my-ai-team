@@ -32,7 +32,7 @@ const JobsPage: React.FC = () => {
 
     const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
     const [isPostingJob, setIsPostingJob] = useState(false);
-    const [jobData, setJobData] = useState({ title: '', company: '', location: '', type: 'Full-time' });
+    const [jobData, setJobData] = useState({ title: '', description: '', company: '', location: '', type: 'Full-time' });
 
     useEffect(() => {
         if (activeTab === 'explore') {
@@ -76,16 +76,17 @@ const JobsPage: React.FC = () => {
         }
         setIsPostingJob(true);
         try {
+            if (!user?.id) throw new Error('User not authenticated');
             await jobService.postJob({
                 title: jobData.title,
-                companyName: jobData.company,
+                description: jobData.description || '',
                 location: jobData.location,
                 jobType: jobData.type,
-                postedAt: new Date().toISOString()
-            });
+                companyId: undefined // Will need to be set from company selection
+            }, user.id);
             addToast({ type: 'success', title: 'Job posted successfully!' });
             setIsPostJobModalOpen(false);
-            setJobData({ title: '', company: '', location: '', type: 'Full-time' });
+            setJobData({ title: '', description: '', company: '', location: '', type: 'Full-time' });
             dispatch(fetchJobs({})); // Refresh list
         } catch (error) {
             console.error('Failed to post job:', error);

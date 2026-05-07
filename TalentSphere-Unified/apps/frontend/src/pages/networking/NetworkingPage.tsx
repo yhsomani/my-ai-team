@@ -24,14 +24,14 @@ const NetworkingPage: React.FC = () => {
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchSuggestions());
+    if (status === 'idle' && user) {
+      dispatch(fetchSuggestions(user.id));
     }
-  }, [dispatch, status]);
+  }, [dispatch, status, user]);
 
   const filtered = profiles.filter(p =>
-    p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.currentRole && p.currentRole.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.currentRole || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleConnect = async (id: string) => {
@@ -41,7 +41,7 @@ const NetworkingPage: React.FC = () => {
     }
     
     try {
-        await networkingService.sendConnectionRequest(id);
+        await networkingService.sendConnectionRequest(id, user.id);
         setPendingRequests(prev => new Set(prev).add(id));
         addToast({ type: 'success', title: 'Request Sent', message: 'Connection request has been sent.' });
     } catch (error) {
@@ -94,10 +94,10 @@ const NetworkingPage: React.FC = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
-                    {profile.fullName.split(' ').map(n => n[0]).join('')}
+                    {(profile.fullName || 'U').split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{profile.fullName}</p>
+                    <p className="text-sm font-semibold">{profile.fullName || 'Unknown User'}</p>
                     <p className="text-xs text-[var(--text-muted)]">{profile.currentRole || 'Professional'}</p>
                   </div>
                 </div>

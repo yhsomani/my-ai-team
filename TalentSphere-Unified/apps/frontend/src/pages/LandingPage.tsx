@@ -6,7 +6,7 @@ import {
   Layers, Target, Cpu, ArrowRight
 } from 'lucide-react';
 import { Button } from '../components/shared/AuraButton';
-import axios from 'axios';
+import { supabase } from '../lib/supabaseClient';
 
 const LandingPage: React.FC = () => {
   const [stats, setStats] = useState({ totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%' });
@@ -14,12 +14,32 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchPublicStats = async () => {
         try {
+<<<<<<< HEAD
             const response = await axios.get(`${import.meta.env.VITE_API_URL || window.location.origin}/api/v1/admin/public/stats`);
             const data = response.data.data;
+=======
+            // Get total users count
+            const { count: totalUsers, error: usersError } = await supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
+
+            // Get active jobs count
+            const { count: activeJobs, error: jobsError } = await supabase
+                .from('jobs')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'ACTIVE');
+
+            if (usersError || jobsError) {
+                console.error("Failed to fetch stats", usersError || jobsError);
+                return;
+            }
+
+>>>>>>> 4c83dee4028d58c61065c033c82cebeb5e95576e
             setStats({
-                totalUsers: `${(data.totalUsers / 1000).toFixed(1)}k+`,
-                activeJobs: `${data.activeJobs}+`,
-                successRate: `${data.successRate}%`
+                totalUsers: totalUsers && totalUsers > 1000 ? `${(totalUsers / 1000).toFixed(1)}k+` : `${totalUsers || 0}`,
+                activeJobs: activeJobs && activeJobs > 1000 ? `${(activeJobs / 1000).toFixed(1)}k+` : `${activeJobs || 0}+`,
+                successRate: '94.2%' // This would need to be calculated from applications
             });
         } catch (err) {
             console.error("Failed to fetch public stats", err);

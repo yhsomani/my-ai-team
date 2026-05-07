@@ -1,6 +1,4 @@
-import apiClient from '../api/axios';
-
-const isTesting = () => typeof window !== 'undefined' && (window as any).__E2E_TESTING__;
+import { supabase } from '../lib/supabaseClient';
 
 export interface DashboardStats {
   xp: number;
@@ -21,35 +19,90 @@ export interface DashboardData {
 export const dashboardService = {
   fetchDashboardData: async (userId: string): Promise<DashboardData> => {
     try {
-      // Parallel fetch through the Gateway (Nginx)
-      const [xpRes, appCountRes, jobsRes, challengesRes, msgRes] = await Promise.allSettled([
-        apiClient.get(`/api/v1/gamification/stats/${userId}`),
-        apiClient.get(`/api/v1/applications/count/${userId}`),
-        apiClient.get('/api/v1/jobs/recommended'),
-        apiClient.get('/api/v1/challenges/trending'),
-        apiClient.get(`/api/v1/messages/unread/count/${userId}`)
+      // Parallel fetch from Supabase tables
+      const [
+        leaderboardData, 
+        appCountData, 
+        jobsData, 
+        challengesData, 
+        messagesData
+      ] = await Promise.allSettled([
+        // Get XP and level from leaderboard or user_profiles
+        supabase
+          .from('leaderboard')
+          .select('total_xp, rank')
+          .eq('user_id', userId)
+          .single(),
+        
+        // Count job applications
+        supabase
+          .from('job_applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId),
+        
+        // Get recommended jobs
+        supabase
+          .from('jobs')
+          .select(`
+            *,
+            companies (id, name, logo_url)
+          `)
+          .eq('status', 'PUBLISHED')
+          .order('posted_at', { ascending: false })
+          .limit(5),
+        
+        // Get trending challenges
+        supabase
+          .from('challenges')
+          .select('*')
+          .eq('is_published', true)
+          .order('xp_reward', { ascending: false })
+          .limit(5),
+        
+        // Count unread messages
+        (async () => {
+          // First get conversation IDs for the user
+          const convResult = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', userId);
+          
+          if (convResult.error || !convResult.data) return { count: 0 };
+          
+          const conversationIds = convResult.data.map(c => c.conversation_id);
+          if (conversationIds.length === 0) return { count: 0 };
+          
+          // Then count unread messages in those conversations
+          const msgResult = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .in('conversation_id', conversationIds)
+            .is('read_at', null);
+          
+          return { count: msgResult.count || 0 };
+        })()
       ]);
 
       const stats: DashboardStats = {
-        xp: xpRes.status === 'fulfilled' ? (xpRes.value as any).data.xp : 0,
-        level: xpRes.status === 'fulfilled' ? (xpRes.value as any).data.level : 1,
-        applications: appCountRes.status === 'fulfilled' ? (appCountRes.value as any).data.count : 0,
-        messages: msgRes.status === 'fulfilled' ? (msgRes.value as any).data.count : 0,
-        xpTrend: xpRes.status === 'fulfilled' ? (xpRes.value as any).data.xpTrend : '+0',
+        xp: leaderboardData.status === 'fulfilled' ? (leaderboardData.value.data?.total_xp || 0) : 0,
+        level: leaderboardData.status === 'fulfilled' ? Math.floor((leaderboardData.value.data?.total_xp || 0) / 100) + 1 : 1,
+        applications: appCountData.status === 'fulfilled' ? appCountData.value.count || 0 : 0,
+        messages: messagesData.status === 'fulfilled' ? messagesData.value.count || 0 : 0,
+        xpTrend: '+0',
         appsTrend: 'STABLE',
-        msgTrend: msgRes.status === 'fulfilled' && (msgRes.value as any).data.count > 0 ? 'NEW' : 'NONE'
+        msgTrend: messagesData.status === 'fulfilled' && (messagesData.value.count || 0) > 0 ? 'NEW' : 'NONE'
       };
 
       const data = {
         stats,
-        jobs: jobsRes.status === 'fulfilled' ? (jobsRes.value as any).data : [],
-        challenges: challengesRes.status === 'fulfilled' ? (challengesRes.value as any).data : []
+        jobs: jobsData.status === 'fulfilled' ? (jobsData.value.data || []) : [],
+        challenges: challengesData.status === 'fulfilled' ? (challengesData.value.data || []) : []
       };
 
       return data;
     } catch (err: any) {
-      console.error("Dashboard isolation breach:", err);
-      throw new Error("Failed to synchronize dashboard state.");
+      console.error("Dashboard data fetch error:", err);
+      throw new Error("Failed to load dashboard data.");
     }
   }
 };
