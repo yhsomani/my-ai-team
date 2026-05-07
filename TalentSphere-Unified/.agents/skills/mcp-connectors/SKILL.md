@@ -6,9 +6,8 @@ Connects the **TalentSphere** project to SQL, Git, and external APIs using MCP s
 
 ## Instructions
 1. Use the `supabase-mcp-server` for all SQL migrations and database queries.
-2. Coordinate with the `StitchMCP` server for design system changes and UI flow generation.
-3. Automatically check the health of configured MCP servers before starting database or design tasks.
-4. Integrate cross-service knowledge from multiple MCP sources (e.g., matching design system styles with DB metadata).
+2. Automatically check the health of configured MCP servers before starting database tasks.
+3. Integrate cross-service knowledge from multiple MCP sources.
 
 ## Constraints
 - Focus only on the requested MCP connections.

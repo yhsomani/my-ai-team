@@ -4,13 +4,5 @@
     ".opencode/plugins/graphify.js"
   ],
   "mcp": {
-    "stitch": {
-      "type": "local",
-      "command": ["node", "C:\\Users\\yashs\\Documents\\Projects\\stitch-mcp-repo\\dist\\server.js"],
-      "environment": {
-        "API_KEY": "REPLACE_WITH_YOUR_STITCH_API_KEY",
-        "BASE_URL": "https://api-demo.stitch-ai.co"
-      }
-    }
   }
 }

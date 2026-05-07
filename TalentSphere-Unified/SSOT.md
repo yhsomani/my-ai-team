@@ -1,12 +1,7 @@
 # TalentSphere — Single Source of Truth (SSOT)
 
-<<<<<<< HEAD
-**Version:** 5.1.0 (Stabilized & Decoupled)  
+**Version:** 6.0.0 (Production Ready & Decoupled)  
 **Last Updated:** 2026-05-07  
-=======
-**Version:** 6.0.0 (Production Complete)  
-**Last Updated:** 2025-01-04  
->>>>>>> 4c83dee4028d58c61065c033c82cebeb5e95576e
 **Status:** Authoritative Reference — Supersedes All Previous Documentation  
 **Implementation Status:** ✅ ALL PHASES COMPLETE  
 

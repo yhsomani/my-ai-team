@@ -2,7 +2,7 @@
 description: Audits UI components for consistency with the Deep Space design system.
 ---
 # UI Consistency Auditor
-Ensures that all frontend components in the **TalentSphere** project adhere to the established design system (Stitch / Deep Space).
+Ensures that all frontend components in the **TalentSphere** project adhere to the established design system (Deep Space).
 
 ## Goals
 - Maintain a unified visual language across all 22+ services.
