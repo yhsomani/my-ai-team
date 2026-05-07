@@ -16,6 +16,9 @@
     <module>services/service-parent</module>
     <module>services/bom</module>
     <module>services/shared</module>
+    <module>services/shared-security</module>
+    <module>services/shared-messaging</module>
+    <module>services/shared-resilience</module>
     <module>services/contracts</module>
     <module>services/schemas</module>
     <module>services/auth-service</module>
@@ -36,7 +39,6 @@
     <module>services/payment-service</module>
     <module>services/ai-service</module>
     <module>services/api-gateway</module>
-    <module>apps/backend</module>
   </modules>
 
   <properties>

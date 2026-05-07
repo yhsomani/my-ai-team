@@ -1,7 +1,7 @@
 # TalentSphere — Single Source of Truth (SSOT)
 
-**Version:** 5.0.0 (Production Ready)  
-**Last Updated:** 2024-10-26  
+**Version:** 5.1.0 (Stabilized & Decoupled)  
+**Last Updated:** 2026-05-07  
 **Status:** Authoritative Reference — Supersedes All Previous Documentation  
 
 ---
@@ -52,12 +52,13 @@ TalentSphere is a distributed, cloud-native career intelligence platform unifyin
 | | Nginx | Latest | API Gateway |
 
 ### 1.3 Architecture Principles
-- **Microservices:** 19 independent services with per-service database isolation
+- **Microservices:** 19 independent services with per-service database isolation. The legacy 'Unified Backend' monolith wrapper (`apps/backend/pom.xml`) has been eradicated to enforce strict decoupling.
 - **Event-Driven:** RabbitMQ for asynchronous communication (Outbox Pattern)
 - **Hexagonal Architecture:** Clear separation of concerns (Ports & Adapters)
 - **Zero Trust Security:** JWT validation at gateway, service-to-service authentication
 - **Resilience:** Circuit breakers (Resilience4j), retries, fallbacks
 - **Observability:** OpenTelemetry, Prometheus, Grafana Loki/Tempo
+- **CI/CD Independence:** GitHub Actions pipeline iterates through services to build distinct Docker images via `SERVICE_NAME` build arguments, abandoning the monolithic build strategy.
 
 ---
 
@@ -69,6 +70,7 @@ TalentSphere is a distributed, cloud-native career intelligence platform unifyin
 ┌─────────────────────────────────────────────────────────────────┐
 │                      CLIENTS                                     │
 │         Web (React SPA) / Mobile / Third-Party APIs             │
+│         (Includes axios-mock-adapter for local dev)             │
 └────────────────────────────┬────────────────────────────────────┘
                              │ HTTPS (TLS 1.3)
                     ┌────────▼────────┐
@@ -171,6 +173,7 @@ apps/frontend/
 │   │   ├── candidates/     # CandidatesPage
 │   │   └── error/          # NotFound
 │   ├── services/           # API clients (axios instances)
+│   ├── api/                # API configuration, mock adapters (axios-mock-adapter)
 │   ├── store/              # Redux slices (auth, jobs, profile, etc.)
 │   ├── hooks/              # Custom hooks
 │   ├── utils/              # Utility functions
@@ -208,7 +211,10 @@ apps/frontend/
 | `TheNexusHeader` | Global navigation | Logo, nav links, user menu, notifications |
 | `ResponsiveLayout` | Page wrapper | Sidebar (desktop), mobile menu, content area |
 
-### 3.3 State Management
+### 3.3 State Management & Mocking Layer
+
+#### Local Development Mocking (axios-mock-adapter)
+In local environments where backend Docker services are unavailable, the application leverages `axios-mock-adapter` (configured in `src/api/mockAdapter.ts` and initialized in `main.tsx`). This allows full UI/UX testing of all user roles without a running database or microservice cluster.
 
 #### Redux Slices
 | Slice | State | Actions |

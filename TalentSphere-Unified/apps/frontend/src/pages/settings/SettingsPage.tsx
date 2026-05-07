@@ -36,10 +36,10 @@ const SettingsPage: React.FC = () => {
             if (!user) return;
             try {
                 setLoading(true);
-                const [profileRes, notifRes, billRes] = await Promise.allSettled([
+                const [profileRes, billRes, plansRes] = await Promise.allSettled([
                     profileService.getProfile(user.id),
-                    settingsService.getNotifications(user.id),
-                    settingsService.getBilling(user.id)
+                    settingsService.getBilling(user.id),
+                    settingsService.getPlans()
                 ]);
 
                 if (profileRes.status === 'fulfilled') {
@@ -48,16 +48,18 @@ const SettingsPage: React.FC = () => {
                     throw new Error('Failed to load profile data');
                 }
 
-                if (notifRes.status === 'fulfilled' && notifRes.value) {
-                    setNotifications(notifRes.value);
-                }
-                
                 if (billRes.status === 'fulfilled' && billRes.value) {
-                    setBillingData(billRes.value);
+                    setBillingData({
+                        transactions: billRes.value,
+                        plan: 'Pro Plan', // Placeholder until user-service handles subscription state
+                        credits: 1250,
+                        cardType: 'Visa',
+                        cardLast4: '4242'
+                    });
                 }
             } catch (err: any) {
                 console.error("Failed to load settings data", err);
-                setError("Unable to connect to settings service. Please try again later.");
+                setError("Unable to connect to system services. Please try again later.");
             } finally {
                 setLoading(false);
             }

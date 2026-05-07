@@ -34,11 +34,13 @@ public class OAuth2LoginConfig {
     @Value("${spring.security.oauth2.client.registration.github.client-secret:}")
     private String githubClientSecret;
 
-    @Value("${app.oauth2.success-url:http://localhost:3000/auth/callback}")
+    @Value("${app.oauth2.success-url:#{null}}")
     private String successUrl;
 
     @Bean
     public SecurityFilterChain oauth2SecurityFilterChain(HttpSecurity http) throws Exception {
+        String finalSuccessUrl = successUrl != null ? successUrl : "https://talentsphere.io/auth/callback";
+        
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/oauth2/**", "/login/**", "/error", "/actuator/**", "/api-docs/**", "/swagger-ui/**").permitAll()
@@ -54,7 +56,7 @@ public class OAuth2LoginConfig {
                 .successHandler((request, response, authentication) -> {
                     OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
                     log.info("OAuth2 login success: {}", oidcUser.getEmail());
-                    response.sendRedirect(successUrl + "?token=" + oidcUser.getSubject());
+                    response.sendRedirect(finalSuccessUrl + "?token=" + oidcUser.getSubject());
                 })
             )
             .oauth2Client(oauth2 -> {})

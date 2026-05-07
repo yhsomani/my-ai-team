@@ -54,7 +54,7 @@ public class PaymentService {
         response.put("amount", amount);
         response.put("currency", transaction.getCurrency());
         response.put("status", "PENDING");
-        response.put("paymentUrl", "https://checkout.stripe.com/pay/" + sessionId); // Mock Stripe URL
+        response.put("paymentUrl", System.getenv().getOrDefault("STRIPE_PAYMENT_URL_BASE", "https://checkout.stripe.com/pay/") + sessionId);
         
         return ApiResponse.ok(response);
     }

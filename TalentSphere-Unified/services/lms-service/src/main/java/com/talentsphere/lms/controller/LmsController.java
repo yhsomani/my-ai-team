@@ -63,18 +63,11 @@ public class LmsController {
         return courseService.completeLesson(userId, courseId, lessonId);
     }
 
-    @GetMapping("/courses/{courseId}/enrollments")
+    @GetMapping("/courses/{courseId}/enrollment")
     public ApiResponse<Enrollment> getEnrollment(
             @PathVariable String courseId,
             @RequestParam String userId) {
         return courseService.getEnrollment(userId, courseId);
-    }
-
-    @GetMapping("/courses/{courseId}/progress")
-    public ApiResponse<Enrollment> getProgress(
-            @PathVariable String courseId,
-            @RequestParam String userId) {
-        return courseService.getUserProgress(userId, courseId);
     }
 
     @GetMapping("/enrollments/{userId}")

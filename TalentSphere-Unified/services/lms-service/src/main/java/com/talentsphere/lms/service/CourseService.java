@@ -50,10 +50,6 @@ public class CourseService {
         return ApiResponse.ok(saved);
     }
 
-    public ApiResponse<List<Course>> getAllCourses() {
-        return listCourses();
-    }
-
     public ApiResponse<Course> getCourseById(String id) {
         return courseRepository.findById(id)
                 .map(ApiResponse::ok)
@@ -82,10 +78,6 @@ public class CourseService {
     public ApiResponse<Enrollment> enrollFallback(String userId, String courseId, Throwable t) {
         log.error("Neural Enrollment congestion for user {} on course {}: {}. Buffering request.", userId, courseId, t.getMessage());
         return ApiResponse.error("Enrollment Node congested. Your entry has been queued for Neural Sync.");
-    }
-
-    public ApiResponse<Enrollment> enrollUser(String userId, String courseId) {
-        return enroll(userId, courseId);
     }
 
     @Transactional
@@ -165,10 +157,6 @@ public class CourseService {
             return ApiResponse.error("No lessons found for this course");
         }
         return ApiResponse.ok(lessons);
-    }
-
-    public ApiResponse<Enrollment> getUserProgress(String userId, String courseId) {
-        return getEnrollment(userId, courseId);
     }
 
     private void archiveEvent(String aggregateType, String aggregateId, String eventType, Object payload) {

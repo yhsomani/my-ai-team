@@ -160,7 +160,7 @@ public class VideoService {
         }
 
         // Generating a secure JWT would happen here in production.
-        // For a real system without mock data, we generate a valid token utilizing the sessionId
+        // Using a secure UUID token as a placeholder for WebRTC tokens until external provider is implemented
         String tokenString = "token-" + UUID.randomUUID().toString() + "-" + sessionId;
 
         Map<String, Object> token = new HashMap<>();

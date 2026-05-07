@@ -14,7 +14,7 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchPublicStats = async () => {
         try {
-            const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/v1/admin/public/stats`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL || window.location.origin}/api/v1/admin/public/stats`);
             const data = response.data.data;
             setStats({
                 totalUsers: `${(data.totalUsers / 1000).toFixed(1)}k+`,

@@ -42,24 +42,17 @@ public class AiController {
     @PostMapping("/chat")
     public ApiResponse<java.util.Map<String, String>> getChatResponse(@RequestBody java.util.Map<String, String> request) {
         String prompt = request.get("prompt");
-        String response = "As an AI assistant, I recommend focusing on " + (prompt.contains("resume") ? "clarifying your technical impact." : "building a strong professional network.");
-        return ApiResponse.ok(java.util.Map.of("message", response));
+        return ApiResponse.ok(java.util.Map.of("message", aiService.getChatResponse(prompt)));
     }
 
     @GetMapping("/career-path/{userId}")
     public ApiResponse<java.util.Map<String, Object>> getCareerPath(@PathVariable String userId) {
-        return ApiResponse.ok(java.util.Map.of(
-            "userId", userId,
-            "recommendedPath", "Senior Software Engineer -> Tech Lead -> CTO",
-            "requiredSkills", java.util.List.of("System Design", "Cloud Architecture", "Leadership")
-        ));
+        return ApiResponse.ok(aiService.getCareerPath(userId));
     }
 
     @GetMapping("/insights")
     public ApiResponse<java.util.Map<String, String>> getInsights() {
-        return ApiResponse.ok(java.util.Map.of(
-            "insight", "Current trajectory analysis indicates high market resonance in Cloud-Native architectures and Rust-based high-performance systems."
-        ));
+        return ApiResponse.ok(java.util.Map.of("insight", aiService.getMarketInsights()));
     }
 
     @GetMapping("/health")

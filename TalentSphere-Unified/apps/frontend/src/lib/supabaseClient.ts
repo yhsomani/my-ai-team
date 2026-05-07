@@ -1,5 +1,11 @@
-import { supabaseMock } from './mockSupabase';
+import { createClient } from '@supabase/supabase-js';
 
-// Mocked for testing because the external Supabase URL is currently unreachable
-export const supabase = supabaseMock as any;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

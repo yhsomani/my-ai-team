@@ -17,17 +17,21 @@ public class RecruiterController {
 
     @GetMapping("/stats")
     public ApiResponse<Map<String, Object>> getStats() {
-        // In a real system, we'd count jobs from JobService and applications from here
+        List<com.talentsphere.application.entity.JobApplication> apps = applicationService.getApplicationsByUserId(null).getData();
+        long totalApps = apps.size();
+        long newApps = apps.stream().filter(a -> "PENDING".equals(a.getStatus())).count();
+        long hiredApps = apps.stream().filter(a -> "HIRED".equals(a.getStatus())).count();
+        
         return ApiResponse.ok(Map.of(
-            "activeJobs", 12,
-            "totalApplications", applicationService.getApplicationsByUserId(null).getData().size(),
-            "newApplications", 5,
-            "hiredCount", 2
+            "activeJobs", 0, // In a real system, this would be fetched from JobService via Feign
+            "totalApplications", totalApps,
+            "newApplications", newApps,
+            "hiredCount", hiredApps
         ));
     }
 
     @GetMapping("/applications/recent")
-    public ApiResponse<Object> getRecentApplications() {
-        return ApiResponse.ok(applicationService.getApplicationsByUserId(null).getData());
+    public ApiResponse<List<com.talentsphere.application.entity.JobApplication>> getRecentApplications() {
+        return applicationService.getApplicationsByUserId(null);
     }
 }

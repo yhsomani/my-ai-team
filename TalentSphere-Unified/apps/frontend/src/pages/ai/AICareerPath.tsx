@@ -1,50 +1,59 @@
-import React from 'react';
-import { Target, TrendingUp, BookOpen, ArrowRight, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Target, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
 import { useNavigate } from 'react-router-dom';
-
-const careerPaths = [
-  {
-    title: 'Senior Full Stack Developer',
-    match: 92,
-    timeline: '6-12 months',
-    skills: ['System Design', 'AWS', 'GraphQL'],
-    steps: [
-      { label: 'Complete System Design course', done: true },
-      { label: 'Build 2 full-stack projects', done: false },
-      { label: 'Get AWS certification', done: false },
-      { label: 'Contribute to open source', done: false },
-    ],
-  },
-  {
-    title: 'Engineering Manager',
-    match: 78,
-    timeline: '12-18 months',
-    skills: ['Leadership', 'Project Management', 'Architecture'],
-    steps: [
-      { label: 'Lead a team project', done: true },
-      { label: 'Take management course', done: false },
-      { label: 'Mentor junior developers', done: false },
-    ],
-  },
-  {
-    title: 'ML Engineer',
-    match: 65,
-    timeline: '18-24 months',
-    skills: ['Python', 'TensorFlow', 'MLOps'],
-    steps: [
-      { label: 'Complete ML fundamentals', done: false },
-      { label: 'Build ML pipeline project', done: false },
-      { label: 'Get ML certification', done: false },
-    ],
-  },
-];
+import { useAppSelector } from '../../store/hooks';
+import { aiService } from '../../services/aiService';
+import { Skeleton } from '../../components/shared/Skeleton';
 
 const AICareerPath: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAppSelector((state) => state.auth);
+  const [loading, setLoading] = useState(true);
+  const [careerPath, setCareerPath] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchPath = async () => {
+      if (!user) return;
+      try {
+        const data = await aiService.generateCareerPath(user.id);
+        setCareerPath(data);
+      } catch (err) {
+        console.error('Failed to fetch career path:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPath();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
+  const paths = [
+    {
+      title: careerPath?.recommendedPath || 'Senior Software Engineer',
+      match: 92,
+      timeline: careerPath?.estimatedTimeline || '2-4 years',
+      skills: careerPath?.requiredSkills || ['System Design', 'Cloud Architecture'],
+      steps: [
+        { label: 'Complete Advanced System Design', done: true },
+        { label: 'Obtain Cloud Architect Certification', done: false },
+        { label: 'Lead a cross-functional project', done: false },
+      ],
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -55,7 +64,7 @@ const AICareerPath: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {careerPaths.map((path, idx) => (
+        {paths.map((path, idx) => (
           <Card key={idx} className={`p-5 flex flex-col ${idx === 0 ? 'border-accent ring-1 ring-accent/20' : ''}`}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -73,7 +82,7 @@ const AICareerPath: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-1.5 mb-4">
-              {path.skills.map(s => (
+              {path.skills.map((s: string) => (
                 <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
               ))}
             </div>
@@ -89,7 +98,7 @@ const AICareerPath: React.FC = () => {
             </div>
 
             <Button variant={idx === 0 ? 'default' : 'outline'} size="sm" className="w-full" onClick={() => navigate('/lms')}>
-              {idx === 0 ? 'Continue Path' : 'Explore Path'} <ArrowRight size={14} className="ml-1" />
+              Explore Path <ArrowRight size={14} className="ml-1" />
             </Button>
           </Card>
         ))}

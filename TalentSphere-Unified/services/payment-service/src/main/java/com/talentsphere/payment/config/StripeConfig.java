@@ -16,10 +16,10 @@ public class StripeConfig {
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
-    @Value("${stripe.success-url:http://localhost:3000/payment/success}")
+    @Value("${stripe.success-url:#{null}}")
     private String successUrl;
 
-    @Value("${stripe.cancel-url:http://localhost:3000/payment/cancel}")
+    @Value("${stripe.cancel-url:#{null}}")
     private String cancelUrl;
 
     @PostConstruct
@@ -30,10 +30,13 @@ public class StripeConfig {
     }
 
     public Session createCheckoutSession(long amount, String currency, String description, String userId) {
+        String finalSuccessUrl = successUrl != null ? successUrl : "https://talentsphere.io/payment/success";
+        String finalCancelUrl = cancelUrl != null ? cancelUrl : "https://talentsphere.io/payment/cancel";
+
         SessionCreateParams params = SessionCreateParams.builder()
                 .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setCustomerEmail(userId + "@talentsphere.local")
+                .setCustomerEmail(userId + "@talentsphere.user")
                 .addLineItem(SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)
                         .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
@@ -44,8 +47,8 @@ public class StripeConfig {
                                         .build())
                                 .build())
                         .build())
-                .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                .setCancelUrl(cancelUrl)
+                .setSuccessUrl(finalSuccessUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(finalCancelUrl)
                 .putMetadata("userId", userId)
                 .build();
 

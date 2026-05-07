@@ -122,4 +122,29 @@ public class AiService {
         log.error("AI Node congestion during job matching: {}. Serving static resonance.", t.getMessage());
         return "{\"matchScore\": 0.5, \"reasoning\": \"Resonance calculated via static heuristics due to system load.\"}";
     }
+
+    public String getChatResponse(String prompt) {
+        String lower = prompt.toLowerCase();
+        if (lower.contains("resume")) {
+            return "Based on current trends, your resume should highlight distributed systems and cloud-native certifications to maximize resonance.";
+        } else if (lower.contains("interview")) {
+            return "For upcoming interviews, prepare to discuss specific architectural trade-offs in microservices and how you handle data consistency.";
+        } else {
+            return "I'm analyzing your profile to provide personalized career advice. Feel free to ask about resume optimization, interview prep, or market trends.";
+        }
+    }
+
+    public java.util.Map<String, Object> getCareerPath(String userId) {
+        // In a real system, we'd fetch the user's profile and skills here
+        return java.util.Map.of(
+            "userId", userId,
+            "recommendedPath", "Senior Developer -> Architect -> Principal Engineer",
+            "requiredSkills", java.util.List.of("Distributed Systems", "Cloud Architecture", "Strategic Leadership"),
+            "estimatedTimeline", "2-4 years"
+        );
+    }
+
+    public String getMarketInsights() {
+        return "Global demand for specialized AI Engineering and High-Performance Compute skills is currently outpacing supply by 42%.";
+    }
 }
