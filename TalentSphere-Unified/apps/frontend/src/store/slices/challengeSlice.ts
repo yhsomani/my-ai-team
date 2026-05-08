@@ -18,7 +18,7 @@ const challengeSlice = createSlice({
     status: 'idle',
     error: null as string | null,
   }),
-  reducers: {},
+  reducers: undefined as unknown as any,
   extraReducers: (builder) => {
     builder
       .addCase(fetchChallenges.pending, (state) => {

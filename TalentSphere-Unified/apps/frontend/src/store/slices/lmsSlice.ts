@@ -18,7 +18,7 @@ const lmsSlice = createSlice({
     status: 'idle',
     error: null as string | null,
   }),
-  reducers: {},
+  reducers: undefined as unknown as any,
   extraReducers: (builder) => {
     builder
       .addCase(fetchCourses.pending, (state) => {
