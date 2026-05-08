@@ -172,6 +172,5 @@ export const settingsService = {
       console.error('Error deleting account:', error);
       throw new Error(`Failed to delete account: ${error.message}`);
     }
-
   }
 };

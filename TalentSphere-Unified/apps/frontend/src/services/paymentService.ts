@@ -39,7 +39,7 @@ export const paymentService = {
       status: 'PENDING' as const
     };
 
-    const { data, error } = await supabase
+    const { data: localPaymentData, error } = await supabase
       .from('payments')
       .insert([payment])
       .select()
@@ -50,11 +50,25 @@ export const paymentService = {
       throw new Error(`Failed to create payment: ${error.message}`);
     }
 
-    // In a real implementation, you would call Stripe API here
-    // For now, return mock session data
+    // Call Supabase Edge Function to create actual Stripe session
+    const { data: sessionData, error: sessionError } = await supabase.functions.invoke('create-checkout-session', {
+      body: {
+        userId,
+        amount,
+        currency,
+        description,
+        paymentId: localPaymentData.id
+      }
+    });
+
+    if (sessionError) {
+      console.error('Error creating Stripe session:', sessionError);
+      throw new Error(`Failed to create checkout session: ${sessionError.message}`);
+    }
+
     return {
-      sessionId: `sess_${data.id}`,
-      url: `/payment/success?session_id=sess_${data.id}`
+      sessionId: sessionData.id,
+      url: sessionData.url
     };
   },
 
@@ -104,18 +118,10 @@ export const paymentService = {
   },
 
   subscribeToPlan: async (userId: string, planId: string): Promise<any> => {
-    const subscription = {
-      user_id: userId,
-      plan_id: planId,
-      status: 'ACTIVE' as const,
-      started_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .insert([subscription])
-      .select()
-      .single();
+    // Invoke edge function to subscribe via stripe rather than local DB insert directly.
+    const { data, error } = await supabase.functions.invoke('create-subscription', {
+        body: { userId, planId }
+    });
 
     if (error) {
       console.error('Error creating subscription:', error);
