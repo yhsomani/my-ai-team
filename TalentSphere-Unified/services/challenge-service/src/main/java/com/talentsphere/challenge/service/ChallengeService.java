@@ -20,6 +20,8 @@ import io.github.resilience4j.retry.annotation.Retry;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -65,13 +67,15 @@ public class ChallengeService {
         submission = submissionRepository.save(submission);
 
         // 2. Validate against Test Cases
-        boolean allPassed = true;
-        for (TestCase tc : challenge.getTestCases()) {
-            if (!validateWithPiston(language, code, tc.getInput(), tc.getExpectedOutput())) {
-                allPassed = false;
-                break;
-            }
-        }
+        List<CompletableFuture<Boolean>> validationFutures = challenge.getTestCases().stream()
+                .map(tc -> CompletableFuture.supplyAsync(() ->
+                        validateWithPiston(language, code, tc.getInput(), tc.getExpectedOutput())))
+                .collect(Collectors.toList());
+
+        CompletableFuture<Void> allOf = CompletableFuture.allOf(
+                validationFutures.toArray(new CompletableFuture[0]));
+
+        boolean allPassed = allOf.thenApply(v -> validationFutures.stream().map(CompletableFuture::join).allMatch(result -> result)).join();
 
         // 3. Finalize result
         submission.setStatus(allPassed ? "PASSED" : "FAILED");
@@ -81,7 +85,12 @@ public class ChallengeService {
         // 4. Publish Event for Gamification
         if (allPassed) {
             rabbitTemplate.convertAndSend("talentsphere.events", "challenge.completed", 
-                Map.of("userId", userId, "xp", challenge.getXpReward(), "challengeTitle", challenge.getTitle()));
+                Map.of(
+                    "userId", userId,
+                    "xp", challenge.getXpReward(),
+                    "challengeTitle", challenge.getTitle() != null ? challenge.getTitle() : "Unknown Challenge"
+                )
+            );
         }
 
         return ApiResponse.ok(saved);

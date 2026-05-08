@@ -10,14 +10,39 @@ export interface AIAnalysisResult {
     createdAt?: string;
 }
 
+export const extractSkillsFromText = (text: string): string[] => {
+    const commonSkills = ['javascript', 'typescript', 'react', 'node', 'python', 'java', 'sql', 'aws', 'docker', 'kubernetes', 'html', 'css', 'agile'];
+    const textLower = text.toLowerCase();
+    return commonSkills.filter(skill => textLower.includes(skill));
+};
+
+export const estimateExperienceYears = (text: string): number => {
+    const yearsMatch = text.match(/(\d+)\+?\s+years?/i);
+    if (yearsMatch && yearsMatch[1]) {
+        return parseInt(yearsMatch[1], 10);
+    }
+    return 0;
+};
+
 export const aiService = {
     analyzeResume: async (text: string) => {
-        const { data, error } = await supabase.functions.invoke('analyze-resume', {
-            body: { text }
-        });
+        // Store resume analysis in a table for tracking
+        const { data, error } = await supabase
+            .rpc('analyze_resume', { resume_text: text });
         
-        if (error) throw error;
-        return data;
+        if (error) {
+            // Fallback: basic client-side analysis
+            return {
+                skills: extractSkillsFromText(text),
+                experience_years: estimateExperienceYears(text),
+                isFallback: true
+            };
+        }
+
+        return {
+            ...data,
+            isFallback: false
+        };
     },
 
     getMatchScore: async (resumeText: string, jobDescription: string) => {
