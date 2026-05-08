@@ -15,6 +15,11 @@
   <artifactId>ts-ai-service</artifactId>
   <name>TalentSphere AI Service</name>
 
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <java.version>21</java.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.talentsphere</groupId>
@@ -85,5 +90,3 @@
     </dependency>
   </dependencies>
 </project>
-
-

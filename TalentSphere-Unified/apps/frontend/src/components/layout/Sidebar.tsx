@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               </div>
               <span className="text-sm font-semibold">TalentSphere</span>
             </Link>
-            <button onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] p-1">
+            <button aria-label="Close sidebar" onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg">
               <ChevronLeft size={20} />
             </button>
           </div>
@@ -237,9 +237,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           {/* Collapse toggle */}
           <button 
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={isOpen}
+            title={!isOpen ? "Expand sidebar" : undefined}
             className={`
               w-full flex items-center gap-2.5 rounded-lg text-[var(--text-muted)] 
-              hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-150
+              hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
           >

@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -55,13 +57,13 @@ public class AiService {
         if (text.contains("kubernetes") || text.contains("k8s")) detectedSkills.add("Kubernetes");
 
         StringBuilder json = new StringBuilder();
-        json.append("{");
-        json.append("\"summary\": \"Advanced profile with focus on ").append(detectedSkills.isEmpty() ? "general engineering" : detectedSkills.get(0)).append("\",");
+        json.append("{\"summary\": \"Advanced profile with focus on ").append(detectedSkills.isEmpty() ? "general engineering" : detectedSkills.get(0)).append("\",");
         json.append("\"skills\": [");
-        for (int i = 0; i < detectedSkills.size(); i++) {
-            json.append("\"").append(detectedSkills.get(i)).append("\"");
-            if (i < detectedSkills.size() - 1) json.append(",");
+
+        if (!detectedSkills.isEmpty()) {
+            json.append("\"").append(String.join("\", \"", detectedSkills)).append("\"");
         }
+
         json.append("],");
         json.append("\"suggestedJobs\": [\"Senior ").append(detectedSkills.isEmpty() ? "Software" : detectedSkills.get(0)).append(" Engineer\"]");
         json.append("}");
@@ -85,7 +87,11 @@ public class AiService {
             return "{\"matchScore\": 0.5, \"reasoning\": \"Generic job description provided; baseline resonance applied.\"}";
         }
         
-        long matches = resumeSkills.stream().filter(jobSkills::contains).count();
+        Set<String> jobSkillsSet = new HashSet<>(jobSkills);
+        List<String> matchedSkills = resumeSkills.stream()
+                .filter(jobSkillsSet::contains)
+                .toList();
+        long matches = matchedSkills.size();
         double score = (double) matches / jobSkills.size();
         
         // Ensure at least some resonance if any skills match
@@ -93,7 +99,7 @@ public class AiService {
         if (score > 0.95) score = 0.98;
 
         String reasoning = matches > 0 
-            ? "Strong skill overlap in: " + String.join(", ", resumeSkills.stream().filter(jobSkills::contains).toList())
+            ? "Strong skill overlap in: " + String.join(", ", matchedSkills)
             : "No direct skill overlap detected; secondary resonance analysis recommended.";
 
         return String.format("{\"matchScore\": %.2f, \"reasoning\": \"%s\"}", score, reasoning);

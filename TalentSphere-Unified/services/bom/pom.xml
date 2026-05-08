@@ -160,6 +160,13 @@
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>9.37.3</version>
       </dependency>
+
+      <!-- AWS SDK -->
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>secretsmanager</artifactId>
+        <version>2.29.35</version>
+      </dependency>
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
@@ -218,7 +225,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.13.0</version>
           <configuration>
-            <release>25</release>
+            <release>21</release>
             <annotationProcessorPaths>
               <path>
                 <groupId>org.projectlombok</groupId>
