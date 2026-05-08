@@ -1,6 +1,5 @@
 import psycopg2
 import os
-import re
 
 # Configuration
 DB_HOST = "localhost"
