@@ -3,7 +3,7 @@ spring:
     name: application-service
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/application_db
-    username: ${POSTGRES_USER:postgres}
+    username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
@@ -12,13 +12,13 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: 5672
-    username: ${RABBITMQ_USER:guest}
+    username: ${RABBITMQ_USER}
     password: ${RABBITMQ_PASSWORD}
   cloud:
     rabbitmq:
       host: ${RABBITMQ_HOST:localhost}
       port: 5672
-      username: ${RABBITMQ_USER:guest}
+      username: ${RABBITMQ_USER}
       password: ${RABBITMQ_PASSWORD}
 
 server:

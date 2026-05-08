@@ -3,7 +3,7 @@ spring:
     name: challenge-service
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/challenge_db
-    username: ${POSTGRES_USER:postgres}
+    username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:

@@ -18,7 +18,11 @@ const challengeSlice = createSlice({
     status: 'idle',
     error: null as string | null,
   }),
-  reducers: {},
+  reducers: {
+    clearChallengeError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchChallenges.pending, (state) => {
@@ -34,6 +38,10 @@ const challengeSlice = createSlice({
       });
   },
 });
+
+export const {
+  clearChallengeError,
+} = challengeSlice.actions;
 
 export const {
   selectAll: selectAllChallenges,

@@ -25,7 +25,7 @@ public class FeatureController {
     }
 
     @GetMapping("/{name}")
-    public ApiResponse<Map<String, Object>> getFeature(@PathVariable String name) {
+    public ApiResponse<Map<String, Object>> getFeature(@PathVariable("name") String name) {
         Map<String, Object> response = new HashMap<>();
         response.put("name", name);
         response.put("enabled", featureFlagsConfig.isEnabled(name));
@@ -33,7 +33,7 @@ public class FeatureController {
     }
 
     @PostMapping("/{name}/enable")
-    public ApiResponse<Map<String, Object>> enableFeature(@PathVariable String name) {
+    public ApiResponse<Map<String, Object>> enableFeature(@PathVariable("name") String name) {
         log.info("Enabling feature: {}", name);
         Map<String, Object> response = new HashMap<>();
         response.put("name", name);
@@ -43,7 +43,7 @@ public class FeatureController {
     }
 
     @PostMapping("/{name}/disable")
-    public ApiResponse<Map<String, Object>> disableFeature(@PathVariable String name) {
+    public ApiResponse<Map<String, Object>> disableFeature(@PathVariable("name") String name) {
         log.info("Disabling feature: {}", name);
         Map<String, Object> response = new HashMap<>();
         response.put("name", name);

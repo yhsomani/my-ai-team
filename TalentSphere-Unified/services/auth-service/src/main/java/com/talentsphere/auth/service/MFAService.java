@@ -14,7 +14,9 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class MFAService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final SecureRandom random = new SecureRandom();
 
-    public record MFAConfig(boolean enabled, String secret, List<String> backupCodes) {}
+    public record MFAConfig(boolean enabled, String secret, Set<String> backupCodes) {}
 
     public String generateSecret() {
         try {
@@ -95,9 +97,9 @@ public class MFAService {
         }
     }
 
-    public List<String> generateBackupCodes() {
-        List<String> codes = new ArrayList<>();
-        for (int i = 0; i < BACKUP_CODES; i++) {
+    public Set<String> generateBackupCodes() {
+        Set<String> codes = new HashSet<>();
+        while (codes.size() < BACKUP_CODES) {
             codes.add(String.format("%08x", random.nextInt(0xFFFFFFFF)));
         }
         return codes;
@@ -105,10 +107,27 @@ public class MFAService {
 
     public boolean verifyBackupCode(String userId, String code) {
         String codesKey = MFA_PREFIX + "codes:" + userId;
-        @SuppressWarnings("unchecked")
-        List<String> codes = (List<String>) redisTemplate.opsForValue().get(codesKey);
+        Object rawCodes = redisTemplate.opsForValue().get(codesKey);
         
-        if (codes == null || !codes.contains(code)) {
+        if (rawCodes == null) {
+            return false;
+        }
+
+        Set<String> codes;
+        if (rawCodes instanceof Set) {
+            @SuppressWarnings("unchecked")
+            Set<String> typedCodes = (Set<String>) rawCodes;
+            codes = typedCodes;
+        } else if (rawCodes instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> listCodes = (List<String>) rawCodes;
+            codes = new HashSet<>(listCodes);
+        } else {
+            log.warn("Unexpected type for backup codes: {}", rawCodes.getClass());
+            return false;
+        }
+
+        if (!codes.contains(code)) {
             return false;
         }
 
@@ -120,7 +139,7 @@ public class MFAService {
 
     public void enableMFA(String userId) {
         String secret = generateSecret();
-        List<String> backupCodes = generateBackupCodes();
+        Set<String> backupCodes = generateBackupCodes();
         
         redisTemplate.opsForValue().set(MFA_PREFIX + "secret:" + userId, secret, Duration.ofDays(365));
         redisTemplate.opsForValue().set(MFA_PREFIX + "codes:" + userId, backupCodes, Duration.ofDays(365));
@@ -141,10 +160,24 @@ public class MFAService {
         return "true".equals(redisTemplate.opsForValue().get(MFA_PREFIX + "enabled:" + userId));
     }
 
-    public List<String> getRemainingBackupCodes(String userId) {
+    public Set<String> getRemainingBackupCodes(String userId) {
         String codesKey = MFA_PREFIX + "codes:" + userId;
-        @SuppressWarnings("unchecked")
-        List<String> codes = (List<String>) redisTemplate.opsForValue().get(codesKey);
-        return codes != null ? codes : List.of();
+        Object rawCodes = redisTemplate.opsForValue().get(codesKey);
+
+        if (rawCodes == null) {
+            return Set.of();
+        }
+
+        if (rawCodes instanceof Set) {
+            @SuppressWarnings("unchecked")
+            Set<String> typedCodes = (Set<String>) rawCodes;
+            return typedCodes;
+        } else if (rawCodes instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> listCodes = (List<String>) rawCodes;
+            return new HashSet<>(listCodes);
+        }
+
+        return Set.of();
     }
 }

@@ -6,7 +6,7 @@ spring:
     name: ai-service
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/ai_db
-    username: ${POSTGRES_USER:postgres}
+    username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:

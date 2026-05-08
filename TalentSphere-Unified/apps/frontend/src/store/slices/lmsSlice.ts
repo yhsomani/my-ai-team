@@ -18,7 +18,11 @@ const lmsSlice = createSlice({
     status: 'idle',
     error: null as string | null,
   }),
-  reducers: {},
+  reducers: {
+    clearLmsError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCourses.pending, (state) => {
@@ -34,6 +38,10 @@ const lmsSlice = createSlice({
       });
   },
 });
+
+export const {
+  clearLmsError,
+} = lmsSlice.actions;
 
 export const {
   selectAll: selectAllCourses,
