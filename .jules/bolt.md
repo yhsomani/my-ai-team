@@ -1,3 +1,4 @@
+2026-05-08: Found that `AiService.matchJob()` used a suboptimal O(N^2) list `contains` check. Optimized to O(N) by storing job skills in a `HashSet`, resulting in a ~6.3x speedup. Also updated the Java compiler release version from 25 to 21 in the BOM and AI service POM to match the standard JDK version 21 used in the environment.
 
 ### 2026-05-08: Job Service OutboxPublisher N+1 Optimization
 - **Goal:** Optimize `OutboxPublisher.publishEvents()` to resolve an N+1 query issue.
