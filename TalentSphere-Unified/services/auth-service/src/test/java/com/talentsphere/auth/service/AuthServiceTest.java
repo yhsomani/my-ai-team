@@ -1,6 +1,8 @@
 package com.talentsphere.auth.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.talentsphere.auth.entity.User;
+import com.talentsphere.auth.repository.OutboxRepository;
 import com.talentsphere.auth.repository.UserRepository;
 import com.talentsphere.contracts.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,9 @@ public class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private OutboxRepository outboxRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -36,6 +41,7 @@ public class AuthServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(authService, "secret", "v3ryS3cr3tK3yTh@tIsL0ngEn0ughT0B3V@lid");
         ReflectionTestUtils.setField(authService, "expiration", 3600000L);
+        ReflectionTestUtils.setField(authService, "objectMapper", new ObjectMapper());
     }
 
     @Test
@@ -58,7 +64,7 @@ public class AuthServiceTest {
         assertTrue(response.isSuccess());
         assertEquals("test@example.com", response.getData().getEmail());
         assertEquals("encodedPassword", response.getData().getPassword());
-        verify(rabbitTemplate, times(1)).convertAndSend(anyString(), anyString(), anyMap());
+        verify(outboxRepository, times(1)).save(any());
     }
 
     @Test
