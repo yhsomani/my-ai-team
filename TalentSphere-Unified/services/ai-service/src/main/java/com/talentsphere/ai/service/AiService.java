@@ -55,13 +55,13 @@ public class AiService {
         if (text.contains("kubernetes") || text.contains("k8s")) detectedSkills.add("Kubernetes");
 
         StringBuilder json = new StringBuilder();
-        json.append("{");
-        json.append("\"summary\": \"Advanced profile with focus on ").append(detectedSkills.isEmpty() ? "general engineering" : detectedSkills.get(0)).append("\",");
+        json.append("{\"summary\": \"Advanced profile with focus on ").append(detectedSkills.isEmpty() ? "general engineering" : detectedSkills.get(0)).append("\",");
         json.append("\"skills\": [");
-        for (int i = 0; i < detectedSkills.size(); i++) {
-            json.append("\"").append(detectedSkills.get(i)).append("\"");
-            if (i < detectedSkills.size() - 1) json.append(",");
+
+        if (!detectedSkills.isEmpty()) {
+            json.append("\"").append(String.join("\", \"", detectedSkills)).append("\"");
         }
+
         json.append("],");
         json.append("\"suggestedJobs\": [\"Senior ").append(detectedSkills.isEmpty() ? "Software" : detectedSkills.get(0)).append(" Engineer\"]");
         json.append("}");
