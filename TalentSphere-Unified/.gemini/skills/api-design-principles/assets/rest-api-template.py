@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI, HTTPException, Query, Path, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+import os
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional, List, Any
@@ -21,19 +22,18 @@ app = FastAPI(
 
 # Security Middleware
 # Trusted Host: Prevents HTTP Host Header attacks
+allowed_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,api.example.com").split(",")
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"] # TODO: Configure this in production, e.g. ["api.example.com"]
+    allowed_hosts=allowed_hosts # Configured via ALLOWED_HOSTS environment variable
 )
 
 # CORS: Configures Cross-Origin Resource Sharing
-# Get allowed origins from environment variable, default to example.com for template
-allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "https://example.com").split(",")
-
+allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True, # Set to True to allow cookies/auth headers, but restrict origins
+    allow_origins=allow_origins, # Configured via CORS_ORIGINS environment variable
+    allow_credentials=os.getenv("CORS_ALLOW_CREDENTIALS", "False").lower() == "true",
     allow_methods=["*"],
     allow_headers=["*"],
 )
