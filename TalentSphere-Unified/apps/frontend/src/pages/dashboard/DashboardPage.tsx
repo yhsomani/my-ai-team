@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Badge } from '../../components/shared/Badge';
 import { Button } from '../../components/shared/AuraButton';
+import { Job } from "../../types/job";
 import { Skeleton } from '../../components/shared/Skeleton';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,7 +27,7 @@ const DashboardPage: React.FC = () => {
   
   // User Data
   const [stats, setStats] = useState<DashboardStats>({ xp: 0, level: 1, applications: 0, messages: 0 });
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
   
   // Recruiter Data
