@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, Briefcase, Bookmark, Building2, Filter } from 'lucide-react';
 import { applicationService } from '../../services/applicationService';
 import { jobService } from '../../services/jobService';
@@ -96,10 +96,15 @@ const JobsPage: React.FC = () => {
         }
     };
 
-    const filteredJobs = jobs.filter(job =>
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // ⚡ Bolt: Memoize filtered jobs and hoist lowercasing to prevent O(N) recalculations on every render
+    const filteredJobs = useMemo(() => {
+        if (!searchTerm) return jobs;
+        const lowerSearch = searchTerm.toLowerCase();
+        return jobs.filter(job =>
+            job.title.toLowerCase().includes(lowerSearch) ||
+            job.companyName?.toLowerCase().includes(lowerSearch)
+        );
+    }, [jobs, searchTerm]);
 
     const isLoading = activeTab === 'explore' ? jobsStatus === 'loading' : isLoadingApplications;
     const items = activeTab === 'explore' ? filteredJobs : applications;
