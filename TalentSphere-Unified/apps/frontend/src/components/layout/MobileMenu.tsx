@@ -38,8 +38,9 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           <Link
             key={item.path}
             to={item.path}
+            aria-label={item.name}
             className={`
-              w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-500
+              w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500
               ${isActive(item.path) 
                 ? 'bg-emerald-900 text-white shadow-xl shadow-emerald-950/40 scale-110' 
                 : 'text-slate-400 hover:text-emerald-600'}
@@ -50,7 +51,9 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         ))}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-12 h-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-emerald-600"
+          aria-label="Toggle mobile menu"
+          aria-expanded={isMobileMenuOpen}
+          className="w-12 h-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         >
           <Menu size={24} />
         </button>
@@ -79,7 +82,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
                     <h3 className="text-2xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Protocols</h3>
                     <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest italic">Aurora System Menu</div>
                  </div>
-                 <button onClick={() => setIsMobileMenuOpen(false)} className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center transition-all active:scale-90">
+                 <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close menu" className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     <X size={20} className="text-slate-500" />
                  </button>
               </div>
