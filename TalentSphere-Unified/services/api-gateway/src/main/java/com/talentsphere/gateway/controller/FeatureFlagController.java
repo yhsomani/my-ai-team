@@ -25,7 +25,7 @@ public class FeatureFlagController {
     }
 
     @GetMapping("/{flagName}")
-    public ApiResponse<FeatureFlagService.FlagStatus> getFlag(@PathVariable String flagName) {
+    public ApiResponse<FeatureFlagService.FlagStatus> getFlag(@PathVariable("flagName") String flagName) {
         Feature feature = Feature.fromFlagName(flagName)
                 .orElse(null);
         
@@ -46,19 +46,19 @@ public class FeatureFlagController {
     }
 
     @PostMapping("/{flagName}/enable")
-    public ApiResponse<String> enableFlag(@PathVariable String flagName) {
+    public ApiResponse<String> enableFlag(@PathVariable("flagName") String flagName) {
         featureFlagService.enableFeature(flagName);
         return ApiResponse.ok("Feature '" + flagName + "' enabled");
     }
 
     @PostMapping("/{flagName}/disable")
-    public ApiResponse<String> disableFlag(@PathVariable String flagName) {
+    public ApiResponse<String> disableFlag(@PathVariable("flagName") String flagName) {
         featureFlagService.disableFeature(flagName);
         return ApiResponse.ok("Feature '" + flagName + "' disabled");
     }
 
     @PostMapping("/{flagName}/reset")
-    public ApiResponse<String> resetFlag(@PathVariable String flagName) {
+    public ApiResponse<String> resetFlag(@PathVariable("flagName") String flagName) {
         Feature feature = Feature.fromFlagName(flagName).orElse(null);
         if (feature != null) {
             featureFlagService.resetFeature(feature);

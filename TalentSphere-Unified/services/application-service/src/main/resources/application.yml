@@ -3,8 +3,8 @@ spring:
     name: application-service
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/application_db
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,14 +12,14 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: 5672
-    username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
   cloud:
     rabbitmq:
       host: ${RABBITMQ_HOST:localhost}
       port: 5672
-      username: ${RABBITMQ_USER:guest}
-      password: ${RABBITMQ_PASSWORD:guest}
+      username: ${RABBITMQ_USER}
+      password: ${RABBITMQ_PASSWORD}
 
 server:
   port: 8086
