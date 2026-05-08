@@ -6,7 +6,7 @@ spring:
     name: notification-service
   data:
     mongodb:
-      uri: mongodb://${MONGO_USER:admin}:${MONGO_PASSWORD:admin123}@${DB_HOST:-localhost}:27017/talentsphere_notification
+      uri: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${DB_HOST:-localhost}:27017/talentsphere_notification
       auto-index-creation: true
   rabbitmq:
     host: ${RABBIT_HOST:localhost}
