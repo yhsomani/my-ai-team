@@ -5,9 +5,8 @@ import com.talentsphere.contracts.ApiResponse;
 import com.talentsphere.file.service.FileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = FileController.class, properties = {"eureka.client.enabled=false"})
+@WebMvcTest(FileController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class FileControllerTest {
 
@@ -35,48 +34,47 @@ public class FileControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void upload_ShouldReturnDownloadUri_WhenSuccessful() throws Exception {
+    void upload_ShouldReturnFileUrl_WhenUploadIsSuccessful() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "test.txt",
-                MediaType.TEXT_PLAIN_VALUE,
-                "Test file content".getBytes()
+                "text/plain",
+                "Hello, World!".getBytes()
         );
-        String expectedUri = "http://localhost/api/v1/files/download/general/test.txt";
 
-        when(fileService.uploadFile(any(), eq("general"))).thenReturn(ApiResponse.ok(expectedUri));
+        String fileUrl = "http://localhost/api/v1/files/download/general/test.txt";
+        when(fileService.uploadFile(any(), eq("general"))).thenReturn(ApiResponse.ok(fileUrl));
 
         mockMvc.perform(multipart("/api/v1/files/upload")
                 .file(file)
-                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .param("folder", "general"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value(expectedUri));
+                .andExpect(jsonPath("$.data").value(fileUrl));
     }
 
     @Test
-    void upload_ShouldReturnDownloadUri_WithCustomFolder() throws Exception {
+    void upload_ShouldUseDefaultFolder_WhenFolderIsNotProvided() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "avatar.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "Image content".getBytes()
+                "test.txt",
+                "text/plain",
+                "Hello, World!".getBytes()
         );
-        String expectedUri = "http://localhost/api/v1/files/download/avatars/avatar.png";
 
-        when(fileService.uploadFile(any(), eq("avatars"))).thenReturn(ApiResponse.ok(expectedUri));
+        String fileUrl = "http://localhost/api/v1/files/download/general/test.txt";
+        // The default value for 'folder' is "general" in the controller
+        when(fileService.uploadFile(any(), eq("general"))).thenReturn(ApiResponse.ok(fileUrl));
 
         mockMvc.perform(multipart("/api/v1/files/upload")
-                .file(file)
-                .param("folder", "avatars")
-                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value(expectedUri));
+                .andExpect(jsonPath("$.data").value(fileUrl));
     }
 
     @Test
-    void delete_ShouldReturnSuccess_WhenFileExists() throws Exception {
+    void delete_ShouldReturnSuccess_WhenDeletionIsSuccessful() throws Exception {
         String fileUrl = "http://localhost/api/v1/files/download/general/test.txt";
 
         when(fileService.deleteFile(eq(fileUrl))).thenReturn(ApiResponse.ok(null));
@@ -88,7 +86,13 @@ public class FileControllerTest {
     }
 
     @Test
-    void health_ShouldReturnUpStatus() throws Exception {
+    void delete_ShouldReturnBadRequest_WhenUrlIsMissing() throws Exception {
+        mockMvc.perform(delete("/api/v1/files"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void health_ShouldReturnUp() throws Exception {
         mockMvc.perform(get("/api/v1/files/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

@@ -30,7 +30,7 @@ class FileServiceTest {
     void setUp() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setServerName("localhost");
-        request.setRequestURI("/api/v1/files/upload");
+        request.setScheme("http");
         request.setServerPort(8080);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
