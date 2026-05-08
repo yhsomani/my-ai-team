@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +87,11 @@ public class AiService {
             return "{\"matchScore\": 0.5, \"reasoning\": \"Generic job description provided; baseline resonance applied.\"}";
         }
         
-        long matches = resumeSkills.stream().filter(jobSkills::contains).count();
+        Set<String> jobSkillsSet = new HashSet<>(jobSkills);
+        List<String> matchedSkills = resumeSkills.stream()
+                .filter(jobSkillsSet::contains)
+                .toList();
+        long matches = matchedSkills.size();
         double score = (double) matches / jobSkills.size();
         
         // Ensure at least some resonance if any skills match
@@ -93,7 +99,7 @@ public class AiService {
         if (score > 0.95) score = 0.98;
 
         String reasoning = matches > 0 
-            ? "Strong skill overlap in: " + String.join(", ", resumeSkills.stream().filter(jobSkills::contains).toList())
+            ? "Strong skill overlap in: " + String.join(", ", matchedSkills)
             : "No direct skill overlap detected; secondary resonance analysis recommended.";
 
         return String.format("{\"matchScore\": %.2f, \"reasoning\": \"%s\"}", score, reasoning);
