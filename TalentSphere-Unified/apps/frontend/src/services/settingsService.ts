@@ -21,25 +21,6 @@ export interface BillingInfo {
 }
 
 export const settingsService = {
-<<<<<<< HEAD
-  getNotifications: async (userId: string) => {
-    const response = await apiClient.get(`/api/v1/notifications/user/${userId}`);
-    return response.data;
-  },
-  updateNotifications: async (userId: string, settings: any) => {
-    // Note: notification-service currently handles individual notifications. 
-    // This would be for user preference synchronization.
-    const response = await apiClient.put(`/api/v1/users/${userId}`, { preferences: settings });
-    return response.data;
-  },
-  getBilling: async (userId: string) => {
-    const response = await apiClient.get(`/api/v1/payments/history/${userId}`);
-    return response.data;
-  },
-  getPlans: async () => {
-    const response = await apiClient.get('/api/v1/payments/plans');
-    return response.data;
-=======
   getNotifications: async (userId: string): Promise<NotificationSettings | null> => {
     const { data, error } = await supabase
       .from('notification_settings')
@@ -191,6 +172,5 @@ export const settingsService = {
       console.error('Error deleting account:', error);
       throw new Error(`Failed to delete account: ${error.message}`);
     }
->>>>>>> 4c83dee4028d58c61065c033c82cebeb5e95576e
   }
 };
