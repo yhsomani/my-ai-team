@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Send, Phone, Video, MoreVertical } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { messageReceived } from '../../store/slices/messagingSlice';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -16,11 +18,43 @@ const MessagingPage: React.FC = () => {
   const [messageText, setMessageText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Real-time listener setup
+  useEffect(() => {
+    if (activeConversationId) {
+      const channel = supabase
+        .channel(`public:messages:conversation_id=eq.${activeConversationId}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConversationId}` }, (payload) => {
+          dispatch(messageReceived(payload.new as any));
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [dispatch, activeConversationId]);
+
   useEffect(() => {
     if (status === 'idle' && user) {
       dispatch(fetchConversations(user.id));
     }
   }, [dispatch, status, user]);
+
+  // Real-time listener setup
+  useEffect(() => {
+    if (activeConversationId) {
+      const channel = supabase
+        .channel(`public:messages:conversation_id=eq.${activeConversationId}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConversationId}` }, (payload) => {
+          dispatch(messageReceived(payload.new as any));
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [dispatch, activeConversationId]);
 
   useEffect(() => {
     if (activeConversationId && user) {

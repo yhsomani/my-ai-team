@@ -1,8 +1,9 @@
 package com.talentsphere.job.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.talentsphere.job.entity.Job;
-import com.talentsphere.job.messaging.JobEventPublisher;
 import com.talentsphere.job.repository.JobRepository;
+import com.talentsphere.job.repository.OutboxRepository;
 import com.talentsphere.contracts.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,10 @@ class JobServiceTest {
     private JobRepository jobRepository;
 
     @Mock
-    private JobEventPublisher eventPublisher;
+    private OutboxRepository outboxRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private JobService jobService;
@@ -44,15 +48,16 @@ class JobServiceTest {
 
     @Test
     @SuppressWarnings("null")
-    void postJob_Success() {
-        Job job = Job.builder().title("Software Engineer").location("Remote").build();
+    void postJob_Success() throws Exception {
+        Job job = Job.builder().id("job1").title("Software Engineer").location("Remote").build();
         when(jobRepository.save(any(Job.class))).thenReturn(job);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         
         ApiResponse<Job> response = jobService.postJob(job);
         
         assertTrue(response.isSuccess());
         verify(jobRepository, times(1)).save(job);
-        verify(eventPublisher, times(1)).publishJobCreated(any());
+        verify(outboxRepository, times(1)).save(any());
     }
 
     @Test

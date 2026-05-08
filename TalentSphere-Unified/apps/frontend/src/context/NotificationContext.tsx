@@ -49,14 +49,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       reconnectionAttempts: 5,
     });
     
-    newSocket.on('connect', () => {
-      console.log('Connected to notification socket:', newSocket.id);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from notification socket');
-    });
-
     newSocket.on('notification', (payload: NotificationPayload) => {
       setNotifications((prev) => [payload, ...prev]);
       setUnreadCount((prev) => prev + 1);
