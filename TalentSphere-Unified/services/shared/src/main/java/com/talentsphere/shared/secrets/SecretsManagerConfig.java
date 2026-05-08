@@ -6,13 +6,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Configuration
 @ConditionalOnProperty(name = "aws.secretsmanager.enabled", havingValue = "true", matchIfMissing = false)
@@ -26,31 +26,25 @@ public class SecretsManagerConfig {
         String region = environment.getProperty("cloud.aws.region.static", "us-east-1");
         String secretName = environment.getProperty("aws.secretsmanager.name", "talentsphere");
 
-        String endpoint = String.format(
-                "https://secretsmanager.%s.amazonaws.com/actions/get-secret-value?SecretId=%s",
-                region, secretName);
+        // SECURITY FIX: Replaced custom HTTP logic that incorrectly and insecurely
+        // sent AWS credentials in a Basic Auth header. Now using the official AWS SDK
+        // which securely signs requests using Signature V4.
 
-        try {
-            URI uri = URI.create(endpoint);
-            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-            connection.setRequestMethod("GET");
+        try (SecretsManagerClient client = SecretsManagerClient.builder()
+                .region(Region.of(region))
+                .build()) {
 
-            String awsAccessKeyId = System.getenv("AWS_ACCESS_KEY_ID");
-            String awsSecretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+            GetSecretValueRequest request = GetSecretValueRequest.builder()
+                    .secretId(secretName)
+                    .build();
 
-            if (awsAccessKeyId != null && awsSecretAccessKey != null) {
-                String auth = awsAccessKeyId + ":" + awsSecretAccessKey;
-                String encoded = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
-                connection.setRequestProperty("Authorization", "Basic " + encoded);
+            GetSecretValueResponse response = client.getSecretValue(request);
+            String secretJson = response.secretString();
+
+            if (secretJson != null) {
+                log.info("Successfully loaded secrets from AWS Secrets Manager (length={})", secretJson.length());
             }
 
-            if (connection.getResponseCode() == 200) {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(connection.getInputStream()))) {
-                    String secretJson = reader.lines().collect(Collectors.joining());
-                    log.info("Successfully loaded secrets from AWS Secrets Manager (length={})", secretJson.length());
-                }
-            }
         } catch (Exception e) {
             log.warn("Failed to load secrets from AWS Secrets Manager: {}. Using environment variables.", 
                     e.getMessage());
