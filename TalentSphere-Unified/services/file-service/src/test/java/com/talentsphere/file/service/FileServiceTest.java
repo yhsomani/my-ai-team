@@ -1,12 +1,17 @@
 package com.talentsphere.file.service;
 
 import com.talentsphere.contracts.ApiResponse;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.nio.file.Path;
 
@@ -20,6 +25,20 @@ class FileServiceTest {
 
     @TempDir
     Path tempDir;
+
+    @BeforeEach
+    void setUp() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setServerName("localhost");
+        request.setRequestURI("/api/v1/files/upload");
+        request.setServerPort(8080);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
 
     @Test
     void uploadFile_Success() {

@@ -1,0 +1,97 @@
+package com.talentsphere.file.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.talentsphere.contracts.ApiResponse;
+import com.talentsphere.file.service.FileService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = FileController.class, properties = {"eureka.client.enabled=false"})
+@AutoConfigureMockMvc(addFilters = false)
+public class FileControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private FileService fileService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void upload_ShouldReturnDownloadUri_WhenSuccessful() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "Test file content".getBytes()
+        );
+        String expectedUri = "http://localhost/api/v1/files/download/general/test.txt";
+
+        when(fileService.uploadFile(any(), eq("general"))).thenReturn(ApiResponse.ok(expectedUri));
+
+        mockMvc.perform(multipart("/api/v1/files/upload")
+                .file(file)
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(expectedUri));
+    }
+
+    @Test
+    void upload_ShouldReturnDownloadUri_WithCustomFolder() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "avatar.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "Image content".getBytes()
+        );
+        String expectedUri = "http://localhost/api/v1/files/download/avatars/avatar.png";
+
+        when(fileService.uploadFile(any(), eq("avatars"))).thenReturn(ApiResponse.ok(expectedUri));
+
+        mockMvc.perform(multipart("/api/v1/files/upload")
+                .file(file)
+                .param("folder", "avatars")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(expectedUri));
+    }
+
+    @Test
+    void delete_ShouldReturnSuccess_WhenFileExists() throws Exception {
+        String fileUrl = "http://localhost/api/v1/files/download/general/test.txt";
+
+        when(fileService.deleteFile(eq(fileUrl))).thenReturn(ApiResponse.ok(null));
+
+        mockMvc.perform(delete("/api/v1/files")
+                .param("url", fileUrl))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void health_ShouldReturnUpStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/files/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("UP"));
+    }
+}
