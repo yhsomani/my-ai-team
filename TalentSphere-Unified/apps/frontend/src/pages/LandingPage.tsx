@@ -14,10 +14,6 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchPublicStats = async () => {
         try {
-<<<<<<< HEAD
-            const response = await axios.get(`${import.meta.env.VITE_API_URL || window.location.origin}/api/v1/admin/public/stats`);
-            const data = response.data.data;
-=======
             // Get total users count
             const { count: totalUsers, error: usersError } = await supabase
                 .from('profiles')
@@ -35,7 +31,6 @@ const LandingPage: React.FC = () => {
                 return;
             }
 
->>>>>>> 4c83dee4028d58c61065c033c82cebeb5e95576e
             setStats({
                 totalUsers: totalUsers && totalUsers > 1000 ? `${(totalUsers / 1000).toFixed(1)}k+` : `${totalUsers || 0}`,
                 activeJobs: activeJobs && activeJobs > 1000 ? `${(activeJobs / 1000).toFixed(1)}k+` : `${activeJobs || 0}+`,
