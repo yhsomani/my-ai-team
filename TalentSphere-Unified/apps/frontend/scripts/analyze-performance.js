@@ -2,7 +2,7 @@
  * analyze-performance.js
  * A simple script to analyze the performance characteristics of the frontend source code.
  */
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,42 +14,43 @@ const IGNORE_DIRS = ['node_modules', 'dist', 'build', '.git'];
 const LARGE_FILE_THRESHOLD = 5000; // 5KB threshold for warning
 const HUGE_FILE_THRESHOLD = 15000; // 15KB threshold for urgent review
 
-function getAllFiles(dirPath, arrayOfFiles = []) {
-  const files = fs.readdirSync(dirPath);
-
-  files.forEach((file) => {
-    if (IGNORE_DIRS.includes(file)) return;
+async function getAllFiles(dirPath) {
+  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  const files = await Promise.all(entries.map(async (entry) => {
+    if (IGNORE_DIRS.includes(entry.name)) return [];
     
-    const filePath = path.join(dirPath, file);
-    if (fs.statSync(filePath).isDirectory()) {
-      arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
+    const filePath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      return getAllFiles(filePath);
     } else {
-      if (file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx')) {
-        arrayOfFiles.push(filePath);
+      if (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx') || entry.name.endsWith('.js') || entry.name.endsWith('.jsx')) {
+        return [filePath];
       }
+      return [];
     }
-  });
+  }));
 
-  return arrayOfFiles;
+  return files.flat();
 }
 
-function analyzePerformance() {
+async function analyzePerformance() {
   console.log('--- Analyzing Frontend Performance (Code Size and Structure) ---');
-  const files = getAllFiles(rootDir);
-  const fileStats = [];
+  const files = await getAllFiles(rootDir);
 
-  files.forEach(file => {
-    const stats = fs.statSync(file);
-    const content = fs.readFileSync(file, 'utf8');
+  const fileStats = await Promise.all(files.map(async (file) => {
+    const [stats, content] = await Promise.all([
+      fs.stat(file),
+      fs.readFile(file, 'utf8')
+    ]);
     const lines = content.split('\n').length;
     
-    fileStats.push({
+    return {
       file: path.relative(rootDir, file),
       size: stats.size,
       lines: lines,
       imports: (content.match(/^import /gm) || []).length
-    });
-  });
+    };
+  }));
 
   // Sort by size
   fileStats.sort((a, b) => b.size - a.size);
@@ -79,4 +80,7 @@ function analyzePerformance() {
   console.log(`  - Average file size: ${(averageSize / 1024).toFixed(2)} KB`);
 }
 
-analyzePerformance();
+analyzePerformance().catch(err => {
+  console.error('Error during performance analysis:', err);
+  process.exit(1);
+});
