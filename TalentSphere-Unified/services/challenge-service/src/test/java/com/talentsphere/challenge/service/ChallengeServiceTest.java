@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import java.util.stream.IntStream;
 
 @ExtendWith(MockitoExtension.class)
 public class ChallengeServiceTest {
@@ -123,5 +124,46 @@ public class ChallengeServiceTest {
         assertEquals("FAILED", response.getData().getStatus());
         assertEquals(0, response.getData().getScore());
         verify(rabbitTemplate, never()).convertAndSend(anyString(), anyString(), any(Map.class));
+    }
+
+    @Test
+    void submitCode_PerformanceBaseline() {
+        // Arrange
+        int testCaseCount = 10;
+        List<com.talentsphere.challenge.entity.TestCase> testCases = IntStream.range(0, testCaseCount)
+                .mapToObj(i -> com.talentsphere.challenge.entity.TestCase.builder()
+                        .input(String.valueOf(i))
+                        .expectedOutput(String.valueOf(i))
+                        .build())
+                .toList();
+
+        Challenge challenge = Challenge.builder()
+                .id("c1")
+                .testCases(testCases)
+                .build();
+
+        when(challengeRepository.findById("c1")).thenReturn(Optional.of(challenge));
+        when(submissionRepository.save(any(Submission.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // Mock Piston Response to simulate 100ms delay per call
+        when(restTemplate.exchange(anyString(), eq(org.springframework.http.HttpMethod.POST), any(org.springframework.http.HttpEntity.class), org.mockito.ArgumentMatchers.<org.springframework.core.ParameterizedTypeReference<Map<String, Object>>>any()))
+            .thenAnswer(invocation -> {
+                Thread.sleep(100); // 100ms delay
+                org.springframework.http.HttpEntity entity = invocation.getArgument(2);
+                Map<String, Object> body = (Map<String, Object>) entity.getBody();
+                String stdin = (String) body.get("stdin");
+                if (stdin == null) {
+                    stdin = "";
+                }
+                return org.springframework.http.ResponseEntity.ok(Map.of("run", Map.of("output", stdin)));
+            });
+
+        long startTime = System.currentTimeMillis();
+        challengeService.submitCode("user-1", "c1", "java", "code");
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Execution time: " + (endTime - startTime) + "ms");
+        // The previous sequential implementation takes ~1000ms for 10 test cases.
+        assertTrue((endTime - startTime) < 900, "Execution should be parallelized and take much less than 1 second (around ~100ms-500ms)");
     }
 }
