@@ -15,6 +15,21 @@ export interface Company {
   createdAt?: string;
 }
 
+const mapCompanyData = (data: any): Company => ({
+  id: data.id,
+  name: data.name,
+  description: data.description,
+  website: data.website,
+  location: data.location,
+  logoUrl: data.logo_url,
+  industry: data.industry,
+  employeeCount: data.employee_count,
+  ownerUserId: data.owner_user_id,
+  verified: data.verified,
+  verifiedAt: data.verified_at,
+  createdAt: data.created_at
+});
+
 export const companyService = {
   getCompanies: async (): Promise<Company[]> => {
     const { data, error } = await supabase
@@ -24,20 +39,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return data.map(c => ({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-      website: c.website,
-      location: c.location,
-      logoUrl: c.logo_url,
-      industry: c.industry,
-      employeeCount: c.employee_count,
-      ownerUserId: c.owner_user_id,
-      verified: c.verified,
-      verifiedAt: c.verified_at,
-      createdAt: c.created_at
-    }));
+    return data.map(mapCompanyData);
   },
 
   getCompanyById: async (id: string): Promise<Company> => {
@@ -49,20 +51,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      website: data.website,
-      location: data.location,
-      logoUrl: data.logo_url,
-      industry: data.industry,
-      employeeCount: data.employee_count,
-      ownerUserId: data.owner_user_id,
-      verified: data.verified,
-      verifiedAt: data.verified_at,
-      createdAt: data.created_at
-    };
+    return mapCompanyData(data);
   },
 
   getCompanyByUser: async (userId: string): Promise<Company> => {
@@ -74,20 +63,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      website: data.website,
-      location: data.location,
-      logoUrl: data.logo_url,
-      industry: data.industry,
-      employeeCount: data.employee_count,
-      ownerUserId: data.owner_user_id,
-      verified: data.verified,
-      verifiedAt: data.verified_at,
-      createdAt: data.created_at
-    };
+    return mapCompanyData(data);
   },
 
   registerCompany: async (company: Partial<Company>): Promise<Company> => {
@@ -109,20 +85,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      website: data.website,
-      location: data.location,
-      logoUrl: data.logo_url,
-      industry: data.industry,
-      employeeCount: data.employee_count,
-      ownerUserId: data.owner_user_id,
-      verified: data.verified,
-      verifiedAt: data.verified_at,
-      createdAt: data.created_at
-    };
+    return mapCompanyData(data);
   },
 
   updateCompany: async (id: string, company: Partial<Company>): Promise<Company> => {
@@ -145,20 +108,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      website: data.website,
-      location: data.location,
-      logoUrl: data.logo_url,
-      industry: data.industry,
-      employeeCount: data.employee_count,
-      ownerUserId: data.owner_user_id,
-      verified: data.verified,
-      verifiedAt: data.verified_at,
-      createdAt: data.created_at
-    };
+    return mapCompanyData(data);
   },
 
   verifyCompany: async (id: string): Promise<Company> => {
@@ -175,20 +125,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      website: data.website,
-      location: data.location,
-      logoUrl: data.logo_url,
-      industry: data.industry,
-      employeeCount: data.employee_count,
-      ownerUserId: data.owner_user_id,
-      verified: data.verified,
-      verifiedAt: data.verified_at,
-      createdAt: data.created_at
-    };
+    return mapCompanyData(data);
   },
 
   searchCompanies: async (keyword: string): Promise<Company[]> => {
@@ -200,19 +137,6 @@ export const companyService = {
     
     if (error) throw error;
     
-    return data.map(c => ({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-      website: c.website,
-      location: c.location,
-      logoUrl: c.logo_url,
-      industry: c.industry,
-      employeeCount: c.employee_count,
-      ownerUserId: c.owner_user_id,
-      verified: c.verified,
-      verifiedAt: c.verified_at,
-      createdAt: c.created_at
-    }));
+    return data.map(mapCompanyData);
   }
 };

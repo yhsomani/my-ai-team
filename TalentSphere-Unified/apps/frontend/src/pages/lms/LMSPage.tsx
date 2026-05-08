@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchCourses, selectAllCourses } from '../../store/slices/lmsSlice';
 import { Skeleton } from '../../components/shared/Skeleton';
 import { AuraModal } from '../../components/shared/AuraModal';
+import { Course } from "../../types/lms";
 import { lmsService } from '../../services/lmsService';
 import { useToast } from '../../components/shared/Toast';
 
@@ -22,7 +23,7 @@ const LMSPage: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -30,7 +31,7 @@ const LMSPage: React.FC = () => {
     dispatch(fetchCourses());
   }, [dispatch]);
 
-  const handleCourseClick = (course: any) => {
+  const handleCourseClick = (course: Course) => {
     setSelectedCourse(course);
     setIsModalOpen(true);
   };

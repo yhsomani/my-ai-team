@@ -1,6 +1,22 @@
 import { supabase } from '../lib/supabaseClient';
 import { Job, JobApplication, CreateApplicationRequest } from '../types/job';
 
+const mapJobResponse = (data: any): Job => ({
+  id: data.id,
+  title: data.title,
+  description: data.description,
+  companyId: data.company_id,
+  companyName: data.companies?.name,
+  companyLogoUrl: data.companies?.logo_url,
+  location: data.location,
+  jobType: data.job_type,
+  salaryMin: data.salary_min,
+  salaryMax: data.salary_max,
+  requirements: data.requirements || [],
+  postedAt: data.posted_at,
+  status: data.status
+});
+
 export const jobService = {
   getJobs: async (params?: { 
     status?: string; 
@@ -50,21 +66,7 @@ export const jobService = {
     if (error) throw error;
     
     // Transform to match frontend Job interface
-    return data.map(job => ({
-      id: job.id,
-      title: job.title,
-      description: job.description,
-      companyId: job.company_id,
-      companyName: job.companies?.name,
-      companyLogoUrl: job.companies?.logo_url,
-      location: job.location,
-      jobType: job.job_type,
-      salaryMin: job.salary_min,
-      salaryMax: job.salary_max,
-      requirements: job.requirements || [],
-      postedAt: job.posted_at,
-      status: job.status
-    }));
+    return data.map(mapJobResponse);
   },
 
   getJobById: async (id: string): Promise<Job> => {
@@ -87,21 +89,7 @@ export const jobService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      companyId: data.company_id,
-      companyName: data.companies?.name,
-      companyLogoUrl: data.companies?.logo_url,
-      location: data.location,
-      jobType: data.job_type,
-      salaryMin: data.salary_min,
-      salaryMax: data.salary_max,
-      requirements: data.requirements || [],
-      postedAt: data.posted_at,
-      status: data.status
-    };
+    return mapJobResponse(data);
   },
 
   getRecommendedJobs: async (userId: string): Promise<Job[]> => {
@@ -144,21 +132,7 @@ export const jobService = {
       )
     );
 
-    return matchedJobs.map(job => ({
-      id: job.id,
-      title: job.title,
-      description: job.description,
-      companyId: job.company_id,
-      companyName: job.companies?.name,
-      companyLogoUrl: job.companies?.logo_url,
-      location: job.location,
-      jobType: job.job_type,
-      salaryMin: job.salary_min,
-      salaryMax: job.salary_max,
-      requirements: job.requirements || [],
-      postedAt: job.posted_at,
-      status: job.status
-    }));
+    return matchedJobs.map(mapJobResponse);
   },
 
   postJob: async (jobData: Partial<Job>, postedBy: string): Promise<Job> => {
@@ -181,19 +155,7 @@ export const jobService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      companyId: data.company_id,
-      location: data.location,
-      jobType: data.job_type,
-      salaryMin: data.salary_min,
-      salaryMax: data.salary_max,
-      requirements: data.requirements || [],
-      postedAt: data.posted_at,
-      status: data.status
-    };
+    return mapJobResponse(data);
   },
 
   updateJob: async (id: string, jobData: Partial<Job>): Promise<Job> => {
@@ -217,19 +179,7 @@ export const jobService = {
     
     if (error) throw error;
     
-    return {
-      id: data.id,
-      title: data.title,
-      description: data.description,
-      companyId: data.company_id,
-      location: data.location,
-      jobType: data.job_type,
-      salaryMin: data.salary_min,
-      salaryMax: data.salary_max,
-      requirements: data.requirements || [],
-      postedAt: data.posted_at,
-      status: data.status
-    };
+    return mapJobResponse(data);
   },
 
   deleteJob: async (id: string): Promise<void> => {

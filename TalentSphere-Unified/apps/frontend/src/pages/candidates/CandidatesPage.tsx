@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -55,10 +55,15 @@ const CandidatesPage: React.FC = () => {
     }
   };
 
-  const filtered = candidates.filter(c =>
-    c.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.job?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ⚡ Bolt: Memoize filtered candidates and hoist lowercasing to prevent O(N) recalculations on every render
+  const filtered = useMemo(() => {
+    if (!searchTerm) return candidates;
+    const lowerSearch = searchTerm.toLowerCase();
+    return candidates.filter(c =>
+      c.user?.fullName?.toLowerCase().includes(lowerSearch) ||
+      c.job?.title?.toLowerCase().includes(lowerSearch)
+    );
+  }, [candidates, searchTerm]);
 
   return (
     <div className="space-y-6">

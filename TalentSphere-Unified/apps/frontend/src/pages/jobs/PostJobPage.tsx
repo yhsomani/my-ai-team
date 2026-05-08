@@ -19,6 +19,8 @@ const PostJobPage: React.FC = () => {
     salaryMax: '',
     requirements: '',
     jobType: 'FULL_TIME',
+    salaryRange: '',
+    category: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,129 +40,141 @@ const PostJobPage: React.FC = () => {
       }, user.id);
       navigate('/jobs');
     } catch (err) {
-      console.error('Failed to post job:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       <PageHeader 
         title="Post a New Job" 
-        description="Fill in the details to find your next great hire."
+        description="Find the best talent for your team"
       />
 
-      <Card className="p-6">
+      <Card className="p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Job Title</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Job Title</label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
-                  required
                   type="text"
-                  placeholder="e.g. Senior Rust Engineer"
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+                  required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                  placeholder="e.g. Senior Frontend Engineer"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Location</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Remote or New York, NY"
-                    className="w-full h-11 pl-10 pr-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Salary Range</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. $120k - $180k"
-                    className="w-full h-11 pl-10 pr-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-                    value={formData.salaryRange}
-                    onChange={(e) => setFormData({ ...formData, salaryRange: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Job Type</label>
-                <select
-                  className="w-full h-11 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all appearance-none"
-                  value={formData.jobType}
-                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
-                >
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Contract</option>
-                  <option>Freelance</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Category</label>
-                <select
-                  className="w-full h-11 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all appearance-none"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
-                  <option>Engineering</option>
-                  <option>Design</option>
-                  <option>Product</option>
-                  <option>Marketing</option>
-                  <option>Sales</option>
-                </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-[var(--text-secondary)]">Description</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Job Description</label>
               <div className="relative">
-                <FileText className="absolute left-3 top-3 text-[var(--text-muted)]" size={16} />
+                <FileText className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
                 <textarea
                   required
-                  rows={6}
-                  placeholder="Describe the role, responsibilities, and requirements..."
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all resize-none"
+                  rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent resize-none"
+                  placeholder="Describe the role and responsibilities..."
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Location</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                    placeholder="e.g. Remote, NY, etc."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Job Type</label>
+                <select
+                  value={formData.jobType}
+                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-accent appearance-none"
+                >
+                  <option value="FULL_TIME">Full Time</option>
+                  <option value="PART_TIME">Part Time</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="FREELANCE">Freelance</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Min Salary (USD)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="number"
+                    value={formData.salaryMin}
+                    onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                    placeholder="e.g. 100000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Max Salary (USD)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="number"
+                    value={formData.salaryMax}
+                    onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                    placeholder="e.g. 150000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Requirements (One per line)</label>
+              <textarea
+                rows={4}
+                required
+                value={formData.requirements}
+                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent resize-none"
+                placeholder="- 5+ years React experience&#10;- Strong CS fundamentals&#10;..."
+              />
+            </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="flex-1" 
-              onClick={() => navigate(-1)}
+          <div className="flex justify-end gap-4 pt-4 border-t border-white/10">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/jobs')}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="flex-1" 
+            <Button
+              type="submit"
               disabled={loading}
+              className="gap-2"
             >
-              {loading ? 'Posting...' : 'Post Job'} <Send size={14} className="ml-2" />
+              <Send className="w-4 h-4" />
+              {loading ? 'Posting...' : 'Post Job'}
             </Button>
           </div>
         </form>
