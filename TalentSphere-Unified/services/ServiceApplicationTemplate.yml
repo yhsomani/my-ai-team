@@ -9,8 +9,8 @@ spring:
 # Database configuration (for PostgreSQL services)
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:postgres}:5432/${DB_NAME:talentsphere_${SERVICE_NAME}}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -50,8 +50,8 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:rabbitmq}
     port: 5672
-    username: ${RABBITMQ_USER:admin}
-    password: ${RABBITMQ_PASSWORD:admin}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
     virtual-host: /
     publisher-confirm-type: correlated
     publisher-returns: true
