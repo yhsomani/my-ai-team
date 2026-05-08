@@ -10,7 +10,7 @@ spring:
     host: ${RABBITMQ_HOST:-rabbitmq}
     port: ${RABBIT_PORT:-5672}
     username: ${RABBITMQ_USER:-admin}
-    password: ${RABBITMQ_PASSWORD:-admin}
+    password: ${RABBITMQ_PASSWORD}
 
 eureka:
   client:

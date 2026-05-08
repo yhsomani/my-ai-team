@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/job_db
     username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,7 +17,7 @@ spring:
     host: ${RABBITMQ_HOST:localhost}
     port: 5672
     username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    password: ${RABBITMQ_PASSWORD}
 
 server:
   port: 8084

@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/messaging_db
     username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
