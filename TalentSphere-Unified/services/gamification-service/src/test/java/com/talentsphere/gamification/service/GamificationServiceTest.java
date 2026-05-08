@@ -48,16 +48,14 @@ class GamificationServiceTest {
         testAchievement = new Achievement();
         testAchievement.setId("achieve-123");
         testAchievement.setUserId("user-1");
-        testAchievement.setCode("FIRST_APPLICATION");
-        testAchievement.setName("First Application");
+        testAchievement.setTitle("FIRST_APPLICATION");
         testAchievement.setDescription("Applied to your first job");
-        testAchievement.setXpReward(100);
 
         testLeaderboardEntry = new LeaderboardEntry();
         testLeaderboardEntry.setId("leader-123");
         testLeaderboardEntry.setUserId("user-1");
-        testLeaderboardEntry.setUsername("JohnDoe");
-        testLeaderboardEntry.setTotalXp(1500L);
+        testLeaderboardEntry.setUserName("JohnDoe");
+        testLeaderboardEntry.setTotalXp(1500);
         testLeaderboardEntry.setRank(1);
 
         testLeaderboard = Arrays.asList(testLeaderboardEntry);
@@ -76,7 +74,7 @@ class GamificationServiceTest {
         assertNotNull(response);
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
-        assertEquals(1500L, response.getData().get(0).getTotalXp());
+        assertEquals(1500, response.getData().get(0).getTotalXp());
         verify(leaderboardRepository, times(1)).findAllByOrderByTotalXpDesc();
     }
 
@@ -122,7 +120,7 @@ class GamificationServiceTest {
         assertNotNull(response);
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
-        assertEquals("FIRST_APPLICATION", response.getData().get(0).getCode());
+        assertEquals("FIRST_APPLICATION", response.getData().get(0).getTitle());
         verify(achievementRepository, times(1)).findByUserId(userId);
     }
 
@@ -168,8 +166,7 @@ class GamificationServiceTest {
         // Assert
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals("FIRST_APPLICATION", response.getData().getCode());
-        assertEquals(100, response.getData().getXpReward());
+        assertEquals("FIRST_APPLICATION", response.getData().getTitle());
         verify(achievementRepository, times(1)).save(testAchievement);
     }
 
@@ -186,7 +183,7 @@ class GamificationServiceTest {
         assertNotNull(response);
         assertTrue(response.isSuccess());
         Map<String, Object> stats = response.getData();
-        assertEquals(1500L, stats.get("xp"));
+        assertEquals(1500, stats.get("xp"));
         assertEquals(4, stats.get("level")); // 1500 / 500 + 1 = 4
         assertEquals("+420", stats.get("xpTrend"));
         verify(leaderboardRepository, times(1)).findByUserId(userId);
