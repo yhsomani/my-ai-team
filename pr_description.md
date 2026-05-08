@@ -1,13 +1,16 @@
-⚡ Optimize matchJob using HashSet and String.join
+🧪 Add comprehensive tests for FeatureFlagController
 
-💡 **What:** Replaced the O(N^2) list contains check with an O(N) HashSet check in `AiService.matchJob()`.
-🎯 **Why:** To improve performance when comparing large lists of skills from resumes and job descriptions. Also cached the matched skills to avoid filtering them a second time for the reasoning string.
-📊 **Measured Improvement:**
+🎯 **What:** The `FeatureFlagController` was completely untested and missing explicit `@PathVariable` name declarations.
 
-================ BENCHMARK RESULTS ================
-Old method time: ~3007 ms (for 100k iterations)
-New method time: ~474 ms (for 100k iterations)
-Improvement: 6.33x faster
-===================================================
+📊 **Coverage:** Covered all endpoint logic including successful requests and handling for incorrect input strings.
+- `GET /api/v1/admin/feature-flags`
+- `GET /api/v1/admin/feature-flags/{flagName}` (Success & unknown flag error paths)
+- `POST /api/v1/admin/feature-flags/{flagName}/enable`
+- `POST /api/v1/admin/feature-flags/{flagName}/disable`
+- `POST /api/v1/admin/feature-flags/{flagName}/reset`
+- `POST /api/v1/admin/feature-flags/reset-all`
+- `GET /api/v1/admin/feature-flags/enabled`
+- `GET /api/v1/admin/feature-flags/core`
+- `GET /api/v1/admin/feature-flags/categories`
 
-Fixes compilation error that POM requested release 25 while the system's java version is 21.
+✨ **Result:** Test coverage for `FeatureFlagController` is improved to near 100%, and a known Spring Boot 3.2+ compatibility issue with missing path variable names when compiling without `-parameters` flag has been preemptively solved.
