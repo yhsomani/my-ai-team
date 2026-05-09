@@ -59,7 +59,7 @@ export const AuraModal: React.FC<ModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-Aurora-border bg-white/2">
               <h3 className="text-xl font-bold font-display text-white">{title}</h3>
-              <AuraButton variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+              <AuraButton variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="rounded-full">
                 <X size={20} />
               </AuraButton>
             </div>
