@@ -44,12 +44,12 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bindingUserCreated(Queue userCreatedQueue, DirectExchange exchange) {
+    public Binding bindingUserCreated(@org.springframework.beans.factory.annotation.Qualifier("userCreatedQueue") Queue userCreatedQueue, @org.springframework.beans.factory.annotation.Qualifier("exchange") DirectExchange exchange) {
         return BindingBuilder.bind(userCreatedQueue).to(exchange).with(ROUTING_KEY_USER_CREATED);
     }
 
     @Bean
-    public Binding bindingDLQ(Queue userCreatedDLQ, DirectExchange deadLetterExchange) {
+    public Binding bindingDLQ(@org.springframework.beans.factory.annotation.Qualifier("userCreatedDLQ") Queue userCreatedDLQ, @org.springframework.beans.factory.annotation.Qualifier("deadLetterExchange") DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(userCreatedDLQ).to(deadLetterExchange).with(ROUTING_KEY_DLQ);
     }
 
