@@ -39,8 +39,8 @@ const SettingsPage: React.FC = () => {
       if (!user) return;
       try {
         setLoading(true);
-        // Note: the backend api for plans was not updated in settingsService mock replacement.
-        // We will fetch available data.
+
+
         const [notifData, billingData] = await Promise.all([
           settingsService.getNotifications(user.id).catch(() => null),
           settingsService.getBilling(user.id).catch(() => null)
