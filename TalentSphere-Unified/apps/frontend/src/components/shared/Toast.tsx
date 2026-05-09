@@ -78,7 +78,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: () => void }> = ({ to
         <h4 className="text-sm font-medium">{toast.title}</h4>
         {toast.message && <p className="text-xs text-[var(--text-muted)] mt-1">{toast.message}</p>}
       </div>
-      <button onClick={onRemove} className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+      <button onClick={onRemove} aria-label="Close notification" className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
         <X size={16} />
       </button>
     </div>
