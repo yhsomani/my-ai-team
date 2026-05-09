@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, UserPlus, MapPin, ExternalLink } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
@@ -29,10 +29,15 @@ const NetworkingPage: React.FC = () => {
     }
   }, [dispatch, status, user]);
 
-  const filtered = profiles.filter(p =>
-    (p.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.currentRole || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ⚡ Bolt: Memoize filtered profiles and hoist lowercasing to prevent O(N) string operations on every render
+  const filtered = useMemo(() => {
+    if (!searchTerm) return profiles;
+    const lowerSearch = searchTerm.toLowerCase();
+    return profiles.filter(p =>
+      (p.fullName || '').toLowerCase().includes(lowerSearch) ||
+      (p.currentRole || '').toLowerCase().includes(lowerSearch)
+    );
+  }, [profiles, searchTerm]);
 
   const handleConnect = async (id: string) => {
     if (!user) {
