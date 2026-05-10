@@ -91,15 +91,15 @@ export const AuraNavbar: React.FC = () => {
           ) : (
             <>
               <div className="hidden sm:flex items-center gap-2">
-                <AuraButton variant="ghost" size="icon">
+                <AuraButton variant="ghost" size="icon" aria-label="Search">
                   <Search size={18} />
                 </AuraButton>
-                <AuraButton variant="ghost" size="icon">
+                <AuraButton variant="ghost" size="icon" aria-label="Notifications">
                   <Bell size={18} />
                 </AuraButton>
               </div>
               <div className="h-6 w-px bg-Aurora-border hidden sm:block" />
-              <Link to="/profile" className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-white/5 transition-all group">
+              <Link to="/profile" aria-label="Profile" className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-white/5 transition-all group">
                 <div className="w-8 h-8 rounded-full bg-Aurora-elevated border border-Aurora-border flex items-center justify-center text-white/50 group-hover:border-electric transition-colors">
                   <UserIcon size={16} />
                 </div>
@@ -107,7 +107,7 @@ export const AuraNavbar: React.FC = () => {
                   {user?.email?.split('@')[0]}
                 </span>
               </Link>
-              <AuraButton variant="ghost" size="icon" onClick={handleLogout} className="hover:text-red-400">
+              <AuraButton variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout} className="hover:text-red-400">
                 <LogOut size={18} />
               </AuraButton>
             </>
@@ -116,6 +116,7 @@ export const AuraNavbar: React.FC = () => {
           {/* Mobile Menu Toggle */}
           <AuraButton 
             variant="ghost" size="icon" 
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             className="lg:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >

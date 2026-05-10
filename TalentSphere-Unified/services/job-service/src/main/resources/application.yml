@@ -3,11 +3,11 @@ spring:
     name: job-service
   datasource:
     url: jdbc:postgresql://ts-postgres:5432/job_db
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:talentsphere}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
   cache:
     type: redis
@@ -16,8 +16,8 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: 5672
-    username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
 
 server:
   port: 8084

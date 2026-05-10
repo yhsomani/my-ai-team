@@ -15,23 +15,24 @@ public class UserController {
   private final UserService userService;
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-  public ApiResponse<UserEntity> getProfile(@PathVariable String id) {
+  @PreAuthorize("hasRole('USER') or hasRole('ADMIN') or hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+  public ApiResponse<UserEntity> getProfile(@org.springframework.security.core.parameters.P("id") @PathVariable("id") String id) {
     log.debug("Entering getProfile with id: {}", id);
     return userService.getProfile(id);
   }
 
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('ROLE_ADMIN')")
   public ApiResponse<List<UserEntity>> getAllUsers() {
     log.debug("Entering getAllUsers");
     return userService.getAllUsers();
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("#id == authentication.name or hasRole('ADMIN')")
+  @PreAuthorize("#id == authentication.name or hasRole(\'ADMIN\') or hasRole(\'ROLE_ADMIN\')")
   public ApiResponse<UserEntity> updateProfile(
-          @PathVariable String id,
+          @org.springframework.security.core.parameters.P("id")
+          @PathVariable("id") String id,
           @RequestBody UserEntity user) {
     log.debug("Entering updateProfile with id: {}", id);
     user.setId(id);
@@ -39,8 +40,8 @@ public class UserController {
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
-  public ApiResponse<Void> deleteProfile(@PathVariable String id) {
+  @PreAuthorize("hasRole('ADMIN') or hasRole('ROLE_ADMIN')")
+  public ApiResponse<Void> deleteProfile(@PathVariable("id") String id) {
     log.debug("Entering deleteProfile with id: {}", id);
     userService.deleteProfile(id);
     return ApiResponse.ok(null);
