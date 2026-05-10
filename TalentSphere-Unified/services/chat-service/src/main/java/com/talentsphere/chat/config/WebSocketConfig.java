@@ -50,13 +50,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
         }
 
         @Override
-        protected void handleTextMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-            // Check if the payload is actually a String
-            if (message.getPayload() instanceof String) {
-                String payload = (String) message.getPayload();
-                log.debug("Received message from {}: {}", session.getId(), payload);
-                broadcastToAll(session.getId(), payload);
-            }
+        protected void handleTextMessage(WebSocketSession session, org.springframework.web.socket.TextMessage message) throws Exception {
+            String payload = message.getPayload();
+            log.debug("Received message from {}: {}", session.getId(), payload);
+            broadcastToAll(session.getId(), payload);
         }
 
         private void broadcastToAll(String senderId, String message) {

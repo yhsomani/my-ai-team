@@ -29,12 +29,12 @@ public class ChatController {
     }
 
     @GetMapping("/api/v1/chat/channel/{channelId}")
-    public ApiResponse<List<ChatMessage>> getChannelMessages(@PathVariable String channelId) {
+    public ApiResponse<List<ChatMessage>> getChannelMessages(@PathVariable("channelId") String channelId) {
         return ApiResponse.success(service.getChannelMessages(channelId));
     }
 
     @GetMapping("/api/v1/chat/user/{userId}")
-    public ApiResponse<List<ChatMessage>> getUserConversations(@PathVariable String userId) {
+    public ApiResponse<List<ChatMessage>> getUserConversations(@PathVariable("userId") String userId) {
         return ApiResponse.success(service.getUserConversations(userId));
     }
 
