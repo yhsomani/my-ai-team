@@ -2264,3 +2264,20 @@ kubectl get pods -n talentsphere-prod
 - **v3.0.0 (2024-08-01):** Event-Driven Architecture - RabbitMQ integration complete
 - **v2.0.0 (2024-06-15):** Security Hardening - JWT, RBAC, rate limiting
 - **v1.0.0 (2024-05-01):** Initial Release - Basic functionality
+
+
+---
+
+## PROPOSED ARCHITECTURAL PIVOT: MySQL Migration
+
+A future state requirement aims to transition from Supabase (PostgreSQL) to a standalone backend powered by **MySQL** and a modern ORM (e.g., Prisma or Drizzle).
+
+### Requirements for Migration
+- **Database**: MySQL 8+ with full normalization, referential integrity, and indexing.
+- **ORM Layer**: Prisma or Drizzle ORM to manage query mapping and migrations.
+- **Backend Framework**: A dedicated API layer (e.g., Express, NestJS, or Next.js API Routes) to replace the direct `supabase-js` client.
+- **Authentication**: Transition off Supabase Auth to a custom JWT or session-based provider (e.g., NextAuth/Auth.js).
+- **Realtime**: Re-implement chat and notifications using dedicated Socket.io/Redis infrastructure.
+- **Storage**: Migrate Supabase Storage buckets to AWS S3 or an equivalent blob store.
+
+*Note: As of the current stabilization phase, the system remains strictly on Supabase to ensure end-to-end functionality.*

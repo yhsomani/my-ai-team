@@ -28,7 +28,7 @@ const LMSPage: React.FC = () => {
   const [isEnrolling, setIsEnrolling] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCourses());
+    dispatch(fetchCourses(user?.roles?.includes('ROLE_INSTRUCTOR') ? 'INSTRUCTOR' : (user?.roles?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER')));
   }, [dispatch]);
 
   const handleCourseClick = (course: Course) => {
@@ -52,7 +52,7 @@ const LMSPage: React.FC = () => {
             duration: 3000
         });
         setIsModalOpen(false);
-        dispatch(fetchCourses()); // Refresh to show progress
+        dispatch(fetchCourses(user?.roles?.includes('ROLE_INSTRUCTOR') ? 'INSTRUCTOR' : (user?.roles?.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER'))); // Refresh to show progress
     } catch (error) {
         console.error('Enrollment failed:', error);
         addToast({ type: 'error', title: 'Enrollment Failed', message: 'Please try again later.' });

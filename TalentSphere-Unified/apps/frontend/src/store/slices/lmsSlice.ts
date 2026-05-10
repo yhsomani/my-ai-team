@@ -7,8 +7,8 @@ const lmsAdapter = createEntityAdapter<Course>();
 
 export const fetchCourses = createAsyncThunk(
   'lms/fetchCourses',
-  async () => {
-    return await lmsService.getCourses();
+  async (userRole?: string) => {
+    return await lmsService.getCourses({ userRole });
   }
 );
 

@@ -3,7 +3,7 @@ import { Course, Enrollment } from '../types/lms';
 
 export const lmsService = {
   // Course operations
-  getCourses: async (params?: { category?: string; published?: boolean }): Promise<Course[]> => {
+  getCourses: async (params?: { category?: string; published?: boolean; userRole?: string }): Promise<Course[]> => {
     let query = supabase
       .from('courses')
       .select(`
@@ -19,9 +19,13 @@ export const lmsService = {
       query = query.eq('category', params.category);
     }
     
+    // Visibility Fix: If the user is an INSTRUCTOR or ADMIN, allow viewing drafts unless explicitly requested otherwise.
+    // Otherwise, restrict to strictly published courses for students.
+    const isPrivileged = params?.userRole === 'INSTRUCTOR' || params?.userRole === 'ADMIN';
+
     if (params?.published !== undefined) {
       query = query.eq('is_published', params.published);
-    } else {
+    } else if (!isPrivileged) {
       query = query.eq('is_published', true);
     }
     

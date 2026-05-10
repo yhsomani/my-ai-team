@@ -44,20 +44,22 @@ pnpm run dev
 
 ## ✨ Features
 
-- 🔐 **Authentication** - Supabase Auth with email & OAuth
+- 🔐 **Authentication** - Supabase Auth with email & OAuth (Proposed migration to Custom JWT/MySQL)
 - 👤 **Profiles** - Complete talent profiles with skills, experience, portfolio
 - 💼 **Jobs** - Job board with applications tracking
 - 🤝 **Networking** - Connections, feed posts, comments, likes
-- 💬 **Messaging** - Real-time conversations
-- 🎓 **LMS** - Courses, lessons, progress tracking
+- 💬 **Messaging** - Real-time conversations (Supabase Realtime)
+- 🎓 **LMS** - Courses, lessons, progress tracking (with Instructor visibility logic)
 - 🏆 **Gamification** - Badges, XP, leaderboard
 - 💳 **Payments** - Subscription management
-- 📊 **Admin Dashboard** - Platform oversight
+- 📊 **Admin Dashboard** - Platform oversight (with interactive user management)
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Proposed Architecture Pivot
 
+Currently, the system is backed entirely by **Supabase**. However, the project mandates a roadmap to migrate to a **MySQL** powered backend utilizing a modern ORM.
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Shadcn UI
-- **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
+- **Current Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
+- **Proposed Backend**: Node.js API (or Java), Prisma/Drizzle ORM, MySQL 8+, dedicated WebSocket Server
 - **State**: Redux Toolkit, React Query
 - **Testing**: Vitest, Playwright
 - **Deployment**: Ready for Vercel/Netlify

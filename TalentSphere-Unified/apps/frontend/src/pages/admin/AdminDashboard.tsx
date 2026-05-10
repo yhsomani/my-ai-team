@@ -6,6 +6,7 @@ import { Skeleton } from '../../components/shared/Skeleton';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Users, Server, ShieldCheck, Activity } from 'lucide-react';
 import { adminService, AdminDashboardData } from '../../services/adminService';
+import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<AdminDashboardData | null>(null);
@@ -120,6 +121,48 @@ const AdminDashboard: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      <Card className="mt-8">
+        <div className="p-5 border-b border-[var(--border-default)] flex justify-between items-center">
+          <h3 className="text-sm font-semibold">User Management</h3>
+        </div>
+        <div className="p-0 overflow-x-auto">
+          <table className="w-full text-sm text-left relative">
+            <thead className="text-xs text-[var(--text-muted)] uppercase bg-[var(--bg-secondary)]">
+              <tr>
+                <th className="px-6 py-3 font-medium">Email</th>
+                <th className="px-6 py-3 font-medium">Role</th>
+                <th className="px-6 py-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border-default)]">
+              <tr className="hover:bg-[var(--bg-secondary)] transition-colors">
+                <td className="px-6 py-4 font-medium">user@example.com</td>
+                <td className="px-6 py-4"><Badge>User</Badge></td>
+                <td className="px-6 py-4 text-right relative">
+                  <div className="dropdown dropdown-end relative inline-block text-left group">
+                    <button className="p-2 hover:bg-[var(--bg-primary)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent" aria-label="Open menu">
+                      <MoreVertical size={16} />
+                    </button>
+                    {/* Z-index fix: Ensure dropdown overlays other rows */}
+                    <div className="opacity-0 invisible group-hover:opacity-100 group-hover:visible absolute right-0 mt-2 w-48 bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-md shadow-lg z-50 transition-all duration-200">
+                      <div className="py-1">
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2">
+                          <Edit size={14} /> Edit Role
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-destructive/10 text-destructive flex items-center gap-2">
+                          <Trash2 size={14} /> Suspend User
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
     </div>
   );
 };
