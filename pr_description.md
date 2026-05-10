@@ -1,15 +1,16 @@
-🎯 **What:**
-- Added test coverage for `VideoController.java` to verify proper `@RequestParam` parsing and ensure the endpoints function correctly under different scenarios.
-- Updated `pom.xml` to include `maven-compiler-plugin` to correctly compile classes with the `-parameters` flag, addressing `IllegalArgumentException` thrown when parameter names were omitted in the bytecode.
-- Suppressed checkstyle violations that aren't critical at this stage to complete tests.
+🧪 Add comprehensive tests for FeatureFlagController
 
-📊 **Coverage:**
-- `scheduleInterview`: Tested successful scheduling, missing parameters, and invalid date formats.
-- `getSession`: Tested retrieving existing and non-existing sessions.
-- `startSession`: Tested starting existing and non-existing sessions.
-- `endSession`: Tested ending a session correctly.
-- `getRoomToken`: Tested retrieving token for an existing session.
+🎯 **What:** The `FeatureFlagController` was completely untested and missing explicit `@PathVariable` name declarations.
 
-✨ **Result:**
-- `VideoController` is now fully covered by tests.
-- Prevents regressions related to parameter mapping and endpoint behavior.
+📊 **Coverage:** Covered all endpoint logic including successful requests and handling for incorrect input strings.
+- `GET /api/v1/admin/feature-flags`
+- `GET /api/v1/admin/feature-flags/{flagName}` (Success & unknown flag error paths)
+- `POST /api/v1/admin/feature-flags/{flagName}/enable`
+- `POST /api/v1/admin/feature-flags/{flagName}/disable`
+- `POST /api/v1/admin/feature-flags/{flagName}/reset`
+- `POST /api/v1/admin/feature-flags/reset-all`
+- `GET /api/v1/admin/feature-flags/enabled`
+- `GET /api/v1/admin/feature-flags/core`
+- `GET /api/v1/admin/feature-flags/categories`
+
+✨ **Result:** Test coverage for `FeatureFlagController` is improved to near 100%, and a known Spring Boot 3.2+ compatibility issue with missing path variable names when compiling without `-parameters` flag has been preemptively solved.
