@@ -4,20 +4,24 @@
 
 ### Prerequisites
 - Node.js 18+ 
-- npm or yarn
+- pnpm (required)
 - Supabase account (free tier works)
 
 ### Setup Steps
 
 1. **Clone & Install**
 ```bash
-cd /workspace/TalentSphere-Unified/apps/frontend
-npm install
+cd TalentSphere-Unified/apps/frontend
+pnpm install
 ```
 
 2. **Configure Supabase**
    - Create `.env` file in `apps/frontend/`
-   - Add your Supabase credentials (see `SUPABASE_SETUP_INSTRUCTIONS.md`)
+   - Add your Supabase credentials (see `SUPABASE_SETUP_INSTRUCTIONS.md` or `SSOT.md`):
+     ```env
+     VITE_SUPABASE_URL=https://your-project.supabase.co
+     VITE_SUPABASE_ANON_KEY=your-anon-key-here
+     ```
 
 3. **Initialize Database**
    - Run `supabase-schema.sql` in Supabase SQL Editor
@@ -25,15 +29,13 @@ npm install
 
 4. **Start Development**
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ## 📚 Documentation
 
 ### Core Documentation
-- **SSOT.md** - Single Source of Truth (Architecture, Status, Roadmap)
-- **SUPABASE_SETUP_INSTRUCTIONS.md** - Detailed Supabase setup steps
-- **SUPABASE_MIGRATION_COMPLETE.md** - Migration summary and architecture changes
+- **SSOT.md** - Single Source of Truth (Architecture, Status, Roadmap). This contains *all* consolidated documentation.
 - **SEED_DATA_GUIDE.md** - Comprehensive guide to test data seeding
 
 ### Database
@@ -57,6 +59,7 @@ npm run dev
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Shadcn UI
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
 - **State**: Redux Toolkit, React Query
+- **Testing**: Vitest, Playwright
 - **Deployment**: Ready for Vercel/Netlify
 
 ## 📦 Project Structure
@@ -68,15 +71,22 @@ TalentSphere-Unified/
 │   │   ├── components/     # UI components
 │   │   ├── pages/          # Page components
 │   │   ├── services/       # Supabase data layer
+│   │   ├── store/          # Redux Toolkit setup
 │   │   ├── lib/            # Utilities & Supabase client
 │   │   └── types/          # TypeScript interfaces
 │   └── .env                # Environment variables
 ├── supabase-schema.sql     # Database schema
 ├── seed-data.sql           # Test data
-└── docs/                   # Additional documentation
+└── SSOT.md                 # Master Architecture Document
 ```
 
 ## 🧪 Testing
+
+To run the unit test suite via Vitest:
+```bash
+cd TalentSphere-Unified/apps/frontend
+pnpm run test:unit
+```
 
 Test users (after running seed-data.sql):
 - `alice.dev@talentsphere.test` / `password123` (Developer)
