@@ -78,7 +78,7 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  const userName = user?.email?.split('@')[0] || 'User';
+  const userName = user?.full_name || user?.email?.split('@')[0] || 'User';
 
   if (isRecruiter) {
     const statCards = [

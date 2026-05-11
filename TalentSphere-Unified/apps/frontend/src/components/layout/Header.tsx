@@ -54,8 +54,9 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-accent rounded-full" />
         </button>
         <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
-          {user?.email?.[0]?.toUpperCase() || 'U'}
+          {user?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
         </div>
+
       </div>
     </header>
   );

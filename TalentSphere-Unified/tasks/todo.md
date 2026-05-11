@@ -18,7 +18,9 @@
 - [ ] Resolve Supabase reachability failure (INF-01)
 - [ ] Stabilize Docker environment or provide local runtime fallback (INF-02)
 - [ ] Refactor Frontend LMS service to use Microservices API instead of direct Supabase calls (ARCH-01)
-- [ ] Fix lesson count metadata in LMS Browse view (UI-01)
+- [ ] Align PostgreSQL schema with Seed Data (Add `slug` to courses, fix lesson column names) (DB-01)
+- [ ] Implement MongoDB seeding for LMS Service to match PostgreSQL data (DB-02)
+- [ ] Fix lesson count metadata and course mapping in LMS Browse view (UI-01)
 - [ ] Re-implement temporary mock layer for system testing if infrastructure recovery is delayed (MITIGATION)
 
 ## Phase 1: Assessment & Discovery - COMPLETE

@@ -1,7 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './store/hooks';
-import { supabase } from './lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { setUser, setLoading } from './store/slices/authSlice';
 import { ResponsiveLayout } from './components/shared/ResponsiveLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -58,7 +58,30 @@ function App() {
   useEffect(() => {
     dispatch(setLoading(true));
 
+    // Timeout: if auth doesn't resolve in 3 seconds, fall back
+    const authTimeout = setTimeout(() => {
+      console.warn('[Auth] Supabase auth timed out. Using fallback mode.');
+      
+      // In dev mode, auto-login with a mock user for testing
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        dispatch(setUser({
+          user: {
+            id: 'mock-user-dev-001',
+            email: 'dev@talentsphere.test',
+            full_name: 'Dev User',
+            roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
+          },
+          session: null,
+        }));
+        console.info('[Auth] Dev mock user activated. All roles granted for testing.');
+      } else {
+        dispatch(setLoading(false));
+      }
+    }, 3000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(authTimeout);
       if (session) {
         dispatch(setUser({ 
           user: {
@@ -68,12 +91,49 @@ function App() {
           }, 
           session 
         }));
+      } else {
+        // No session found.
+        const isDev = import.meta.env.DEV;
+        if (isDev) {
+          // Auto-activate mock user for local development
+          dispatch(setUser({
+            user: {
+              id: 'mock-user-dev-001',
+              email: 'dev@talentsphere.test',
+              full_name: 'Dev User',
+              roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
+            },
+            session: null,
+          }));
+          console.info('[Auth] Dev mode: mock user activated (no Supabase session).');
+        } else {
+          dispatch(setLoading(false));
+        }
+      }
+    }).catch((err) => {
+      clearTimeout(authTimeout);
+      console.warn('[Auth] Supabase session fetch failed:', err?.message || err);
+      
+      // Dev mode fallback on error
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        dispatch(setUser({
+          user: {
+            id: 'mock-user-dev-001',
+            email: 'dev@talentsphere.test',
+            full_name: 'Dev User',
+            roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
+          },
+          session: null,
+        }));
+        console.info('[Auth] Dev mock user activated due to Supabase error.');
       } else {
         dispatch(setLoading(false));
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      clearTimeout(authTimeout);
       if (session) {
         dispatch(setUser({ 
           user: {
@@ -84,11 +144,23 @@ function App() {
           session 
         }));
       } else {
-        dispatch(setUser({ user: null, session: null }));
+        // If we are in dev mode, we might want to keep the mock user
+        const isDev = import.meta.env.DEV;
+        if (isDev && event === 'INITIAL_SESSION') {
+          // Keep mock user if it was already set or about to be set
+          console.info('[Auth] onAuthStateChange: ignoring null initial session in dev mode to preserve mock user.');
+        } else if (event === 'SIGNED_OUT') {
+          dispatch(setUser({ user: null, session: null }));
+        } else if (!isDev) {
+          dispatch(setUser({ user: null, session: null }));
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      subscription.unsubscribe();
+    };
   }, [dispatch]);
 
   return (

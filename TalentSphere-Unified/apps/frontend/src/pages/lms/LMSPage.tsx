@@ -115,12 +115,18 @@ const LMSPage: React.FC = () => {
             </Card>
           ))}
         </div>
+      ) : status === 'failed' ? (
+        <EmptyState
+          title="Unable to load courses"
+          description="We couldn't connect to the course catalog. Please check your connection and try again."
+        />
       ) : filtered.length === 0 ? (
         <EmptyState title="No courses found" description="Try adjusting your search or filters." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((course) => {
-            const progress = (course as any).progress || 0;
+            const progress = course.progress || 0;
+            const lessonCount = course.lessons?.length || 0;
             return (
               <Card key={course.id} className="p-5 flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors">
                 <div className="space-y-4">
@@ -130,10 +136,15 @@ const LMSPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold mb-1">{course.title}</h3>
+                    <p className="text-xs text-[var(--text-muted)] mb-2 line-clamp-2">{course.description}</p>
                     <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
                       <span className="flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
-                      <span className="flex items-center gap-1"><BookOpen size={12} /> {(course as any).lessons?.length || 0} lessons</span>
+                      <span className="flex items-center gap-1"><BookOpen size={12} /> {lessonCount} lessons</span>
+                      {course.xp && <span className="flex items-center gap-1 text-accent font-medium">+{course.xp} XP</span>}
                     </div>
+                    {course.provider && (
+                      <p className="text-xs text-[var(--text-muted)] mt-1">by {course.provider}</p>
+                    )}
                   </div>
                   {progress > 0 && (
                     <div>

@@ -304,6 +304,7 @@ CREATE INDEX idx_messages_created_at ON public.messages(created_at DESC);
 CREATE TABLE public.courses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(200) NOT NULL,
+    slug VARCHAR(200) UNIQUE,
     description TEXT,
     instructor_id UUID REFERENCES public.profiles(id),
     category VARCHAR(100),
@@ -311,6 +312,7 @@ CREATE TABLE public.courses (
     thumbnail_url TEXT,
     duration_hours INTEGER,
     level VARCHAR(50),
+    xp_reward INTEGER DEFAULT 0,
     is_published BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -319,6 +321,7 @@ CREATE TABLE public.courses (
 CREATE INDEX idx_courses_instructor ON public.courses(instructor_id);
 CREATE INDEX idx_courses_category ON public.courses(category);
 CREATE INDEX idx_courses_published ON public.courses(is_published);
+CREATE INDEX idx_courses_slug ON public.courses(slug);
 
 -- =============================================================================
 -- LMS - LESSONS
@@ -330,7 +333,9 @@ CREATE TABLE public.lessons (
     content TEXT,
     video_url TEXT,
     order_number INTEGER NOT NULL,
+    order_index INTEGER GENERATED ALWAYS AS (order_number) STORED,
     duration_minutes INTEGER,
+    duration_seconds INTEGER,
     is_free_preview BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -345,10 +350,13 @@ CREATE TABLE public.enrollments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     status enrollment_status DEFAULT 'ENROLLED',
-    progress_percentage INTEGER DEFAULT 0,
+    progress_percentage DECIMAL(5,2) DEFAULT 0,
     enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    started_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
+    certificate_url TEXT,
     UNIQUE(course_id, user_id)
 );
 
@@ -365,6 +373,8 @@ CREATE TABLE public.lesson_progress (
     lesson_id UUID NOT NULL REFERENCES public.lessons(id) ON DELETE CASCADE,
     completed BOOLEAN DEFAULT FALSE,
     completed_at TIMESTAMP WITH TIME ZONE,
+    viewed_at TIMESTAMP WITH TIME ZONE,
+    watched_seconds INTEGER DEFAULT 0,
     UNIQUE(enrollment_id, lesson_id)
 );
 
@@ -420,7 +430,7 @@ CREATE INDEX idx_challenge_submissions_user ON public.challenge_submissions(user
 CREATE TABLE public.leaderboard (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    total_xp INTEGER DEFAULT 0,
+    total_xp INTEGER DEFAULT 0,+
     rank INTEGER DEFAULT 0,
     weekly_xp INTEGER DEFAULT 0,
     monthly_xp INTEGER DEFAULT 0,
