@@ -611,21 +611,22 @@ Error response:
 | Method | Endpoint | Description | Auth | Request | Response |
 |--------|----------|-------------|------|---------|----------|
 | GET | /conversations | List conversations | USER | - | List<ConversationDto> |
-| GET | /conversations/{id}/messages | Get messages | Participant | before, limit | List<MessageDto> |
-| POST | /conversations/{id}/messages | Send message | Participant | { content, type } | MessageDto |
+| GET | /conversation/{userId} | Get conversation | Participant | before, limit | List<MessageDto> |
+| POST | / | Send message | Participant | { receiverId, content, type } | MessageDto |
 | GET | /unread/count | Unread count | USER | - | { count } |
-| PATCH | /messages/{id}/read | Mark as read | Recipient | - | { success } |
+| PUT | /{id}/read | Mark as read | Recipient | - | { success } |
 
 #### Networking Service (/api/v1/networking)
 
 | Method | Endpoint | Description | Auth | Request | Response |
 |--------|----------|-------------|------|---------|----------|
 | GET | /profiles | Discover profiles | USER | keyword, location | Page<ProfileSummaryDto> |
-| POST | /connect/{userId} | Send connection request | USER | - | { status: "PENDING" } |
-| POST | /connect/{userId}/accept | Accept request | Recipient | - | { success } |
-| POST | /connect/{userId}/reject | Reject request | Recipient | - | { success } |
+| POST | /connections/request | Send connection request | USER | { targetUserId } | { status: "PENDING" } |
+| PUT | /connections/{id}/accept | Accept request | Recipient | - | { success } |
+| PUT | /connections/{id}/reject | Reject request | Recipient | - | { success } |
 | GET | /connections | Get accepted connections | USER | - | List<ConnectionDto> |
-| GET | /requests/pending | Pending requests | USER | - | List<RequestDto> |
+| GET | /connections/pending | Pending requests | USER | - | List<RequestDto> |
+| GET | /connections/suggestions | Get suggestions | USER | - | List<ProfileSummaryDto> |
 
 #### Gamification Service (/api/v1/gamification)
 
@@ -1600,7 +1601,7 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 | **SMS** | Twilio | 2FA, notifications | TWILIO_SID, TWILIO_TOKEN, TWILIO_PHONE |
 | **File Storage** | AWS S3 / Supabase | Resume, avatar storage | AWS_ACCESS_KEY, AWS_SECRET, S3_BUCKET |
 | **Payments** | Stripe | Subscriptions, one-time payments | STRIPE_SECRET, STRIPE_WEBHOOK_SECRET |
-| **Video** | Twilio Video / Agora | WebRTC infrastructure | TWILIO_API_KEY, TWILIO_API_SECRET |
+| **Video** | LiveKit (WebRTC) | WebRTC infrastructure | LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL |
 | **Search** | Elasticsearch (self-hosted) | Full-text search | ELASTICSEARCH_HOST |
 | **CDN** | CloudFront | Static asset delivery | CLOUDFRONT_DOMAIN |
 | **Monitoring** | Prometheus + Grafana | Metrics, dashboards | PROMETHEUS_HOST, GRAFANA_HOST |
