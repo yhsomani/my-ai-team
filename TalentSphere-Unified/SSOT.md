@@ -59,7 +59,8 @@ TalentSphere is a distributed, cloud-native career intelligence platform unifyin
 | | Nginx | Latest | API Gateway |
 
 ### 1.3 Architecture Principles
-- **Microservices:** 19 independent services with per-service database isolation. The legacy 'Unified Backend' monolith wrapper (`apps/backend/pom.xml`) has been eradicated to enforce strict decoupling.
+- **Microservices:** 19 active services with per-service database isolation. Additional optional services (analytics-service:8089, email-service:8095, pathway-service:8101) exist in Docker Compose profiles but are not part of the core deployment. The legacy 'Unified Backend' monolith wrapper has been eradicated to enforce strict decoupling.
+- **Database Hosting:** Development uses local Docker PostgreSQL/MongoDB. Production-ready Supabase PostgreSQL integration is available via environment configuration (see Appendix F).
 - **Event-Driven:** RabbitMQ for asynchronous communication (Outbox Pattern)
 - **Hexagonal Architecture:** Clear separation of concerns (Ports & Adapters)
 - **Zero Trust Security:** JWT validation at gateway, service-to-service authentication
@@ -131,7 +132,9 @@ TalentSphere is a distributed, cloud-native career intelligence platform unifyin
 | 16 | networking-service | 8097 | networking_db | PostgreSQL | Connection graph, suggestions |
 | 17 | payment-service | 8098 | payment_db | PostgreSQL | Subscriptions, Stripe integration |
 | 18 | ai-service | 8099 | ai_db | PostgreSQL | Resume analysis, job matching, LLM orchestration |
-| 19 | chat-service | 8097 | chatservice | MongoDB | Real-time WebSocket chat (STOMP) |
+| 19 | chat-service | 8100 | chatservice | MongoDB | Real-time WebSocket chat (STOMP) |
+
+> **Note:** Ports 8089 and 8095 are reserved for future services (e.g., analytics-service, email-service).
 
 **MongoDB Connection:** `mongodb://localhost:27017` (Standalone, MongoDB 8.2.7 Community Edition)
 
@@ -1714,7 +1717,7 @@ Requirements:
 - Entity with @Version for optimistic locking
 - DTOs with Bean Validation annotations (@NotNull, @Size, @Email)
 - application.yml with DB, RabbitMQ, Redis configuration
-- Dockerfile using eclipse-temurin:21-jre-alpine
+- Dockerfile using eclipse-temurin:25-jre-alpine
 - Unit tests with JUnit5 and Mockito
 - OpenAPI documentation with SpringDoc
 
@@ -1896,6 +1899,488 @@ Requirements:
 
 ---
 
+## 13. Event & Messaging Architecture
+
+### 13.1 RabbitMQ Event Catalog
+
+**Exchange:** `talentsphere.events` (topic, durable) | **DLX:** `talentsphere.dlx`
+**Message TTL:** 7 days | **Max Retries Before DLQ:** 3
+**Queue Naming:** `{consumer-service}.{event-key}` e.g. `notification-service.user.created`
+
+| Event Key | Publisher | Consumers | Payload Fields | Trigger |
+|-----------|-----------|-----------|---------------|---------|
+| `user.created` | auth-service | notification, search, gamification | userId, email, role, name | Registration |
+| `user.deleted` | user-service | search, networking, messaging | userId | Account deletion |
+| `application.created` | application-service | notification, ai, search | applicationId, jobId, candidateId, resumeUrl | Job application |
+| `application.status_changed` | application-service | notification | applicationId, oldStatus, newStatus, candidateId | Recruiter updates status |
+| `job.created` | job-service | search, notification | jobId, recruiterId, title | Job posted |
+| `job.closed` | job-service | search, notification | jobId | Job closed/expired |
+| `course.completed` | lms-service | gamification, notification | userId, courseId, completedAt | Progress = 100% |
+| `challenge.passed` | challenge-service | gamification | userId, challengeId, difficulty, points | Accepted submission |
+| `user.hired` | application-service | gamification | userId, jobId | Status → HIRED |
+| `connection.accepted` | networking-service | notification, gamification | userId, connectedUserId | Connection accepted |
+| `profile.updated` | profile-service | search | userId, updatedFields[] | Profile edit |
+| `badge.earned` | gamification-service | notification | userId, badgeCode, badgeName | Badge criteria met |
+| `auth.password.reset_requested` | auth-service | notification | userId, email, resetLink | Forgot password |
+| `payment.completed` | payment-service | notification | userId, planId, amount | Subscription started |
+
+### 13.2 WebSocket Event Catalog
+
+**Endpoint:** `/ws-chat` | **Protocol:** STOMP over WebSocket
+**Auth:** Bearer token in STOMP CONNECT headers
+**Heartbeat:** 10s send / 10s receive | **Reconnect:** Exponential backoff 1s→30s, max 10 attempts
+
+| Subscribe Destination | Payload | Description |
+|----------------------|---------|-------------|
+| `/topic/conversation.{channelId}` | MessageDto | New chat message |
+| `/user/{userId}/notifications` | NotificationDto | Real-time in-app notification |
+| `/user/{userId}/typing` | { conversationId, userId, isTyping } | Typing indicator |
+| `/topic/interview.{sessionId}` | { event: started/ended, participantId } | Video session events |
+| `/user/{userId}/connection-requests` | ConnectionRequestDto | New connection request |
+
+| Send Destination | Payload | Description |
+|-----------------|---------|-------------|
+| `/app/message.send` | { channelId, content, type } | Send chat message |
+| `/app/typing.start` | { conversationId } | Start typing indicator |
+| `/app/typing.stop` | { conversationId } | Stop typing indicator |
+
+### 13.3 Messaging vs Chat Service Clarification
+
+| Aspect | messaging-service (8096) | chat-service (8100) |
+|--------|-------------------------|---------------------|
+| **Protocol** | REST API | WebSocket (STOMP) |
+| **Database** | PostgreSQL (messaging_db) | MongoDB (chatservice) |
+| **Use Case** | Async direct messages, conversation history, search | Real-time live chat, typing indicators, presence |
+| **Persistence** | Long-term conversation/thread storage | Real-time relay + MongoDB event log |
+| **Coordination** | chat-service writes to messaging-service for archival | messaging-service provides history; chat-service handles live delivery |
+
+---
+
+## 14. Caching Architecture (Redis)
+
+| Cache Key Pattern | TTL | Data Cached | Service | Invalidation Trigger |
+|------------------|-----|-------------|---------|---------------------|
+| `user:{userId}` | 15 min | UserDto | user-service | Profile update |
+| `profile:{userId}` | 10 min | ProfileDto | profile-service | Profile PATCH |
+| `jobs:list:{filterHash}` | 5 min | Page&lt;JobDto&gt; | job-service | Job create/delete |
+| `job:{jobId}` | 30 min | JobDetailDto | job-service | Job PUT/DELETE |
+| `leaderboard:{period}` | 1 hour | Top 100 entries | gamification-service | Points updated |
+| `courses:catalog:{hash}` | 1 hour | Course list | lms-service | New course added |
+| `blacklist:{tokenJti}` | JWT expiry | void (presence = blocked) | auth-service | Logout |
+| `ratelimit:{ip}:{endpoint}` | 1 min | Request count | api-gateway | Natural expiry |
+| `stats:public` | 5 min | PublicStatsDto | api-gateway | Aggregation cron |
+| `feature-flags` | 5 min | HashMap&lt;String, Boolean&gt; | all services | Admin toggle |
+
+**Pattern:** Cache-aside (check Redis → miss → query DB → populate → return)
+**Serialization:** JSON via Jackson ObjectMapper | **Client:** Spring Data Redis (Lettuce)
+**Key namespace separator:** `:` (colon)
+
+---
+
+## 15. AI Service Configuration
+
+**Provider:** OpenAI (recommended) or Azure OpenAI for enterprise deployments
+**Orchestration Framework:** Spring AI 1.0
+**Fallback:** If provider unavailable → return cached suggestions or static fallback message
+**PII Handling:** Strip name, email, phone from resumes before sending to LLM
+**Cost Controls:** Max token limits enforced per request; streaming enabled to reduce TTFB
+
+| Feature | Endpoint | Model | Max Tokens | Temperature |
+|---------|----------|-------|-----------|-------------|
+| Resume analysis | `POST /api/v1/ai/resume/analyze` | gpt-4o | 2000 | 0.3 |
+| Job match scoring | `POST /api/v1/ai/match` | gpt-4o-mini | 500 | 0.1 |
+| Interview prep | `POST /api/v1/ai/interview-prep` | gpt-4o | 1500 | 0.7 |
+| Career path | `POST /api/v1/ai/career-path` | gpt-4o | 2000 | 0.5 |
+| Chat assistant | `POST /api/v1/ai/chat` | gpt-4o | 4000 | 0.6 |
+
+**Rate Limits:** Free: 10 AI requests/min | Pro: 50/min | Enterprise: 200/min
+
+---
+
+## 16. Error Code Catalog
+
+| Code | HTTP | Description | Client Action |
+|------|------|-------------|---------------|
+| `AUTH_001` | 401 | Missing Authorization header | Redirect to login |
+| `AUTH_002` | 401 | JWT expired | Use refresh token |
+| `AUTH_003` | 401 | JWT invalid/tampered | Re-authenticate |
+| `AUTH_004` | 403 | Insufficient role | Show permission error |
+| `AUTH_005` | 429 | Brute force lockout | Show lockout timer |
+| `USER_001` | 404 | User not found | Show not found page |
+| `USER_002` | 409 | Email already registered | Show "email in use" |
+| `JOB_001` | 404 | Job not found | Show deleted/unavailable |
+| `JOB_002` | 403 | Not job owner | Hide edit controls |
+| `APP_001` | 409 | Already applied to this job | Show "Applied" badge |
+| `APP_002` | 404 | Application not found | — |
+| `FILE_001` | 413 | File too large (&gt;10 MB) | Show size limit message |
+| `FILE_002` | 415 | Unsupported file type | Show accepted types |
+| `PAY_001` | 402 | Subscription required | Show upgrade prompt |
+| `PAY_002` | 400 | Payment failed | Show payment error |
+| `LMS_001` | 409 | Already enrolled in course | Show "Continue" button |
+| `NET_001` | 409 | Connection already exists | Show current status |
+| `VAL_001` | 400 | Validation error (field-level) | Show field-level errors |
+| `SYS_001` | 503 | Circuit breaker open | Show retry banner |
+| `SYS_002` | 500 | Internal server error | Show generic error |
+
+---
+
+## 17. Authentication Details
+
+### 17.1 OAuth2 Authorization Code Flow
+
+1. User clicks "Sign in with Google/GitHub" on login page
+2. Frontend redirects to provider's authorization endpoint
+3. Provider authenticates user, redirects to `/api/v1/auth/oauth/callback/{provider}`
+4. Auth-service exchanges authorization code for provider access token
+5. Fetches user profile from provider (email, name, avatar)
+6. If email exists in `users` table → link account and login
+7. If email is new → create user (role: USER by default) and login
+8. Generate JWT + refresh token (same flow as password login)
+9. Redirect to `/dashboard` with tokens
+
+**Providers:** Google, GitHub
+**Callback URL:** `https://api.talentsphere.com/api/v1/auth/oauth/callback/{provider}`
+**Spring Config:** `OAuth2LoginConfig.java` in auth-service
+
+### 17.2 Forgot Password Flow
+
+1. User clicks "Forgot password" → enters email
+2. `POST /api/v1/auth/forgot-password` with `{ email }`
+3. Auth-service generates UUID reset token (1-hour expiry), stores hash in `password_reset_tokens`
+4. Publishes `auth.password.reset_requested` event → notification-service sends email
+5. User clicks link → navigates to `/reset-password?token={token}`
+6. `POST /api/v1/auth/reset-password` with `{ token, newPassword }`
+7. Auth-service validates token, updates password hash, invalidates token
+8. All existing refresh tokens for user are revoked
+9. Redirect to login
+
+**Missing Schema (add to auth_db):**
+```sql
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
+```
+
+### 17.3 Service-to-Service Authentication
+
+| Pattern | Implementation | Use Case |
+|---------|---------------|----------|
+| Gateway → Service | `X-User-Id`, `X-User-Role`, `X-User-Email` headers | User context forwarding |
+| Service → Service | `X-Service-Secret: ${INTERNAL_SERVICE_SECRET}` header | Internal API calls |
+| Internal routes | `/internal/**` paths blocked by gateway from public access | Private inter-service endpoints |
+
+**Trust Model:** Services trust headers injected by gateway. Gateway validates JWT and strips any client-provided `X-User-*` headers before forwarding to prevent spoofing.
+
+---
+
+## 18. Operational Systems
+
+### 18.1 Feature Flag System
+
+**Storage:** Redis hash `feature-flags` + PostgreSQL `feature_flags` table for persistence
+**Check Pattern:** `FeatureFlagService.isEnabled("flag_name")` injected into services
+
+| Flag Name | Description | Default | Category |
+|-----------|-------------|---------|----------|
+| `enable_social_oauth` | Google/GitHub login | false | Auth |
+| `enable_ai_recommendations` | AI-powered job matching | false | AI |
+| `enable_module_federation` | Micro-frontend loading | false | Frontend |
+| `enable_collaboration` | Team collaboration features | false | Social |
+| `enable_video_interviews` | WebRTC video interviews | true | Video |
+| `enable_stripe_payments` | Live payment processing | false | Billing |
+
+**Admin API:**
+- `GET /api/v1/admin/feature-flags` — list all flags
+- `GET /api/v1/admin/feature-flags/{flagName}` — get flag state
+- `POST /api/v1/admin/feature-flags/{flagName}/enable` — enable
+- `POST /api/v1/admin/feature-flags/{flagName}/disable` — disable
+- `POST /api/v1/admin/feature-flags/{flagName}/reset` — reset to default
+
+### 18.2 CI/CD Pipeline
+
+**Platform:** GitHub Actions | **Branch Strategy:** feature → develop → staging → main
+
+| Stage | Action | Trigger |
+|-------|--------|---------|
+| Lint | ESLint (frontend), Checkstyle (backend) | PR opened |
+| Test | Vitest (frontend), JUnit5 (backend) | PR opened |
+| Build | `npm run build` + `./mvnw package -DskipTests` | PR merged to develop |
+| Scan | `npm audit`, OWASP dependency-check | PR merged |
+| Docker | Build per-service images via `SERVICE_NAME` arg | Tag pushed |
+| Deploy (staging) | `kubectl apply` to staging namespace | develop branch |
+| Deploy (prod) | Manual approval gate → rolling update | main branch |
+
+**Rollback:** `kubectl rollout undo deployment/{service} -n talentsphere-prod`
+**Secrets:** Managed via GitHub Secrets → injected as K8s Secrets at deploy time
+
+### 18.3 Monitoring Alerts
+
+| Alert | Condition | Severity | Channel |
+|-------|-----------|----------|---------|
+| Service Down | Health check fails 3× consecutive | P1 Critical | PagerDuty |
+| High Error Rate | 5xx &gt; 5% of requests in 5 min | P1 Critical | PagerDuty |
+| High Latency | p95 &gt; 500ms sustained 10 min | P2 Warning | Slack |
+| Circuit Breaker Open | Any breaker OPEN &gt; 2 min | P2 Warning | Slack |
+| Queue Depth | RabbitMQ depth &gt; 10,000 messages | P2 Warning | Slack |
+| DB Connection Pool | Pool utilization &gt; 80% | P3 Info | Slack |
+| Disk Usage | Any volume &gt; 85% full | P3 Info | Email |
+| Certificate Expiry | TLS cert expires in &lt; 30 days | P2 Warning | Email |
+
+---
+
+## 19. Business Rules & Limits
+
+### 19.1 Subscription Plan Feature Matrix
+
+| Feature | Free | Pro ($19/mo) | Enterprise (Custom) |
+|---------|------|-------------|---------------------|
+| Job applications / month | 5 | Unlimited | Unlimited |
+| Saved jobs | 10 | Unlimited | Unlimited |
+| AI resume reviews | 1 | 10 | Unlimited |
+| AI chat messages / day | 5 | 50 | Unlimited |
+| Course enrollments | 3 | Unlimited | Unlimited |
+| Networking connections | 50 | Unlimited | Unlimited |
+| Video interviews / month | 2 | 20 | Unlimited |
+| Analytics dashboard | Basic | Advanced | Full + Custom |
+| Priority support | ❌ | Email | Dedicated |
+| Team management | ❌ | ❌ | ✅ |
+| SSO / SAML | ❌ | ❌ | ✅ |
+| API access | ❌ | ❌ | ✅ |
+
+### 19.2 Badge Catalog
+
+| Badge Code | Name | Trigger Condition | XP Bonus |
+|-----------|------|------------------|---------|
+| `EARLY_ADOPTER` | Early Adopter | Registered in first 1,000 users | 0 |
+| `PROFILE_COMPLETE` | Profile Pro | Completion score = 100% | 50 |
+| `FIRST_APPLICATION` | Eager Applicant | First job application | 10 |
+| `HIRED` | Success Story | Status → HIRED | 500 |
+| `COURSE_COMPLETE` | Lifelong Learner | First course completed | 100 |
+| `CHALLENGE_MASTER` | Code Wizard | 10 challenges completed | 200 |
+| `NETWORKER` | Connector | 50+ accepted connections | 100 |
+| `TOP_10` | Leaderboard Legend | Top 10 monthly leaderboard | 250 |
+| `STREAK_7` | Week Warrior | 7-day consecutive login streak | 75 |
+
+### 19.3 File Upload Limits
+
+| File Type | Max Size | Accepted MIME Types | Storage |
+|-----------|---------|---------------------|---------|
+| Resume | 10 MB | application/pdf | S3 (private, signed URL) |
+| Avatar | 5 MB | image/png, image/jpeg, image/webp | S3 (public CDN) |
+| Cover Letter | 5 MB | application/pdf, text/plain | S3 (private) |
+| Chat Attachment | 25 MB | image/*, application/pdf, text/* | S3 (private, signed URL) |
+
+**Signed URL Expiry:** 1 hour for private files
+**CDN:** CloudFront for public assets (avatars, course thumbnails)
+
+### 19.4 Pagination Standard
+
+All list endpoints use consistent pagination:
+```json
+{
+  "content": [...],
+  "page": 0,
+  "size": 20,
+  "totalElements": 150,
+  "totalPages": 8,
+  "first": true,
+  "last": false
+}
+```
+**Default page size:** 20 | **Maximum page size:** 100
+**Exception:** Messaging uses cursor-based pagination: `{ before: "messageId", limit: 50 }`
+
+### 19.5 CORS Whitelist
+
+```
+Allowed Origins:
+  - http://localhost:5173  (Vite dev server)
+  - http://localhost:3000  (alternative dev)
+  - https://talentsphere.com
+  - https://www.talentsphere.com
+  - https://app.talentsphere.com
+
+Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+Headers: Authorization, Content-Type, X-Correlation-ID
+Credentials: true
+Max Age: 3600s
+```
+
+### 19.6 Data Retention & Deletion Policy
+
+| Data | Retention | Deletion Method |
+|------|----------|-----------------|
+| Active user data | Indefinite | User-initiated |
+| Soft-deleted accounts | 30 days grace | Hard delete via scheduled job |
+| Chat messages | 2 years | Anonymized after retention period |
+| Job listings (closed) | 1 year | Archived to cold storage |
+| Audit logs | 3 years | Regulatory requirement |
+| Session/refresh tokens | 7 days (refresh) | Automatic expiry |
+| Password reset tokens | 1 hour | Automatic expiry |
+| File uploads (orphaned) | 90 days | Cleanup cron job |
+
+**Account Deletion Flow:**
+1. User requests deletion via Settings → Danger Zone
+2. 7-day cancellation grace period begins
+3. After grace period: soft-delete user, anonymize profile, cascade-delete connections
+4. After 30 days: hard-delete all user data, purge from search index
+5. Data export available via `GET /api/v1/users/{id}/export` (GDPR compliance)
+
+### 19.7 Accessibility & Internationalization
+
+- **WCAG Level:** 2.1 AA compliance target
+- **Keyboard Navigation:** All interactive elements reachable via Tab/Shift+Tab
+- **Screen Readers:** ARIA labels on all form fields, buttons, and dynamic content
+- **Focus Management:** Focus trapped in modals, restored on close
+- **i18n:** English-only (v1). Multi-language support planned for v2 using `react-i18next`
+- **API Versioning:** Path-based (`/api/v1/`, `/api/v2/`). v1 maintained for 12 months after v2 release.
+
+---
+
+## 20. Missing API Specifications
+
+### 20.1 Search Service (8088) — `/api/v1/search`
+
+| Method | Endpoint | Description | Auth | Request | Response |
+|--------|----------|-------------|------|---------|----------|
+| GET | `/query` | Full-text search | USER | q, type (jobs/users/courses), page, size | SearchResultsDto |
+| GET | `/autocomplete` | Typeahead suggestions | USER | q, type, limit(5) | List&lt;String&gt; |
+| GET | `/jobs/facets` | Job filter aggregations | USER | keyword, location | FacetResultDto |
+| POST | `/index/{type}/{id}` | Index/update document | INTERNAL | Document body | { success } |
+| DELETE | `/index/{type}/{id}` | Remove from index | INTERNAL | — | { success } |
+
+**Searchable Fields:** jobs (title, description, requirements, location), users (name, headline, skills), courses (title, description, category)
+**Fuzzy Matching:** Enabled with edit distance 2 | **Boolean Operators:** AND, OR, NOT supported
+
+### 20.2 Company Service (8086) — `/api/v1/companies`
+
+| Method | Endpoint | Description | Auth | Request | Response |
+|--------|----------|-------------|------|---------|----------|
+| GET | `/` | List companies | PUBLIC | keyword, industry, size, page | Page&lt;CompanyDto&gt; |
+| GET | `/{id}` | Company details | PUBLIC | — | CompanyDetailDto |
+| POST | `/` | Create company | RECRUITER | CreateCompanyDto | CompanyDto |
+| PUT | `/{id}` | Update company | Owner/Admin | UpdateCompanyDto | CompanyDto |
+| DELETE | `/{id}` | Delete company | Owner/Admin | — | { success } |
+| GET | `/{id}/jobs` | Company's job listings | PUBLIC | — | List&lt;JobSummaryDto&gt; |
+
+**MongoDB Schema (company_db):**
+```javascript
+{
+  _id: ObjectId,
+  name: "string",
+  logoUrl: "string",
+  description: "string",
+  industry: "TECHNOLOGY" | "FINANCE" | "HEALTHCARE" | "ENERGY" | "OTHER",
+  size: "1-10" | "11-50" | "51-200" | "201-1000" | "1000+",
+  location: "string",
+  website: "string",
+  recruiters: ["uuid"],
+  jobCount: 0,
+  verified: false,
+  createdAt: ISODate,
+  updatedAt: ISODate
+}
+db.companies.createIndex({ name: 1 });
+db.companies.createIndex({ industry: 1, location: 1 });
+```
+
+### 20.3 AI Service (8099) — `/api/v1/ai`
+
+| Method | Endpoint | Description | Auth | Request | Response |
+|--------|----------|-------------|------|---------|----------|
+| POST | `/resume/analyze` | Analyze resume quality | USER | { resumeText } | ResumeAnalysisDto |
+| POST | `/match` | Job-candidate match score | RECRUITER | { jobId, candidateId } | { score, explanation } |
+| POST | `/interview-prep` | Generate interview Qs | USER | { jobId } | List&lt;QuestionDto&gt; |
+| POST | `/career-path` | Career recommendations | USER | { currentRole, skills } | CareerPathDto |
+| POST | `/chat` | AI assistant chat | USER | { message, conversationId } | { response, conversationId } |
+
+### 20.4 Admin Endpoints (via existing services)
+
+Admin capabilities are exposed through existing services with `@PreAuthorize("hasRole('ADMIN')")`:
+
+| Method | Endpoint | Service | Description |
+|--------|----------|---------|-------------|
+| GET | `/api/v1/admin/users` | user-service | List all users (paginated) |
+| PATCH | `/api/v1/admin/users/{id}/ban` | user-service | Ban/unban user |
+| PATCH | `/api/v1/admin/users/{id}/role` | user-service | Change user role |
+| GET | `/api/v1/admin/feature-flags` | api-gateway | List feature flags |
+| POST | `/api/v1/admin/feature-flags/{name}/enable` | api-gateway | Toggle flag |
+| GET | `/api/v1/admin/metrics` | api-gateway | System metrics summary |
+| GET | `/api/v1/admin/services/health` | api-gateway | All service health status |
+
+### 20.5 Public Stats Endpoint
+
+**Owner:** api-gateway (aggregates from multiple services, cached in Redis)
+
+`GET /api/v1/stats/public` — No auth required
+
+```json
+{
+  "totalUsers": 42000,
+  "totalJobs": 1800,
+  "totalCompanies": 350,
+  "totalCourses": 120,
+  "successHires": 6500
+}
+```
+**Cache TTL:** 5 minutes | **Fallback:** Static values if services unavailable
+
+### 20.6 Additional Profile Schemas
+
+**Table: certifications** (add to profile_db)
+```sql
+CREATE TABLE certifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    issuer VARCHAR(200),
+    issue_date DATE,
+    expiry_date DATE,
+    credential_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT NOW(),
+    version BIGINT DEFAULT 0
+);
+CREATE INDEX idx_certifications_profile ON certifications(profile_id);
+```
+
+**Table: portfolio_projects** (add to profile_db)
+```sql
+CREATE TABLE portfolio_projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    project_url VARCHAR(500),
+    repo_url VARCHAR(500),
+    tech_stack TEXT[],
+    created_at TIMESTAMP DEFAULT NOW(),
+    version BIGINT DEFAULT 0
+);
+CREATE INDEX idx_portfolio_profile ON portfolio_projects(profile_id);
+```
+
+### 20.7 Notification Templates
+
+| Template | Trigger Event | Channel | Subject/Title |
+|----------|--------------|---------|---------------|
+| Welcome | user.created | Email + In-App | "Welcome to TalentSphere!" |
+| Application Received | application.created | Email (recruiter) | "New application for {jobTitle}" |
+| Status Changed | application.status_changed | Email + In-App (candidate) | "Application update: {newStatus}" |
+| Interview Scheduled | interview.scheduled | Email + In-App | "Interview scheduled: {date}" |
+| Connection Request | connection.requested | In-App + Push | "{name} wants to connect" |
+| Course Completed | course.completed | In-App | "Congratulations! You completed {courseTitle}" |
+| Badge Earned | badge.earned | In-App | "You earned the {badgeName} badge!" |
+| Password Reset | auth.password.reset_requested | Email | "Reset your password" |
+| Payment Confirmation | payment.completed | Email | "Subscription confirmed: {planName}" |
+
+---
+
 ## Appendix A: Service Details
 
 ### Complete Service Registry with Test Coverage
@@ -1920,7 +2405,7 @@ Requirements:
 | 16 | networking-service | 8097 | networking_db | NetworkingServiceTest.java | ~85% | ✅ Production |
 | 17 | payment-service | 8098 | payment_db | PaymentServiceTest.java | ~85% | ✅ Production |
 | 18 | ai-service | 8099 | ai_db | AiServiceTest.java | ~90% | ✅ Production |
-| 19 | chat-service | 8097 | chatservice | ChatServiceTest.java | ~85% | ✅ Production |
+| 19 | chat-service | 8100 | chatservice | ChatServiceTest.java | ~85% | ✅ Production |
 
 **Total Services:** 19  
 **Services with Unit Tests:** 19/19 (100%)  
@@ -1960,7 +2445,7 @@ Requirements:
 #### Application Service (8085)
 - `POST /api/v1/applications` - Apply to job
 - `GET /api/v1/applications/user/{userId}` - Get user's applications
-- `PUT /api/v1/applications/{id}/status` - Update application status
+- `PATCH /api/v1/applications/{id}/status` - Update application status
 
 #### Messaging Service (8096)
 - `POST /api/v1/messages` - Send message
@@ -2057,7 +2542,8 @@ SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
 **Document Control:**
 - **Owner:** TalentSphere Architecture Team
 - **Review Cycle:** Quarterly
-- **Next Review:** 2025-04-04
+- **Last Reviewed:** 2026-05-17
+- **Next Review:** 2026-08-17
 - **Distribution:** All Engineering Teams
 
 **This document supersedes all previous architecture documentation, READMEs, and wikis.**
@@ -2067,7 +2553,7 @@ SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
 ## Appendix E: Implementation Completion Summary
 
 ### C.1 Phase 1: Infrastructure Unification (Supabase) — ✅ COMPLETE
-- [x] Migrate all 22 Backend Microservices to Supabase PostgreSQL
+- [x] Migrate all 19 core Backend Microservices to Supabase PostgreSQL (3 optional profile services excluded)
 - [x] Update `docker-compose.yml` for unified DB connectivity
 - [x] Configure SSL and JWT environment variables for all services
 - [x] Remove local PostgreSQL container dependency
