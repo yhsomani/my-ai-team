@@ -65,6 +65,7 @@ const fetchCoursesFromGateway = async (params?: { category?: string }): Promise<
   return apiData.map((course: any) => ({
     id: course.id,
     title: course.title,
+    slug: course.slug,
     provider: course.instructorId || 'TalentSphere',
     status: 'NOT_STARTED' as const,
     progress: 0,
@@ -74,13 +75,13 @@ const fetchCoursesFromGateway = async (params?: { category?: string }): Promise<
     duration: course.lessonIds
       ? `${course.lessonIds.length * 15} min`
       : 'Self-paced',
-    difficulty: mapDifficulty(course.rating),
+    difficulty: (course.level || 'Normal') as Course['difficulty'],
     lessons: (course.lessonIds || []).map((lid: string, idx: number) => ({
       id: lid,
       courseId: course.id,
       title: `Lesson ${idx + 1}`,
       content: '',
-      orderNumber: idx + 1,
+      orderIndex: idx + 1,
       durationMinutes: 15,
       isFree: idx === 0,
     })),
@@ -103,6 +104,7 @@ const fetchCourseByIdFromGateway = async (courseId: string): Promise<Course> => 
   return {
     id: course.id,
     title: course.title,
+    slug: course.slug,
     provider: course.instructorId || 'TalentSphere',
     status: 'NOT_STARTED',
     progress: 0,
@@ -110,18 +112,24 @@ const fetchCourseByIdFromGateway = async (courseId: string): Promise<Course> => 
     xp: course.xpReward || 0,
     category: course.category,
     duration: `${lessons.length * 15} min`,
-    difficulty: mapDifficulty(course.rating),
+    difficulty: (course.level || 'Normal') as Course['difficulty'],
     lessons: lessons.map((l: any, idx: number) => ({
       id: l.id,
       courseId: course.id,
       title: l.title,
       content: l.content || '',
-      orderNumber: l.orderNumber || idx + 1,
+      orderIndex: l.orderIndex || idx + 1,
       videoUrl: l.videoUrl,
       durationMinutes: l.durationMinutes || 15,
       isFree: idx === 0,
     })),
   };
+};
+
+const fetchCourseBySlugFromGateway = async (slug: string): Promise<Course> => {
+  const response = await apiClient.get(`/api/v1/lms/courses/slug/${slug}`, { timeout: 5000 });
+  const course = response.data?.data || response.data;
+  return fetchCourseByIdFromGateway(course.id);
 };
 
 const enrollViaGateway = async (courseId: string, userId: string): Promise<Enrollment> => {
@@ -156,6 +164,14 @@ const fetchEnrollmentsFromGateway = async (userId: string): Promise<Enrollment[]
     completedAt: e.completedAt,
     completedLessonIds: e.completedLessonIds || [],
   }));
+};
+
+const markLessonCompleteViaGateway = async (courseId: string, lessonId: string, userId: string): Promise<void> => {
+  await apiClient.post(
+    `/api/v1/lms/courses/${courseId}/lessons/${lessonId}/complete`,
+    null,
+    { params: { userId }, timeout: 5000 }
+  );
 };
 
 // ---------------------------------------------------------------------------
@@ -195,9 +211,9 @@ const fetchCoursesFromSupabase = async (params?: { category?: string; published?
   const courseIds = data.map(c => c.id);
   const { data: lessonData } = await supabase
     .from('lessons')
-    .select('id, course_id, title, order_number, duration_minutes, is_free_preview')
+    .select('id, course_id, title, order_index, duration_minutes, is_free_preview')
     .in('course_id', courseIds)
-    .order('order_number', { ascending: true });
+    .order('order_index', { ascending: true });
 
   const lessonsByCourse: Record<string, any[]> = {};
   (lessonData || []).forEach(l => {
@@ -208,6 +224,7 @@ const fetchCoursesFromSupabase = async (params?: { category?: string; published?
   return data.map(course => ({
     id: course.id,
     title: course.title,
+    slug: course.slug,
     provider: course.profiles?.full_name || 'Unknown',
     status: 'NOT_STARTED' as const,
     progress: 0,
@@ -221,7 +238,7 @@ const fetchCoursesFromSupabase = async (params?: { category?: string; published?
       courseId: course.id,
       title: l.title,
       content: '',
-      orderNumber: l.order_number,
+      orderIndex: l.order_index,
       durationMinutes: l.duration_minutes || 15,
       isFree: l.is_free_preview || false,
     })),
@@ -241,7 +258,7 @@ const fetchCourseByIdFromSupabase = async (courseId: string): Promise<Course> =>
       lessons (
         id,
         title,
-        order_number,
+        order_index,
         duration_minutes,
         is_free_preview
       )
@@ -254,6 +271,7 @@ const fetchCourseByIdFromSupabase = async (courseId: string): Promise<Course> =>
   return {
     id: data.id,
     title: data.title,
+    slug: data.slug,
     provider: data.profiles?.full_name || 'Unknown',
     status: 'NOT_STARTED',
     progress: 0,
@@ -267,7 +285,7 @@ const fetchCourseByIdFromSupabase = async (courseId: string): Promise<Course> =>
       courseId: data.id,
       title: l.title,
       content: '',
-      orderNumber: l.order_number,
+      orderIndex: l.order_index,
       durationMinutes: l.duration_minutes || 15,
       isFree: l.is_free_preview || false,
     })),
@@ -445,6 +463,19 @@ export const lmsService = {
     return fetchCourseByIdFromMock(courseId);
   },
 
+  getCourseBySlug: async (slug: string): Promise<Course> => {
+    if (_gatewayReachable !== false) {
+      try {
+        return await fetchCourseBySlugFromGateway(slug);
+      } catch (err) {
+        _gatewayReachable = false;
+        console.warn('[LMS] getCourseBySlug: gateway failed, trying mock...', err);
+      }
+    }
+    // No Supabase slug fallback implemented yet for simplicity
+    return fetchCoursesFromMock().find(c => c.slug === slug) || fetchCourseByIdFromMock(slug);
+  },
+
   enrollInCourse: async (courseId: string, userId: string): Promise<Enrollment> => {
     if (_gatewayReachable !== false) {
       try {
@@ -489,8 +520,29 @@ export const lmsService = {
     return fetchEnrollmentsFromMock(userId);
   },
 
-  getLessonProgress: async (enrollmentId: string): Promise<any[]> => {
-    // Only Supabase has lesson_progress table
+  getLessonProgress: async (enrollmentId: string, userId?: string, courseId?: string): Promise<any[]> => {
+    // Try Gateway first if we have userId and courseId
+    if (userId && courseId && _gatewayReachable !== false) {
+      try {
+        const response = await apiClient.get(`/api/v1/lms/courses/${courseId}/enrollment`, {
+            params: { userId },
+            timeout: 5000
+        });
+        const enrollment = response.data?.data;
+        if (enrollment) {
+            _gatewayReachable = true;
+            // Map completedLessonIds to the progress format the UI expects
+            return (enrollment.completedLessonIds || []).map((lid: string) => ({
+                lesson_id: lid,
+                completed: true
+            }));
+        }
+      } catch (err) {
+        console.warn('[LMS] getLessonProgress: gateway failed, trying Supabase...', err);
+      }
+    }
+
+    // Tier 2: Supabase
     if (_supabaseReachable !== false) {
       try {
         const { data, error } = await supabase
@@ -500,7 +552,7 @@ export const lmsService = {
             lessons (
               id,
               title,
-              order_number
+              order_index
             )
           `)
           .eq('enrollment_id', enrollmentId);
@@ -518,7 +570,18 @@ export const lmsService = {
     return [];
   },
 
-  markLessonComplete: async (enrollmentId: string, lessonId: string): Promise<void> => {
+  markLessonComplete: async (enrollmentId: string, lessonId: string, userId?: string, courseId?: string): Promise<void> => {
+    // Try Gateway first
+    if (userId && courseId && _gatewayReachable !== false) {
+      try {
+        await markLessonCompleteViaGateway(courseId, lessonId, userId);
+        _gatewayReachable = true;
+        return;
+      } catch (err) {
+        console.warn('[LMS] markLessonComplete: gateway failed, trying Supabase...', err);
+      }
+    }
+
     if (_supabaseReachable !== false) {
       try {
         const { data: existing } = await supabase

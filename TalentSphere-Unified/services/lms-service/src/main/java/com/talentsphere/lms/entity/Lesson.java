@@ -14,7 +14,7 @@ public class Lesson {
   private String courseId;
   private String title;
   private String content;
-  private int orderNumber;
+  private int orderIndex;
   private String videoUrl;
   private int durationMinutes;
   private String prerequisiteLessonId;

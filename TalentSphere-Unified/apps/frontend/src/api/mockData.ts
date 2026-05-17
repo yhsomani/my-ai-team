@@ -51,9 +51,9 @@ export const MOCK_COURSES: Course[] = [
     duration: '6 hours',
     difficulty: 'Advanced',
     lessons: [
-      { id: 'lesson-react-1', courseId: 'course-react-patterns', title: 'Introduction to Render Props', content: '', orderNumber: 1, videoUrl: '', durationMinutes: 10, isFree: true },
-      { id: 'lesson-react-2', courseId: 'course-react-patterns', title: 'Custom Hooks Deep Dive', content: '', orderNumber: 2, videoUrl: '', durationMinutes: 15, isFree: false },
-      { id: 'lesson-react-3', courseId: 'course-react-patterns', title: 'Compound Components', content: '', orderNumber: 3, videoUrl: '', durationMinutes: 13, isFree: false },
+      { id: 'lesson-react-1', courseId: 'course-react-patterns', title: 'Introduction to Render Props', content: '', orderIndex: 1, videoUrl: '', durationMinutes: 10, isFree: true },
+      { id: 'lesson-react-2', courseId: 'course-react-patterns', title: 'Custom Hooks Deep Dive', content: '', orderIndex: 2, videoUrl: '', durationMinutes: 15, isFree: false },
+      { id: 'lesson-react-3', courseId: 'course-react-patterns', title: 'Compound Components', content: '', orderIndex: 3, videoUrl: '', durationMinutes: 13, isFree: false },
     ],
   },
   {
@@ -68,10 +68,10 @@ export const MOCK_COURSES: Course[] = [
     duration: '10 hours',
     difficulty: 'Beginner',
     lessons: [
-      { id: 'lesson-python-1', courseId: 'course-python-basics', title: 'Variables & Data Types', content: '', orderNumber: 1, videoUrl: '', durationMinutes: 12, isFree: true },
-      { id: 'lesson-python-2', courseId: 'course-python-basics', title: 'Control Flow', content: '', orderNumber: 2, videoUrl: '', durationMinutes: 14, isFree: false },
-      { id: 'lesson-python-3', courseId: 'course-python-basics', title: 'Functions & Modules', content: '', orderNumber: 3, videoUrl: '', durationMinutes: 16, isFree: false },
-      { id: 'lesson-python-4', courseId: 'course-python-basics', title: 'OOP in Python', content: '', orderNumber: 4, videoUrl: '', durationMinutes: 20, isFree: false },
+      { id: 'lesson-python-1', courseId: 'course-python-basics', title: 'Variables & Data Types', content: '', orderIndex: 1, videoUrl: '', durationMinutes: 12, isFree: true },
+      { id: 'lesson-python-2', courseId: 'course-python-basics', title: 'Control Flow', content: '', orderIndex: 2, videoUrl: '', durationMinutes: 14, isFree: false },
+      { id: 'lesson-python-3', courseId: 'course-python-basics', title: 'Functions & Modules', content: '', orderIndex: 3, videoUrl: '', durationMinutes: 16, isFree: false },
+      { id: 'lesson-python-4', courseId: 'course-python-basics', title: 'OOP in Python', content: '', orderIndex: 4, videoUrl: '', durationMinutes: 20, isFree: false },
     ],
   },
   {
@@ -86,11 +86,11 @@ export const MOCK_COURSES: Course[] = [
     duration: '12 hours',
     difficulty: 'Expert',
     lessons: [
-      { id: 'lesson-sysdesign-1', courseId: 'course-system-design', title: 'Scalability Fundamentals', content: '', orderNumber: 1, durationMinutes: 25, isFree: true },
-      { id: 'lesson-sysdesign-2', courseId: 'course-system-design', title: 'Database Design', content: '', orderNumber: 2, durationMinutes: 30, isFree: false },
-      { id: 'lesson-sysdesign-3', courseId: 'course-system-design', title: 'Caching Strategies', content: '', orderNumber: 3, durationMinutes: 22, isFree: false },
-      { id: 'lesson-sysdesign-4', courseId: 'course-system-design', title: 'Load Balancing', content: '', orderNumber: 4, durationMinutes: 18, isFree: false },
-      { id: 'lesson-sysdesign-5', courseId: 'course-system-design', title: 'Message Queues', content: '', orderNumber: 5, durationMinutes: 20, isFree: false },
+      { id: 'lesson-sysdesign-1', courseId: 'course-system-design', title: 'Scalability Fundamentals', content: '', orderIndex: 1, durationMinutes: 25, isFree: true },
+      { id: 'lesson-sysdesign-2', courseId: 'course-system-design', title: 'Database Design', content: '', orderIndex: 2, durationMinutes: 30, isFree: false },
+      { id: 'lesson-sysdesign-3', courseId: 'course-system-design', title: 'Caching Strategies', content: '', orderIndex: 3, durationMinutes: 22, isFree: false },
+      { id: 'lesson-sysdesign-4', courseId: 'course-system-design', title: 'Load Balancing', content: '', orderIndex: 4, durationMinutes: 18, isFree: false },
+      { id: 'lesson-sysdesign-5', courseId: 'course-system-design', title: 'Message Queues', content: '', orderIndex: 5, durationMinutes: 20, isFree: false },
     ],
   },
   {
@@ -105,10 +105,10 @@ export const MOCK_COURSES: Course[] = [
     duration: '8 hours',
     difficulty: 'Normal',
     lessons: [
-      { id: 'lesson-dk-1', courseId: 'course-docker-k8s', title: 'Docker Basics', content: '', orderNumber: 1, durationMinutes: 15, isFree: true },
-      { id: 'lesson-dk-2', courseId: 'course-docker-k8s', title: 'Multi-stage Builds', content: '', orderNumber: 2, durationMinutes: 12, isFree: false },
-      { id: 'lesson-dk-3', courseId: 'course-docker-k8s', title: 'Kubernetes Architecture', content: '', orderNumber: 3, durationMinutes: 25, isFree: false },
-      { id: 'lesson-dk-4', courseId: 'course-docker-k8s', title: 'Helm Charts', content: '', orderNumber: 4, durationMinutes: 18, isFree: false },
+      { id: 'lesson-dk-1', courseId: 'course-docker-k8s', title: 'Docker Basics', content: '', orderIndex: 1, durationMinutes: 15, isFree: true },
+      { id: 'lesson-dk-2', courseId: 'course-docker-k8s', title: 'Multi-stage Builds', content: '', orderIndex: 2, durationMinutes: 12, isFree: false },
+      { id: 'lesson-dk-3', courseId: 'course-docker-k8s', title: 'Kubernetes Architecture', content: '', orderIndex: 3, durationMinutes: 25, isFree: false },
+      { id: 'lesson-dk-4', courseId: 'course-docker-k8s', title: 'Helm Charts', content: '', orderIndex: 4, durationMinutes: 18, isFree: false },
     ],
   },
   {
@@ -123,9 +123,9 @@ export const MOCK_COURSES: Course[] = [
     duration: '15 hours',
     difficulty: 'Advanced',
     lessons: [
-      { id: 'lesson-ml-1', courseId: 'course-ml-fundamentals', title: 'Supervised Learning', content: '', orderNumber: 1, durationMinutes: 30, isFree: true },
-      { id: 'lesson-ml-2', courseId: 'course-ml-fundamentals', title: 'Unsupervised Learning', content: '', orderNumber: 2, durationMinutes: 25, isFree: false },
-      { id: 'lesson-ml-3', courseId: 'course-ml-fundamentals', title: 'Neural Networks', content: '', orderNumber: 3, durationMinutes: 35, isFree: false },
+      { id: 'lesson-ml-1', courseId: 'course-ml-fundamentals', title: 'Supervised Learning', content: '', orderIndex: 1, durationMinutes: 30, isFree: true },
+      { id: 'lesson-ml-2', courseId: 'course-ml-fundamentals', title: 'Unsupervised Learning', content: '', orderIndex: 2, durationMinutes: 25, isFree: false },
+      { id: 'lesson-ml-3', courseId: 'course-ml-fundamentals', title: 'Neural Networks', content: '', orderIndex: 3, durationMinutes: 35, isFree: false },
     ],
   },
   {
@@ -140,10 +140,10 @@ export const MOCK_COURSES: Course[] = [
     duration: '7 hours',
     difficulty: 'Advanced',
     lessons: [
-      { id: 'lesson-ts-1', courseId: 'course-typescript-deep', title: 'Advanced Generics', content: '', orderNumber: 1, durationMinutes: 20, isFree: true },
-      { id: 'lesson-ts-2', courseId: 'course-typescript-deep', title: 'Mapped Types', content: '', orderNumber: 2, durationMinutes: 18, isFree: false },
-      { id: 'lesson-ts-3', courseId: 'course-typescript-deep', title: 'Template Literal Types', content: '', orderNumber: 3, durationMinutes: 15, isFree: false },
-      { id: 'lesson-ts-4', courseId: 'course-typescript-deep', title: 'Type-safe Libraries', content: '', orderNumber: 4, durationMinutes: 22, isFree: false },
+      { id: 'lesson-ts-1', courseId: 'course-typescript-deep', title: 'Advanced Generics', content: '', orderIndex: 1, durationMinutes: 20, isFree: true },
+      { id: 'lesson-ts-2', courseId: 'course-typescript-deep', title: 'Mapped Types', content: '', orderIndex: 2, durationMinutes: 18, isFree: false },
+      { id: 'lesson-ts-3', courseId: 'course-typescript-deep', title: 'Template Literal Types', content: '', orderIndex: 3, durationMinutes: 15, isFree: false },
+      { id: 'lesson-ts-4', courseId: 'course-typescript-deep', title: 'Type-safe Libraries', content: '', orderIndex: 4, durationMinutes: 22, isFree: false },
     ],
   },
 ];

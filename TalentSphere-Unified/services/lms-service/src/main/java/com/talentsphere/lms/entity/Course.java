@@ -12,11 +12,15 @@ public class Course {
   private String id;
   @Indexed
   private String title;
+  @Indexed(unique = true)
+  private String slug;
   private String description;
   @Indexed
   private String instructorId;
   @Indexed
   private String category;
+  private String level;
+  private int xpReward;
   private double price;
   private String rating;
   private int studentCount;

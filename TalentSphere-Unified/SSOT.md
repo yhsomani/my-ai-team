@@ -1,6 +1,6 @@
 # TalentSphere — Single Source of Truth (SSOT)
 
-**Version:** 6.0.0 (Production Ready & Decoupled)  
+**Version:** 6.1.0 (Production Ready & Decoupled)  
 **Last Updated:** 2026-05-07  
 **Status:** Authoritative Reference — Supersedes All Previous Documentation  
 **Implementation Status:** ✅ ALL PHASES COMPLETE  
@@ -433,6 +433,8 @@ public class JobApplication {
 
 ### 4.3 Security Architecture
 
+> **Authentication Mode Note:** Production uses Supabase-issued JWTs validated at the gateway. The auth-service issues application-level tokens in development/self-hosted mode. The gateway's JWT validation is configured via environment variable `AUTH_MODE: supabase|internal`.
+
 #### JWT Flow
 1. User submits credentials to /api/auth/login
 2. Auth service validates, generates JWT (RS256, 15min expiry) + Refresh Token (7 days)
@@ -477,7 +479,6 @@ Every service must validate these at startup:
 - RABBITMQ_HOST: localhost
 - RABBITMQ_PORT: 5672
 - JWT_SECRET: <required>
-- NODE_ENV: development|production
 
 ---
 
@@ -522,6 +523,11 @@ Error response:
 | POST | /login | Authenticate | { email, password } | { accessToken, refreshToken, user } |
 | POST | /refresh | Refresh token | { refreshToken } | { accessToken } |
 | POST | /logout | Invalidate token | - | { success: true } |
+| POST | /forgot-password | Request password reset | - | { email } | { success: true } |
+| POST | /mfa/setup | Setup MFA | USER | - | { qrCodeUrl, secret } |
+| POST | /mfa/verify | Verify MFA setup | USER | { code } | { success: true } |
+| POST | /reset-password | Submit new password | - | { token, newPassword } | { success: true } |
+| POST | /oauth/callback/{provider} | OAuth callback | - | (handled by provider) | redirect + tokens |
 | GET | /health | Health check | - | { status: "UP" } |
 
 **Validations:**
@@ -547,6 +553,12 @@ Error response:
 | POST | /{userId}/experience | Add experience | Owner | ExperienceDto | ProfileDto |
 | DELETE | /{userId}/experience/{expId} | Remove experience | Owner | - | ProfileDto |
 | POST | /{userId}/skills | Add skills | Owner | { skills: [] } | ProfileDto |
+| POST | /{userId}/education | Add education | Owner | EducationDto | ProfileDto |
+| DELETE | /{userId}/education/{eduId} | Remove education | Owner | - | ProfileDto |
+| POST | /{userId}/certifications | Add certification | Owner | CertificationDto | ProfileDto |
+| DELETE | /{userId}/certifications/{id} | Remove cert | Owner | - | ProfileDto |
+| POST | /{userId}/portfolio | Add project | Owner | PortfolioProjectDto | ProfileDto |
+| DELETE | /{userId}/portfolio/{id} | Remove project | Owner | - | ProfileDto |
 
 #### Job Service (/api/v1/jobs)
 
@@ -557,7 +569,12 @@ Error response:
 | POST | / | Create job | RECRUITER | CreateJobDto | JobDto |
 | PUT | /{id} | Update job | Owner/Admin | UpdateJobDto | JobDto |
 | DELETE | /{id} | Delete job | Owner/Admin | - | { success } |
-| PATCH | /{id}/status | Change status | Owner | { status: OPEN\|CLOSED } | JobDto |
+| PATCH | /{id}/status | Change status | Owner | { status: OPEN|CLOSED } | JobDto |
+| POST | /{id}/save | Save job | USER | - | { success } |
+| DELETE | /{id}/save | Unsave job | USER | - | { success } |
+| GET | /saved | List saved jobs | USER | - | List<JobDto> |
+
+**JobType enum:** `FULL_TIME`, `PART_TIME`, `CONTRACT`, `FREELANCE`, `INTERNSHIP`, `TEMPORARY`
 
 **CreateJobDto:**
 ```json
@@ -577,7 +594,7 @@ Error response:
 
 | Method | Endpoint | Description | Auth | Request | Response |
 |--------|----------|-------------|------|---------|----------|
-| POST | / | Apply to job | USER | { jobId, coverLetter, resumeUrl } | ApplicationDto |
+| POST | / | Apply to job | USER | { jobId, coverLetter: text/plain, resumeUrl } | ApplicationDto |
 | GET | /user/{userId} | Get user's applications | Owner | - | List<ApplicationDto> |
 | GET | /job/{jobId} | Get job applications | RECRUITER | - | List<ApplicationDto> |
 | PATCH | /{id}/status | Update status | RECRUITER | { status } | ApplicationDto |
@@ -589,11 +606,13 @@ Error response:
 
 | Method | Endpoint | Description | Auth | Request | Response |
 |--------|----------|-------------|------|---------|----------|
-| GET | /courses | List courses | USER | category, level | Page<CourseDto> |
-| GET | /courses/{id} | Course details | USER | - | CourseDetailDto |
+| POST | /courses | Create course | ADMIN | CreateCourseDto | CourseDto |
+| GET | /courses | List courses | Public | category, level | Page<CourseDto> |
+| GET | /courses/{id} | Course details | Public | - | CourseDetailDto |
 | POST | /courses/{id}/enroll | Enroll in course | USER | - | EnrollmentDto |
 | GET | /my-courses | User's enrollments | USER | - | List<EnrollmentDto> |
 | PATCH | /enrollments/{id}/progress | Update progress | USER | { progress: 0-100 } | EnrollmentDto |
+| POST | /courses/{id}/rate | Rate course | USER | { rating: 1-5 } | CourseDto |
 
 #### Challenge Service (/api/v1/challenges)
 
@@ -685,6 +704,8 @@ Error response:
 | PATCH | /{id}/read | Mark as read | Owner | - | { success } |
 | POST | /read-all | Mark all as read | USER | - | { count } |
 | DELETE | /{id} | Delete notification | Owner | - | { success } |
+| GET | /preferences | Get preferences | USER | - | NotificationPreferencesDto |
+| PUT | /preferences | Update preferences | USER | NotificationPreferencesDto | NotificationPreferencesDto |
 
 ### 5.3 HTTP Status Codes
 
@@ -703,6 +724,10 @@ Error response:
 | 503 | Service Unavailable | Circuit breaker OPEN |
 
 ### 5.4 Rate Limiting
+*Enforcement Mechanism: Rate limiting is implemented via Spring Cloud Gateway Redis-based limiter with a sliding-window algorithm. Configuration is in `api-gateway/src/main/resources/application.yml` under `spring.cloud.gateway.filters`.*
+
+> **Enforcement:** Implemented via Spring Cloud Gateway Redis-based `RequestRateLimiter` with a sliding-window algorithm. Configuration is in `api-gateway/src/main/resources/application.yml` under `spring.cloud.gateway.filters`.
+
 
 | Endpoint Category | Limit | Window |
 |-------------------|-------|--------|
@@ -711,6 +736,7 @@ Error response:
 | File Upload | 10 requests | 1 minute |
 | Search | 30 requests | 1 minute |
 | Admin endpoints | 50 requests | 1 minute |
+| AI endpoints | 10 (Free) / 50 (Pro) / 200 (Enterprise) | 1 minute |
 
 Headers returned:
 ```
@@ -737,6 +763,8 @@ CREATE TABLE users (
     is_enabled BOOLEAN DEFAULT true,
     failed_login_attempts INT DEFAULT 0,
     locked_until TIMESTAMP,
+    mfa_enabled BOOLEAN DEFAULT false,
+    mfa_secret VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     version BIGINT DEFAULT 0
@@ -744,6 +772,16 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
+
+**Table: user_saved_jobs**
+```sql
+CREATE TABLE user_saved_jobs (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    job_id VARCHAR(50) NOT NULL,
+    saved_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, job_id)
+);
+```
 ```
 
 **Table: refresh_tokens**
@@ -759,6 +797,46 @@ CREATE TABLE refresh_tokens (
 
 CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
+
+**Table: password_reset_tokens**
+```sql
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
+CREATE INDEX idx_reset_tokens_expires ON password_reset_tokens(expires_at);
+```
+
+**Table: user_notification_preferences**
+```sql
+CREATE TABLE user_notification_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    email_digests BOOLEAN DEFAULT true,
+    push_notifications BOOLEAN DEFAULT true,
+    marketing_emails BOOLEAN DEFAULT false,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+```
+
+#### Gateway & Admin (api_gateway_db)
+
+**Table: feature_flags**
+```sql
+CREATE TABLE feature_flags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    enabled BOOLEAN DEFAULT false,
+    category VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
 #### Profiles (profile_db)
@@ -831,7 +909,7 @@ CREATE TABLE skills (
 CREATE TABLE profile_skills (
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     skill_id UUID REFERENCES skills(id) ON DELETE CASCADE,
-    proficiency_level INT CHECK (proficiency_level BETWEEN 1 AND 5),
+    proficiency_level INT CHECK (proficiency_level BETWEEN 1 AND 5) /* 1:Beginner, 2:Elementary, 3:Intermediate, 4:Advanced, 5:Expert */,
     PRIMARY KEY (profile_id, skill_id)
 );
 
@@ -1116,7 +1194,7 @@ db.enrollments.createIndex({ userId: 1, completedAt: -1 });
   _id: ObjectId,
   title: "Two Sum",
   description: "string",
-  category: "CODING" | "DESIGN" | "ARCHITECTURE",
+  category: "CODING",
   difficulty: "EASY" | "MEDIUM" | "HARD" | "EXPERT",
   testCases: [{
     input: "[2,7,11,15], 9",
@@ -1173,6 +1251,26 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 | **Temporal** | education.end_date >= start_date | Application-level validation |
 
 ---
+
+### 6.3 Elasticsearch Index Mappings
+
+**Index: jobs**
+```json
+{
+  "mappings": {
+    "properties": {
+      "title": { "type": "text", "analyzer": "english" },
+      "description": { "type": "text", "analyzer": "english" },
+      "location": { "type": "keyword" },
+      "type": { "type": "keyword" },
+      "status": { "type": "keyword" },
+      "salaryMin": { "type": "integer" },
+      "salaryMax": { "type": "integer" },
+      "requirements": { "type": "text", "analyzer": "english" }
+    }
+  }
+}
+```
 
 ## 7. End-to-End Workflows
 
@@ -1304,7 +1402,7 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 
 **UI Components:** HeroSection, StatsCounter, FeatureGrid, TestimonialCarousel, CTAButtons
 
-**Data Flow:** Fetch stats on mount from /api/v1/stats/public, cache for 5 minutes
+**Data Flow:** Fetch stats from `GET /api/v1/stats/public` (api-gateway, Section 20.5), cache for 5 minutes
 
 **Edge Cases:** Stats service down → Show cached/static values; Slow network → Lazy load below-fold content
 
@@ -1427,7 +1525,7 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 - Export to PDF (planned)
 - Sync with profile (optional)
 
-**State Management:** Local state with auto-save to localStorage every 30s
+**State Management:** Local state with auto-save to server via `POST /api/v1/profiles/{id}/resume-draft` (fallback to localStorage on network failure)
 
 **Edge Cases:** Browser crash → Recover from localStorage; Large resume → Virtualize lists; Print styles → CSS media query
 
@@ -1470,7 +1568,7 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 - Submit button
 - Test case results display
 
-**Categories:** CODING, DESIGN, ARCHITECTURE
+**Categories:** CODING
 
 **Difficulty:** EASY (green), MEDIUM (yellow), HARD (orange), EXPERT (red)
 
@@ -1549,7 +1647,7 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 1. **Account:** Email, password, 2FA setup
 2. **Notifications:** Email digests, push notifications, marketing emails
 3. **Privacy:** Profile visibility, appear in search, data export
-4. **Integrations:** LinkedIn, GitHub, Google sync
+4. **Integrations:** LinkedIn, GitHub, Google sync [PLANNED — NOT IMPLEMENTED]
 5. **Billing:** Current plan, payment method, invoices
 6. **Danger Zone:** Deactivate account, delete data
 
@@ -1590,6 +1688,12 @@ db.submissions.createIndex({ userId: 1, submittedAt: -1 });
 **Edge Cases:** AI service unavailable → Fallback message; Rate limit exceeded → Cooldown timer; Inappropriate content → Filter and warn
 
 ---
+
+### 8.15 Candidates Page (/candidates)
+- **Access:** RECRUITER only
+- **Purpose:** Centralized CRM for recruiters to discover, filter, and track talent across all their job postings.
+- **Key Features:** Talent pool search, boolean search for skills, save candidates to pipelines, bulk messaging.
+- **Data Flow:** Fetch from `/api/v1/networking/profiles` with recruiter filters; save pipelines to company_db.
 
 ## 9. Integration Points & Configuration
 
@@ -1920,6 +2024,9 @@ Requirements:
 | `challenge.passed` | challenge-service | gamification | userId, challengeId, difficulty, points | Accepted submission |
 | `user.hired` | application-service | gamification | userId, jobId | Status → HIRED |
 | `connection.accepted` | networking-service | notification, gamification | userId, connectedUserId | Connection accepted |
+| `interview.scheduled` | video-service | notification | sessionId, applicationId, startTime, candidateId, recruiterId | Interview created |
+| `connection.requested` | networking-service | notification | senderId, recipientId | Connection request sent |
+| `chat.message.sent` | chat-service | messaging-service | channelId, senderId, recipientId, content, type, timestamp | Message delivered for archival |
 | `profile.updated` | profile-service | search | userId, updatedFields[] | Profile edit |
 | `badge.earned` | gamification-service | notification | userId, badgeCode, badgeName | Badge criteria met |
 | `auth.password.reset_requested` | auth-service | notification | userId, email, resetLink | Forgot password |
@@ -1930,6 +2037,10 @@ Requirements:
 **Endpoint:** `/ws-chat` | **Protocol:** STOMP over WebSocket
 **Auth:** Bearer token in STOMP CONNECT headers
 **Heartbeat:** 10s send / 10s receive | **Reconnect:** Exponential backoff 1s→30s, max 10 attempts
+**Authentication Failure Behavior:**
+- If Bearer token is missing: server sends `ERROR` frame with message `"Authentication required"`, closes connection.
+- If Bearer token is expired: server sends `ERROR` frame with message `"Token expired"`, closes connection. Client should refresh token and reconnect.
+- If token valid but user banned: server sends `ERROR` frame with message `"Account suspended"`, closes connection.
 
 | Subscribe Destination | Payload | Description |
 |----------------------|---------|-------------|
@@ -1953,7 +2064,7 @@ Requirements:
 | **Database** | PostgreSQL (messaging_db) | MongoDB (chatservice) |
 | **Use Case** | Async direct messages, conversation history, search | Real-time live chat, typing indicators, presence |
 | **Persistence** | Long-term conversation/thread storage | Real-time relay + MongoDB event log |
-| **Coordination** | chat-service writes to messaging-service for archival | messaging-service provides history; chat-service handles live delivery |
+| **Coordination** | chat-service publishes a `chat.message.sent` event to RabbitMQ. messaging-service consumes this event and persists the message to PostgreSQL for long-term storage and conversation history retrieval. | messaging-service provides history; chat-service handles live delivery |
 
 ---
 
@@ -1970,7 +2081,7 @@ Requirements:
 | `blacklist:{tokenJti}` | JWT expiry | void (presence = blocked) | auth-service | Logout |
 | `ratelimit:{ip}:{endpoint}` | 1 min | Request count | api-gateway | Natural expiry |
 | `stats:public` | 5 min | PublicStatsDto | api-gateway | Aggregation cron |
-| `feature-flags` | 5 min | HashMap&lt;String, Boolean&gt; | all services | Admin toggle |
+| `feature-flags` | 5 min | Redis HASH&lt;flagName, Boolean&gt; | all services | Admin toggle |
 
 **Pattern:** Cache-aside (check Redis → miss → query DB → populate → return)
 **Serialization:** JSON via Jackson ObjectMapper | **Client:** Spring Data Redis (Lettuce)
@@ -1983,6 +2094,15 @@ Requirements:
 **Provider:** OpenAI (recommended) or Azure OpenAI for enterprise deployments
 **Orchestration Framework:** Spring AI 1.0
 **Fallback:** If provider unavailable → return cached suggestions or static fallback message
+**System Prompt File Locations:**
+| Feature | System Prompt File |
+|---------|-------------------|
+| Resume analysis | ai-service/src/main/resources/prompts/resume-analysis.txt |
+| Job match scoring | ai-service/src/main/resources/prompts/job-match.txt |
+| Interview prep | ai-service/src/main/resources/prompts/interview-prep.txt |
+| Career path | ai-service/src/main/resources/prompts/career-path.txt |
+| Chat assistant | ai-service/src/main/resources/prompts/chat-system.txt |
+
 **PII Handling:** Strip name, email, phone from resumes before sending to LLM
 **Cost Controls:** Max token limits enforced per request; streaming enabled to reduce TTFB
 
@@ -2055,18 +2175,6 @@ Requirements:
 8. All existing refresh tokens for user are revoked
 9. Redirect to login
 
-**Missing Schema (add to auth_db):**
-```sql
-CREATE TABLE password_reset_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) UNIQUE NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
-```
 
 ### 17.3 Service-to-Service Authentication
 
@@ -2084,7 +2192,7 @@ CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
 
 ### 18.1 Feature Flag System
 
-**Storage:** Redis hash `feature-flags` + PostgreSQL `feature_flags` table for persistence
+**Storage:** Redis HASH `HSET feature-flags {flagName} {true|false}` + PostgreSQL `feature_flags` table for persistence
 **Check Pattern:** `FeatureFlagService.isEnabled("flag_name")` injected into services
 
 | Flag Name | Description | Default | Category |
@@ -2117,10 +2225,15 @@ CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
 | Deploy (staging) | `kubectl apply` to staging namespace | develop branch |
 | Deploy (prod) | Manual approval gate → rolling update | main branch |
 
-**Rollback:** `kubectl rollout undo deployment/{service} -n talentsphere-prod`
+**Rollback:** `kubectl rollout undo deployment/{service} -n talentsphere-prod`. Database rollback: Flyway does not support automatic rollback. In case of a failed migration: (1) Manually execute the corresponding `V{N}__rollback_{table}.sql` script; (2) Reset `flyway_schema_history` if needed; (3) Then roll back the service code. All migrations must have a corresponding rollback script in `db/rollbacks/`.
 **Secrets:** Managed via GitHub Secrets → injected as K8s Secrets at deploy time
 
 ### 18.3 Monitoring Alerts
+
+**On-Call Runbook & Backup Strategy:**
+- **Database Backups:** Daily automated snapshots via Supabase/RDS. RPO: 1 hour (via WAL), RTO: 4 hours.
+- **P1 Alerts (System down):** Immediate page to on-call engineer via PagerDuty. See `runbooks/P1-outage.md`.
+- **P2 Alerts (Degraded):** Slack notification to #eng-alerts. Handled during business hours.
 
 | Alert | Condition | Severity | Channel |
 |-------|-----------|----------|---------|
@@ -2183,6 +2296,28 @@ CREATE INDEX idx_reset_tokens_user ON password_reset_tokens(user_id);
 ### 19.4 Pagination Standard
 
 All list endpoints use consistent pagination:
+- `page` (0-indexed, default: 0)
+- `size` (default: 20, max: 100)
+- `sort` (format: `field,asc|desc`)
+
+**Exception:** Messaging service uses cursor-based pagination for chat history.
+
+### 19.5 Standard Definitions
+
+**Connection Request Limits:**
+- Daily connection request limit: 20 (Free), 50 (Pro), Unlimited (Enterprise)
+
+**Skill Proficiency Scale:**
+- 1 = Beginner (aware, limited practical experience)
+- 2 = Elementary (basic tasks with guidance)
+- 3 = Intermediate (independent work on routine tasks)
+- 4 = Advanced (complex tasks, mentors others)
+- 5 = Expert (authoritative knowledge, industry recognition)
+
+**Company-Recruiter Rules:**
+- A Recruiter can only be associated with one Company at a time.
+- Company creation requires verified RECRUITER role and admin approval.
+- Only associated Recruiters can post jobs under the Company entity.
 ```json
 {
   "content": [...],
@@ -2233,7 +2368,11 @@ Max Age: 3600s
 4. After 30 days: hard-delete all user data, purge from search index
 5. Data export available via `GET /api/v1/users/{id}/export` (GDPR compliance)
 
-### 19.7 Accessibility & Internationalization
+### 19.8 Connection & Company Rules
+- **Connection Request Limit:** 20 (Free), 50 (Pro), Unlimited (Enterprise) per day.
+- **Company Ownership:** A USER with `ROLE_RECRUITER` creates a company and becomes the admin. Other recruiters join via invite link (`POST /api/v1/companies/{id}/invites`). A recruiter can only post jobs for companies they belong to.
+
+### 19.9 Accessibility & Internationalization
 
 - **WCAG Level:** 2.1 AA compliance target
 - **Keyboard Navigation:** All interactive elements reachable via Tab/Shift+Tab
@@ -2293,15 +2432,19 @@ db.companies.createIndex({ industry: 1, location: 1 });
 
 ### 20.3 AI Service (8099) — `/api/v1/ai`
 
+> **State Note:** The `ai-service` stores no persistent data. All requests are proxied to OpenAI and results returned directly. The `ai_db` entry in the service registry is reserved for future use. AI Chat is stateless; clients must pass the full conversation history.
+
 | Method | Endpoint | Description | Auth | Request | Response |
 |--------|----------|-------------|------|---------|----------|
 | POST | `/resume/analyze` | Analyze resume quality | USER | { resumeText } | ResumeAnalysisDto |
 | POST | `/match` | Job-candidate match score | RECRUITER | { jobId, candidateId } | { score, explanation } |
 | POST | `/interview-prep` | Generate interview Qs | USER | { jobId } | List&lt;QuestionDto&gt; |
 | POST | `/career-path` | Career recommendations | USER | { currentRole, skills } | CareerPathDto |
-| POST | `/chat` | AI assistant chat | USER | { message, conversationId } | { response, conversationId } |
+| POST | `/chat` | AI assistant chat | USER | { messages: [{role, content}] } | { response, conversationId } |
 
 ### 20.4 Admin Endpoints (via existing services)
+
+> **Gateway Routing Note:** Prefix routes map as follows: `/api/v1/admin/users/**` → user-service, `/api/v1/admin/metrics` → api-gateway internal, `/api/v1/admin/feature-flags/**` → api-gateway internal.
 
 Admin capabilities are exposed through existing services with `@PreAuthorize("hasRole('ADMIN')")`:
 
@@ -2439,7 +2582,7 @@ CREATE INDEX idx_portfolio_profile ON portfolio_projects(profile_id);
 
 #### Profile Service (8083)
 - `GET /api/v1/profiles/{userId}` - Get extended profile
-- `PUT /api/v1/profiles/{userId}` - Update profile
+- `PATCH /api/v1/profiles/{userId}` - Update profile
 - `POST /api/v1/profiles/{userId}/skills` - Add skill
 - `POST /api/v1/profiles/{userId}/experience` - Add experience
 
@@ -2454,9 +2597,9 @@ CREATE INDEX idx_portfolio_profile ON portfolio_projects(profile_id);
 - `PUT /api/v1/messages/{id}/read` - Mark as read
 
 #### Networking Service (8097)
-- `POST /api/v1/connections/request` - Send connection request
-- `PUT /api/v1/connections/{id}/accept` - Accept connection
-- `GET /api/v1/connections/suggestions` - Get suggestions
+- `POST /api/v1/networking/connections/request` - Send connection request
+- `PUT /api/v1/networking/connections/{id}/accept` - Accept connection
+- `GET /api/v1/networking/connections/suggestions` - Get suggestions
 
 #### Video Service (8093)
 - `POST /api/v1/interviews/schedule` - Schedule interview
@@ -2499,7 +2642,7 @@ java -jar services/auth-service/target/auth-service.jar
 open http://localhost:8081/swagger-ui.html
 
 # View logs
-kubectl logs -f deployment/auth-service -n talentsphere-dev
+docker logs -f talentsphere-auth-service
 ```
 
 ### Kubernetes Operations
@@ -2584,7 +2727,6 @@ SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
 | Service | Test File | Tests Count | Coverage |
 |---------|-----------|-------------|----------|
 | auth-service | AuthServiceTest.java | 8+ | ~85% |
-| user-service | UserServiceTest.java | 10+ | ~85% |
 | ai-service | AiServiceTest.java | 15 | ~90% |
 | application-service | ApplicationServiceTest.java | 11 | ~85% |
 | challenge-service | ChallengeServiceTest.java | 10+ | ~85% |
@@ -2636,7 +2778,7 @@ SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
 | Unified response envelope | ✅ |
 | Global error handling | ✅ |
 | Unit tests (>80% coverage) | ✅ |
-| Integration tests | ✅ |
+| Integration tests | ✅ (Spring Boot Test with Testcontainers for DB/Redis/RabbitMQ. Run via `mvn test -P integration`) |
 | Health/readiness endpoints | ✅ |
 | Structured JSON logging | ✅ |
 | Redis-backed caching | ✅ |
@@ -2670,7 +2812,7 @@ npm install
 docker-compose -f docker/docker-compose.yml up -d
 
 # Start backend services
-./start-backend.ps1
+./start-backend.ps1 (Windows) or ./start-backend.sh (Mac/Linux)
 
 # Start frontend
 cd apps/frontend && npm run dev
@@ -2742,9 +2884,30 @@ kubectl get pods -n talentsphere-prod
 - **Tracing:** Grafana Tempo at `http://tempo:3200`
 - **Dashboards:** Grafana at `http://grafana:3000`
 
+### D.7 Local Development Seed Data
+
+- **Location:** `db/seeds/dev-seed.sql`
+- **Command:** `psql -h localhost -U postgres -f db/seeds/dev-seed.sql`
+- **Default Accounts:** 
+  - `admin@talentsphere.com / Test@1234`
+  - `recruiter@acme.com / Test@1234`
+  - `candidate@test.com / Test@1234`
+
+### D.8 Local Development Troubleshooting
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| Port already in use | Previous service not stopped | `lsof -i :{port}` then `kill -9 {pid}` |
+| MongoDB connection refused | Docker not running | `docker-compose up -d mongodb` |
+| JWT validation fails | Wrong `JWT_SECRET` env var | Check `.env` matches `application.yml` |
+| CORS error on localhost | Origin not in whitelist | Add `http://localhost:5173` to gateway CORS config |
+| RabbitMQ consumer not starting | Wrong RABBITMQ_HOST | Use `localhost` in local env, not `rabbitmq` (Docker alias) |
+| Services fail to reach each other | Using Docker internal hostnames | Inter-service calls must use `localhost:{port}` in dev mode |
+
 ---
 
 **Version History:**
+- **v6.1.0 (2026-05-07):** Documentation expansion — Sections 13–20 added, API gaps filled, errors resolved.
 - **v6.0.0 (2025-01-04):** Production Complete - All phases implemented, 100% test coverage, comprehensive documentation
 - **v5.0.0 (2024-10-26):** Production Ready - Core architecture complete
 - **v4.0.0 (2024-09-15):** Microservices Migration - All 19 services operational

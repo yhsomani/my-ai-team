@@ -332,8 +332,7 @@ CREATE TABLE public.lessons (
     title VARCHAR(200) NOT NULL,
     content TEXT,
     video_url TEXT,
-    order_number INTEGER NOT NULL,
-    order_index INTEGER GENERATED ALWAYS AS (order_number) STORED,
+    order_index INTEGER NOT NULL,
     duration_minutes INTEGER,
     duration_seconds INTEGER,
     is_free_preview BOOLEAN DEFAULT FALSE,
@@ -341,7 +340,7 @@ CREATE TABLE public.lessons (
 );
 
 CREATE INDEX idx_lessons_course_id ON public.lessons(course_id);
-CREATE INDEX idx_lessons_order ON public.lessons(course_id, order_number);
+CREATE INDEX idx_lessons_order ON public.lessons(course_id, order_index);
 
 -- =============================================================================
 -- LMS - ENROLLMENTS

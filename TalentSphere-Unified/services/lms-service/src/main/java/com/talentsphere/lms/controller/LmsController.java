@@ -34,6 +34,11 @@ public class LmsController {
         return courseService.getCourseById(courseId);
     }
 
+    @GetMapping("/courses/slug/{slug}")
+    public ApiResponse<Course> getBySlug(@PathVariable String slug) {
+        return courseService.getCourseBySlug(slug);
+    }
+
     @GetMapping("/courses/{courseId}/lessons")
     public ApiResponse<List<Lesson>> getLessons(@PathVariable String courseId) {
         return courseService.getCourseLessons(courseId);

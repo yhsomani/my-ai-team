@@ -56,6 +56,12 @@ public class CourseService {
                 .orElse(ApiResponse.error("Course not found"));
     }
 
+    public ApiResponse<Course> getCourseBySlug(String slug) {
+        return courseRepository.findBySlug(slug)
+                .map(ApiResponse::ok)
+                .orElse(ApiResponse.error("Course not found"));
+    }
+
     @Transactional
     @CircuitBreaker(name = "lmsEnrollment", fallbackMethod = "enrollFallback")
     public ApiResponse<Enrollment> enroll(String userId, String courseId) {
@@ -99,7 +105,7 @@ public class CourseService {
 
             enrollment.getCompletedLessonIds().add(lessonId);
             
-            List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderNumberAsc(courseId);
+            List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
             int totalLessons = lessons.size();
             int completed = enrollment.getCompletedLessonIds().size();
             int progress = totalLessons > 0 ? (int) (((double) completed / totalLessons) * 100) : 0;
@@ -152,7 +158,7 @@ public class CourseService {
     }
 
     public ApiResponse<List<Lesson>> getCourseLessons(String courseId) {
-        List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderNumberAsc(courseId);
+        List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
         if (lessons.isEmpty()) {
             return ApiResponse.error("No lessons found for this course");
         }

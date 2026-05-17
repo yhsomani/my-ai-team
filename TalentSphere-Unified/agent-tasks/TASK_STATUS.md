@@ -30,7 +30,7 @@
 ## BACKEND-PLATFORM TASKS
 [PENDING] PLAT-001: Create challenge-service (challenges, code submission, Judge0 judging) (Owner: Backend-Platform)
 [PENDING] PLAT-002: Create gamification-service (XP, levels, badges, streaks, leaderboard) (Owner: Backend-Platform)
-[PENDING] PLAT-003: Create lms-service (courses, modules, lessons, enrollments, progress) (Owner: Backend-Platform)
+[DONE] PLAT-003: Create lms-service (courses, modules, lessons, enrollments, progress) (Owner: Backend-Platform)
 [PENDING] PLAT-004: Create messaging-service (DMs, conversations, WebSocket) (Owner: Backend-Platform)
 [PENDING] PLAT-005: Create networking-service (connections, follow, suggestions) (Owner: Backend-Platform)
 [PENDING] PLAT-006: Write unit tests for all Platform services (Owner: Backend-Platform)

@@ -1,6 +1,7 @@
 export interface Course {
     id: string;
     title: string;
+    slug?: string;
     provider: string;
     status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
     progress: number;
@@ -9,7 +10,7 @@ export interface Course {
     category?: string;
     duration?: string;
     difficulty?: 'Beginner' | 'Normal' | 'Advanced' | 'Expert';
-    lessons?: any[];
+    lessons?: Lesson[];
 }
 
 export interface Enrollment {
@@ -30,11 +31,12 @@ export interface Lesson {
     courseId: string;
     title: string;
     content: string;
-    orderNumber: number;
+    orderIndex: number;
     videoUrl?: string;
     durationMinutes: number;
     prerequisiteLessonId?: string;
     isFree: boolean;
+    completed?: boolean;
 }
 
 export interface LearningPath {

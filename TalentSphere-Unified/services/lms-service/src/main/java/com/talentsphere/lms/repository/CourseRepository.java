@@ -5,4 +5,5 @@ import java.util.Optional;
 
 public interface CourseRepository extends MongoRepository<Course, String> {
     Optional<Course> findByTitle(String title);
+    Optional<Course> findBySlug(String slug);
 }
