@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { jobService } from './jobService';
 import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../api/axios';
 
 vi.mock('../lib/supabaseClient', () => {
   return {
@@ -9,6 +10,16 @@ vi.mock('../lib/supabaseClient', () => {
     },
   };
 });
+
+vi.mock('../api/axios', () => ({
+  apiClient: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  }
+}));
 
 describe('jobService', () => {
   let mockQueryBuilder: any;
@@ -75,6 +86,8 @@ describe('jobService', () => {
 
     it('should throw an error if the query fails', async () => {
       mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({ data: null, error: new Error('DB Error') }).then(res, rej));
+      // @ts-expect-error mock
+      apiClient.get.mockRejectedValueOnce(new Error('DB Error'));
       await expect(jobService.getJobs()).rejects.toThrow('DB Error');
     });
   });

@@ -6,6 +6,16 @@ version: '3.9'
 services:
   # ── Frontend (Vite Dev Server) ──
   frontend:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
@@ -22,6 +32,16 @@ services:
 
   # ── API Gateway (Nginx) ──
   gateway:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: nginx:1.27-alpine
     ports:
       - "8080:8080"
@@ -32,6 +52,16 @@ services:
 
   # ── User Service ──
   user-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -58,6 +88,16 @@ services:
 
   # ── Auth Service ──
   auth-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -81,6 +121,16 @@ services:
 
   # ── Profile Service ──
   profile-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -100,6 +150,16 @@ services:
 
   # ── Job Service (Careers & Hiring) ──
   job-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -121,6 +181,16 @@ services:
 
   # ── Application Service ──
   application-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -140,6 +210,16 @@ services:
 
   # ── Company Service ──
   company-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -157,6 +237,16 @@ services:
 
   # ── Notification Service ──
   notification-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -179,6 +269,16 @@ services:
 
   # ── LMS Service ──
   lms-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -198,6 +298,16 @@ services:
 
   # ── Search Service ──
   search-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -216,6 +326,16 @@ services:
 
   # ── Gamification Service ──
   gamification-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -235,6 +355,16 @@ services:
 
   # ── Challenge Service ──
   challenge-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -256,6 +386,16 @@ services:
 
   # ── Messaging Service ──
   messaging-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -275,6 +415,16 @@ services:
 
   # ── Networking Service ──
   networking-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -294,6 +444,16 @@ services:
 
   # ── AI Service ──
   ai-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -313,6 +473,16 @@ services:
 
   # ── Chat Service ──
   chat-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -332,6 +502,16 @@ services:
 
   # ── Payment Service ──
   payment-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -351,6 +531,16 @@ services:
 
   # ── File Service ──
   file-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -368,6 +558,16 @@ services:
 
   # ── PostgreSQL ──
   postgres:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: postgres:15-alpine
     container_name: ts-postgres
     ports:
@@ -387,6 +587,16 @@ services:
 
   # ── PgBouncer ──
   pgbouncer:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: edoburu/pgbouncer:latest
     container_name: ts-pgbouncer
     ports:
@@ -402,6 +612,16 @@ services:
 
   # ── MongoDB ──
   ts-mongodb:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: mongo:7.0
     ports:
       - "27017:27017"
@@ -420,6 +640,16 @@ services:
 
   # ── MongoDB Express (Web UI) ──
   mongo-express:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: mongo-express:1.0.2
     ports:
       - "8099:8081"
@@ -431,6 +661,16 @@ services:
 
   # ── Redis (Dragonfly-compatible) ──
   redis:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: redis:7-alpine
     ports:
       - "6379:6379"
@@ -445,6 +685,16 @@ services:
 
   # ── RabbitMQ ──
   rabbitmq:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: rabbitmq:3.13-management-alpine
     container_name: ts-rabbitmq
     ports:
@@ -463,6 +713,16 @@ services:
 
   # ── Elasticsearch ──
   elasticsearch:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     environment:
       - discovery.type=single-node
@@ -480,6 +740,16 @@ services:
 
   # ── Prometheus ──
   prometheus:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: prom/prometheus:v2.54.0
     ports:
       - "9090:9090"
@@ -491,6 +761,16 @@ services:
 
   # ── Grafana ──
   grafana:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: grafana/grafana:11.3.0
     ports:
       - "3001:3000"
@@ -507,6 +787,16 @@ services:
   # ── Apicurio Registry (Schema Registry) ──
   # NOTE: Port changed from 8081 → 8180 to avoid collision with auth-service
   apicurio-registry:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: apicurio/apicurio-registry-mem:2.6.5.Final
     container_name: ts-apicurio
     ports:
@@ -523,6 +813,16 @@ services:
 
   # ── Pathway Service (Career Pathway Analyzer) ──
   pathway-service:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -553,6 +853,16 @@ services:
 
   # ── Grafana Tempo (Distributed Tracing) ──
   tempo:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: grafana/tempo:2.6.0
     container_name: ts-tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
@@ -568,6 +878,16 @@ services:
 
   # ── OpenTelemetry Collector ──
   otel-collector:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: otel/opentelemetry-collector-contrib:0.111.0
     container_name: ts-otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
@@ -584,6 +904,16 @@ services:
 
   # ── Loki ──
   loki:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: grafana/loki:latest
     container_name: ts-loki
     ports:
@@ -595,6 +925,16 @@ services:
 
   # ── Promtail ──
   promtail:
+    networks:
+      - talentsphere-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     image: grafana/promtail:latest
     container_name: ts-promtail
     volumes:
@@ -613,3 +953,7 @@ volumes:
   es_data:
   tempo_data:
   loki_data:
+
+networks:
+  talentsphere-net:
+    driver: bridge

@@ -43,7 +43,7 @@ public class SharedSecurityConfig {
         String allowedOriginsEnv = System.getenv("ALLOWED_ORIGINS");
         List<String> allowedOrigins = allowedOriginsEnv != null 
             ? Arrays.asList(allowedOriginsEnv.split(","))
-            : Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://localhost:3001");
+            : List.of();
 
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);

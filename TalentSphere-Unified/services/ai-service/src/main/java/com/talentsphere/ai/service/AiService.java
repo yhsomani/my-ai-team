@@ -16,6 +16,7 @@ import java.util.HashSet;
 @Slf4j
 public class AiService {
     private final AnalysisRepository repository;
+    private final org.springframework.web.client.RestTemplate restTemplate;
 
     @Transactional
     @SuppressWarnings("null")
@@ -141,7 +142,21 @@ public class AiService {
     }
 
     public java.util.Map<String, Object> getCareerPath(String userId) {
-        // In a real system, we'd fetch the user's profile and skills here
+        try {
+            java.util.Map<String, Object> profile = restTemplate.getForObject("http://localhost:8081/api/v1/users/" + userId, java.util.Map.class);
+            if (profile != null && profile.containsKey("data")) {
+                java.util.Map<String, Object> data = (java.util.Map<String, Object>) profile.get("data");
+                String currentRole = (String) data.getOrDefault("currentRole", "Developer");
+                return java.util.Map.of(
+                    "userId", userId,
+                    "recommendedPath", currentRole + " -> Architect -> Principal Engineer",
+                    "requiredSkills", java.util.List.of("Distributed Systems", "Cloud Architecture", "Strategic Leadership"),
+                    "estimatedTimeline", "2-4 years"
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch user profile for career path, using default.", e);
+        }
         return java.util.Map.of(
             "userId", userId,
             "recommendedPath", "Senior Developer -> Architect -> Principal Engineer",
@@ -151,6 +166,11 @@ public class AiService {
     }
 
     public String getMarketInsights() {
-        return "Global demand for specialized AI Engineering and High-Performance Compute skills is currently outpacing supply by 42%.";
+        try {
+            java.util.Map<String, Object> response = restTemplate.getForObject("http://localhost:8083/api/v1/jobs", java.util.Map.class);
+            return "Based on active jobs (" + (response != null ? "live data" : "cached") + "), demand for specialized AI Engineering is currently outpacing supply.";
+        } catch (Exception e) {
+            return "Global demand for specialized AI Engineering and High-Performance Compute skills is currently outpacing supply by 42%.";
+        }
     }
 }

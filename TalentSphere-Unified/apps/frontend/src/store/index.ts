@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import jobReducer from './slices/jobSlice';
+import jobReducer, { jobApi } from './slices/jobSlice';
 import lmsReducer from './slices/lmsSlice';
 import challengeReducer from './slices/challengeSlice';
 import aiReducer from './slices/aiSlice';
@@ -20,7 +20,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }),
+    }).concat(jobApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

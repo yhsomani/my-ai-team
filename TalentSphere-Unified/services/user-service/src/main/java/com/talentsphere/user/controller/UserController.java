@@ -33,7 +33,7 @@ public class UserController {
   public ApiResponse<UserEntity> updateProfile(
           @org.springframework.security.core.parameters.P("id")
           @PathVariable("id") String id,
-          @RequestBody UserEntity user) {
+          @jakarta.validation.Valid @RequestBody UserEntity user) {
     log.debug("Entering updateProfile with id: {}", id);
     user.setId(id);
     return userService.updateProfile(user);

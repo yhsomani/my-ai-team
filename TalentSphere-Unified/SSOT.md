@@ -351,6 +351,21 @@ const routes = [
 6. **Keyboard Navigation:** All interactive elements accessible via keyboard
 7. **Focus Management:** Trap focus in modals, restore on close
 
+### 3.7 Chrome Extension Architecture (TalentSphere Companion)
+The platform includes a Manifest V3 Chrome Extension located in `chrome-extension-project/` which acts as an AI-powered assistant, resume optimizer, and job application tracker.
+
+#### Extension Structure
+- **Vite Multi-Page App:** Compiled via Vite for `popup` and `options` panels.
+- **Popup UI (`src/popup`):** A dashboard displaying active tracked jobs, syncing metrics, and system diagnostics.
+- **Options UI (`src/options`):** A full-screen companion console featuring the AI Resume Matcher and Interview Prep Checklist.
+- **Background Worker (`src/background/index.ts`):** Handles lifecycle events (`onInstalled`) and robust asynchronous message routing.
+- **Messaging & Storage Layer:** Built with fallback support. `src/lib/storage.ts` wraps `chrome.storage.local` with try-catch boundaries and `src/lib/messaging.ts` wraps `chrome.runtime.sendMessage` with exponential backoff retries for resilience against MV3 port closures.
+
+#### Performance & Security
+- Heavily memoized React architecture (`useMemo`, `useCallback`) to prevent excessive re-renders during state mutations.
+- Protected by global React `ErrorBoundary` wrappers.
+- Secure MV3 `manifest.json` enforcing strict Content Security Policies (`script-src 'self'`).
+
 ---
 
 ## 4. Backend Architecture

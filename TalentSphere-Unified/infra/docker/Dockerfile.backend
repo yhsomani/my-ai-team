@@ -8,6 +8,8 @@ RUN mvn clean package -pl services/${SERVICE_NAME} -am -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
 ARG SERVICE_NAME
-COPY --from=build /app/services/${SERVICE_NAME}/target/*.jar app.jar
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

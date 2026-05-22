@@ -120,7 +120,7 @@ jobs:
         run: cd services && ../mvnw clean package -DskipTests
       - name: Build Docker images
         run: |
-          SERVICES=("auth-service" "user-service" "job-service")
+          SERVICES=("auth-service" "user-service" "job-service" "profile-service" "application-service" "company-service" "notification-service" "lms-service" "search-service" "gamification-service" "challenge-service" "messaging-service" "networking-service" "ai-service" "chat-service" "payment-service" "file-service" "video-service" "api-gateway")
           for SERVICE in "${SERVICES[@]}"; do
             docker build --build-arg SERVICE_NAME=$SERVICE -f docker/Dockerfile.service -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-$SERVICE:${{ github.sha }} .
             docker build --build-arg SERVICE_NAME=$SERVICE -f docker/Dockerfile.service -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-$SERVICE:latest .
@@ -174,7 +174,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push images
         run: |
-          SERVICES=("auth-service" "user-service" "job-service")
+          SERVICES=("auth-service" "user-service" "job-service" "profile-service" "application-service" "company-service" "notification-service" "lms-service" "search-service" "gamification-service" "challenge-service" "messaging-service" "networking-service" "ai-service" "chat-service" "payment-service" "file-service" "video-service" "api-gateway")
           for SERVICE in "${SERVICES[@]}"; do
             docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-$SERVICE:${{ github.sha }}
             docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-$SERVICE:latest

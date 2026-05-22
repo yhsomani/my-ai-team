@@ -15,7 +15,6 @@
 import { apiClient } from '../api/axios';
 import { supabase } from '../lib/supabaseClient';
 import { Course, Enrollment } from '../types/lms';
-import { MOCK_COURSES, MOCK_ENROLLMENTS } from '../api/mockData';
 
 // Track connectivity state to avoid redundant failed requests
 let _gatewayReachable: boolean | null = null;
@@ -62,7 +61,7 @@ const fetchCoursesFromGateway = async (params?: { category?: string }): Promise<
   const apiData = response.data?.data || response.data;
   if (!Array.isArray(apiData)) return [];
 
-  return apiData.map((course: any) => ({
+  return apiData.map((course: Record<string, any>) => ({
     id: course.id,
     title: course.title,
     slug: course.slug,
@@ -93,7 +92,7 @@ const fetchCourseByIdFromGateway = async (courseId: string): Promise<Course> => 
   const course = response.data?.data || response.data;
 
   // Fetch lessons for this course
-  let lessons: any[] = [];
+  let lessons: Record<string, any>[] = [];
   try {
     const lessonsResponse = await apiClient.get(`/api/v1/lms/courses/${courseId}/lessons`, { timeout: 5000 });
     lessons = lessonsResponse.data?.data || lessonsResponse.data || [];
@@ -113,7 +112,7 @@ const fetchCourseByIdFromGateway = async (courseId: string): Promise<Course> => 
     category: course.category,
     duration: `${lessons.length * 15} min`,
     difficulty: (course.level || 'Normal') as Course['difficulty'],
-    lessons: lessons.map((l: any, idx: number) => ({
+    lessons: lessons.map((l: Record<string, any>, idx: number) => ({
       id: l.id,
       courseId: course.id,
       title: l.title,
@@ -153,7 +152,7 @@ const enrollViaGateway = async (courseId: string, userId: string): Promise<Enrol
 const fetchEnrollmentsFromGateway = async (userId: string): Promise<Enrollment[]> => {
   const response = await apiClient.get(`/api/v1/lms/enrollments/${userId}`, { timeout: 5000 });
   const data = response.data?.data || response.data || [];
-  return data.map((e: any) => ({
+  return data.map((e: Record<string, any>) => ({
     id: e.id,
     userId: e.userId,
     courseId: e.courseId,
@@ -233,7 +232,7 @@ const fetchCoursesFromSupabase = async (params?: { category?: string; published?
     category: course.category,
     duration: course.duration_hours ? `${course.duration_hours} hours` : 'Self-paced',
     difficulty: (course.level?.charAt(0).toUpperCase() + course.level?.slice(1)) as Course['difficulty'],
-    lessons: (lessonsByCourse[course.id] || []).map((l: any) => ({
+    lessons: (lessonsByCourse[course.id] || []).map((l: Record<string, any>) => ({
       id: l.id,
       courseId: course.id,
       title: l.title,
@@ -280,7 +279,7 @@ const fetchCourseByIdFromSupabase = async (courseId: string): Promise<Course> =>
     category: data.category,
     duration: data.duration_hours ? `${data.duration_hours} hours` : 'Self-paced',
     difficulty: (data.level?.charAt(0).toUpperCase() + data.level?.slice(1)) as Course['difficulty'],
-    lessons: (data.lessons || []).map((l: any) => ({
+    lessons: (data.lessons || []).map((l: Record<string, any>) => ({
       id: l.id,
       courseId: data.id,
       title: l.title,
@@ -358,41 +357,8 @@ const fetchEnrollmentsFromSupabase = async (userId: string): Promise<Enrollment[
   }));
 };
 
-// ---------------------------------------------------------------------------
-// Mock Data Fetchers (Tertiary Fallback — local static data)
-// ---------------------------------------------------------------------------
+// Tertiary fallback removed
 
-const fetchCoursesFromMock = (params?: { category?: string }): Course[] => {
-  console.warn('[LMS] Using mock data — both API Gateway and Supabase are unreachable');
-  let courses = [...MOCK_COURSES];
-  if (params?.category) {
-    courses = courses.filter(c => c.category === params.category);
-  }
-  return courses;
-};
-
-const fetchCourseByIdFromMock = (courseId: string): Course => {
-  const course = MOCK_COURSES.find(c => c.id === courseId);
-  if (!course) throw new Error(`Course ${courseId} not found in mock data`);
-  return { ...course };
-};
-
-const enrollViaMock = (courseId: string, userId: string): Enrollment => {
-  console.warn('[LMS] Mock enrollment — no backend persistence');
-  return {
-    id: `mock-enrollment-${Date.now()}`,
-    userId,
-    courseId,
-    status: 'ENROLLED',
-    progress: 0,
-    enrolledAt: new Date().toISOString(),
-    completedLessonIds: [],
-  };
-};
-
-const fetchEnrollmentsFromMock = (_userId: string): Enrollment[] => {
-  return [...MOCK_ENROLLMENTS];
-};
 
 // ---------------------------------------------------------------------------
 // Utility
@@ -437,8 +403,7 @@ export const lmsService = {
       }
     }
 
-    // Tier 3: Mock Data (always succeeds)
-    return fetchCoursesFromMock(params);
+    return [];
   },
 
   getCourseById: async (courseId: string): Promise<Course> => {
@@ -460,7 +425,7 @@ export const lmsService = {
       }
     }
 
-    return fetchCourseByIdFromMock(courseId);
+    throw new Error('Course not found and both backends are unreachable');
   },
 
   getCourseBySlug: async (slug: string): Promise<Course> => {
@@ -472,8 +437,7 @@ export const lmsService = {
         console.warn('[LMS] getCourseBySlug: gateway failed, trying mock...', err);
       }
     }
-    // No Supabase slug fallback implemented yet for simplicity
-    return fetchCoursesFromMock().find(c => c.slug === slug) || fetchCourseByIdFromMock(slug);
+    throw new Error('Course not found and both backends are unreachable');
   },
 
   enrollInCourse: async (courseId: string, userId: string): Promise<Enrollment> => {
@@ -495,7 +459,7 @@ export const lmsService = {
       }
     }
 
-    return enrollViaMock(courseId, userId);
+    throw new Error('Failed to enroll, both backends unreachable');
   },
 
   getUserEnrollments: async (userId: string): Promise<Enrollment[]> => {
@@ -517,7 +481,7 @@ export const lmsService = {
       }
     }
 
-    return fetchEnrollmentsFromMock(userId);
+    return [];
   },
 
   getLessonProgress: async (enrollmentId: string, userId?: string, courseId?: string): Promise<any[]> => {
@@ -725,17 +689,7 @@ export const lmsService = {
       }
     }
 
-    // Mock fallback
-    console.warn('[LMS] createCourse: no backend available, returning mock');
-    return {
-      id: `mock-course-${Date.now()}`,
-      title: course.title || 'Untitled Course',
-      provider: 'Mock Instructor',
-      status: 'NOT_STARTED',
-      progress: 0,
-      description: course.description,
-      category: course.category,
-    };
+    throw new Error('Failed to create course, no backend available');
   },
 
   // Reset connectivity cache (useful after network recovery)

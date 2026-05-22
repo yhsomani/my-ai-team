@@ -12,7 +12,10 @@ public class ChallengeServiceApplication {
   }
 
   @Bean
-  public RestTemplate restTemplate() {
-    return new RestTemplate();
+  public RestTemplate restTemplate(org.springframework.boot.web.client.RestTemplateBuilder builder) {
+    return builder
+        .setConnectTimeout(java.time.Duration.ofMillis(5000))
+        .setReadTimeout(java.time.Duration.ofMillis(5000))
+        .build();
   }
 }

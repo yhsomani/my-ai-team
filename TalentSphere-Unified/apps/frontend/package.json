@@ -12,7 +12,8 @@
     "docs": "typedoc \"src/**/*.ts\" \"src/**/*.tsx\" --out ../docs/frontend/html --excludePrivate --name \"TalentSphere Frontend\"",
     "docs:serve": "npx serve ../docs/frontend/html -l 3001",
     "generate-docs": "typedoc \"src/**/*.ts\" \"src/**/*.tsx\" --out ../docs/frontend/html --excludePrivate --name \"TalentSphere Frontend\"",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
@@ -43,7 +44,6 @@
     "@vitejs/plugin-react": "5.0.0",
     "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.4.27",
-    "axios-mock-adapter": "^2.1.0",
     "eslint": "^9.18.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",

@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabaseClient';
 import { Job, JobApplication, CreateApplicationRequest } from '../types/job';
-import { fetchJobsFromMock } from '../api/mockData';
+import { apiClient } from '../api/axios';
 
-const mapJobResponse = (data: any): Job => ({
+const mapJobResponse = (data: Record<string, any>): Job => ({
   id: data.id,
   title: data.title,
   description: data.description,
@@ -69,9 +69,13 @@ export const jobService = {
       
       return data.map(mapJobResponse);
     } catch (err) {
-      console.warn('[Jobs] Supabase failed, falling back to mock data...', err);
-      const mockData = await fetchJobsFromMock(params);
-      return mockData.map(mapJobResponse);
+      console.warn('[Jobs] Supabase failed, trying API Gateway...', err);
+      try {
+        const response = await apiClient.get('/api/v1/jobs', { params });
+        return response.data?.data?.map(mapJobResponse) || [];
+      } catch (gatewayErr) {
+        throw gatewayErr;
+      }
     }
   },
 
@@ -98,11 +102,13 @@ export const jobService = {
       if (error) throw error;
       return mapJobResponse(data);
     } catch (err) {
-      console.warn(`[Jobs] getJobById failed for ${id}, checking mock...`, err);
-      const mockJobs = await fetchJobsFromMock();
-      const job = mockJobs.find(j => j.id === id);
-      if (job) return mapJobResponse(job);
-      throw err;
+      console.warn(`[Jobs] getJobById failed for ${id}, trying API Gateway...`, err);
+      try {
+        const response = await apiClient.get(`/api/v1/jobs/${id}`);
+        return mapJobResponse(response.data?.data || response.data);
+      } catch (gatewayErr) {
+        throw gatewayErr;
+      }
     }
   },
 
@@ -138,7 +144,7 @@ export const jobService = {
     if (error) throw error;
     
     // Simple client-side matching (can be improved with full-text search)
-    const matchedJobs = (data || []).filter((job: any) => 
+    const matchedJobs = (data || []).filter((job: Record<string, any>) => 
       job.requirements?.some((req: string) => 
         skillNames.some(skill => 
           req.toLowerCase().includes(skill.toLowerCase())
@@ -173,7 +179,7 @@ export const jobService = {
   },
 
   updateJob: async (id: string, jobData: Partial<Job>): Promise<Job> => {
-    const updateData: any = {};
+    const updateData: Record<string, any> = {};
     if (jobData.title) updateData.title = jobData.title;
     if (jobData.description) updateData.description = jobData.description;
     if (jobData.location) updateData.location = jobData.location;

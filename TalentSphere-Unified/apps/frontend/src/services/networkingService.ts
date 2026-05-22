@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { Connection, FeedItem, PublicProfile } from '../types/networking';
-import { fetchFeedFromMock, fetchSuggestionsFromMock } from '../api/mockData';
+import { apiClient } from '../api/axios';
 
 export const networkingService = {
   getFeed: async (userId: string): Promise<FeedItem[]> => {
@@ -23,8 +23,9 @@ export const networkingService = {
       const connectionIds = connections?.map(c => c.receiver_id) || [];
       
       if (connectionIds.length === 0) {
-        // Fallback to mock feed if no connections found (could be a new user or network error)
-        return fetchFeedFromMock();
+        // Fallback to API gateway if no connections found
+        const response = await apiClient.get('/api/v1/network/feed', { params: { userId } });
+        return response.data?.data || [];
       }
 
       // Get recent activity from connections
@@ -89,8 +90,13 @@ export const networkingService = {
         new Date(b.timestamp || b.createdAt || 0).getTime() - new Date(a.timestamp || a.createdAt || 0).getTime()
       );
     } catch (err) {
-      console.warn('[Networking] Supabase feed fetch failed, using mock...', err);
-      return fetchFeedFromMock();
+      console.warn('[Networking] Supabase feed fetch failed, using Gateway...', err);
+      try {
+        const response = await apiClient.get('/api/v1/network/feed', { params: { userId } });
+        return response.data?.data || [];
+      } catch (gatewayErr) {
+        return [];
+      }
     }
   },
 
@@ -169,8 +175,13 @@ export const networkingService = {
         avatarUrl: p.avatar_url || undefined
       }));
     } catch (err) {
-      console.warn('[Networking] Supabase suggestions fetch failed, using mock...', err);
-      return fetchSuggestionsFromMock();
+      console.warn('[Networking] Supabase suggestions fetch failed, using Gateway...', err);
+      try {
+        const response = await apiClient.get('/api/v1/network/suggestions', { params: { userId } });
+        return response.data?.data || [];
+      } catch (gatewayErr) {
+        return [];
+      }
     }
   },
 

@@ -31,9 +31,9 @@ RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 # Copy layers from the build stage
-COPY --from=build /app/services/${SERVICE_NAME}/target/dependencies/ ./
-COPY --from=build /app/services/${SERVICE_NAME}/target/spring-boot-loader/ ./
-COPY --from=build /app/services/${SERVICE_NAME}/target/snapshot-dependencies/ ./
-COPY --from=build /app/services/${SERVICE_NAME}/target/application/ ./
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/dependencies/ ./
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/spring-boot-loader/ ./
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/snapshot-dependencies/ ./
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/application/ ./
 
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

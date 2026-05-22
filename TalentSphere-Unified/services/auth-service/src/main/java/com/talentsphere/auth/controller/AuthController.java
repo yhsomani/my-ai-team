@@ -25,7 +25,7 @@ public class AuthController {
 
     @Operation(summary = "Login user", description = "Authenticate user and return JWT token")
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestBody User loginRequest) {
+    public ApiResponse<String> login(@Valid @RequestBody User loginRequest) {
         return authService.login(loginRequest.getEmail(), loginRequest.getPassword());
     }
 

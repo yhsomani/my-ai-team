@@ -16,7 +16,7 @@ const ProfilePage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({ headline: '', location: '', bio: '' });
@@ -49,7 +49,7 @@ const ProfilePage: React.FC = () => {
         location: editFormData.location,
         bio: editFormData.bio
       });
-      setProfile((prev: any) => ({ ...prev, ...editFormData }));
+      setProfile((prev: Record<string, any> | null) => ({ ...prev, ...editFormData }));
       setIsEditModalOpen(false);
       addToast({ type: 'success', title: 'Profile Updated', message: 'Your changes have been saved successfully.' });
     } catch (err) {
@@ -82,13 +82,7 @@ const ProfilePage: React.FC = () => {
   const skills = profile?.skills || [];
   const achievements = profile?.achievements || [];
 
-  const handleAddExperience = () => {
-    addToast({ type: 'info', title: 'Coming Soon', message: 'Adding experience will be available in the next release.' });
-  };
 
-  const handleAddEducation = () => {
-    addToast({ type: 'info', title: 'Coming Soon', message: 'Adding education will be available in the next release.' });
-  };
 
   return (
     <div className="space-y-6">
@@ -159,7 +153,7 @@ const ProfilePage: React.FC = () => {
               <span className="flex items-center gap-1"><Calendar size={12} /> Joined {profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}</span>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {skills.map((s: any) => (
+              {skills.map((s: Record<string, any> | string) => (
                 <Badge key={typeof s === 'string' ? s : s.name} variant="outline" className="text-[10px]">
                   {typeof s === 'string' ? s : s.name}
                 </Badge>
@@ -221,9 +215,8 @@ const ProfilePage: React.FC = () => {
         <Card className="p-5 space-y-6">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Work Experience</h3>
-            <Button variant="ghost" size="sm" onClick={handleAddExperience}>+ Add Experience</Button>
           </div>
-          {experiences.length > 0 ? experiences.map((exp: any, i: number) => (
+          {experiences.length > 0 ? experiences.map((exp: Record<string, any>, i: number) => (
             <div key={i} className="flex gap-4">
               <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
                 <Briefcase size={16} />
@@ -245,9 +238,8 @@ const ProfilePage: React.FC = () => {
         <Card className="p-5 space-y-6">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Education</h3>
-            <Button variant="ghost" size="sm" onClick={handleAddEducation}>+ Add Education</Button>
           </div>
-          {education.length > 0 ? education.map((edu: any, i: number) => (
+          {education.length > 0 ? education.map((edu: Record<string, any>, i: number) => (
             <div key={i} className="flex gap-4">
               <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
                 <GraduationCap size={16} />
@@ -266,7 +258,7 @@ const ProfilePage: React.FC = () => {
 
       {activeTab === 'achievements' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {achievements.length > 0 ? achievements.map((badge: any, i: number) => (
+          {achievements.length > 0 ? achievements.map((badge: Record<string, any>, i: number) => (
             <Card key={i} className="p-5 text-center">
               <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-3">
                 <Award size={16} />

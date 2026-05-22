@@ -13,6 +13,7 @@ import { Button } from '../../components/shared/AuraButton';
 import { Job } from "../../types/job";
 import { Skeleton } from '../../components/shared/Skeleton';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/shared/Toast';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -22,17 +23,18 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   
   // User Data
   const [stats, setStats] = useState<DashboardStats>({ xp: 0, level: 1, applications: 0, messages: 0 });
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [challenges, setChallenges] = useState<any[]>([]);
+  const [challenges, setChallenges] = useState<Record<string, any>[]>([]);
   
   // Recruiter Data
   const [recruiterStats, setRecruiterStats] = useState<RecruiterStats>({ activeJobs: 0, totalApplications: 0, newApplications: 0, hiredCount: 0 });
-  const [recentApplications, setRecentApplications] = useState<any[]>([]);
+  const [recentApplications, setRecentApplications] = useState<Record<string, any>[]>([]);
 
   const isRecruiter = user?.roles?.includes('ROLE_RECRUITER');
 
@@ -56,6 +58,7 @@ const DashboardPage: React.FC = () => {
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err);
+        addToast({ type: 'error', title: 'Dashboard Error', message: 'Failed to load dashboard data. Please try again.' });
       } finally {
         setLoading(false);
       }
@@ -122,7 +125,7 @@ const DashboardPage: React.FC = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate('/candidates')}>View all</Button>
             </div>
             <div className="divide-y divide-[var(--border-default)]">
-              {recentApplications.length > 0 ? recentApplications.slice(0, 5).map((app: any, i: number) => (
+              {recentApplications.length > 0 ? recentApplications.slice(0, 5).map((app: Record<string, any>, i: number) => (
                 <div key={i} className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent">
@@ -202,7 +205,7 @@ const DashboardPage: React.FC = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate('/jobs')}>View all</Button>
           </div>
           <div className="divide-y divide-[var(--border-default)]">
-            {jobs.length > 0 ? jobs.slice(0, 5).map((job: any, i: number) => (
+            {jobs.length > 0 ? jobs.slice(0, 5).map((job: Job, i: number) => (
               <div key={i} className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
@@ -242,7 +245,7 @@ const DashboardPage: React.FC = () => {
               <h3 className="text-sm font-semibold">Active Challenges</h3>
             </div>
             <div className="divide-y divide-[var(--border-default)]">
-              {challenges.length > 0 ? challenges.slice(0, 3).map((c: any, i: number) => (
+              {challenges.length > 0 ? challenges.slice(0, 3).map((c: Record<string, any>, i: number) => (
                 <div key={i} className="flex items-center justify-between p-4">
                   <div>
                     <p className="text-sm font-medium">{c.title}</p>

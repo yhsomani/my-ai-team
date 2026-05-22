@@ -3,8 +3,8 @@ import { Search, MapPin, Briefcase, Bookmark, Building2, Filter } from 'lucide-r
 import { applicationService } from '../../services/applicationService';
 import { jobService } from '../../services/jobService';
 import { JobApplication } from '../../types/job';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { fetchJobs, selectAllJobs } from '../../store/slices/jobSlice';
+import { useAppSelector } from '../../store/hooks';
+import { useGetJobsQuery } from '../../store/slices/jobSlice';
 import type { RootState } from '../../store';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { Badge } from '../../components/shared/Badge';
@@ -18,10 +18,8 @@ import { Input } from '../../components/shared/AuraInput';
 import { useToast } from '../../components/shared/Toast';
 
 const JobsPage: React.FC = () => {
-    const dispatch = useAppDispatch();
     const { user } = useAppSelector((state: RootState) => state.auth);
-    const jobs = useAppSelector(selectAllJobs);
-    const jobsStatus = useAppSelector((state: RootState) => state.jobs.status);
+    const { data: jobs = [], isLoading: jobsLoading, refetch: refetchJobs } = useGetJobsQuery({});
     const { addToast } = useToast();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -36,11 +34,11 @@ const JobsPage: React.FC = () => {
 
     useEffect(() => {
         if (activeTab === 'explore') {
-            dispatch(fetchJobs({}));
+            refetchJobs();
         } else if (user) {
             loadApplications(user.id);
         }
-    }, [activeTab, dispatch, user]);
+    }, [activeTab, refetchJobs, user]);
 
     const loadApplications = async (userId: string) => {
         setIsLoadingApplications(true);
@@ -49,6 +47,7 @@ const JobsPage: React.FC = () => {
             setApplications(data);
         } catch (error) {
             console.error('Failed to load applications:', error);
+            addToast({ type: 'error', title: 'Error', message: 'Failed to load applications. Please try again.' });
         } finally {
             setIsLoadingApplications(false);
         }
@@ -87,7 +86,7 @@ const JobsPage: React.FC = () => {
             addToast({ type: 'success', title: 'Job posted successfully!' });
             setIsPostJobModalOpen(false);
             setJobData({ title: '', description: '', company: '', location: '', type: 'Full-time' });
-            dispatch(fetchJobs({})); // Refresh list
+            refetchJobs(); // Refresh list
         } catch (error) {
             console.error('Failed to post job:', error);
             addToast({ type: 'error', title: 'Failed to post job', message: 'Please try again later.' });
@@ -106,7 +105,7 @@ const JobsPage: React.FC = () => {
         );
     }, [jobs, searchTerm]);
 
-    const isLoading = activeTab === 'explore' ? jobsStatus === 'loading' : isLoadingApplications;
+    const isLoading = activeTab === 'explore' ? jobsLoading : isLoadingApplications;
     const items = activeTab === 'explore' ? filteredJobs : applications;
 
     return (
@@ -172,7 +171,7 @@ const JobsPage: React.FC = () => {
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {items.map((item: any, idx: number) => {
+                    {items.map((item: Record<string, any>) => {
                         const job = activeTab === 'explore' ? item : item.job;
                         if (!job) return null;
 

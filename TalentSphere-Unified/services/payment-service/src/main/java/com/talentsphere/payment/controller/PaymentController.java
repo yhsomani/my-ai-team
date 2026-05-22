@@ -14,14 +14,17 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    public record CheckoutRequest(
+        @jakarta.validation.constraints.NotBlank String userId,
+        @jakarta.validation.constraints.Positive double amount,
+        @jakarta.validation.constraints.NotBlank String currency,
+        String description
+    ) {}
+
     @PostMapping("/checkout")
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Map<String, Object>> createSession(@RequestBody Map<String, Object> request) {
-        String userId = (String) request.get("userId");
-        double amount = ((Number) request.get("amount")).doubleValue();
-        String currency = (String) request.get("currency");
-        String description = (String) request.get("description");
-        return paymentService.createPaymentSession(userId, amount, currency, description);
+    public ApiResponse<Map<String, Object>> createSession(@jakarta.validation.Valid @RequestBody CheckoutRequest request) {
+        return paymentService.createPaymentSession(request.userId(), request.amount(), request.currency(), request.description());
     }
 
     @GetMapping("/status/{sessionId}")

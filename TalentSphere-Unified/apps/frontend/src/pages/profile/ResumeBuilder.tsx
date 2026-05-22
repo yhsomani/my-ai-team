@@ -15,7 +15,7 @@ const ResumeBuilder: React.FC = () => {
   const [activeTab, setActiveTab] = useState('editor');
   const { addToast } = useToast();
   
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,9 +41,7 @@ const ResumeBuilder: React.FC = () => {
     addToast({ type: 'success', title: 'Saved', message: 'Your resume changes have been saved.' });
   };
 
-  const handleAdd = (section: string) => {
-    addToast({ type: 'info', title: 'Coming Soon', message: `Adding ${section} will be available in the next release.` });
-  };
+
 
   if (loading) {
     return (
@@ -112,9 +110,8 @@ const ResumeBuilder: React.FC = () => {
           <Card className="p-5 space-y-4 lg:col-span-2">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">Work Experience</h3>
-              <Button variant="outline" size="sm" onClick={() => handleAdd('experience')}><Plus size={14} className="mr-1" /> Add</Button>
             </div>
-            {experiences.map((exp: any, i: number) => (
+            {experiences.map((exp: Record<string, any>, i: number) => (
               <div key={i} className="flex items-start gap-3 p-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]">
                 <GripVertical size={16} className="text-[var(--text-muted)] mt-0.5 cursor-grab" />
                 <div className="flex-1">
@@ -137,10 +134,9 @@ const ResumeBuilder: React.FC = () => {
           <Card className="p-5 space-y-4 lg:col-span-2">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">Skills</h3>
-              <Button variant="outline" size="sm" onClick={() => handleAdd('skills')}><Plus size={14} className="mr-1" /> Add</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {skills.map((s: any) => (
+              {skills.map((s: Record<string, any> | string) => (
                 <span key={typeof s === 'string' ? s : s.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-default)] text-sm bg-[var(--bg-primary)]">
                   {typeof s === 'string' ? s : s.name}
                   <button className="text-[var(--text-muted)] hover:text-destructive transition-colors">
@@ -169,7 +165,7 @@ const ResumeBuilder: React.FC = () => {
             <div>
               <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wide">Experience</h3>
               <div className="space-y-4">
-                {experiences.map((exp: any, i: number) => (
+                {experiences.map((exp: Record<string, any>, i: number) => (
                   <div key={i}>
                     <p className="text-sm font-medium">{exp.title} — {exp.company}</p>
                     <p className="text-xs text-[var(--text-muted)]">{exp.startDate} – {exp.endDate || 'Present'}</p>
