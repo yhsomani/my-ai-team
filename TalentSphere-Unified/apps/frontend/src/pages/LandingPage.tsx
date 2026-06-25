@@ -8,11 +8,30 @@ import {
 import { Button } from '../components/shared/AuraButton';
 import { supabase } from '../lib/supabaseClient';
 
+const fallbackStats = { totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%', systemStatus: 'Optimal' };
+
+const formatPublicCount = (count: number | null) => {
+  const safeCount = count || 0;
+  return safeCount > 1000 ? `${(safeCount / 1000).toFixed(1)}k+` : `${safeCount}`;
+};
+
+const formatStatsTimestamp = (date: Date) => date.toLocaleTimeString(undefined, {
+  hour: 'numeric',
+  minute: '2-digit'
+});
+
 const LandingPage: React.FC = () => {
-  const [stats, setStats] = useState({ totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%' });
+  const [stats, setStats] = useState(fallbackStats);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsMeta, setStatsMeta] = useState({
+    source: 'fallback' as 'live' | 'fallback',
+    updatedAt: new Date(),
+    message: 'Showing fallback platform estimates'
+  });
 
   useEffect(() => {
     const fetchPublicStats = async () => {
+        setStatsLoading(true);
         try {
             // Get total users count
             const { count: totalUsers, error: usersError } = await supabase
@@ -27,16 +46,31 @@ const LandingPage: React.FC = () => {
 
             if (usersError || jobsError) {
                 console.error("Failed to fetch stats", usersError || jobsError);
-                return;
+                throw usersError || jobsError;
             }
 
+            const updatedAt = new Date();
             setStats({
-                totalUsers: totalUsers && totalUsers > 1000 ? `${(totalUsers / 1000).toFixed(1)}k+` : `${totalUsers || 0}`,
-                activeJobs: activeJobs && activeJobs > 1000 ? `${(activeJobs / 1000).toFixed(1)}k+` : `${activeJobs || 0}+`,
-                successRate: '94.2%' // This would need to be calculated from applications
+                totalUsers: formatPublicCount(totalUsers),
+                activeJobs: `${formatPublicCount(activeJobs)}+`,
+                successRate: '94.2%', // This would need to be calculated from applications
+                systemStatus: 'Optimal'
+            });
+            setStatsMeta({
+              source: 'live',
+              updatedAt,
+              message: 'Live public stats from TalentSphere data'
             });
         } catch (err) {
             console.error("Failed to fetch public stats", err);
+            setStats(fallbackStats);
+            setStatsMeta({
+              source: 'fallback',
+              updatedAt: new Date(),
+              message: 'Live public stats unavailable; showing fallback estimates'
+            });
+        } finally {
+            setStatsLoading(false);
         }
     };
     fetchPublicStats();
@@ -106,18 +140,21 @@ const LandingPage: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/register">
+              <Link to="/register?role=talent">
                 <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-lg group">
-                  Join the Network
+                  Join as Talent
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link to="/jobs">
+              <Link to="/register?role=recruiter">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-lg border-white/10 hover:bg-white/5 text-white">
-                  Explore Opportunities
+                  Hire Talent
                 </Button>
               </Link>
             </div>
+            <p className="mt-4 text-sm text-slate-500">
+              Choose a role now; you can review the account type before creating your account.
+            </p>
           </div>
 
           {/* Core Pillars */}
@@ -166,17 +203,27 @@ const LandingPage: React.FC = () => {
                 { label: 'Active Users', value: stats.totalUsers },
                 { label: 'Opportunities', value: stats.activeJobs },
                 { label: 'Match Rate', value: stats.successRate },
-                { label: 'System Status', value: 'Optimal' }
+                { label: 'System Status', value: stats.systemStatus }
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col gap-2">
                   <span className="text-4xl md:text-5xl font-black text-white tracking-tighter">
-                    {stat.value}
+                    {statsLoading ? (
+                      <span className="mx-auto block h-12 w-24 animate-pulse rounded-lg bg-white/10" aria-label={`Loading ${stat.label}`} />
+                    ) : (
+                      stat.value
+                    )}
                   </span>
                   <span className="text-sm font-medium text-slate-400 uppercase tracking-widest">
                     {stat.label}
                   </span>
                 </div>
               ))}
+            </div>
+            <div className="relative mt-8 flex flex-col items-center justify-center gap-2 text-center text-xs text-slate-400 sm:flex-row">
+              <BadgeDot source={statsMeta.source} />
+              <span>
+                {statsMeta.message} · Updated {formatStatsTimestamp(statsMeta.updatedAt)}
+              </span>
             </div>
           </div>
 
@@ -198,5 +245,12 @@ const LandingPage: React.FC = () => {
     </div>
   );
 };
+
+const BadgeDot: React.FC<{ source: 'live' | 'fallback' }> = ({ source }) => (
+  <span className="inline-flex items-center gap-2">
+    <span className={`h-2 w-2 rounded-full ${source === 'live' ? 'bg-success' : 'bg-warning'}`} aria-hidden="true" />
+    <span className="font-medium uppercase tracking-wider">{source === 'live' ? 'Live' : 'Fallback'}</span>
+  </span>
+);
 
 export default LandingPage;

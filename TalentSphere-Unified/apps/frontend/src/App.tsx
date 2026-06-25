@@ -191,6 +191,7 @@ function App() {
                 <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route path="/profile/:userId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/resume" element={<ProtectedRoute><ResumeBuilder /></ProtectedRoute>} />
                 <Route path="/career-path" element={<ProtectedRoute><AICareerPath /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']}><AdminDashboard /></ProtectedRoute>} />

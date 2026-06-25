@@ -31,6 +31,8 @@ describe('jobService', () => {
       eq: vi.fn().mockReturnThis(),
       ilike: vi.fn().mockReturnThis(),
       or: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       range: vi.fn().mockReturnThis(),
@@ -72,6 +74,12 @@ describe('jobService', () => {
     it('should append search filter using or if provided', async () => {
       await jobService.getJobs({ search: 'developer' });
       expect(mockQueryBuilder.or).toHaveBeenCalledWith('title.ilike.%developer%,description.ilike.%developer%');
+    });
+
+    it('should append salary range filters if provided', async () => {
+      await jobService.getJobs({ salary_min: 100000, salary_max: 160000 });
+      expect(mockQueryBuilder.gte).toHaveBeenCalledWith('salary_max', 100000);
+      expect(mockQueryBuilder.lte).toHaveBeenCalledWith('salary_min', 160000);
     });
 
     it('should apply limit if provided', async () => {

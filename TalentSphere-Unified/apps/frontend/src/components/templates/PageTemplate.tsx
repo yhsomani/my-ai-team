@@ -21,7 +21,7 @@ export function PageTemplate({
       {showHeader && (
         <PageHeader
           title={title}
-          subtitle={subtitle}
+          description={subtitle}
           actions={actions}
         />
       )}

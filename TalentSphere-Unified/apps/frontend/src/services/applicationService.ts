@@ -1,6 +1,39 @@
 import { supabase } from '../lib/supabaseClient';
 import type { JobApplication, CreateApplicationRequest } from '../types/job';
 
+const mapApplicationResponse = (application: Record<string, any>): JobApplication => {
+  const job = application.jobs || application.job;
+  const company = Array.isArray(job?.companies) ? job.companies[0] : job?.companies;
+
+  return {
+    id: application.id,
+    jobId: application.job_id || application.jobId || '',
+    userId: application.user_id || application.userId || '',
+    status: application.status || 'PENDING',
+    appliedAt: application.applied_at || application.created_at || new Date().toISOString(),
+    resumeUrl: application.resume_url || application.resumeUrl,
+    coverLetter: application.cover_letter || application.coverLetter,
+    job: job
+      ? {
+          id: job.id,
+          title: job.title,
+          description: job.description || '',
+          companyId: job.company_id || job.companyId || '',
+          companyName: company?.name || job.companyName,
+          companyLogoUrl: company?.logo_url || job.companyLogoUrl,
+          location: job.location || '',
+          jobType: job.job_type || job.jobType || '',
+          salaryMin: job.salary_min || job.salaryMin,
+          salaryMax: job.salary_max || job.salaryMax,
+          salaryRange: job.salary_range || job.salaryRange,
+          requirements: job.requirements || [],
+          postedAt: job.posted_at || job.postedAt || '',
+          status: job.status || '',
+        }
+      : undefined,
+  };
+};
+
 export const applicationService = {
   submitApplication: async (request: CreateApplicationRequest & { userId: string }): Promise<JobApplication> => {
     try {
@@ -9,6 +42,7 @@ export const applicationService = {
         .insert({
           user_id: request.userId,
           job_id: request.jobId,
+          resume_url: request.resumeUrl,
           cover_letter: request.coverLetter,
           status: 'PENDING'
         })
@@ -16,16 +50,16 @@ export const applicationService = {
         .single();
       
       if (error) throw error;
-      return data as unknown as JobApplication;
+      return mapApplicationResponse(data);
     } catch (err) {
       console.warn('[Applications] submitApplication failed, simulating success...', err);
       return {
         id: `mock-app-${Date.now()}`,
-        job_id: request.jobId,
-        user_id: request.userId,
+        jobId: request.jobId,
+        userId: request.userId,
         status: 'PENDING',
-        created_at: new Date().toISOString()
-      } as any;
+        appliedAt: new Date().toISOString()
+      };
     }
   },
 
@@ -38,7 +72,15 @@ export const applicationService = {
           jobs (
             id,
             title,
+            description,
             company_id,
+            location,
+            job_type,
+            salary_min,
+            salary_max,
+            requirements,
+            posted_at,
+            status,
             companies (name, logo_url)
           )
         `)
@@ -46,7 +88,7 @@ export const applicationService = {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as unknown as JobApplication[];
+      return (data || []).map(mapApplicationResponse);
     } catch (err) {
       console.warn('[Applications] getUserApplications failed, using mock list...', err);
       return [];
@@ -63,13 +105,15 @@ export const applicationService = {
         .single();
       
       if (error) throw error;
-      return data as unknown as JobApplication;
+      return mapApplicationResponse(data);
     } catch (err) {
       console.warn('[Applications] updateApplicationStatus failed, simulating success...', err);
       return {
         id: applicationId,
-        status,
-        updated_at: new Date().toISOString()
+        jobId: '',
+        userId: '',
+        status: status as JobApplication['status'],
+        appliedAt: new Date().toISOString()
       } as any;
     }
   },
@@ -87,4 +131,3 @@ export const applicationService = {
     }
   }
 };
-

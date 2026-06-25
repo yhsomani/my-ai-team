@@ -12,6 +12,43 @@ interface NotificationSettingsProps {
   saving: boolean;
 }
 
+type NotificationPreferenceKey = 'email_notifications' | 'push_notifications' | 'job_alerts' | 'message_notifications';
+
+interface NotificationPreference {
+  key: NotificationPreferenceKey;
+  title: string;
+  description: string;
+  icon?: React.ReactNode;
+}
+
+const channelPreferences: NotificationPreference[] = [
+  {
+    key: 'email_notifications',
+    title: 'Email Notifications',
+    description: 'Receive updates via email',
+    icon: <Mail className="w-5 h-5 text-slate-400" />
+  },
+  {
+    key: 'push_notifications',
+    title: 'Push Notifications',
+    description: 'Receive push notifications in browser',
+    icon: <Smartphone className="w-5 h-5 text-slate-400" />
+  }
+];
+
+const activityPreferences: NotificationPreference[] = [
+  {
+    key: 'job_alerts',
+    title: 'Job Alerts',
+    description: 'New job postings matching your skills'
+  },
+  {
+    key: 'message_notifications',
+    title: 'Messages',
+    description: 'When you receive a new direct message'
+  }
+];
+
 export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
   notifications,
   setNotifications,
@@ -19,6 +56,41 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
   loading,
   saving
 }) => {
+  const updatePreference = (key: NotificationPreferenceKey, checked: boolean) => {
+    setNotifications(prev => prev ? { ...prev, [key]: checked } : null);
+  };
+
+  const renderPreference = (preference: NotificationPreference) => {
+    const checked = Boolean(notifications?.[preference.key]);
+    const titleId = `${preference.key}-label`;
+    const descriptionId = `${preference.key}-description`;
+
+    return (
+      <div key={preference.key} className="flex items-center justify-between gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+        <div className="flex items-center gap-3 min-w-0">
+          {preference.icon}
+          <div>
+            <p id={titleId} className="font-medium text-white">{preference.title}</p>
+            <p id={descriptionId} className="text-sm text-slate-400">{preference.description}</p>
+          </div>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            role="switch"
+            aria-checked={checked}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            className="sr-only peer"
+            checked={checked}
+            onChange={(e) => updatePreference(preference.key, e.target.checked)}
+          />
+          <span aria-hidden="true" className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent" />
+        </label>
+      </div>
+    );
+  };
+
   return (
     <Card className="p-6">
       <h3 className="text-xl font-bold text-white mb-6">Notification Preferences</h3>
@@ -33,43 +105,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           <div>
             <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Channels</h4>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-slate-400" />
-                  <div>
-                    <p className="font-medium text-white">Email Notifications</p>
-                    <p className="text-sm text-slate-400">Receive updates via email</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={notifications?.email_notifications || false}
-                    onChange={(e) => setNotifications(p => p ? { ...p, email_notifications: e.target.checked } : null)}
-                  />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-slate-400" />
-                  <div>
-                    <p className="font-medium text-white">Push Notifications</p>
-                    <p className="text-sm text-slate-400">Receive push notifications in browser</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={notifications?.push_notifications || false}
-                    onChange={(e) => setNotifications(p => p ? { ...p, push_notifications: e.target.checked } : null)}
-                  />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                </label>
-              </div>
+              {channelPreferences.map(renderPreference)}
             </div>
           </div>
 
@@ -77,37 +113,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           <div>
             <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 mt-8">Activity Alerts</h4>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-                <div>
-                  <p className="font-medium text-white">Job Alerts</p>
-                  <p className="text-sm text-slate-400">New job postings matching your skills</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={notifications?.job_alerts || false}
-                    onChange={(e) => setNotifications(p => p ? { ...p, job_alerts: e.target.checked } : null)}
-                  />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-                <div>
-                  <p className="font-medium text-white">Messages</p>
-                  <p className="text-sm text-slate-400">When you receive a new direct message</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={notifications?.message_notifications || false}
-                    onChange={(e) => setNotifications(p => p ? { ...p, message_notifications: e.target.checked } : null)}
-                  />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                </label>
-              </div>
+              {activityPreferences.map(renderPreference)}
             </div>
           </div>
 

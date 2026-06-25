@@ -46,7 +46,9 @@ const messagingSlice = createSlice({
       state.activeConversationId = action.payload;
     },
     messageReceived: (state, action: PayloadAction<Message>) => {
-      state.messages.push(action.payload);
+      if (!state.messages.some(message => message.id === action.payload.id)) {
+        state.messages.push(action.payload);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -72,7 +74,9 @@ const messagingSlice = createSlice({
         state.messages = action.payload;
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
-        state.messages.push(action.payload);
+        if (!state.messages.some(message => message.id === action.payload.id)) {
+          state.messages.push(action.payload);
+        }
       });
   },
 });

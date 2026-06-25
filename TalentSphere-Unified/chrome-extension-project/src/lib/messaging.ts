@@ -45,7 +45,22 @@ export const extMessaging = {
         // Mock a slow background response based on action type
         setTimeout(() => {
           if (message.action === 'analyze_page') {
-            resolve({ status: 'success', summary: 'Parsed job details on mock page: Software Engineer at Google.' });
+            resolve({
+              status: 'success',
+              summary: 'Drafted Software Engineer at Google for review.',
+              draft: {
+                id: `mock-scan-${Date.now()}`,
+                company: 'Google',
+                role: 'Software Engineer',
+                status: 'Applied',
+                url: window.location.href,
+                source: 'mock-page',
+                notes: 'Scanned page excerpt: mock extension preview response.',
+                scannedAt: new Date().toISOString(),
+                confidence: 'medium',
+                rawTitle: document.title
+              }
+            });
           } else if (message.action === 'optimize_resume') {
             resolve({ 
               status: 'success', 

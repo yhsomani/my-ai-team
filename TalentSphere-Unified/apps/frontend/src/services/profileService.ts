@@ -31,6 +31,7 @@ export const profileService = {
         current_role: profile.currentRole,
         bio: profile.bio,
         location: profile.location,
+        phone: profile.phone,
         website: profile.website,
         linkedin_url: profile.linkedinUrl,
         github_url: profile.githubUrl,

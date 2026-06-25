@@ -2,18 +2,16 @@ import { useState, useMemo, useCallback } from 'react';
 import { Briefcase, BarChart3, Terminal, ExternalLink } from 'lucide-react';
 import { useChromeStorage } from '../hooks/useChromeStorage';
 import { extMessaging } from '../lib/messaging';
+import {
+  JOB_SCAN_DRAFT_STORAGE_KEY,
+  TRACKED_JOBS_STORAGE_KEY,
+  type Job,
+  type JobScanDraft
+} from '../lib/jobTypes';
 
 import { DashboardView } from './views/DashboardView';
 import { JobsView } from './views/JobsView';
 import { DiagnosticsView } from './views/DiagnosticsView';
-
-interface Job {
-  id: string;
-  company: string;
-  role: string;
-  status: 'Applied' | 'Interviewing' | 'Offered' | 'Rejected';
-  date: string;
-}
 
 interface LogEntry {
   time: string;
@@ -23,11 +21,13 @@ interface LogEntry {
 
 export function PopupApp() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'logs'>('dashboard');
-  const [jobs, setJobs] = useChromeStorage<Job[]>('ts_jobs', [
+  const [isScanningPage, setIsScanningPage] = useState(false);
+  const [jobs, setJobs] = useChromeStorage<Job[]>(TRACKED_JOBS_STORAGE_KEY, [
     { id: '1', company: 'Google', role: 'Frontend Engineer', status: 'Interviewing', date: '2026-05-20' },
     { id: '2', company: 'Stripe', role: 'Full Stack Engineer', status: 'Applied', date: '2026-05-21' },
     { id: '3', company: 'Netflix', role: 'Backend Specialist', status: 'Offered', date: '2026-05-18' }
   ]);
+  const [jobDraft, setJobDraft] = useChromeStorage<JobScanDraft | null>(JOB_SCAN_DRAFT_STORAGE_KEY, null);
   const [logs, setLogs] = useState<LogEntry[]>([
     { time: '21:08:12', type: 'info', message: 'TalentSphere Companion initialized.' },
     { time: '21:08:13', type: 'success', message: 'Successfully connected to Local Storage API.' }
@@ -39,13 +39,19 @@ export function PopupApp() {
     setLogs(curr => [{ time: timeStr, type, message }, ...curr]);
   }, []);
 
-  const handleAddJob = useCallback(async (newCompany: string, newRole: string, newStatus: Job['status']) => {
+  const handleAddJob = useCallback(async (
+    newCompany: string,
+    newRole: string,
+    newStatus: Job['status'],
+    details: Pick<Partial<Job>, 'url' | 'source' | 'notes'> = {}
+  ) => {
     const newJob: Job = {
       id: Date.now().toString(),
       company: newCompany,
       role: newRole,
       status: newStatus,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      ...details
     };
 
     await setJobs(curr => [...curr, newJob]);
@@ -68,13 +74,60 @@ export function PopupApp() {
     }
   }, [jobs, setJobs, addLog]);
 
-  const triggerMockAnalysis = useCallback(async () => {
-    addLog('Requesting active tab DOM parsing from background service worker...', 'info');
-    const response = await extMessaging.sendMessage({ action: 'analyze_page' });
-    if (response && response.status === 'success') {
-      addLog(`Received tab analysis: "${response.summary}"`, 'success');
+  const handleSaveDraft = useCallback(async (draft: JobScanDraft) => {
+    const company = draft.company.trim();
+    const role = draft.role.trim();
+
+    if (!company || !role) {
+      addLog('Scanned draft needs both company and role before saving.', 'warn');
+      return;
     }
-  }, [addLog]);
+
+    const newJob: Job = {
+      id: Date.now().toString(),
+      company,
+      role,
+      status: draft.status,
+      date: new Date().toISOString().split('T')[0],
+      url: draft.url.trim() || undefined,
+      source: draft.source.trim() || undefined,
+      notes: draft.notes.trim() || undefined
+    };
+
+    await setJobs(curr => [...curr, newJob]);
+    await setJobDraft(null);
+    addLog(`Saved scanned draft: ${role} at ${company}.`, 'success');
+  }, [addLog, setJobDraft, setJobs]);
+
+  const handleDiscardDraft = useCallback(async () => {
+    await setJobDraft(null);
+    addLog('Discarded scanned job draft.', 'info');
+  }, [addLog, setJobDraft]);
+
+  const triggerPageScan = useCallback(async () => {
+    if (isScanningPage) {
+      return;
+    }
+
+    try {
+      setIsScanningPage(true);
+      addLog('Requesting active tab DOM parsing from background service worker...', 'info');
+      const response = await extMessaging.sendMessage({ action: 'analyze_page' });
+
+      if (response?.status === 'success' && response.draft) {
+        await setJobDraft(response.draft);
+        setActiveTab('jobs');
+        addLog(`Prepared tab scan draft: "${response.summary}"`, 'success');
+        return;
+      }
+
+      addLog(`Page scan did not return a draft: ${response?.error || 'No response details.'}`, 'warn');
+    } catch (err) {
+      addLog(`Page scan failed: ${err instanceof Error ? err.message : String(err)}`, 'warn');
+    } finally {
+      setIsScanningPage(false);
+    }
+  }, [addLog, isScanningPage, setJobDraft]);
 
   const openOptionsPage = useCallback(() => {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.openOptionsPage) {
@@ -164,16 +217,21 @@ export function PopupApp() {
             jobs={jobs} 
             statusCounts={statusCounts} 
             openOptionsPage={openOptionsPage} 
-            triggerMockAnalysis={triggerMockAnalysis} 
+            triggerPageScan={triggerPageScan}
+            isScanningPage={isScanningPage}
+            hasDraft={Boolean(jobDraft)}
           />
         )}
         
         {activeTab === 'jobs' && (
           <JobsView 
             jobs={jobs} 
+            jobDraft={jobDraft}
             handleAddJob={handleAddJob} 
             handleDeleteJob={handleDeleteJob} 
             handleUpdateStatus={handleUpdateStatus} 
+            handleSaveDraft={handleSaveDraft}
+            handleDiscardDraft={handleDiscardDraft}
           />
         )}
 

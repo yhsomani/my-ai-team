@@ -11,7 +11,7 @@ export interface Application {
   id: string;
   userId: string;
   jobId: string;
-  status: 'PENDING' | 'REVIEWED' | 'ACCEPTED' | 'REJECTED' | string;
+  status: 'PENDING' | 'REVIEWED' | 'INTERVIEW' | 'OFFER' | 'REJECTED' | string;
   appliedAt: string;
   user?: {
     fullName: string;
@@ -21,90 +21,99 @@ export interface Application {
     title: string;
   };
   resumeUrl?: string;
+  coverLetter?: string;
+  updatedAt?: string;
 }
+
+const activeRecruiterJobStatuses = ['DRAFT', 'PUBLISHED'];
+const offerStatuses = ['OFFER'];
+
+const mapApplicationResponse = (app: any): Application => ({
+  id: app.id,
+  userId: app.user_id,
+  jobId: app.job_id,
+  status: app.status,
+  appliedAt: app.created_at,
+  user: {
+    fullName: app.profiles?.full_name || 'Unknown',
+    email: app.profiles?.email || ''
+  },
+  job: {
+    title: app.jobs?.title || 'Unknown'
+  },
+  resumeUrl: app.resume_url,
+  coverLetter: app.cover_letter,
+  updatedAt: app.updated_at
+});
+
+const getRecruiterJobs = async (recruiterId: string): Promise<Array<{ id: string; status?: string }>> => {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, status')
+    .eq('posted_by', recruiterId);
+
+  if (error) {
+    console.error('Error fetching recruiter jobs:', error);
+    throw new Error(`Failed to fetch recruiter jobs: ${error.message}`);
+  }
+
+  return data || [];
+};
+
+const countApplications = async (
+  jobIds: string[],
+  options?: { since?: string; statuses?: string[] }
+): Promise<number> => {
+  if (jobIds.length === 0) return 0;
+
+  let query = supabase
+    .from('job_applications')
+    .select('id', { count: 'exact', head: true })
+    .in('job_id', jobIds);
+
+  if (options?.since) {
+    query = query.gte('created_at', options.since);
+  }
+
+  if (options?.statuses?.length) {
+    query = query.in('status', options.statuses);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Error counting applications:', error);
+    throw new Error(`Failed to count applications: ${error.message}`);
+  }
+
+  return count || 0;
+};
 
 export const recruiterService = {
   getStats: async (recruiterId: string): Promise<RecruiterStats> => {
-    // Get active jobs count
-    const { data: jobsData, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id', { count: 'exact' })
-      .eq('recruiter_id', recruiterId)
-      .eq('status', 'ACTIVE');
+    const jobsData = await getRecruiterJobs(recruiterId);
+    const jobIds = jobsData.map(j => j.id);
 
-    if (jobsError) {
-      console.error('Error fetching jobs:', jobsError);
-      throw new Error(`Failed to fetch stats: ${jobsError.message}`);
-    }
-
-    // Get total applications for recruiter's jobs
-    const { data: appsData, error: appsError } = await supabase
-      .from('job_applications')
-      .select('id', { count: 'exact' })
-      .in(
-        'job_id',
-        (jobsData || []).map(j => j.id)
-      );
-
-    if (appsError) {
-      console.error('Error fetching applications:', appsError);
-      throw new Error(`Failed to fetch stats: ${appsError.message}`);
-    }
-
-    // Get new applications (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data: newAppsData, error: newAppsError } = await supabase
-      .from('job_applications')
-      .select('id', { count: 'exact' })
-      .in(
-        'job_id',
-        (jobsData || []).map(j => j.id)
-      )
-      .gte('created_at', sevenDaysAgo.toISOString());
-
-    if (newAppsError) {
-      console.error('Error fetching new applications:', newAppsError);
-      throw new Error(`Failed to fetch stats: ${newAppsError.message}`);
-    }
-
-    // Get hired count
-    const { data: hiredData, error: hiredError } = await supabase
-      .from('job_applications')
-      .select('id', { count: 'exact' })
-      .in(
-        'job_id',
-        (jobsData || []).map(j => j.id)
-      )
-      .eq('status', 'HIRED');
-
-    if (hiredError) {
-      console.error('Error fetching hired count:', hiredError);
-      throw new Error(`Failed to fetch stats: ${hiredError.message}`);
-    }
+    const [totalApplications, newApplications, hiredCount] = await Promise.all([
+      countApplications(jobIds),
+      countApplications(jobIds, { since: sevenDaysAgo.toISOString() }),
+      countApplications(jobIds, { statuses: offerStatuses })
+    ]);
 
     return {
-      activeJobs: jobsData?.length || 0,
-      totalApplications: appsData?.length || 0,
-      newApplications: newAppsData?.length || 0,
-      hiredCount: hiredData?.length || 0
+      activeJobs: jobsData.filter(job => activeRecruiterJobStatuses.includes(job.status || '')).length,
+      totalApplications,
+      newApplications,
+      hiredCount
     };
   },
 
   getRecentApplications: async (recruiterId: string, limit: number = 10): Promise<Application[]> => {
-    // First get recruiter's jobs
-    const { data: jobs, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('recruiter_id', recruiterId);
-
-    if (jobsError) {
-      console.error('Error fetching jobs:', jobsError);
-      throw new Error(`Failed to fetch applications: ${jobsError.message}`);
-    }
-
-    const jobIds = (jobs || []).map(j => j.id);
+    const jobs = await getRecruiterJobs(recruiterId);
+    const jobIds = jobs.map(j => j.id);
 
     if (jobIds.length === 0) {
       return [];
@@ -132,21 +141,7 @@ export const recruiterService = {
       throw new Error(`Failed to fetch applications: ${error.message}`);
     }
 
-    return (data || []).map((app: any) => ({
-      id: app.id,
-      userId: app.user_id,
-      jobId: app.job_id,
-      status: app.status,
-      appliedAt: app.created_at,
-      user: {
-        fullName: app.profiles?.full_name || 'Unknown',
-        email: app.profiles?.email || ''
-      },
-      job: {
-        title: app.jobs?.title || 'Unknown'
-      },
-      resumeUrl: app.resume_url
-    }));
+    return (data || []).map(mapApplicationResponse);
   },
 
   getAllApplications: async (recruiterId: string, jobId?: string): Promise<Application[]> => {
@@ -155,18 +150,8 @@ export const recruiterService = {
     if (jobId) {
       jobIds = [jobId];
     } else {
-      // Get all recruiter's jobs
-      const { data: jobs, error: jobsError } = await supabase
-        .from('jobs')
-        .select('id')
-        .eq('recruiter_id', recruiterId);
-
-      if (jobsError) {
-        console.error('Error fetching jobs:', jobsError);
-        throw new Error(`Failed to fetch applications: ${jobsError.message}`);
-      }
-
-      jobIds = (jobs || []).map(j => j.id);
+      const jobs = await getRecruiterJobs(recruiterId);
+      jobIds = jobs.map(j => j.id);
     }
 
     if (jobIds.length === 0) {
@@ -193,21 +178,7 @@ export const recruiterService = {
       throw new Error(`Failed to fetch applications: ${error.message}`);
     }
 
-    return (data || []).map((app: any) => ({
-      id: app.id,
-      userId: app.user_id,
-      jobId: app.job_id,
-      status: app.status,
-      appliedAt: app.created_at,
-      user: {
-        fullName: app.profiles?.full_name || 'Unknown',
-        email: app.profiles?.email || ''
-      },
-      job: {
-        title: app.jobs?.title || 'Unknown'
-      },
-      resumeUrl: app.resume_url
-    }));
+    return (data || []).map(mapApplicationResponse);
   },
 
   getRecruiterJobs: async (recruiterId: string): Promise<any[]> => {
@@ -220,7 +191,7 @@ export const recruiterService = {
           logo_url
         )
       `)
-      .eq('recruiter_id', recruiterId)
+      .eq('posted_by', recruiterId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -256,20 +227,6 @@ export const recruiterService = {
       throw new Error(`Failed to update application: ${error.message}`);
     }
 
-    return {
-      id: data.id,
-      userId: data.user_id,
-      jobId: data.job_id,
-      status: data.status,
-      appliedAt: data.created_at,
-      user: {
-        fullName: data.profiles?.full_name || 'Unknown',
-        email: data.profiles?.email || ''
-      },
-      job: {
-        title: data.jobs?.title || 'Unknown'
-      },
-      resumeUrl: data.resume_url
-    };
+    return mapApplicationResponse(data);
   }
 };

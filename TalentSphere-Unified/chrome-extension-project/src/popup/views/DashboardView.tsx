@@ -1,22 +1,25 @@
-import { Sparkles, Clock, CheckCircle2, FileText } from 'lucide-react';
+import { Sparkles, Clock, CheckCircle2, FileText, ScanSearch } from 'lucide-react';
 import React from 'react';
 
-interface Job {
-  id: string;
-  company: string;
-  role: string;
-  status: 'Applied' | 'Interviewing' | 'Offered' | 'Rejected';
-  date: string;
-}
+import type { Job } from '../../lib/jobTypes';
 
 interface DashboardViewProps {
   jobs: Job[];
   statusCounts: { Applied: number; Interviewing: number; Offered: number; Rejected: number };
   openOptionsPage: () => void;
-  triggerMockAnalysis: () => void;
+  triggerPageScan: () => void;
+  isScanningPage: boolean;
+  hasDraft: boolean;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ jobs, statusCounts, openOptionsPage, triggerMockAnalysis }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  jobs,
+  statusCounts,
+  openOptionsPage,
+  triggerPageScan,
+  isScanningPage,
+  hasDraft
+}) => {
   return (
     <div className="space-y-4" id="view-dashboard">
       <div className="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-slate-800/60 rounded-xl p-4 shadow-xl backdrop-blur-glass">
@@ -68,14 +71,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ jobs, statusCounts
       <div className="border border-slate-800/60 rounded-xl p-3 bg-slate-900/10 flex justify-between items-center">
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-300 font-semibold">Active Tab Analyzer</span>
-          <span className="text-[9px] text-slate-500 mt-0.5">Scrapes role data from current web portal.</span>
+          <span className="text-[9px] text-slate-500 mt-0.5">
+            {hasDraft ? 'Draft ready in Tracker.' : 'Scrapes role data from current web portal.'}
+          </span>
         </div>
         <button
-          onClick={triggerMockAnalysis}
-          className="bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 transition duration-200"
+          onClick={triggerPageScan}
+          disabled={isScanningPage}
+          className="inline-flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-500 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 transition duration-200"
           id="tab-analyze-btn"
         >
-          Scan Webpage
+          <ScanSearch className="h-3.5 w-3.5" />
+          <span>{isScanningPage ? 'Scanning' : 'Scan Webpage'}</span>
         </button>
       </div>
     </div>

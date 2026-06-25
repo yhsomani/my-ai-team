@@ -37,6 +37,7 @@ const DashboardPage: React.FC = () => {
   const [recentApplications, setRecentApplications] = useState<Record<string, any>[]>([]);
 
   const isRecruiter = user?.roles?.includes('ROLE_RECRUITER');
+  const statCardClass = 'w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 text-left shadow-sm transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,10 +86,10 @@ const DashboardPage: React.FC = () => {
 
   if (isRecruiter) {
     const statCards = [
-      { label: 'Active Jobs', value: recruiterStats.activeJobs, icon: <Briefcase size={16} />, color: 'text-accent' },
-      { label: 'Total Applicants', value: recruiterStats.totalApplications, icon: <Users size={16} />, color: 'text-blue-500' },
-      { label: 'New Today', value: recruiterStats.newApplications, icon: <Clock size={16} />, color: 'text-amber-500' },
-      { label: 'Hired', value: recruiterStats.hiredCount, icon: <CheckCircle size={16} />, color: 'text-success' },
+      { label: 'Active Jobs', value: recruiterStats.activeJobs, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs', action: 'Open recruiter jobs' },
+      { label: 'Total Applicants', value: recruiterStats.totalApplications, icon: <Users size={16} />, color: 'text-blue-500', route: '/candidates', action: 'Review all applicants' },
+      { label: 'New Today', value: recruiterStats.newApplications, icon: <Clock size={16} />, color: 'text-amber-500', route: '/candidates', action: 'Review new applications' },
+      { label: 'Offers', value: recruiterStats.hiredCount, icon: <CheckCircle size={16} />, color: 'text-success', route: '/candidates', action: 'Review offer-stage candidates' },
     ];
 
     return (
@@ -105,13 +106,20 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, i) => (
-            <Card key={i} className="p-5">
+            <button
+              key={i}
+              type="button"
+              className={statCardClass}
+              onClick={() => navigate(stat.route)}
+              aria-label={`${stat.label}: ${stat.value}. ${stat.action}`}
+            >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-[var(--text-secondary)]">{stat.label}</span>
                 <span className={stat.color}>{stat.icon}</span>
               </div>
               <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-            </Card>
+              <p className="mt-2 text-xs text-[var(--text-muted)]">{stat.action}</p>
+            </button>
           ))}
         </div>
 
@@ -136,10 +144,15 @@ const DashboardPage: React.FC = () => {
                       <p className="text-xs text-[var(--text-muted)]">Applied for {app.job?.title}</p>
                     </div>
                   </div>
-                  <Badge variant={app.status === 'ACCEPTED' ? 'success' : 'warning'}>{app.status}</Badge>
+                  <Badge variant={app.status === 'OFFER' ? 'success' : 'warning'}>{app.status}</Badge>
                 </div>
               )) : (
-                <div className="p-8 text-center text-sm text-[var(--text-muted)]">No recent applications</div>
+                <div className="p-8 text-center">
+                  <p className="text-sm text-[var(--text-muted)]">No recent applications</p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate('/jobs/post')}>
+                    Post a Job
+                  </Button>
+                </div>
               )}
             </div>
           </Card>
@@ -165,10 +178,10 @@ const DashboardPage: React.FC = () => {
 
   // Standard User Dashboard
   const userStatCards = [
-    { label: 'Applications', value: stats.applications, icon: <Briefcase size={16} />, color: 'text-accent' },
-    { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} />, color: 'text-blue-500' },
-    { label: 'XP Earned', value: stats.xp.toLocaleString(), icon: <TrendingUp size={16} />, color: 'text-success' },
-    { label: 'Level', value: stats.level, icon: <Award size={16} />, color: 'text-amber-500' },
+    { label: 'Applications', value: stats.applications, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs?tab=applied', action: 'View applications' },
+    { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} />, color: 'text-blue-500', route: '/messaging', action: 'Open messages' },
+    { label: 'XP Earned', value: stats.xp.toLocaleString(), icon: <TrendingUp size={16} />, color: 'text-success', route: '/challenges', action: 'Earn more XP' },
+    { label: 'Level', value: stats.level, icon: <Award size={16} />, color: 'text-amber-500', route: '/profile', action: 'View profile progress' },
   ];
 
   return (
@@ -185,13 +198,20 @@ const DashboardPage: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {userStatCards.map((stat, i) => (
-          <Card key={i} className="p-5">
+          <button
+            key={i}
+            type="button"
+            className={statCardClass}
+            onClick={() => navigate(stat.route)}
+            aria-label={`${stat.label}: ${stat.value}. ${stat.action}`}
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-[var(--text-secondary)]">{stat.label}</span>
               <span className={stat.color}>{stat.icon}</span>
             </div>
             <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-          </Card>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">{stat.action}</p>
+          </button>
         ))}
       </div>
 
@@ -219,7 +239,12 @@ const DashboardPage: React.FC = () => {
                 <Badge variant="success">{job.matchScore || 85}% match</Badge>
               </div>
             )) : (
-              <div className="p-8 text-center text-sm text-[var(--text-muted)]">No recent jobs found</div>
+              <div className="p-8 text-center">
+                <p className="text-sm text-[var(--text-muted)]">No recent jobs found</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate('/jobs')}>
+                  Browse Jobs
+                </Button>
+              </div>
             )}
           </div>
         </Card>
@@ -254,7 +279,12 @@ const DashboardPage: React.FC = () => {
                   <Badge variant="outline">{c.difficulty || 'Medium'}</Badge>
                 </div>
               )) : (
-                <div className="p-6 text-center text-sm text-[var(--text-muted)]">No active challenges</div>
+                <div className="p-6 text-center">
+                  <p className="text-sm text-[var(--text-muted)]">No active challenges</p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate('/challenges')}>
+                    Explore Challenges
+                  </Button>
+                </div>
               )}
             </div>
           </Card>

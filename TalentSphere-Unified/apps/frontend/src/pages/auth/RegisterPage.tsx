@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, User, Briefcase, Layers } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/shared/AuraButton';
 import { Input } from '../../components/shared/AuraInput';
 
 const RegisterPage: React.FC = () => {
+    const [searchParams] = useSearchParams();
+    const initialUserType = searchParams.get('role')?.toLowerCase() === 'recruiter' ? 'RECRUITER' : 'TALENT';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
-    const [userType, setUserType] = useState<'TALENT' | 'EMPLOYER'>('TALENT');
+    const [userType, setUserType] = useState<'TALENT' | 'RECRUITER'>(initialUserType);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        setUserType(searchParams.get('role')?.toLowerCase() === 'recruiter' ? 'RECRUITER' : 'TALENT');
+    }, [searchParams]);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,7 +30,7 @@ const RegisterPage: React.FC = () => {
                 email,
                 password,
                 fullName,
-                userType === 'TALENT' ? 'ROLE_USER' : 'ROLE_EMPLOYER'
+                userType === 'TALENT' ? 'ROLE_USER' : 'ROLE_RECRUITER'
             );
             navigate('/dashboard');
         } catch (err: any) {
@@ -62,33 +68,47 @@ const RegisterPage: React.FC = () => {
 
                     <form onSubmit={handleRegister} className="space-y-4" data-testid="register-form">
                         {/* Account Type */}
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-[var(--text-primary)]">Account Type</label>
-                            <div className="grid grid-cols-2 gap-3">
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium text-[var(--text-primary)]">Account Type</legend>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <button
                                     type="button"
                                     onClick={() => setUserType('TALENT')}
-                                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
+                                    className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
                                         userType === 'TALENT'
                                             ? 'bg-accent/10 border-accent text-accent'
                                             : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                                     }`}
+                                    aria-pressed={userType === 'TALENT'}
+                                    aria-describedby="talent-account-type-description"
                                 >
-                                    <User size={16} /> Talent
+                                    <span className="flex items-center gap-2 text-sm font-medium">
+                                        <User size={16} /> Talent
+                                    </span>
+                                    <span id="talent-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
+                                        Browse jobs, build a profile, learn skills, solve challenges, and apply.
+                                    </span>
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setUserType('EMPLOYER')}
-                                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
-                                        userType === 'EMPLOYER'
+                                    onClick={() => setUserType('RECRUITER')}
+                                    className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
+                                        userType === 'RECRUITER'
                                             ? 'bg-accent/10 border-accent text-accent'
                                             : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                                     }`}
+                                    aria-pressed={userType === 'RECRUITER'}
+                                    aria-describedby="recruiter-account-type-description"
                                 >
-                                    <Briefcase size={16} /> Employer
+                                    <span className="flex items-center gap-2 text-sm font-medium">
+                                        <Briefcase size={16} /> Recruiter
+                                    </span>
+                                    <span id="recruiter-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
+                                        Post jobs, review candidates, manage applications, and coordinate hiring.
+                                    </span>
                                 </button>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <Input
                             label="Full Name"

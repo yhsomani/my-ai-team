@@ -92,6 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsOpen(false)}
+                aria-current={isActive(item.path) ? 'page' : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
                   ${isActive(item.path) 
@@ -112,6 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsOpen(false)}
+                aria-current={isActive(item.path) ? 'page' : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
                   ${isActive(item.path) 
@@ -169,6 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               key={item.path}
               to={item.path}
               title={!isOpen ? item.name : undefined}
+              aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
                 ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
@@ -193,6 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               key={item.path}
               to={item.path}
               title={!isOpen ? item.name : undefined}
+              aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
                 ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
@@ -258,6 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           <Link
             key={item.path}
             to={item.path}
+            aria-current={isActive(item.path) ? 'page' : undefined}
             className={`
               flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
               ${isActive(item.path) ? 'text-accent' : 'text-[var(--text-muted)]'}

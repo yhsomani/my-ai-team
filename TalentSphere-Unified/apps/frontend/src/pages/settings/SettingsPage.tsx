@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { settingsService, NotificationSettings as NotificationSettingsType, BillingInfo } from '../../services/settingsService';
 import {
@@ -15,9 +16,21 @@ import {
   BillingSettings
 } from './components';
 
+const createDefaultNotificationSettings = (userId: string): NotificationSettingsType => ({
+  user_id: userId,
+  email_notifications: true,
+  push_notifications: true,
+  sms_notifications: false,
+  job_alerts: true,
+  message_notifications: true,
+  newsletter: false,
+  updated_at: new Date().toISOString()
+} as NotificationSettingsType);
+
 const SettingsPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { addToast } = useToast();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
@@ -46,7 +59,7 @@ const SettingsPage: React.FC = () => {
           settingsService.getBilling(user.id).catch(() => null)
         ]);
 
-        if (notifData) setNotifications(notifData);
+        setNotifications(notifData || createDefaultNotificationSettings(user.id));
         if (billingData) setBilling(billingData);
       } catch (err) {
         console.error("Failed to fetch settings", err);
@@ -146,11 +159,11 @@ const SettingsPage: React.FC = () => {
           )}
 
           {activeTab === 'security' && (
-            <SecuritySettings />
+            <SecuritySettings userId={user?.id} userEmail={user?.email} />
           )}
 
           {activeTab === 'billing' && (
-            <BillingSettings billing={billing} />
+            <BillingSettings billing={billing} onOpenBilling={() => navigate('/billing')} />
           )}
         </div>
       </div>

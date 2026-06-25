@@ -14,13 +14,13 @@ export interface Payment {
 }
 
 export interface PaymentPlan {
-  id: string;
+  id?: string;
   name: string;
   price: number;
-  currency: string;
-  interval: 'month' | 'year';
+  currency?: string;
+  interval?: 'month' | 'year';
   features: string[];
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 export const paymentService = {
@@ -129,6 +129,22 @@ export const paymentService = {
     }
 
     return data;
+  },
+
+  createBillingPortalSession: async (userId: string): Promise<{ url?: string; [key: string]: any }> => {
+    const { data, error } = await supabase.functions.invoke('create-billing-portal-session', {
+      body: { userId }
+    });
+
+    if (error) {
+      console.error('Error creating billing portal session:', error);
+      throw new Error(`Failed to open billing portal: ${error.message}`);
+    }
+
+    return {
+      ...data,
+      url: data?.url || data?.billingPortalUrl || data?.paymentUrl
+    };
   },
 
   getUserSubscription: async (userId: string): Promise<any | null> => {

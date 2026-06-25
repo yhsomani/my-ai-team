@@ -2,6 +2,55 @@ import { supabase } from '../lib/supabaseClient';
 import { Connection, FeedItem, PublicProfile } from '../types/networking';
 import { apiClient } from '../api/axios';
 
+const mapProfileRow = (profile: any): PublicProfile => ({
+  id: profile.id,
+  userId: profile.id,
+  fullName: profile.full_name || undefined,
+  firstName: profile.full_name?.split(' ')[0] || undefined,
+  lastName: profile.full_name?.split(' ').slice(1).join(' ') || undefined,
+  headline: profile.user_profiles?.[0]?.headline || undefined,
+  currentRole: profile.user_profiles?.[0]?.current_role || profile.user_profiles?.[0]?.headline || undefined,
+  location: profile.user_profiles?.[0]?.location || undefined,
+  avatarUrl: profile.avatar_url || undefined
+});
+
+const fetchProfilesByIds = async (userIds: string[]) => {
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return new Map<string, PublicProfile>();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(`
+      id,
+      email,
+      full_name,
+      avatar_url,
+      user_profiles (
+        headline,
+        current_role,
+        location
+      )
+    `)
+    .in('id', uniqueIds);
+
+  if (error) throw error;
+
+  return new Map((data || []).map((profile) => [profile.id, mapProfileRow(profile)]));
+};
+
+const mapConnectionRow = (row: any, profilesById: Map<string, PublicProfile>): Connection => ({
+  id: row.id,
+  requesterId: row.requester_id,
+  receiverId: row.receiver_id,
+  recipientId: row.receiver_id,
+  status: row.status,
+  message: row.message || undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  requester: profilesById.get(row.requester_id),
+  recipient: profilesById.get(row.receiver_id)
+});
+
 export const networkingService = {
   getFeed: async (userId: string): Promise<FeedItem[]> => {
     try {
@@ -21,7 +70,7 @@ export const networkingService = {
         .eq('status', 'ACCEPTED');
 
       const connectionIds = connections?.map(c => c.receiver_id) || [];
-      
+
       if (connectionIds.length === 0) {
         // Fallback to API gateway if no connections found
         const response = await apiClient.get('/api/v1/network/feed', { params: { userId } });
@@ -50,7 +99,7 @@ export const networkingService = {
         `)
         .in('user_id', connectionIds)
         .limit(20);
-      
+
       if (error) throw error;
       
       // Transform into feed items
@@ -110,28 +159,13 @@ export const networkingService = {
         status: 'PENDING',
         message
       })
-      .select(`
-        *,
-        profiles (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .single();
     
     if (error) throw error;
-    
-    return {
-      id: data.id,
-      requesterId: data.requester_id,
-      receiverId: data.receiver_id,
-      status: data.status,
-      message: data.message,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      requester: data.profiles
-    };
+
+    const profilesById = await fetchProfilesByIds([data.requester_id, data.receiver_id]);
+    return mapConnectionRow(data, profilesById);
   },
 
   getSuggestions: async (userId: string): Promise<PublicProfile[]> => {
@@ -204,31 +238,56 @@ export const networkingService = {
     if (error) throw error;
   },
 
+  getConnectionRequests: async (userId: string): Promise<{ incoming: Connection[]; sent: Connection[] }> => {
+    try {
+      const { data, error } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const profilesById = await fetchProfilesByIds(
+        (data || []).flatMap((connection) => [connection.requester_id, connection.receiver_id])
+      );
+      const connections = (data || []).map((connection) => mapConnectionRow(connection, profilesById));
+
+      return {
+        incoming: connections.filter((connection) => connection.receiverId === userId),
+        sent: connections.filter((connection) => connection.requesterId === userId)
+      };
+    } catch (err) {
+      console.warn('[Networking] Supabase request fetch failed, using empty request lists...', err);
+      return { incoming: [], sent: [] };
+    }
+  },
+
   getConnections: async (userId: string): Promise<Connection[]> => {
-    const { data, error } = await supabase
-      .from('connections')
-      .select(`
-        *,
-        profiles (
-          id,
-          full_name,
-          avatar_url,
-          user_profiles (headline)
-        )
-      `)
-      .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
-      .eq('status', 'ACCEPTED');
-    
-    if (error) throw error;
-    
-    return data.map(c => ({
-      id: c.id,
-      requesterId: c.requester_id,
-      receiverId: c.receiver_id,
-      status: c.status,
-      createdAt: c.created_at,
-      updatedAt: c.updated_at,
-      requester: c.profiles
-    }));
+    try {
+      const { data, error } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq('status', 'ACCEPTED')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      const profilesById = await fetchProfilesByIds(
+        (data || []).flatMap((connection) => [connection.requester_id, connection.receiver_id])
+      );
+
+      return (data || []).map((connection) => mapConnectionRow(connection, profilesById));
+    } catch (err) {
+      console.warn('[Networking] Supabase connections fetch failed, using Gateway...', err);
+      try {
+        const response = await apiClient.get('/api/v1/networking/connections/' + userId);
+        return response.data?.data || [];
+      } catch (gatewayErr) {
+        return [];
+      }
+    }
   }
 };

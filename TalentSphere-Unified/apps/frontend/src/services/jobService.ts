@@ -24,6 +24,8 @@ export const jobService = {
     job_type?: string; 
     location?: string; 
     search?: string;
+    salary_min?: number;
+    salary_max?: number;
     limit?: number;
     offset?: number;
   }): Promise<Job[]> => {
@@ -54,6 +56,14 @@ export const jobService = {
         query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`);
       }
 
+      if (params?.salary_min !== undefined) {
+        query = query.gte('salary_max', params.salary_min);
+      }
+
+      if (params?.salary_max !== undefined) {
+        query = query.lte('salary_min', params.salary_max);
+      }
+
       query = query.order('posted_at', { ascending: false });
 
       if (params?.limit) {
@@ -70,12 +80,8 @@ export const jobService = {
       return data.map(mapJobResponse);
     } catch (err) {
       console.warn('[Jobs] Supabase failed, trying API Gateway...', err);
-      try {
-        const response = await apiClient.get('/api/v1/jobs', { params });
-        return response.data?.data?.map(mapJobResponse) || [];
-      } catch (gatewayErr) {
-        throw gatewayErr;
-      }
+      const response = await apiClient.get('/api/v1/jobs', { params });
+      return response.data?.data?.map(mapJobResponse) || [];
     }
   },
 
@@ -103,12 +109,8 @@ export const jobService = {
       return mapJobResponse(data);
     } catch (err) {
       console.warn(`[Jobs] getJobById failed for ${id}, trying API Gateway...`, err);
-      try {
-        const response = await apiClient.get(`/api/v1/jobs/${id}`);
-        return mapJobResponse(response.data?.data || response.data);
-      } catch (gatewayErr) {
-        throw gatewayErr;
-      }
+      const response = await apiClient.get(`/api/v1/jobs/${id}`);
+      return mapJobResponse(response.data?.data || response.data);
     }
   },
 
@@ -216,13 +218,18 @@ export const jobService = {
   },
 
   // Job Applications
-  applyToJob: async (application: CreateApplicationRequest): Promise<JobApplication> => {
+  applyToJob: async (application: CreateApplicationRequest, userId?: string): Promise<JobApplication> => {
+    const applicantId = application.userId || userId;
+    if (!applicantId) {
+      throw new Error('User ID is required to apply for a job');
+    }
+
     try {
       const { data, error } = await supabase
         .from('job_applications')
         .insert({
           job_id: application.jobId,
-          user_id: application.userId,
+          user_id: applicantId,
           status: 'PENDING',
           applied_at: new Date().toISOString()
         })
@@ -236,7 +243,7 @@ export const jobService = {
       return {
         id: `mock-app-${Date.now()}`,
         job_id: application.jobId,
-        user_id: application.userId,
+        user_id: applicantId,
         status: 'PENDING',
         applied_at: new Date().toISOString()
       } as any;

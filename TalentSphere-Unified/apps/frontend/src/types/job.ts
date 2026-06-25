@@ -29,6 +29,7 @@ export interface JobApplication {
 
 export interface CreateApplicationRequest {
   jobId: string;
+  userId?: string;
   resumeUrl?: string;
   coverLetter?: string;
 }
