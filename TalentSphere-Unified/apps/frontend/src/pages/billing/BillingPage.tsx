@@ -9,6 +9,10 @@ import { useAppSelector } from '../../store/hooks';
 import { Skeleton } from '../../components/shared/Skeleton';
 import { AuraModal } from '../../components/shared/AuraModal';
 import { useToast } from '../../components/shared/Toast';
+import {
+  recordBillingWorkflowAnalytics,
+  type BillingWorkflowAnalyticsAction,
+} from '../../lib/billingWorkflowAnalytics';
 
 const getActionUrl = (response: any) => {
   return response?.url || response?.checkoutUrl || response?.paymentUrl || response?.data?.url || response?.data?.paymentUrl;
@@ -20,6 +24,17 @@ const formatCurrency = (amount: number, currency = 'usd') => {
     currency: currency.toUpperCase(),
     maximumFractionDigits: amount % 1 === 0 ? 0 : 2
   }).format(amount);
+};
+
+const getBillingErrorCategory = (error: unknown, fallback = 'request_error') => {
+  if (!error) return fallback;
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  if (message.includes('auth') || message.includes('login') || message.includes('sign in')) return 'auth_required';
+  if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) return 'network_error';
+  if (message.includes('stripe') || message.includes('checkout') || message.includes('portal') || message.includes('subscription')) {
+    return 'provider_error';
+  }
+  return fallback;
 };
 
 const BillingPage: React.FC = () => {
@@ -37,7 +52,18 @@ const BillingPage: React.FC = () => {
 
   const userId = user?.id;
 
-  const loadBillingData = useCallback(async () => {
+  const recordBillingAction = useCallback((
+    action: BillingWorkflowAnalyticsAction,
+    extra: Omit<Parameters<typeof recordBillingWorkflowAnalytics>[0], 'action' | 'userId'> = {}
+  ) => {
+    recordBillingWorkflowAnalytics({
+      userId,
+      action,
+      ...extra,
+    });
+  }, [userId]);
+
+  const loadBillingData = useCallback(async (entryPoint = 'page_load') => {
     try {
       setLoading(true);
       setBillingLoadError(null);
@@ -49,20 +75,32 @@ const BillingPage: React.FC = () => {
       setPlans(plansData);
       setHistory(historyData);
       setSubscription(subscriptionData);
+      recordBillingAction('billing_data_loaded', {
+        entryPoint,
+        currentPlanId: subscriptionData?.plan_id || subscriptionData?.planId || null,
+        planCount: plansData.length,
+        transactionCount: historyData.length,
+        hasSubscription: Boolean(subscriptionData),
+        hasPaymentMethod: Boolean(subscriptionData?.payment_method || subscriptionData?.paymentMethod),
+      });
     } catch (err) {
       console.error("Billing fetch error:", err);
       setPlans([]);
       setHistory([]);
       setSubscription(null);
       setBillingLoadError('Billing provider data is unavailable right now.');
+      recordBillingAction('billing_data_load_failed', {
+        entryPoint,
+        errorCategory: getBillingErrorCategory(err, 'billing_load_failed'),
+      });
       addToast({ type: 'error', title: 'Billing unavailable', message: 'Could not load billing details.' });
     } finally {
       setLoading(false);
     }
-  }, [addToast, userId]);
+  }, [addToast, recordBillingAction, userId]);
 
   useEffect(() => {
-    loadBillingData();
+    void loadBillingData();
   }, [loadBillingData]);
 
   const currentPlanName = subscription?.subscription_plans?.name || subscription?.plan?.name || 'Free';
@@ -72,13 +110,71 @@ const BillingPage: React.FC = () => {
     return plans.find((plan) => plan.name?.toLowerCase() === currentPlanName?.toLowerCase()) || null;
   }, [currentPlanName, plans]);
 
+  const currentPlanId = subscription?.plan_id || subscription?.planId || planByCurrentSubscription?.id || null;
+
+  const getBillingOverviewAnalyticsContext = useCallback((entryPoint?: string) => ({
+    entryPoint,
+    currentPlanId,
+    planCount: plans.length,
+    transactionCount: history.length,
+    hasSubscription: Boolean(subscription),
+    hasPaymentMethod: Boolean(paymentMethod),
+  }), [currentPlanId, history.length, paymentMethod, plans.length, subscription]);
+
+  const getPlanAnalyticsContext = useCallback((plan: PaymentPlan, entryPoint?: string) => ({
+    ...getBillingOverviewAnalyticsContext(entryPoint),
+    planId: plan.id || null,
+    planInterval: plan.interval || 'month',
+    currency: plan.currency || 'usd',
+    price: plan.price,
+    featureCount: plan.features.length,
+  }), [getBillingOverviewAnalyticsContext]);
+
+  const handleRetryBillingData = useCallback((entryPoint: string) => {
+    recordBillingAction('billing_retry_clicked', getBillingOverviewAnalyticsContext(entryPoint));
+    void loadBillingData(entryPoint);
+  }, [getBillingOverviewAnalyticsContext, loadBillingData, recordBillingAction]);
+
   const handleChoosePlan = (plan: PaymentPlan) => {
     if (!user) {
+      recordBillingAction('billing_plan_review_failed', {
+        ...getPlanAnalyticsContext(plan, 'plan_card'),
+        errorCategory: 'auth_required',
+      });
       addToast({ type: 'warning', title: 'Sign in required', message: 'Please sign in before changing your plan.' });
       return;
     }
+    recordBillingAction('billing_plan_review_opened', getPlanAnalyticsContext(plan, 'plan_card'));
     setSelectedPlan(plan);
     setIsPlanModalOpen(true);
+  };
+
+  const handleClosePlanReview = () => {
+    if (isProcessing) return;
+    if (selectedPlan) {
+      recordBillingAction('billing_plan_review_cancelled', getPlanAnalyticsContext(selectedPlan, 'review_modal'));
+    }
+    setIsPlanModalOpen(false);
+  };
+
+  const handleOpenPaymentMethodReview = () => {
+    if (!user) {
+      recordBillingAction('billing_portal_failed', {
+        ...getBillingOverviewAnalyticsContext('payment_method_card'),
+        providerAction: 'billing_portal',
+        errorCategory: 'auth_required',
+      });
+      addToast({ type: 'warning', title: 'Sign in required', message: 'Please sign in before updating your payment method.' });
+      return;
+    }
+    recordBillingAction('billing_payment_method_review_opened', getBillingOverviewAnalyticsContext('payment_method_card'));
+    setIsPaymentMethodModalOpen(true);
+  };
+
+  const handleClosePaymentMethodReview = () => {
+    if (isProcessing) return;
+    recordBillingAction('billing_payment_method_review_cancelled', getBillingOverviewAnalyticsContext('review_modal'));
+    setIsPaymentMethodModalOpen(false);
   };
 
   const openUrl = (url?: string) => {
@@ -89,6 +185,11 @@ const BillingPage: React.FC = () => {
 
   const handleConfirmPlan = async () => {
     if (!user || !selectedPlan) return;
+    const planAnalyticsContext = getPlanAnalyticsContext(selectedPlan, 'review_modal');
+    recordBillingAction('billing_plan_checkout_started', {
+      ...planAnalyticsContext,
+      providerAction: 'checkout',
+    });
     setIsProcessing(true);
     try {
       const currency = selectedPlan.currency || 'usd';
@@ -108,12 +209,24 @@ const BillingPage: React.FC = () => {
       const actionUrl = getActionUrl(response);
       if (actionUrl) {
         const opened = openUrl(actionUrl);
+        recordBillingAction(opened ? 'billing_plan_checkout_opened' : 'billing_plan_checkout_popup_blocked', {
+          ...planAnalyticsContext,
+          providerAction: 'checkout',
+          redirectAvailable: true,
+          popupOpened: opened,
+        });
         addToast({
           type: opened ? 'success' : 'warning',
           title: opened ? 'Checkout opened' : 'Popup blocked',
           message: opened ? 'Review and confirm the plan change in Stripe.' : 'Allow popups, then try again.'
         });
       } else {
+        recordBillingAction('billing_plan_change_requested', {
+          ...planAnalyticsContext,
+          providerAction: 'checkout',
+          redirectAvailable: false,
+          popupOpened: false,
+        });
         addToast({
           type: 'success',
           title: 'Plan request submitted',
@@ -123,6 +236,11 @@ const BillingPage: React.FC = () => {
       setIsPlanModalOpen(false);
     } catch (err) {
       console.error('Plan change failed:', err);
+      recordBillingAction('billing_plan_checkout_failed', {
+        ...planAnalyticsContext,
+        providerAction: 'checkout',
+        errorCategory: getBillingErrorCategory(err, 'plan_checkout_failed'),
+      });
       addToast({ type: 'error', title: 'Plan change failed', message: 'Please try again later.' });
     } finally {
       setIsProcessing(false);
@@ -130,19 +248,44 @@ const BillingPage: React.FC = () => {
   };
 
   const handleUpdatePaymentMethod = async () => {
-    if (!user) return;
+    const portalAnalyticsContext = getBillingOverviewAnalyticsContext('review_modal');
+    if (!user) {
+      recordBillingAction('billing_portal_failed', {
+        ...portalAnalyticsContext,
+        providerAction: 'billing_portal',
+        errorCategory: 'auth_required',
+      });
+      addToast({ type: 'warning', title: 'Sign in required', message: 'Please sign in before updating your payment method.' });
+      return;
+    }
+    recordBillingAction('billing_portal_started', {
+      ...portalAnalyticsContext,
+      providerAction: 'billing_portal',
+    });
     setIsProcessing(true);
     try {
       const response = await paymentService.createBillingPortalSession(user.id);
       const actionUrl = getActionUrl(response);
       if (actionUrl) {
         const opened = openUrl(actionUrl);
+        recordBillingAction(opened ? 'billing_portal_opened' : 'billing_portal_popup_blocked', {
+          ...portalAnalyticsContext,
+          providerAction: 'billing_portal',
+          redirectAvailable: true,
+          popupOpened: opened,
+        });
         addToast({
           type: opened ? 'success' : 'warning',
           title: opened ? 'Billing portal opened' : 'Popup blocked',
           message: opened ? 'Update your payment method in Stripe.' : 'Allow popups, then try again.'
         });
       } else {
+        recordBillingAction('billing_portal_request_submitted', {
+          ...portalAnalyticsContext,
+          providerAction: 'billing_portal',
+          redirectAvailable: false,
+          popupOpened: false,
+        });
         addToast({
           type: 'success',
           title: 'Payment method request submitted',
@@ -152,6 +295,11 @@ const BillingPage: React.FC = () => {
       setIsPaymentMethodModalOpen(false);
     } catch (err) {
       console.error('Payment method update failed:', err);
+      recordBillingAction('billing_portal_failed', {
+        ...portalAnalyticsContext,
+        providerAction: 'billing_portal',
+        errorCategory: getBillingErrorCategory(err, 'billing_portal_failed'),
+      });
       addToast({ type: 'error', title: 'Update failed', message: 'Payment method portal is unavailable right now.' });
     } finally {
       setIsProcessing(false);
@@ -174,7 +322,7 @@ const BillingPage: React.FC = () => {
                 <p className="text-sm text-[var(--text-secondary)]">{billingLoadError} You can retry without changing your current subscription.</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={loadBillingData}>
+            <Button variant="outline" size="sm" onClick={() => handleRetryBillingData('load_error_retry')}>
               Retry
             </Button>
           </div>
@@ -223,7 +371,7 @@ const BillingPage: React.FC = () => {
             <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-secondary)]">
               Plans could not be loaded from the billing provider. Your current subscription is not changed.
             </p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={loadBillingData}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => handleRetryBillingData('plan_catalog_empty')}>
               Retry Plans
             </Button>
           </Card>
@@ -234,7 +382,7 @@ const BillingPage: React.FC = () => {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">Payment Method</h3>
-          <Button variant="outline" size="sm" onClick={() => setIsPaymentMethodModalOpen(true)}>
+          <Button variant="outline" size="sm" onClick={handleOpenPaymentMethodReview}>
             Update
           </Button>
         </div>
@@ -276,7 +424,7 @@ const BillingPage: React.FC = () => {
 
       <AuraModal
         isOpen={isPlanModalOpen}
-        onClose={() => !isProcessing && setIsPlanModalOpen(false)}
+        onClose={handleClosePlanReview}
         title={selectedPlan ? `Review ${selectedPlan.name}` : 'Review Plan'}
         size="md"
       >
@@ -311,7 +459,7 @@ const BillingPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsPlanModalOpen(false)} disabled={isProcessing}>Cancel</Button>
+              <Button variant="outline" onClick={handleClosePlanReview} disabled={isProcessing}>Cancel</Button>
               <Button onClick={handleConfirmPlan} isLoading={isProcessing}>
                 <ArrowUpRight size={14} />
                 Continue
@@ -323,7 +471,7 @@ const BillingPage: React.FC = () => {
 
       <AuraModal
         isOpen={isPaymentMethodModalOpen}
-        onClose={() => !isProcessing && setIsPaymentMethodModalOpen(false)}
+        onClose={handleClosePaymentMethodReview}
         title="Update Payment Method"
         size="sm"
       >
@@ -332,7 +480,7 @@ const BillingPage: React.FC = () => {
             Payment method changes open in the secure billing provider. Your current card is not changed until you confirm the update there.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsPaymentMethodModalOpen(false)} disabled={isProcessing}>Cancel</Button>
+            <Button variant="outline" onClick={handleClosePaymentMethodReview} disabled={isProcessing}>Cancel</Button>
             <Button onClick={handleUpdatePaymentMethod} isLoading={isProcessing}>
               <ArrowUpRight size={14} />
               Open Billing Portal

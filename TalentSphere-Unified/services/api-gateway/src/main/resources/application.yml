@@ -135,6 +135,12 @@ spring:
             - Path=/api/v1/files/**
           filters:
             - AuthenticationFilter
+        - id: video-service
+          uri: lb://video-service
+          predicates:
+            - Path=/api/v1/video/**
+          filters:
+            - AuthenticationFilter
 
 eureka:
   client:

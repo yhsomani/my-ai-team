@@ -3,6 +3,7 @@ package com.talentsphere.application.service;
 import com.talentsphere.application.entity.JobApplication;
 import com.talentsphere.application.messaging.ApplicationEventPublisher;
 import com.talentsphere.application.repository.ApplicationRepository;
+import com.talentsphere.application.repository.ApplicationStatusEventRepository;
 import com.talentsphere.contracts.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ class ApplicationServiceTest {
 
     @Mock
     private ApplicationRepository applicationRepository;
+
+    @Mock
+    private ApplicationStatusEventRepository statusEventRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -58,6 +62,12 @@ class ApplicationServiceTest {
         assertEquals("PENDING", testApplication.getStatus());
         assertNotNull(testApplication.getAppliedAt());
         verify(applicationRepository).save(testApplication);
+        verify(statusEventRepository).save(argThat(event ->
+            event.getApplicationId().equals("app-123") &&
+            event.getPreviousStatus() == null &&
+            event.getStatus().equals("PENDING") &&
+            event.getChangedBy().equals("user-456")
+        ));
         verify(eventPublisher).publishApplicationSubmitted(any(Map.class));
     }
 
@@ -73,6 +83,7 @@ class ApplicationServiceTest {
         assertFalse(response.isSuccess());
         assertEquals("Missing mandatory fields: userId or jobId", response.getMessage());
         verify(applicationRepository, never()).save(any());
+        verify(statusEventRepository, never()).save(any());
         verify(eventPublisher, never()).publishApplicationSubmitted(any());
     }
 
@@ -88,6 +99,7 @@ class ApplicationServiceTest {
         assertFalse(response.isSuccess());
         assertEquals("Missing mandatory fields: userId or jobId", response.getMessage());
         verify(applicationRepository, never()).save(any());
+        verify(statusEventRepository, never()).save(any());
         verify(eventPublisher, never()).publishApplicationSubmitted(any());
     }
 
@@ -105,6 +117,12 @@ class ApplicationServiceTest {
         assertTrue(response.isSuccess());
         assertEquals(newStatus, testApplication.getStatus());
         verify(applicationRepository).save(testApplication);
+        verify(statusEventRepository).save(argThat(event ->
+            event.getApplicationId().equals("app-123") &&
+            event.getPreviousStatus().equals("DRAFT") &&
+            event.getStatus().equals(newStatus) &&
+            event.getChangedBy().equals("user-456")
+        ));
         verify(eventPublisher).publishApplicationSubmitted(any(Map.class));
     }
 
@@ -120,6 +138,7 @@ class ApplicationServiceTest {
         assertFalse(response.isSuccess());
         assertEquals("Application not found", response.getMessage());
         verify(applicationRepository, never()).save(any());
+        verify(statusEventRepository, never()).save(any());
         verify(eventPublisher, never()).publishApplicationSubmitted(any());
     }
 

@@ -27,6 +27,16 @@ export interface JobApplication {
   job?: Job;
 }
 
+export interface ApplicationStatusEvent {
+  id: string;
+  applicationId: string;
+  previousStatus?: JobApplication['status'] | string | null;
+  status: JobApplication['status'] | string;
+  changedBy?: string | null;
+  reason?: string | null;
+  createdAt: string;
+}
+
 export interface CreateApplicationRequest {
   jobId: string;
   userId?: string;

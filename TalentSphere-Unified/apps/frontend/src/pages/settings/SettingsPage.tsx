@@ -8,6 +8,10 @@ import {
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { useToast } from '../../components/shared/Toast';
+import {
+  recordSettingsWorkflowAnalytics,
+  type SettingsWorkflowAnalyticsAction,
+} from '../../lib/settingsWorkflowAnalytics';
 
 import {
   ProfileSettings,
@@ -24,8 +28,43 @@ const createDefaultNotificationSettings = (userId: string): NotificationSettings
   job_alerts: true,
   message_notifications: true,
   newsletter: false,
+  digest_frequency: 'immediate',
+  quiet_hours_enabled: false,
+  quiet_hours_start: '18:00',
+  quiet_hours_end: '09:00',
   updated_at: new Date().toISOString()
 } as NotificationSettingsType);
+
+const settingsNotificationPreferenceKeys = [
+  'email_notifications',
+  'push_notifications',
+  'job_alerts',
+  'message_notifications',
+] as const;
+
+const getSettingsWorkflowErrorCategory = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.name : fallback
+);
+
+const getProfileSettingsFieldCount = (profileData: {
+  firstName: string;
+  lastName: string;
+  headline: string;
+  location: string;
+}) => (
+  [
+    profileData.firstName.trim(),
+    profileData.lastName.trim(),
+    profileData.headline.trim(),
+    profileData.location.trim(),
+  ].filter(Boolean).length
+);
+
+const getEnabledNotificationChannelCount = (notifications?: NotificationSettingsType | null) => (
+  notifications
+    ? settingsNotificationPreferenceKeys.filter(key => Boolean(notifications[key])).length
+    : 0
+);
 
 const SettingsPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -47,6 +86,17 @@ const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationSettingsType | null>(null);
   const [billing, setBilling] = useState<BillingInfo | null>(null);
 
+  const recordSettingsAnalytics = (
+    action: SettingsWorkflowAnalyticsAction,
+    extra: Omit<Parameters<typeof recordSettingsWorkflowAnalytics>[0], 'action' | 'userId'> = {}
+  ) => {
+    recordSettingsWorkflowAnalytics({
+      userId: user?.id,
+      action,
+      ...extra,
+    });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -59,7 +109,10 @@ const SettingsPage: React.FC = () => {
           settingsService.getBilling(user.id).catch(() => null)
         ]);
 
-        setNotifications(notifData || createDefaultNotificationSettings(user.id));
+        setNotifications({
+          ...createDefaultNotificationSettings(user.id),
+          ...(notifData || {}),
+        });
         if (billingData) setBilling(billingData);
       } catch (err) {
         console.error("Failed to fetch settings", err);
@@ -82,8 +135,15 @@ const SettingsPage: React.FC = () => {
         location: profileData.location
       });
       addToast({ type: 'success', title: 'Success', message: 'Profile settings saved' });
+      recordSettingsAnalytics('profile_settings_saved', {
+        fieldCount: getProfileSettingsFieldCount(profileData),
+      });
     } catch (err) {
       addToast({ type: 'error', title: 'Error', message: 'Failed to save profile' });
+      recordSettingsAnalytics('profile_settings_save_failed', {
+        fieldCount: getProfileSettingsFieldCount(profileData),
+        errorCategory: getSettingsWorkflowErrorCategory(err, 'profile_settings_save_failed'),
+      });
     } finally {
       setSaving(false);
     }
@@ -95,11 +155,55 @@ const SettingsPage: React.FC = () => {
     try {
       await settingsService.updateNotifications(user.id, notifications);
       addToast({ type: 'success', title: 'Success', message: 'Notification preferences saved' });
+      recordSettingsAnalytics('notification_settings_saved', {
+        digestFrequency: notifications.digest_frequency,
+        quietHoursEnabled: Boolean(notifications.quiet_hours_enabled),
+        channelCount: getEnabledNotificationChannelCount(notifications),
+      });
     } catch (err) {
       addToast({ type: 'error', title: 'Error', message: 'Failed to save preferences' });
+      recordSettingsAnalytics('notification_settings_save_failed', {
+        digestFrequency: notifications.digest_frequency,
+        quietHoursEnabled: Boolean(notifications.quiet_hours_enabled),
+        channelCount: getEnabledNotificationChannelCount(notifications),
+        errorCategory: getSettingsWorkflowErrorCategory(err, 'notification_settings_save_failed'),
+      });
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTabSelect = (tabId: string) => {
+    recordSettingsAnalytics('settings_tab_selected', { tabId });
+    setActiveTab(tabId);
+  };
+
+  const handleNotificationPreferenceAnalytics = (
+    preferenceKey: string,
+    updates: Partial<NotificationSettingsType>
+  ) => {
+    const nextNotifications = {
+      ...(notifications || createDefaultNotificationSettings(user?.id || 'anonymous')),
+      ...updates,
+    };
+
+    recordSettingsAnalytics('notification_preference_changed', {
+      preferenceKey,
+      enabled: typeof updates[preferenceKey as keyof NotificationSettingsType] === 'boolean'
+        ? Boolean(updates[preferenceKey as keyof NotificationSettingsType])
+        : undefined,
+      digestFrequency: nextNotifications.digest_frequency,
+      quietHoursEnabled: Boolean(nextNotifications.quiet_hours_enabled),
+      channelCount: getEnabledNotificationChannelCount(nextNotifications),
+    });
+  };
+
+  const handleOpenBilling = () => {
+    recordSettingsAnalytics('billing_handoff_opened', {
+      hasBillingRecord: Boolean(billing),
+      invoiceCount: billing?.billing_history?.length || 0,
+    });
+    navigate('/billing');
   };
 
   const tabs = [
@@ -123,7 +227,7 @@ const SettingsPage: React.FC = () => {
               {tabs.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabSelect(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                     activeTab === tab.id
                       ? 'bg-accent/10 text-accent'
@@ -153,17 +257,22 @@ const SettingsPage: React.FC = () => {
               notifications={notifications}
               setNotifications={setNotifications}
               handleNotificationSave={handleNotificationSave}
+              recordPreferenceChange={handleNotificationPreferenceAnalytics}
               loading={loading}
               saving={saving}
             />
           )}
 
           {activeTab === 'security' && (
-            <SecuritySettings userId={user?.id} userEmail={user?.email} />
+            <SecuritySettings
+              userId={user?.id}
+              userEmail={user?.email}
+              recordSettingsAction={recordSettingsAnalytics}
+            />
           )}
 
           {activeTab === 'billing' && (
-            <BillingSettings billing={billing} onOpenBilling={() => navigate('/billing')} />
+            <BillingSettings billing={billing} onOpenBilling={handleOpenBilling} />
           )}
         </div>
       </div>

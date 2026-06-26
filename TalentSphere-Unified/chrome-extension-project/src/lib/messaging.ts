@@ -1,6 +1,6 @@
 /**
  * Unified extension message passing helper.
- * Simulates standard chrome.runtime message channels in web browser environments.
+ * Reports unavailable chrome.runtime channels explicitly in web browser previews.
  * Enhanced with retry logic and promise rejections for enterprise readiness.
  */
 
@@ -34,46 +34,31 @@ export const extMessaging = {
         }
       });
     } else {
-      // Simulate messaging in web environment via CustomEvent
+      // Web previews cannot inspect the active browser tab or reach a Manifest V3 service worker.
       return new Promise((resolve) => {
-        console.log('[Mock Messaging] Sending message:', message);
+        console.log('[Web Preview Messaging] Runtime unavailable for message:', message);
         
-        // Dispatch custom event to simulate content/background listeners
         const event = new CustomEvent('talentsphere-extension-msg', { detail: message });
         window.dispatchEvent(event);
 
-        // Mock a slow background response based on action type
         setTimeout(() => {
           if (message.action === 'analyze_page') {
             resolve({
-              status: 'success',
-              summary: 'Drafted Software Engineer at Google for review.',
-              draft: {
-                id: `mock-scan-${Date.now()}`,
-                company: 'Google',
-                role: 'Software Engineer',
-                status: 'Applied',
-                url: window.location.href,
-                source: 'mock-page',
-                notes: 'Scanned page excerpt: mock extension preview response.',
-                scannedAt: new Date().toISOString(),
-                confidence: 'medium',
-                rawTitle: document.title
-              }
+              status: 'error',
+              error: 'Page scanning requires the Chrome extension runtime.'
             });
-          } else if (message.action === 'optimize_resume') {
-            resolve({ 
-              status: 'success', 
-              suggestions: [
-                'Add "Tailwind CSS responsive alignment" to resume skills.',
-                'Quantify your backend optimizations by mentioning the 40% memory latency savings.',
-                'Emphasize your Spring Boot microservice security architectural designs.'
-              ] 
+          } else if (message.action === 'ping') {
+            resolve({
+              status: 'unavailable',
+              error: 'Chrome extension runtime is unavailable in this web preview.'
             });
           } else {
-            resolve({ status: 'received', message: 'Handled in background worker thread.' });
+            resolve({
+              status: 'unavailable',
+              error: 'Chrome extension runtime is unavailable in this web preview.'
+            });
           }
-        }, 800);
+        }, 150);
       });
     }
   },
@@ -93,16 +78,16 @@ export const extMessaging = {
       chrome.runtime.onMessage.addListener(listener);
       return () => chrome.runtime.onMessage.removeListener(listener);
     } else {
-      // Simulate on web environment
+      // Web previews can observe local events, but they do not provide a real background response path.
       const webListener = (event: Event) => {
         try {
           const customEvent = event as CustomEvent;
-          console.log('[Mock Messaging] Received message event:', customEvent.detail);
+          console.log('[Web Preview Messaging] Received local message event:', customEvent.detail);
           callback(customEvent.detail, (response) => {
-            console.log('[Mock Messaging] Mock sending response:', response);
+            console.log('[Web Preview Messaging] Ignored local response without chrome.runtime:', response);
           });
         } catch (err) {
-          console.error('[Mock Messaging] Error in simulated web listener:', err);
+          console.error('[Web Preview Messaging] Error in local message listener:', err);
         }
       };
       window.addEventListener('talentsphere-extension-msg', webListener);

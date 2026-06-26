@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,6 +19,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +87,22 @@ public class FileControllerTest {
                 .param("url", fileUrl))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void download_ShouldReturnFileResource_WhenFileExists() throws Exception {
+        Resource resource = new ByteArrayResource("Hello, World!".getBytes()) {
+            @Override
+            public String getFilename() {
+                return "test.txt";
+            }
+        };
+        when(fileService.loadFile(eq("general"), eq("test.txt"))).thenReturn(resource);
+
+        mockMvc.perform(get("/api/v1/files/download/general/test.txt"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "inline; filename=\"test.txt\""))
+                .andExpect(content().string("Hello, World!"));
     }
 
     @Test

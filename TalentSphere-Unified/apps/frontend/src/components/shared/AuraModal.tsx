@@ -26,12 +26,86 @@ export const AuraModal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
 }) => {
+  const titleId = React.useId();
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const onCloseRef = React.useRef(onClose);
   const sizes = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
   };
+
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'textarea:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    const focusFirstElement = () => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter(element => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+      (focusable[0] || dialog).focus();
+    };
+
+    const frame = window.requestAnimationFrame(focusFirstElement);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter(element => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusable[0];
+      const lastElement = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousFocus?.isConnected) {
+        previousFocus.focus();
+      }
+    };
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -48,6 +122,11 @@ export const AuraModal: React.FC<ModalProps> = ({
 
           {/* Modal Content */}
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -58,7 +137,7 @@ export const AuraModal: React.FC<ModalProps> = ({
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-Aurora-border bg-white/2">
-              <h3 className="text-xl font-bold font-display text-white">{title}</h3>
+              <h3 id={titleId} className="text-xl font-bold font-display text-white">{title}</h3>
               <AuraButton variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="rounded-full">
                 <X size={20} />
               </AuraButton>

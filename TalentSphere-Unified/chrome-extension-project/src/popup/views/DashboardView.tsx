@@ -24,12 +24,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-4" id="view-dashboard">
       <div className="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-slate-800/60 rounded-xl p-4 shadow-xl backdrop-blur-glass">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Applications</span>
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Tracked Jobs</span>
           <Sparkles className="h-4 w-4 text-amber-400" />
         </div>
         <div className="flex items-baseline space-x-2">
           <span className="text-3xl font-bold font-outfit text-white tracking-tight">{jobs.length}</span>
-          <span className="text-xs text-slate-500">jobs active in catalog</span>
+          <span className="text-xs text-slate-500">local tracker records</span>
         </div>
       </div>
 
@@ -56,8 +56,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <FileText className="h-4 w-4 text-purple-400" />
           </div>
           <div>
-            <h4 className="text-xs font-semibold text-white">AI Resume Optimizer</h4>
-            <p className="text-[10px] text-slate-400 mt-0.5">Analyze and align skills inside the premium options panel.</p>
+            <h4 className="text-xs font-semibold text-white">Resume Match Preview</h4>
+            <p className="text-[10px] text-slate-400 mt-0.5">Compare pasted job and resume text locally in the options panel.</p>
           </div>
         </div>
         <button 
@@ -70,9 +70,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       <div className="border border-slate-800/60 rounded-xl p-3 bg-slate-900/10 flex justify-between items-center">
         <div className="flex flex-col">
-          <span className="text-[11px] text-slate-300 font-semibold">Active Tab Analyzer</span>
+          <span className="text-[11px] text-slate-300 font-semibold">Page Scan Draft</span>
           <span className="text-[9px] text-slate-500 mt-0.5">
-            {hasDraft ? 'Draft ready in Tracker.' : 'Scrapes role data from current web portal.'}
+            {hasDraft ? 'Editable draft ready in Tracker.' : 'Create an editable local draft from the current page.'}
           </span>
         </div>
         <button

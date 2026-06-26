@@ -1,7 +1,9 @@
 package com.talentsphere.application.service;
+import com.talentsphere.application.entity.ApplicationStatusEvent;
 import com.talentsphere.application.entity.JobApplication;
 import com.talentsphere.application.messaging.ApplicationEventPublisher;
 import com.talentsphere.application.repository.ApplicationRepository;
+import com.talentsphere.application.repository.ApplicationStatusEventRepository;
 import com.talentsphere.contracts.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import java.util.Map;
 @Service @Slf4j @RequiredArgsConstructor
 public class ApplicationService {
   private final ApplicationRepository applicationRepository;
+  private final ApplicationStatusEventRepository statusEventRepository;
   private final ApplicationEventPublisher eventPublisher;
 
   @CircuitBreaker(name = "applicationService", fallbackMethod = "applyFallback")
@@ -33,6 +36,7 @@ public class ApplicationService {
     event.put("status", "SUCCESS");
     event.put("timestamp", LocalDateTime.now().toString());
     eventPublisher.publishApplicationSubmitted(event);
+    recordStatusEvent(saved.getId(), null, saved.getStatus(), saved.getUserId(), "Application submitted");
     
     return ApiResponse.ok(saved);
   }
@@ -42,6 +46,7 @@ public class ApplicationService {
     application.setAppliedAt(LocalDateTime.now());
     application.setStatus("LOCAL_PENDING");
     JobApplication saved = applicationRepository.save(application);
+    recordStatusEvent(saved.getId(), null, saved.getStatus(), saved.getUserId(), "Application stored for retry");
     // Mark for retry - in production this would be picked up by a scheduled job
     log.warn("Application {} stored with LOCAL_PENDING status for retry", saved.getId());
     return ApiResponse.success(saved, "WARNING: Event publishing failed. Application stored for retry.");
@@ -50,8 +55,15 @@ public class ApplicationService {
   @SuppressWarnings("null")
   @CircuitBreaker(name = "updateStatus", fallbackMethod = "updateStatusFallback")
   public ApiResponse<JobApplication> updateApplicationStatus(String id, String newStatus) {
+    return updateApplicationStatus(id, newStatus, null, null);
+  }
+
+  @SuppressWarnings("null")
+  @CircuitBreaker(name = "updateStatus", fallbackMethod = "updateStatusFallback")
+  public ApiResponse<JobApplication> updateApplicationStatus(String id, String newStatus, String changedBy, String reason) {
     return applicationRepository.findById(id)
         .map(app -> {
+            String previousStatus = app.getStatus();
             app.setStatus(newStatus);
             JobApplication saved = applicationRepository.save(app);
             
@@ -61,6 +73,13 @@ public class ApplicationService {
             event.put("content", "Application Status Updated to: " + newStatus);
             event.put("type", "STATUS_CHANGE");
             eventPublisher.publishApplicationSubmitted(event);
+            recordStatusEvent(
+                saved.getId(),
+                previousStatus,
+                saved.getStatus(),
+                changedBy != null && !changedBy.isBlank() ? changedBy : saved.getUserId(),
+                reason != null && !reason.isBlank() ? reason : "Application status updated"
+            );
             
             return ApiResponse.ok(saved);
         })
@@ -71,11 +90,21 @@ public class ApplicationService {
     log.error("Failed to update application {} status to {}: {}", id, newStatus, t.getMessage());
     return applicationRepository.findById(id)
         .map(app -> {
+            String previousStatus = app.getStatus();
             app.setStatus(newStatus);
             JobApplication saved = applicationRepository.save(app);
+            recordStatusEvent(saved.getId(), previousStatus, saved.getStatus(), saved.getUserId(), "Status updated while notification failed");
             return ApiResponse.success(saved, "Status updated but notification failed");
         })
         .orElse(ApiResponse.error("Application not found"));
+  }
+
+  public ApiResponse<JobApplication> updateStatusFallback(String id, String newStatus, String changedBy, String reason, Throwable t) {
+    return updateStatusFallback(id, newStatus, t);
+  }
+
+  public ApiResponse<List<ApplicationStatusEvent>> getApplicationStatusEvents(String applicationId) {
+    return ApiResponse.ok(statusEventRepository.findByApplicationIdOrderByCreatedAtAsc(applicationId));
   }
 
   @CircuitBreaker(name = "getByUserId", fallbackMethod = "getApplicationsByUserIdFallback")
@@ -96,5 +125,20 @@ public class ApplicationService {
   public ApiResponse<List<JobApplication>> getApplicationsByJobIdFallback(String jobId, Throwable t) {
     log.warn("Unable to fetch applications for job {}: {}", jobId, t.getMessage());
     return ApiResponse.ok(List.of());
+  }
+
+  private void recordStatusEvent(String applicationId, String previousStatus, String status, String changedBy, String reason) {
+    try {
+      statusEventRepository.save(ApplicationStatusEvent.builder()
+          .applicationId(applicationId)
+          .previousStatus(previousStatus)
+          .status(status)
+          .changedBy(changedBy)
+          .reason(reason)
+          .createdAt(LocalDateTime.now())
+          .build());
+    } catch (Exception e) {
+      log.warn("Unable to record status event for application {}: {}", applicationId, e.getMessage());
+    }
   }
 }

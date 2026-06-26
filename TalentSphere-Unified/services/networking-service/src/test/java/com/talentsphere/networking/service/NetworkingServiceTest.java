@@ -1,19 +1,24 @@
 package com.talentsphere.networking.service;
 
+import com.talentsphere.networking.dto.NetworkingSuggestion;
 import com.talentsphere.networking.entity.Connection;
 import com.talentsphere.networking.entity.Connection.ConnectionStatus;
 import com.talentsphere.networking.repository.ConnectionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -218,5 +223,79 @@ class NetworkingServiceTest {
 
         // Assert
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getSuggestions_ShouldReturnRankedMutualNetworkSuggestions() {
+        // Arrange
+        String userId = "user1";
+        when(repository.findConnectionSuggestions(eq(userId), any(Pageable.class)))
+                .thenReturn(List.of(new SuggestionProjection("user4", 2L)));
+
+        // Act
+        List<NetworkingSuggestion> result = networkingService.getSuggestions(userId, 5);
+
+        // Assert
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findConnectionSuggestions(eq(userId), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getSuggestedUserId()).isEqualTo("user4");
+        assertThat(result.get(0).getMutualConnections()).isEqualTo(2);
+        assertThat(result.get(0).getRecommendationScore()).isEqualTo(60);
+        assertThat(result.get(0).getRecommendationReasons())
+                .contains("2 mutual connections", "Expanded from your accepted network");
+        assertThat(result.get(0).getSource()).isEqualTo("accepted_connection_graph");
+    }
+
+    @Test
+    void getSuggestions_ShouldCapRequestedLimit() {
+        // Arrange
+        when(repository.findConnectionSuggestions(eq("user1"), any(Pageable.class))).thenReturn(List.of());
+
+        // Act
+        networkingService.getSuggestions("user1", 500);
+
+        // Assert
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findConnectionSuggestions(eq("user1"), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(50);
+    }
+
+    @Test
+    void getSuggestions_ShouldSkipRepository_WhenUserIdIsBlank() {
+        // Act
+        List<NetworkingSuggestion> result = networkingService.getSuggestions(" ", 10);
+
+        // Assert
+        assertThat(result).isEmpty();
+        verify(repository, never()).findConnectionSuggestions(anyString(), any(Pageable.class));
+    }
+
+    @Test
+    void getSuggestionsFallback_ShouldReturnEmptyList_WhenServiceFails() {
+        // Arrange
+        Throwable error = new RuntimeException("Service unavailable");
+
+        // Act
+        List<NetworkingSuggestion> result = networkingService.getSuggestionsFallback("user1", 10, error);
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    private record SuggestionProjection(
+            String suggestedUserId,
+            Number mutualConnections
+    ) implements ConnectionRepository.ConnectionSuggestionProjection {
+        @Override
+        public String getSuggestedUserId() {
+            return suggestedUserId;
+        }
+
+        @Override
+        public Number getMutualConnections() {
+            return mutualConnections;
+        }
     }
 }

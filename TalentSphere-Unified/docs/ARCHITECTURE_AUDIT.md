@@ -1,5 +1,7 @@
 # BRUTAL ARCHITECTURE AUDIT — TalentSphere
 
+> Current status note, 2026-06-26: this file is a historical architecture risk assessment. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence before using this audit for planning.
+
 ---
 
 ## 1. BRUTAL TRUTH (What's Broken)

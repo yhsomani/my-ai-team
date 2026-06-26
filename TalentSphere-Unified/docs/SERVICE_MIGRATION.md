@@ -1,5 +1,7 @@
 # Service Migration Status
 
+> Current status note, 2026-06-26: this file is a historical migration tracker. Current POM evidence is summarized in `docs/ARCHITECTURE_STATUS_INDEX.md`; treat migration as incomplete while `ts-shared` remains in many service POMs.
+
 ## Updated Services (BOM + Contracts)
 
 | Service | Status | Notes |

@@ -14,7 +14,7 @@ public class SecurityConfig {
       .csrf(csrf -> csrf.disable())
       .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/courses/**", "/actuator/**").permitAll()
+        .requestMatchers("/api/v1/lms/**", "/actuator/**").permitAll()
         .anyRequest().authenticated()
       )
       .build();

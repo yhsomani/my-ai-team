@@ -1,5 +1,7 @@
 # Architecture Migration Progress
 
+> Current status note, 2026-06-26: this file is a historical progress note. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence before treating completion statements here as current evidence.
+
 ## Completed ✓
 
 ### 1. Contracts Module (services/contracts)

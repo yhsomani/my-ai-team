@@ -21,7 +21,7 @@ CREATE TYPE challenge_difficulty AS ENUM ('EASY', 'MEDIUM', 'HARD');
 CREATE TYPE challenge_category AS ENUM ('FRONTEND', 'BACKEND', 'FULLSTACK', 'DATABASE', 'DEVOPS', 'MOBILE', 'DATA_SCIENCE');
 CREATE TYPE enrollment_status AS ENUM ('ENROLLED', 'IN_PROGRESS', 'COMPLETED', 'DROPPED');
 CREATE TYPE message_status AS ENUM ('SENT', 'DELIVERED', 'READ');
-CREATE TYPE notification_type AS ENUM ('JOB_APPLICATION', 'MESSAGE', 'CONNECTION', 'COURSE_UPDATE', 'CHALLENGE', 'ACHIEVEMENT', 'SYSTEM');
+CREATE TYPE notification_type AS ENUM ('JOB_APPLICATION', 'JOB_ALERT', 'MESSAGE', 'CONNECTION', 'COURSE_UPDATE', 'CHALLENGE', 'ACHIEVEMENT', 'SYSTEM');
 
 -- =============================================================================
 -- USERS & AUTH (Supabase auth.users is primary, this extends with app data)
@@ -214,6 +214,58 @@ CREATE INDEX idx_jobs_location ON public.jobs(location);
 CREATE INDEX idx_jobs_title ON public.jobs(title);
 
 -- =============================================================================
+-- JOB POST DRAFT VERSIONS
+-- =============================================================================
+CREATE TABLE public.job_post_draft_versions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    recruiter_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    draft_key TEXT NOT NULL,
+    job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    location VARCHAR(200) NOT NULL,
+    job_type VARCHAR(30) NOT NULL DEFAULT 'FULL_TIME',
+    salary_min TEXT,
+    salary_max TEXT,
+    requirements TEXT NOT NULL DEFAULT '',
+    salary_range TEXT,
+    category TEXT,
+    company_id UUID REFERENCES public.companies(id) ON DELETE SET NULL,
+    company_name TEXT,
+    company_attached BOOLEAN NOT NULL DEFAULT FALSE,
+    reason VARCHAR(30) NOT NULL DEFAULT 'autosave' CHECK (reason IN ('autosave', 'template_applied', 'reviewed', 'saved', 'restored')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_job_post_draft_versions_recruiter_key ON public.job_post_draft_versions(recruiter_id, draft_key, updated_at DESC);
+CREATE INDEX idx_job_post_draft_versions_job ON public.job_post_draft_versions(job_id, updated_at DESC);
+CREATE INDEX idx_job_post_draft_versions_updated_at ON public.job_post_draft_versions(updated_at DESC);
+
+-- =============================================================================
+-- JOB POST TEMPLATES
+-- =============================================================================
+CREATE TABLE public.job_post_templates (
+    id TEXT PRIMARY KEY,
+    recruiter_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    location VARCHAR(200) NOT NULL DEFAULT '',
+    job_type VARCHAR(30) NOT NULL DEFAULT 'FULL_TIME',
+    salary_min TEXT,
+    salary_max TEXT,
+    requirements TEXT NOT NULL DEFAULT '',
+    salary_range TEXT,
+    category TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_job_post_templates_recruiter_updated_at ON public.job_post_templates(recruiter_id, updated_at DESC);
+CREATE INDEX idx_job_post_templates_updated_at ON public.job_post_templates(updated_at DESC);
+
+-- =============================================================================
 -- JOB APPLICATIONS
 -- =============================================================================
 CREATE TABLE public.job_applications (
@@ -236,6 +288,240 @@ CREATE INDEX idx_job_applications_user_id ON public.job_applications(user_id);
 CREATE INDEX idx_job_applications_status ON public.job_applications(status);
 
 -- =============================================================================
+-- APPLICATION STATUS EVENTS
+-- =============================================================================
+CREATE TABLE public.application_status_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    application_id UUID NOT NULL REFERENCES public.job_applications(id) ON DELETE CASCADE,
+    previous_status application_status,
+    status application_status NOT NULL,
+    changed_by UUID REFERENCES public.profiles(id),
+    reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_application_status_events_application_id ON public.application_status_events(application_id);
+CREATE INDEX idx_application_status_events_created_at ON public.application_status_events(created_at);
+
+-- =============================================================================
+-- APPLICATION DRAFTS
+-- =============================================================================
+CREATE TABLE public.application_drafts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
+    resume_url TEXT,
+    cover_letter TEXT,
+    source VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'profile', 'ai')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, job_id)
+);
+
+CREATE INDEX idx_application_drafts_user_id ON public.application_drafts(user_id);
+CREATE INDEX idx_application_drafts_job_id ON public.application_drafts(job_id);
+CREATE INDEX idx_application_drafts_updated_at ON public.application_drafts(updated_at DESC);
+
+CREATE TABLE public.application_draft_versions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
+    resume_url TEXT,
+    cover_letter TEXT,
+    source VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'profile', 'ai')),
+    reason VARCHAR(30) NOT NULL DEFAULT 'autosave' CHECK (reason IN ('autosave', 'profile_applied', 'restored', 'cleared')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_application_draft_versions_user_job ON public.application_draft_versions(user_id, job_id, updated_at DESC);
+CREATE INDEX idx_application_draft_versions_updated_at ON public.application_draft_versions(updated_at DESC);
+
+-- =============================================================================
+-- RESUME EXPORT EVENTS
+-- =============================================================================
+CREATE TABLE public.resume_export_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('ready', 'blocked')),
+    method VARCHAR(30) NOT NULL CHECK (method IN ('browser-print', 'html-download', 'native-pdf', 'provider-pdf')),
+    file_name TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_resume_export_events_user_created ON public.resume_export_events(user_id, created_at DESC);
+CREATE INDEX idx_resume_export_events_created ON public.resume_export_events(created_at DESC);
+
+-- =============================================================================
+-- RESUME ARTIFACTS
+-- =============================================================================
+CREATE TABLE public.resume_artifacts (
+    id TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    file_name TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deleted')),
+    uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_resume_artifacts_user_uploaded ON public.resume_artifacts(user_id, uploaded_at DESC);
+CREATE INDEX idx_resume_artifacts_user_status_uploaded ON public.resume_artifacts(user_id, status, uploaded_at DESC);
+
+-- =============================================================================
+-- CANDIDATE NOTES
+-- =============================================================================
+CREATE TABLE public.candidate_notes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    application_id UUID NOT NULL REFERENCES public.job_applications(id) ON DELETE CASCADE,
+    recruiter_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(application_id, recruiter_id)
+);
+
+CREATE INDEX idx_candidate_notes_application_id ON public.candidate_notes(application_id);
+CREATE INDEX idx_candidate_notes_recruiter_id ON public.candidate_notes(recruiter_id);
+CREATE INDEX idx_candidate_notes_updated_at ON public.candidate_notes(updated_at DESC);
+
+-- =============================================================================
+-- CANDIDATE SCORECARDS
+-- =============================================================================
+CREATE TABLE public.candidate_scorecards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    application_id UUID NOT NULL REFERENCES public.job_applications(id) ON DELETE CASCADE,
+    recruiter_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    ratings JSONB NOT NULL DEFAULT '{}'::JSONB,
+    evidence TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(application_id, recruiter_id)
+);
+
+CREATE INDEX idx_candidate_scorecards_application_id ON public.candidate_scorecards(application_id);
+CREATE INDEX idx_candidate_scorecards_recruiter_id ON public.candidate_scorecards(recruiter_id);
+CREATE INDEX idx_candidate_scorecards_updated_at ON public.candidate_scorecards(updated_at DESC);
+
+-- =============================================================================
+-- SAVED JOB SEARCHES
+-- =============================================================================
+CREATE TABLE public.saved_job_searches (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    search_term TEXT DEFAULT '',
+    filters JSONB NOT NULL DEFAULT '{}'::JSONB,
+    alert_enabled BOOLEAN DEFAULT FALSE,
+    last_match_count INTEGER,
+    last_checked_at TIMESTAMP WITH TIME ZONE,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, id)
+);
+
+CREATE INDEX idx_saved_job_searches_user_id ON public.saved_job_searches(user_id);
+CREATE INDEX idx_saved_job_searches_updated_at ON public.saved_job_searches(updated_at DESC);
+
+-- =============================================================================
+-- HIDDEN EXPLORE JOBS
+-- =============================================================================
+CREATE TABLE public.hidden_explore_jobs (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    company_name TEXT,
+    job_type TEXT,
+    location TEXT,
+    hidden_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, job_id)
+);
+
+CREATE INDEX idx_hidden_explore_jobs_user_hidden_at ON public.hidden_explore_jobs(user_id, hidden_at DESC);
+CREATE INDEX idx_hidden_explore_jobs_job_id ON public.hidden_explore_jobs(job_id);
+
+-- =============================================================================
+-- AI SESSIONS AND REVIEWABLE SUGGESTIONS
+-- =============================================================================
+CREATE TABLE public.ai_sessions (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title VARCHAR(200) DEFAULT 'AI Assistant',
+    messages JSONB NOT NULL DEFAULT '[]'::JSONB,
+    last_saved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_ai_sessions_user_id ON public.ai_sessions(user_id);
+CREATE INDEX idx_ai_sessions_updated_at ON public.ai_sessions(updated_at DESC);
+
+CREATE TABLE public.automation_suggestions (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    session_id TEXT REFERENCES public.ai_sessions(id) ON DELETE CASCADE,
+    suggestion_type VARCHAR(50) NOT NULL DEFAULT 'chat_response',
+    source_label VARCHAR(200),
+    source_detail TEXT,
+    prompt TEXT,
+    content TEXT NOT NULL,
+    review_status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (review_status IN ('draft', 'saved', 'dismissed')),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_automation_suggestions_user_id ON public.automation_suggestions(user_id);
+CREATE INDEX idx_automation_suggestions_session_id ON public.automation_suggestions(session_id);
+CREATE INDEX idx_automation_suggestions_review_status ON public.automation_suggestions(review_status);
+CREATE INDEX idx_automation_suggestions_updated_at ON public.automation_suggestions(updated_at DESC);
+
+CREATE TABLE public.automation_suggestion_audit_events (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    suggestion_id TEXT NOT NULL REFERENCES public.automation_suggestions(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('created', 'review_status_changed', 'workflow_handoff_opened', 'workflow_prefill_used', 'workflow_prefill_rejected')),
+    previous_review_status VARCHAR(20) CHECK (previous_review_status IN ('draft', 'saved', 'dismissed')),
+    next_review_status VARCHAR(20) CHECK (next_review_status IN ('draft', 'saved', 'dismissed')),
+    source VARCHAR(120) NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_automation_suggestion_audit_user ON public.automation_suggestion_audit_events(user_id);
+CREATE INDEX idx_automation_suggestion_audit_suggestion ON public.automation_suggestion_audit_events(suggestion_id);
+CREATE INDEX idx_automation_suggestion_audit_occurred ON public.automation_suggestion_audit_events(occurred_at DESC);
+
+-- =============================================================================
+-- PRODUCT ANALYTICS EVENTS
+-- =============================================================================
+CREATE TABLE public.product_analytics_events (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    area VARCHAR(50) NOT NULL,
+    event_name VARCHAR(80) NOT NULL,
+    source VARCHAR(120) NOT NULL,
+    object_type VARCHAR(80),
+    object_id TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_product_analytics_events_user_id ON public.product_analytics_events(user_id);
+CREATE INDEX idx_product_analytics_events_area_name ON public.product_analytics_events(area, event_name);
+CREATE INDEX idx_product_analytics_events_occurred_at ON public.product_analytics_events(occurred_at DESC);
+
+-- =============================================================================
 -- NETWORKING - CONNECTIONS
 -- =============================================================================
 CREATE TABLE public.connections (
@@ -252,6 +538,21 @@ CREATE TABLE public.connections (
 CREATE INDEX idx_connections_requester ON public.connections(requester_id);
 CREATE INDEX idx_connections_receiver ON public.connections(receiver_id);
 CREATE INDEX idx_connections_status ON public.connections(status);
+
+CREATE TABLE public.networking_suggestion_preferences (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    suggested_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'dismissed' CHECK (status IN ('dismissed')),
+    reason VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, suggested_user_id)
+);
+
+CREATE INDEX idx_networking_suggestion_preferences_user ON public.networking_suggestion_preferences(user_id);
+CREATE INDEX idx_networking_suggestion_preferences_suggested_user ON public.networking_suggestion_preferences(suggested_user_id);
+CREATE INDEX idx_networking_suggestion_preferences_updated ON public.networking_suggestion_preferences(updated_at DESC);
 
 -- =============================================================================
 -- MESSAGING - CONVERSATIONS
@@ -483,6 +784,22 @@ CREATE INDEX idx_xp_transactions_created ON public.xp_transactions(created_at DE
 -- =============================================================================
 -- NOTIFICATIONS
 -- =============================================================================
+CREATE TABLE public.notification_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    push_notifications BOOLEAN DEFAULT TRUE,
+    sms_notifications BOOLEAN DEFAULT FALSE,
+    job_alerts BOOLEAN DEFAULT TRUE,
+    message_notifications BOOLEAN DEFAULT TRUE,
+    newsletter BOOLEAN DEFAULT FALSE,
+    digest_frequency TEXT DEFAULT 'immediate' CHECK (digest_frequency IN ('immediate', 'daily', 'weekly', 'off')),
+    quiet_hours_enabled BOOLEAN DEFAULT FALSE,
+    quiet_hours_start TIME DEFAULT '18:00',
+    quiet_hours_end TIME DEFAULT '09:00',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE public.notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -498,6 +815,31 @@ CREATE TABLE public.notifications (
 CREATE INDEX idx_notifications_user ON public.notifications(user_id);
 CREATE INDEX idx_notifications_is_read ON public.notifications(is_read);
 CREATE INDEX idx_notifications_created ON public.notifications(created_at DESC);
+CREATE INDEX idx_notifications_user_read_created ON public.notifications(user_id, is_read, created_at DESC);
+CREATE INDEX idx_notifications_metadata ON public.notifications USING GIN(metadata);
+
+CREATE TABLE public.notification_digest_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    source_type TEXT NOT NULL CHECK (source_type IN ('saved_search')),
+    source_id TEXT NOT NULL,
+    delivery_key TEXT NOT NULL UNIQUE,
+    digest_frequency TEXT NOT NULL CHECK (digest_frequency IN ('daily', 'weekly')),
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    action_url VARCHAR(255),
+    metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'delivered', 'skipped')),
+    deliver_after TIMESTAMP WITH TIME ZONE NOT NULL,
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    skip_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_notification_digest_items_user_status ON public.notification_digest_items(user_id, status, deliver_after);
+CREATE INDEX idx_notification_digest_items_due ON public.notification_digest_items(status, deliver_after);
+CREATE INDEX idx_notification_digest_items_metadata ON public.notification_digest_items USING GIN(metadata);
 
 -- =============================================================================
 -- PAYMENTS
@@ -563,8 +905,24 @@ ALTER TABLE public.experiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.educations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_post_draft_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_post_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.application_status_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.application_drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.application_draft_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.resume_export_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.resume_artifacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.candidate_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.candidate_scorecards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saved_job_searches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hidden_explore_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_suggestions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_suggestion_audit_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.networking_suggestion_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
@@ -572,7 +930,9 @@ ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.challenge_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leaderboard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_digest_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users can view all profiles but only update their own
@@ -597,10 +957,219 @@ CREATE POLICY "Recruiters can create jobs" ON public.jobs FOR INSERT WITH CHECK 
 );
 CREATE POLICY "Job posters can update their jobs" ON public.jobs FOR UPDATE USING (auth.uid() = posted_by);
 
+-- Job Post Draft Versions: recruiter-owned checkpoints that never publish jobs by themselves
+CREATE POLICY "Recruiters can view own job post draft versions" ON public.job_post_draft_versions FOR SELECT USING (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can create own job post draft versions" ON public.job_post_draft_versions FOR INSERT WITH CHECK (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can update own job post draft versions" ON public.job_post_draft_versions FOR UPDATE USING (auth.uid() = recruiter_id) WITH CHECK (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can delete own job post draft versions" ON public.job_post_draft_versions FOR DELETE USING (auth.uid() = recruiter_id);
+
+-- Job Post Templates: recruiter-owned editable drafts that never publish jobs by themselves
+CREATE POLICY "Recruiters can view own job post templates" ON public.job_post_templates FOR SELECT USING (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can create own job post templates" ON public.job_post_templates FOR INSERT WITH CHECK (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can update own job post templates" ON public.job_post_templates FOR UPDATE USING (auth.uid() = recruiter_id) WITH CHECK (auth.uid() = recruiter_id);
+CREATE POLICY "Recruiters can delete own job post templates" ON public.job_post_templates FOR DELETE USING (auth.uid() = recruiter_id);
+
 -- Job Applications: Users can view/create their own applications
 CREATE POLICY "Users can view own applications" ON public.job_applications FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create own applications" ON public.job_applications FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own applications" ON public.job_applications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Job posters can view applications" ON public.job_applications FOR SELECT USING (
+    EXISTS (
+        SELECT 1
+        FROM public.jobs job
+        WHERE job.id = job_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can update application status" ON public.job_applications FOR UPDATE USING (
+    EXISTS (
+        SELECT 1
+        FROM public.jobs job
+        WHERE job.id = job_id
+          AND job.posted_by = auth.uid()
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1
+        FROM public.jobs job
+        WHERE job.id = job_id
+          AND job.posted_by = auth.uid()
+    )
+);
+
+-- Application Status Events: talent and job posters can view status history; actors can append events for owned applications/jobs
+CREATE POLICY "Users and recruiters can view application status events" ON public.application_status_events FOR SELECT USING (
+    EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND (app.user_id = auth.uid() OR job.posted_by = auth.uid())
+    )
+);
+CREATE POLICY "Users and recruiters can create application status events" ON public.application_status_events FOR INSERT WITH CHECK (
+    changed_by = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND (app.user_id = auth.uid() OR job.posted_by = auth.uid())
+    )
+);
+
+-- Application Drafts: user-owned pre-submit drafts that never create applications by themselves
+CREATE POLICY "Users can view own application drafts" ON public.application_drafts FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own application drafts" ON public.application_drafts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own application drafts" ON public.application_drafts FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own application drafts" ON public.application_drafts FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own application draft versions" ON public.application_draft_versions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own application draft versions" ON public.application_draft_versions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own application draft versions" ON public.application_draft_versions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own application draft versions" ON public.application_draft_versions FOR DELETE USING (auth.uid() = user_id);
+
+-- Resume Export Events: user-owned export activity for transparency and cross-device continuity
+CREATE POLICY "Users can view own resume export events" ON public.resume_export_events FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own resume export events" ON public.resume_export_events FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own resume export events" ON public.resume_export_events FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own resume export events" ON public.resume_export_events FOR DELETE USING (auth.uid() = user_id);
+
+-- Resume Artifacts: user-owned uploaded artifact metadata for cross-device continuity and revocation audit
+CREATE POLICY "Users can view own resume artifacts" ON public.resume_artifacts FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own resume artifacts" ON public.resume_artifacts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own resume artifacts" ON public.resume_artifacts FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own resume artifacts" ON public.resume_artifacts FOR DELETE USING (auth.uid() = user_id);
+
+-- Candidate Notes: private recruiter notes scoped to applications on jobs they posted
+CREATE POLICY "Job posters can view own candidate notes" ON public.candidate_notes FOR SELECT USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can create own candidate notes" ON public.candidate_notes FOR INSERT WITH CHECK (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can update own candidate notes" ON public.candidate_notes FOR UPDATE USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+) WITH CHECK (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can delete own candidate notes" ON public.candidate_notes FOR DELETE USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+
+-- Candidate Scorecards: private recruiter scorecards scoped to applications on jobs they posted
+CREATE POLICY "Job posters can view own candidate scorecards" ON public.candidate_scorecards FOR SELECT USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can create own candidate scorecards" ON public.candidate_scorecards FOR INSERT WITH CHECK (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can update own candidate scorecards" ON public.candidate_scorecards FOR UPDATE USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+) WITH CHECK (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+CREATE POLICY "Job posters can delete own candidate scorecards" ON public.candidate_scorecards FOR DELETE USING (
+    recruiter_id = auth.uid()
+    AND EXISTS (
+        SELECT 1
+        FROM public.job_applications app
+        JOIN public.jobs job ON job.id = app.job_id
+        WHERE app.id = application_id
+          AND job.posted_by = auth.uid()
+    )
+);
+
+-- Saved Job Searches: account-scoped search presets and alert settings
+CREATE POLICY "Users can view own saved job searches" ON public.saved_job_searches FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own saved job searches" ON public.saved_job_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own saved job searches" ON public.saved_job_searches FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own saved job searches" ON public.saved_job_searches FOR DELETE USING (auth.uid() = user_id);
+
+-- Hidden Explore Jobs: account-scoped recommendation visibility preferences
+CREATE POLICY "Users can view own hidden Explore jobs" ON public.hidden_explore_jobs FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own hidden Explore jobs" ON public.hidden_explore_jobs FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own hidden Explore jobs" ON public.hidden_explore_jobs FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own hidden Explore jobs" ON public.hidden_explore_jobs FOR DELETE USING (auth.uid() = user_id);
+
+-- AI Sessions and Suggestions: user-owned AI history and review records
+CREATE POLICY "Users can view own AI sessions" ON public.ai_sessions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own AI sessions" ON public.ai_sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own AI sessions" ON public.ai_sessions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own AI sessions" ON public.ai_sessions FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own automation suggestions" ON public.automation_suggestions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own automation suggestions" ON public.automation_suggestions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own automation suggestions" ON public.automation_suggestions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own automation suggestions" ON public.automation_suggestions FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own automation suggestion audit events" ON public.automation_suggestion_audit_events FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own automation suggestion audit events" ON public.automation_suggestion_audit_events FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own product analytics events" ON public.product_analytics_events FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all product analytics events" ON public.product_analytics_events FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+);
+CREATE POLICY "Users can create product analytics events" ON public.product_analytics_events FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
 -- Companies: Everyone can view, owners can update
 CREATE POLICY "Companies viewable by everyone" ON public.companies FOR SELECT USING (true);
@@ -611,6 +1180,65 @@ CREATE POLICY "Users can create companies" ON public.companies FOR INSERT WITH C
 CREATE POLICY "Users can view own connections" ON public.connections FOR SELECT USING (auth.uid() = requester_id OR auth.uid() = receiver_id);
 CREATE POLICY "Users can create connection requests" ON public.connections FOR INSERT WITH CHECK (auth.uid() = requester_id);
 CREATE POLICY "Connection participants can update" ON public.connections FOR UPDATE USING (auth.uid() = requester_id OR auth.uid() = receiver_id);
+CREATE POLICY "Users can view own networking suggestion preferences" ON public.networking_suggestion_preferences FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own networking suggestion preferences" ON public.networking_suggestion_preferences FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own networking suggestion preferences" ON public.networking_suggestion_preferences FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own networking suggestion preferences" ON public.networking_suggestion_preferences FOR DELETE USING (auth.uid() = user_id);
+
+CREATE OR REPLACE FUNCTION public.get_mutual_connection_counts(
+    p_current_user_id UUID,
+    p_candidate_ids UUID[]
+)
+RETURNS TABLE(suggested_user_id UUID, mutual_count INTEGER)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    WITH requested_candidates AS (
+        SELECT candidate_id AS suggested_user_id
+        FROM unnest(COALESCE(p_candidate_ids, ARRAY[]::UUID[])) AS candidate(candidate_id)
+        WHERE candidate_id <> p_current_user_id
+    ),
+    current_connections AS (
+        SELECT CASE
+            WHEN connection.requester_id = p_current_user_id THEN connection.receiver_id
+            ELSE connection.requester_id
+        END AS connected_user_id
+        FROM public.connections connection
+        WHERE connection.status = 'ACCEPTED'
+            AND auth.uid() = p_current_user_id
+            AND (
+                connection.requester_id = p_current_user_id
+                OR connection.receiver_id = p_current_user_id
+            )
+    ),
+    candidate_connections AS (
+        SELECT
+            requested_candidates.suggested_user_id,
+            CASE
+                WHEN connection.requester_id = requested_candidates.suggested_user_id THEN connection.receiver_id
+                ELSE connection.requester_id
+            END AS connected_user_id
+        FROM requested_candidates
+        JOIN public.connections connection
+            ON connection.status = 'ACCEPTED'
+            AND (
+                connection.requester_id = requested_candidates.suggested_user_id
+                OR connection.receiver_id = requested_candidates.suggested_user_id
+            )
+    )
+    SELECT
+        candidate_connections.suggested_user_id,
+        COUNT(*)::INTEGER AS mutual_count
+    FROM candidate_connections
+    JOIN current_connections
+        ON current_connections.connected_user_id = candidate_connections.connected_user_id
+    WHERE candidate_connections.connected_user_id <> p_current_user_id
+    GROUP BY candidate_connections.suggested_user_id;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_mutual_connection_counts(UUID, UUID[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_mutual_connection_counts(UUID, UUID[]) TO authenticated;
 
 -- Messages: Participants can view their conversations and messages
 CREATE POLICY "Conversation participants can view" ON public.conversations FOR SELECT USING (
@@ -622,6 +1250,20 @@ CREATE POLICY "Message participants can view" ON public.messages FOR SELECT USIN
             WHERE c.id = messages.conversation_id AND cp.user_id = auth.uid())
 );
 CREATE POLICY "Users can send messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "Participants can mark incoming messages read" ON public.messages FOR UPDATE USING (
+    sender_id <> auth.uid()
+    AND EXISTS (SELECT 1 FROM public.conversation_participants cp
+            WHERE cp.conversation_id = messages.conversation_id AND cp.user_id = auth.uid() AND cp.left_at IS NULL)
+) WITH CHECK (
+    sender_id <> auth.uid()
+    AND EXISTS (SELECT 1 FROM public.conversation_participants cp
+            WHERE cp.conversation_id = messages.conversation_id AND cp.user_id = auth.uid() AND cp.left_at IS NULL)
+);
+CREATE POLICY "Participants can update own read marker" ON public.conversation_participants FOR UPDATE USING (
+    user_id = auth.uid()
+) WITH CHECK (
+    user_id = auth.uid()
+);
 
 -- Courses: Everyone can view published courses
 CREATE POLICY "Published courses viewable by everyone" ON public.courses FOR SELECT USING (is_published = true OR auth.uid() = instructor_id);
@@ -642,8 +1284,17 @@ CREATE POLICY "Users can view own submissions" ON public.challenge_submissions F
 CREATE POLICY "Leaderboard viewable by everyone" ON public.leaderboard FOR SELECT USING (true);
 
 -- Notifications: Users can only view their own notifications
+CREATE POLICY "Users can view own notification settings" ON public.notification_settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own notification settings" ON public.notification_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own notification settings" ON public.notification_settings FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own notifications" ON public.notifications FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own notification digest items" ON public.notification_digest_items FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own notification digest items" ON public.notification_digest_items FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own notification digest items" ON public.notification_digest_items FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own notification digest items" ON public.notification_digest_items FOR DELETE USING (auth.uid() = user_id);
 
 -- Payments: Users can only view their own payments
 CREATE POLICY "Users can view own payments" ON public.payments FOR SELECT USING (auth.uid() = user_id);
@@ -659,16 +1310,71 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION enforce_job_publish_readiness()
+RETURNS TRIGGER AS $$
+DECLARE
+    requirement_count INTEGER;
+BEGIN
+    IF NEW.status = 'PUBLISHED' THEN
+        SELECT COUNT(*)
+        INTO requirement_count
+        FROM unnest(COALESCE(NEW.requirements, ARRAY[]::TEXT[])) AS requirement
+        WHERE btrim(requirement) <> '';
+
+        IF btrim(COALESCE(NEW.title, '')) = '' THEN
+            RAISE EXCEPTION 'Cannot publish job without a title'
+                USING ERRCODE = '23514', CONSTRAINT = 'job_publish_readiness';
+        END IF;
+
+        IF btrim(COALESCE(NEW.description, '')) = '' THEN
+            RAISE EXCEPTION 'Cannot publish job without a description'
+                USING ERRCODE = '23514', CONSTRAINT = 'job_publish_readiness';
+        END IF;
+
+        IF btrim(COALESCE(NEW.location, '')) = '' THEN
+            RAISE EXCEPTION 'Cannot publish job without a location'
+                USING ERRCODE = '23514', CONSTRAINT = 'job_publish_readiness';
+        END IF;
+
+        IF NEW.company_id IS NULL THEN
+            RAISE EXCEPTION 'Cannot publish job without company context'
+                USING ERRCODE = '23514', CONSTRAINT = 'job_publish_readiness';
+        END IF;
+
+        IF requirement_count = 0 THEN
+            RAISE EXCEPTION 'Cannot publish job without at least one requirement'
+                USING ERRCODE = '23514', CONSTRAINT = 'job_publish_readiness';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Apply updated_at triggers
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON public.user_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON public.companies FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER enforce_jobs_publish_readiness BEFORE INSERT OR UPDATE OF status, title, description, location, company_id, requirements ON public.jobs FOR EACH ROW EXECUTE FUNCTION enforce_job_publish_readiness();
 CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON public.jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_job_post_draft_versions_updated_at BEFORE UPDATE ON public.job_post_draft_versions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_job_post_templates_updated_at BEFORE UPDATE ON public.job_post_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_job_applications_updated_at BEFORE UPDATE ON public.job_applications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_application_drafts_updated_at BEFORE UPDATE ON public.application_drafts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_application_draft_versions_updated_at BEFORE UPDATE ON public.application_draft_versions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_candidate_notes_updated_at BEFORE UPDATE ON public.candidate_notes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_candidate_scorecards_updated_at BEFORE UPDATE ON public.candidate_scorecards FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_saved_job_searches_updated_at BEFORE UPDATE ON public.saved_job_searches FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_hidden_explore_jobs_updated_at BEFORE UPDATE ON public.hidden_explore_jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ai_sessions_updated_at BEFORE UPDATE ON public.ai_sessions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_automation_suggestions_updated_at BEFORE UPDATE ON public.automation_suggestions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_connections_updated_at BEFORE UPDATE ON public.connections FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_networking_suggestion_preferences_updated_at BEFORE UPDATE ON public.networking_suggestion_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON public.conversations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_challenges_updated_at BEFORE UPDATE ON public.challenges FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_notification_settings_updated_at BEFORE UPDATE ON public.notification_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_notification_digest_items_updated_at BEFORE UPDATE ON public.notification_digest_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================

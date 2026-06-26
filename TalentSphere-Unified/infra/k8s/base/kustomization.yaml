@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - infrastructure.yaml
   - services/api-gateway.yaml
   - services/auth-service.yaml
   - services/user-service.yaml
@@ -20,3 +21,4 @@ resources:
   - services/chat-service.yaml
   - services/payment-service.yaml
   - services/file-service.yaml
+  - notification-digest-cronjobs.yaml

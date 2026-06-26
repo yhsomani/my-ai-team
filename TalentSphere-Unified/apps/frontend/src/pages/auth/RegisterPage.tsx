@@ -4,37 +4,80 @@ import { Mail, Lock, ArrowRight, User, Briefcase, Layers } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/shared/AuraButton';
 import { Input } from '../../components/shared/AuraInput';
+import {
+    getPostRegistrationPath,
+    getRegistrationAccountTypeFromRoleParam,
+    getRegistrationNextStep,
+    getRegistrationRole,
+    type RegistrationAccountType,
+} from '../../lib/registrationOnboarding';
+import { recordOnboardingAnalytics } from '../../lib/onboardingAnalytics';
 
 const RegisterPage: React.FC = () => {
     const [searchParams] = useSearchParams();
-    const initialUserType = searchParams.get('role')?.toLowerCase() === 'recruiter' ? 'RECRUITER' : 'TALENT';
+    const initialUserType = getRegistrationAccountTypeFromRoleParam(searchParams.get('role'));
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
-    const [userType, setUserType] = useState<'TALENT' | 'RECRUITER'>(initialUserType);
+    const [userType, setUserType] = useState<RegistrationAccountType>(initialUserType);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const nextStep = getRegistrationNextStep(userType);
 
     useEffect(() => {
-        setUserType(searchParams.get('role')?.toLowerCase() === 'recruiter' ? 'RECRUITER' : 'TALENT');
+        setUserType(getRegistrationAccountTypeFromRoleParam(searchParams.get('role')));
     }, [searchParams]);
+
+    const getEntryPoint = () => (searchParams.get('role') ? 'role_query' : 'manual');
+
+    const selectAccountType = (nextType: RegistrationAccountType) => {
+        setUserType(nextType);
+        recordOnboardingAnalytics({
+            action: 'account_type_selected',
+            accountType: nextType,
+            nextStepPath: getPostRegistrationPath(nextType),
+            entryPoint: getEntryPoint(),
+        });
+    };
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        const nextStepPath = nextStep.path;
+
+        recordOnboardingAnalytics({
+            action: 'registration_submitted',
+            accountType: userType,
+            nextStepPath,
+            entryPoint: getEntryPoint(),
+        });
 
         try {
-            await authService.register(
+            const result = await authService.register(
                 email,
                 password,
                 fullName,
-                userType === 'TALENT' ? 'ROLE_USER' : 'ROLE_RECRUITER'
+                getRegistrationRole(userType)
             );
-            navigate('/dashboard');
+            recordOnboardingAnalytics({
+                userId: result?.user?.id,
+                action: 'registration_completed',
+                accountType: userType,
+                nextStepPath,
+                entryPoint: getEntryPoint(),
+            });
+            navigate(nextStepPath);
         } catch (err: any) {
             console.error('Registration error:', err);
+            recordOnboardingAnalytics({
+                action: 'registration_failed',
+                accountType: userType,
+                nextStepPath,
+                entryPoint: getEntryPoint(),
+                errorCategory: String(err?.code || err?.name || err?.response?.status || 'registration_error'),
+            });
             const errorMessage = err?.response?.data?.message || err?.message || 'An unexpected error occurred during registration. Please try again later.';
             setError(errorMessage);
         } finally {
@@ -73,7 +116,7 @@ const RegisterPage: React.FC = () => {
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <button
                                     type="button"
-                                    onClick={() => setUserType('TALENT')}
+                                    onClick={() => selectAccountType('TALENT')}
                                     className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
                                         userType === 'TALENT'
                                             ? 'bg-accent/10 border-accent text-accent'
@@ -91,7 +134,7 @@ const RegisterPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setUserType('RECRUITER')}
+                                    onClick={() => selectAccountType('RECRUITER')}
                                     className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
                                         userType === 'RECRUITER'
                                             ? 'bg-accent/10 border-accent text-accent'
@@ -109,6 +152,11 @@ const RegisterPage: React.FC = () => {
                                 </button>
                             </div>
                         </fieldset>
+
+                        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2">
+                            <p className="text-sm font-medium text-[var(--text-primary)]">{nextStep.title}</p>
+                            <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{nextStep.description}</p>
+                        </div>
 
                         <Input
                             label="Full Name"

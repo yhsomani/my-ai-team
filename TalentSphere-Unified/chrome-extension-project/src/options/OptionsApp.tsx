@@ -1,8 +1,14 @@
-import { useState, useCallback } from 'react';
-import { Sparkles, Calendar, Settings2, Cpu, RefreshCw } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Sparkles, Calendar, Settings2, Cpu, HardDrive } from 'lucide-react';
 import { useChromeStorage } from '../hooks/useChromeStorage';
+import {
+  countBand,
+  recordExtensionOperationalEvent,
+  scoreBand,
+  textLengthBand
+} from '../lib/operationalAnalytics';
 
-import { AIView } from './views/AIView';
+import { AIView, type ResumeMatchReport } from './views/AIView';
 import { PrepView } from './views/PrepView';
 import { SettingsView } from './views/SettingsView';
 
@@ -13,42 +19,210 @@ interface PrepItem {
   completed: boolean;
 }
 
+type BooleanSettingUpdater = boolean | ((curr: boolean) => boolean);
+type PrepClearEntryPoint = 'prep' | 'settings';
+
+const STOP_WORDS = new Set([
+  'about', 'after', 'also', 'and', 'are', 'based', 'but', 'can', 'for', 'from',
+  'has', 'have', 'into', 'its', 'job', 'our', 'the', 'their', 'this', 'that',
+  'with', 'will', 'work', 'you', 'your'
+]);
+
+const canonicalKeyword = (term: string) => {
+  if (term.length > 4 && term.endsWith('s')) {
+    return term.slice(0, -1);
+  }
+
+  return term;
+};
+
+const extractRankedKeywords = (text: string, limit = 24) => {
+  const counts = new Map<string, { label: string; count: number }>();
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9+#]+/g, ' ')
+    .split(/\s+/)
+    .map(token => token.trim())
+    .filter(token => token.length > 2 && !STOP_WORDS.has(token));
+
+  tokens.forEach((token) => {
+    const key = canonicalKeyword(token);
+    const current = counts.get(key);
+
+    if (current) {
+      counts.set(key, { ...current, count: current.count + 1 });
+      return;
+    }
+
+    counts.set(key, { label: token, count: 1 });
+  });
+
+  return Array.from(counts.values())
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .map(entry => entry.label)
+    .slice(0, limit);
+};
+
+const buildResumeMatchReport = (jobDescription: string, resumeText: string): ResumeMatchReport => {
+  const jobKeywords = extractRankedKeywords(jobDescription, 18);
+  const resumeKeywords = extractRankedKeywords(resumeText, 36);
+  const resumeKeywordSet = new Set(resumeKeywords.map(canonicalKeyword));
+  const matchedKeywords = jobKeywords.filter(keyword => resumeKeywordSet.has(canonicalKeyword(keyword)));
+  const missingKeywords = jobKeywords.filter(keyword => !resumeKeywordSet.has(canonicalKeyword(keyword)));
+  const score = jobKeywords.length > 0
+    ? Math.round((matchedKeywords.length / jobKeywords.length) * 100)
+    : 0;
+  const improvementTips = missingKeywords.length > 0
+    ? missingKeywords.slice(0, 3).map(keyword => `Add specific evidence for "${keyword}" if it reflects your experience.`)
+    : ['Your resume already covers the strongest repeated job keywords in this local preview.'];
+
+  if (matchedKeywords.length < 3 && jobKeywords.length >= 3) {
+    improvementTips.push('Move the most relevant matching skills into your summary or recent experience bullets.');
+  }
+
+  return {
+    score,
+    matchedKeywords,
+    missingKeywords,
+    improvementTips,
+    jobKeywordCount: jobKeywords.length,
+    resumeKeywordCount: resumeKeywords.length,
+    matchedKeywordCount: matchedKeywords.length
+  };
+};
+
 export function OptionsApp() {
   const [activeTab, setActiveTab] = useState<'ai' | 'prep' | 'settings'>('ai');
-  const [prepItems, setPrepItems] = useChromeStorage<PrepItem[]>('ts_prep', [
-    { id: '1', topic: 'Practice "Tell me about a time" (STAR method)', type: 'Behavioral', completed: true },
-    { id: '2', topic: 'Review Spring Boot JPA query optimization rules', type: 'Technical', completed: false },
-    { id: '3', topic: 'Draw mock microservices event architecture', type: 'System Design', completed: false }
-  ]);
+  const [isPrepClearReviewOpen, setIsPrepClearReviewOpen] = useState(false);
+  const [isCloudSyncPlanOpen, setIsCloudSyncPlanOpen] = useState(false);
+  const hasRecordedOpen = useRef(false);
+  const [prepItems, setPrepItems, prepLoading] = useChromeStorage<PrepItem[]>('ts_prep', []);
 
   const [jobDescription, setJobDescription] = useState('');
   const [resumeText, setResumeText] = useState('');
   const [optimizing, setOptimizing] = useState(false);
   const [optimized, setOptimized] = useState(false);
-  const [score, setScore] = useState(65);
+  const [score, setScore] = useState(0);
+  const [matchReport, setMatchReport] = useState<ResumeMatchReport | null>(null);
 
-  const [cloudSync, setCloudSync] = useChromeStorage('ts_settings_cloud', true);
-  const [notifications, setNotifications] = useChromeStorage('ts_settings_notif', true);
-  const [analytics, setAnalytics] = useChromeStorage('ts_settings_analytics', false);
+  const [notifications, setNotifications, notificationsLoading] = useChromeStorage('ts_settings_notif', true);
+  const [analytics, setAnalytics, analyticsLoading] = useChromeStorage('ts_settings_analytics', false);
 
   const [newTopic, setNewTopic] = useState('');
   const [newType, setNewType] = useState<PrepItem['type']>('Technical');
 
+  const optionsMetadata = useCallback(() => ({
+    option_tab: activeTab,
+    prep_count: prepItems.length,
+    prep_count_band: countBand(prepItems.length),
+    cloud_sync_enabled: false,
+    notifications_enabled: notifications,
+    usage_diagnostics_enabled: analytics
+  }), [activeTab, analytics, notifications, prepItems.length]);
+
+  const prepClearMetadata = useCallback((entryPoint: PrepClearEntryPoint) => ({
+    clear_scope: 'prep_cards',
+    entry_point: entryPoint,
+    prep_count: prepItems.length,
+    prep_count_band: countBand(prepItems.length)
+  }), [prepItems.length]);
+
+  useEffect(() => {
+    if (prepItems.length === 0 && isPrepClearReviewOpen) {
+      setIsPrepClearReviewOpen(false);
+    }
+  }, [isPrepClearReviewOpen, prepItems.length]);
+
+  useEffect(() => {
+    if (prepLoading || notificationsLoading || analyticsLoading || hasRecordedOpen.current) {
+      return;
+    }
+
+    hasRecordedOpen.current = true;
+    void recordExtensionOperationalEvent({
+      area: 'options',
+      event: 'options_opened',
+      metadata: optionsMetadata()
+    });
+  }, [analyticsLoading, notificationsLoading, optionsMetadata, prepLoading]);
+
+  const handleOptionsTabChange = useCallback((nextTab: 'ai' | 'prep' | 'settings') => {
+    if (activeTab !== nextTab) {
+      void recordExtensionOperationalEvent({
+        area: 'options',
+        event: 'tab_changed',
+        metadata: {
+          previous_tab: activeTab,
+          next_tab: nextTab,
+          ...optionsMetadata()
+        }
+      });
+    }
+
+    setActiveTab(nextTab);
+  }, [activeTab, optionsMetadata]);
+
   const handleOptimize = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobDescription || !resumeText) return;
+    if (!jobDescription || !resumeText) {
+      void recordExtensionOperationalEvent({
+        area: 'resume_matcher',
+        event: 'match_validation_failed',
+        metadata: {
+          job_description_length_band: textLengthBand(jobDescription),
+          resume_length_band: textLengthBand(resumeText),
+          missing_field_count: Number(!jobDescription) + Number(!resumeText)
+        }
+      });
+      return;
+    }
 
     setOptimizing(true);
+    setOptimized(false);
+    setMatchReport(null);
+    void recordExtensionOperationalEvent({
+      area: 'resume_matcher',
+      event: 'match_requested',
+      metadata: {
+        job_description_length_band: textLengthBand(jobDescription),
+        resume_length_band: textLengthBand(resumeText)
+      }
+    });
+
     setTimeout(() => {
+      const report = buildResumeMatchReport(jobDescription, resumeText);
       setOptimizing(false);
       setOptimized(true);
-      setScore(88); // Bump matching score
+      setScore(report.score);
+      setMatchReport(report);
+      void recordExtensionOperationalEvent({
+        area: 'resume_matcher',
+        event: 'match_completed',
+        metadata: {
+          job_description_length_band: textLengthBand(jobDescription),
+          resume_length_band: textLengthBand(resumeText),
+          score_band: scoreBand(report.score),
+          job_keyword_count_band: countBand(report.jobKeywordCount),
+          matched_keyword_count_band: countBand(report.matchedKeywordCount),
+          missing_keyword_count_band: countBand(report.missingKeywords.length)
+        }
+      });
     }, 2000);
   }, [jobDescription, resumeText]);
 
   const handleAddPrep = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTopic) return;
+    if (!newTopic) {
+      void recordExtensionOperationalEvent({
+        area: 'interview_planner',
+        event: 'prep_card_validation_failed',
+        metadata: {
+          prep_category: newType,
+          missing_field_count: 1
+        }
+      });
+      return;
+    }
 
     const newItem: PrepItem = {
       id: Date.now().toString(),
@@ -59,15 +233,138 @@ export function OptionsApp() {
 
     setPrepItems(curr => [...curr, newItem]);
     setNewTopic('');
-  }, [newTopic, newType, setPrepItems]);
+    void recordExtensionOperationalEvent({
+      area: 'interview_planner',
+      event: 'prep_card_added',
+      metadata: {
+        prep_category: newType,
+        prep_count: prepItems.length + 1,
+        prep_count_band: countBand(prepItems.length + 1)
+      }
+    });
+  }, [newTopic, newType, prepItems.length, setPrepItems]);
 
   const togglePrep = useCallback((id: string) => {
+    const prepItem = prepItems.find(item => item.id === id);
     setPrepItems(curr => curr.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
-  }, [setPrepItems]);
+    if (prepItem) {
+      void recordExtensionOperationalEvent({
+        area: 'interview_planner',
+        event: 'prep_card_toggled',
+        metadata: {
+          prep_category: prepItem.type,
+          previous_completed: prepItem.completed,
+          next_completed: !prepItem.completed,
+          prep_count: prepItems.length,
+          prep_count_band: countBand(prepItems.length)
+        }
+      });
+    }
+  }, [prepItems, setPrepItems]);
 
-  const clearPrep = useCallback(() => {
+  const openPrepClearReview = useCallback((entryPoint: PrepClearEntryPoint) => {
+    if (prepItems.length === 0) {
+      return;
+    }
+
+    setIsPrepClearReviewOpen(true);
+    void recordExtensionOperationalEvent({
+      area: entryPoint === 'settings' ? 'settings' : 'interview_planner',
+      event: entryPoint === 'settings' ? 'prep_cards_reset_review_opened' : 'prep_cards_clear_review_opened',
+      metadata: prepClearMetadata(entryPoint)
+    });
+  }, [prepClearMetadata, prepItems.length]);
+
+  const cancelPrepClearReview = useCallback((entryPoint: PrepClearEntryPoint) => {
+    setIsPrepClearReviewOpen(false);
+    void recordExtensionOperationalEvent({
+      area: entryPoint === 'settings' ? 'settings' : 'interview_planner',
+      event: entryPoint === 'settings' ? 'prep_cards_reset_cancelled' : 'prep_cards_clear_cancelled',
+      metadata: prepClearMetadata(entryPoint)
+    });
+  }, [prepClearMetadata]);
+
+  const confirmPrepClear = useCallback((entryPoint: PrepClearEntryPoint) => {
+    if (prepItems.length === 0) {
+      setIsPrepClearReviewOpen(false);
+      return;
+    }
+
+    if (entryPoint === 'settings') {
+      void recordExtensionOperationalEvent({
+        area: 'settings',
+        event: 'prep_cards_reset_confirmed',
+        metadata: prepClearMetadata(entryPoint)
+      });
+    }
+
     setPrepItems([]);
-  }, [setPrepItems]);
+    setIsPrepClearReviewOpen(false);
+    void recordExtensionOperationalEvent({
+      area: 'interview_planner',
+      event: 'prep_cards_cleared',
+      metadata: prepClearMetadata(entryPoint)
+    });
+  }, [prepClearMetadata, prepItems.length, setPrepItems]);
+
+  const updateBooleanSetting = useCallback(async (
+    setting: 'notifications' | 'usage_diagnostics',
+    currentValue: boolean,
+    setter: (value: BooleanSettingUpdater) => Promise<void> | void,
+    value: BooleanSettingUpdater
+  ) => {
+    const nextValue = typeof value === 'function' ? value(currentValue) : value;
+
+    await setter(nextValue);
+    void recordExtensionOperationalEvent({
+      area: 'settings',
+      event: 'setting_changed',
+      forceLocal: setting === 'usage_diagnostics' && nextValue,
+      metadata: {
+        setting,
+        enabled: nextValue,
+        usage_diagnostics_enabled: setting === 'usage_diagnostics' ? nextValue : analytics
+      }
+    });
+  }, [analytics]);
+
+  const handleNotificationsChange = useCallback((value: BooleanSettingUpdater) => {
+    return updateBooleanSetting('notifications', notifications, setNotifications, value);
+  }, [notifications, setNotifications, updateBooleanSetting]);
+
+  const handleAnalyticsChange = useCallback((value: BooleanSettingUpdater) => {
+    return updateBooleanSetting('usage_diagnostics', analytics, setAnalytics, value);
+  }, [analytics, setAnalytics, updateBooleanSetting]);
+
+  const openCloudSyncPlan = useCallback(() => {
+    setIsCloudSyncPlanOpen(true);
+    void recordExtensionOperationalEvent({
+      area: 'settings',
+      event: 'cloud_sync_plan_review_opened',
+      metadata: {
+        setting: 'cloud_sync',
+        enabled: false,
+        cloud_sync_enabled: false,
+        usage_diagnostics_enabled: analytics,
+        entry_point: 'settings'
+      }
+    });
+  }, [analytics]);
+
+  const closeCloudSyncPlan = useCallback(() => {
+    setIsCloudSyncPlanOpen(false);
+    void recordExtensionOperationalEvent({
+      area: 'settings',
+      event: 'cloud_sync_plan_review_closed',
+      metadata: {
+        setting: 'cloud_sync',
+        enabled: false,
+        cloud_sync_enabled: false,
+        usage_diagnostics_enabled: analytics,
+        entry_point: 'settings'
+      }
+    });
+  }, [analytics]);
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
@@ -85,7 +382,7 @@ export function OptionsApp() {
 
           <nav className="space-y-1">
             <button
-              onClick={() => setActiveTab('ai')}
+              onClick={() => handleOptionsTabChange('ai')}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
                 activeTab === 'ai'
                   ? 'bg-gradient-to-r from-cyan-500/10 to-cyan-500/0 text-cyan-400 border-l-4 border-cyan-400 shadow-md'
@@ -94,10 +391,10 @@ export function OptionsApp() {
               id="options-ai-tab"
             >
               <Sparkles className="h-4 w-4" />
-              <span>AI Resume Matcher</span>
+              <span>Resume Match Preview</span>
             </button>
             <button
-              onClick={() => setActiveTab('prep')}
+              onClick={() => handleOptionsTabChange('prep')}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
                 activeTab === 'prep'
                   ? 'bg-gradient-to-r from-purple-500/10 to-purple-500/0 text-purple-400 border-l-4 border-purple-400 shadow-md'
@@ -109,7 +406,7 @@ export function OptionsApp() {
               <span>Interview Planner</span>
             </button>
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => handleOptionsTabChange('settings')}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
                 activeTab === 'settings'
                   ? 'bg-gradient-to-r from-emerald-500/10 to-emerald-500/0 text-emerald-400 border-l-4 border-emerald-400 shadow-md'
@@ -118,7 +415,7 @@ export function OptionsApp() {
               id="options-settings-tab"
             >
               <Settings2 className="h-4 w-4" />
-              <span>System Settings</span>
+              <span>Local Settings</span>
             </button>
           </nav>
         </div>
@@ -126,9 +423,9 @@ export function OptionsApp() {
         <div className="bg-slate-950/40 border border-slate-850 rounded-xl p-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] text-slate-400">Database Sync: Connected</span>
+            <span className="text-[10px] text-slate-400">Local Storage: Active</span>
           </div>
-          <RefreshCw className="h-3 w-3 text-slate-500 animate-spin" />
+          <HardDrive className="h-3 w-3 text-slate-500" />
         </div>
       </aside>
 
@@ -142,6 +439,7 @@ export function OptionsApp() {
             optimizing={optimizing}
             optimized={optimized}
             score={score}
+            matchReport={matchReport}
             handleOptimize={handleOptimize}
           />
         )}
@@ -155,19 +453,27 @@ export function OptionsApp() {
             setNewType={setNewType}
             handleAddPrep={handleAddPrep}
             togglePrep={togglePrep}
-            clearPrep={clearPrep}
+            isPrepClearReviewOpen={isPrepClearReviewOpen}
+            openPrepClearReview={() => openPrepClearReview('prep')}
+            cancelPrepClearReview={() => cancelPrepClearReview('prep')}
+            confirmPrepClear={() => confirmPrepClear('prep')}
           />
         )}
 
         {activeTab === 'settings' && (
           <SettingsView 
-            cloudSync={cloudSync}
-            setCloudSync={setCloudSync}
+            isCloudSyncPlanOpen={isCloudSyncPlanOpen}
+            openCloudSyncPlan={openCloudSyncPlan}
+            closeCloudSyncPlan={closeCloudSyncPlan}
             notifications={notifications}
-            setNotifications={setNotifications}
+            setNotifications={handleNotificationsChange}
             analytics={analytics}
-            setAnalytics={setAnalytics}
-            clearPrep={clearPrep}
+            setAnalytics={handleAnalyticsChange}
+            prepCount={prepItems.length}
+            isPrepClearReviewOpen={isPrepClearReviewOpen}
+            openPrepClearReview={() => openPrepClearReview('settings')}
+            cancelPrepClearReview={() => cancelPrepClearReview('settings')}
+            confirmPrepClear={() => confirmPrepClear('settings')}
           />
         )}
       </main>

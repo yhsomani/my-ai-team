@@ -15,6 +15,7 @@ data:
   SPRING_REDIS_HOST: "ts-redis"
   SPRING_ELASTICSEARCH_HOSTS: "http://ts-elasticsearch:9200"
   SPRING_PROFILES_ACTIVE: "production"
+  SUPABASE_URL: "https://replace-me.supabase.co"
 ---
 apiVersion: v1
 kind: Secret
@@ -26,6 +27,7 @@ stringData:
   POSTGRES_PASSWORD: "replace-me"
   RABBITMQ_PASSWORD: "replace-me"
   JWT_SECRET: "replace-me"
+  SUPABASE_SERVICE_ROLE_KEY: "replace-me"
 ---
 apiVersion: v1
 kind: Service

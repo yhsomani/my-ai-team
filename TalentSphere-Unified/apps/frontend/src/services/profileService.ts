@@ -1,5 +1,37 @@
 import { supabase } from '../lib/supabaseClient';
+import { buildResumeArtifactRecord, type ResumeArtifactRecord } from '../lib/resumeArtifactLibrary';
+import type { ResumeExportMethod, ResumeExportRecord, ResumeExportStatus } from '../lib/resumeExportHistory';
 import type { UserProfile, Resume, WorkExperience, Education } from '../types/profile';
+
+const mapResumeExportRecordResponse = (record: Record<string, any>): ResumeExportRecord => ({
+  id: record.id,
+  userId: record.user_id || record.userId || '',
+  status: (record.status || 'ready') as ResumeExportStatus,
+  method: (record.method || 'browser-print') as ResumeExportMethod,
+  fileName: record.file_name || record.fileName || 'Resume export',
+  detail: record.detail || '',
+  createdAt: record.created_at || record.createdAt || new Date().toISOString(),
+  persistedTo: 'server',
+});
+
+const mapResumeArtifactRecordResponse = (record: Record<string, any>): ResumeArtifactRecord => {
+  const artifact = buildResumeArtifactRecord({
+    id: record.id,
+    user_id: record.user_id || record.userId,
+    file_name: record.file_name || record.fileName,
+    file_url: record.file_url || record.url,
+    uploaded_at: record.uploaded_at || record.uploadedAt,
+    deleted_at: record.deleted_at || record.deletedAt,
+    status: record.status,
+    persisted_to: 'server',
+  });
+
+  if (!artifact) {
+    throw new Error('Resume artifact record did not include a usable file URL.');
+  }
+
+  return artifact;
+};
 
 export const profileService = {
   getProfile: async (userId: string) => {
@@ -43,6 +75,24 @@ export const profileService = {
     
     if (error) throw error;
     return data;
+  },
+
+  updateAvatar: async (userId: string, avatarUrl: string | null) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select('id, avatar_url')
+      .single();
+
+    if (error) throw error;
+    return {
+      ...data,
+      avatarUrl: data?.avatar_url || avatarUrl || '',
+    };
   },
 
   getSkills: async (userId: string) => {
@@ -89,6 +139,22 @@ export const profileService = {
     return data;
   },
 
+  updateSkill: async (skillId: string, skill: { name: string; proficiency?: string; years_of_experience?: number }) => {
+    const { data, error } = await supabase
+      .from('skills')
+      .update({
+        name: skill.name,
+        proficiency: skill.proficiency || 'INTERMEDIATE',
+        years_of_experience: skill.years_of_experience
+      })
+      .eq('id', skillId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   deleteSkill: async (skillId: string) => {
     const { error } = await supabase.from('skills').delete().eq('id', skillId);
     if (error) throw error;
@@ -122,6 +188,31 @@ export const profileService = {
     return data;
   },
 
+  updateExperience: async (experienceId: string, experience: Omit<WorkExperience, 'id'>) => {
+    const { data, error } = await supabase
+      .from('experiences')
+      .update({
+        company: experience.company,
+        title: experience.title,
+        location: experience.location,
+        start_date: experience.startDate,
+        end_date: experience.endDate || null,
+        current: experience.current,
+        description: experience.description
+      })
+      .eq('id', experienceId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  deleteExperience: async (experienceId: string) => {
+    const { error } = await supabase.from('experiences').delete().eq('id', experienceId);
+    if (error) throw error;
+  },
+
   addEducation: async (userId: string, education: Omit<Education, 'id'>) => {
     const { data: profileData } = await supabase
       .from('user_profiles')
@@ -147,6 +238,30 @@ export const profileService = {
     
     if (error) throw error;
     return data;
+  },
+
+  updateEducation: async (educationId: string, education: Omit<Education, 'id'>) => {
+    const { data, error } = await supabase
+      .from('educations')
+      .update({
+        institution: education.institution,
+        degree: education.degree,
+        field_of_study: education.fieldOfStudy,
+        start_date: education.startDate,
+        end_date: education.endDate || null,
+        gpa: education.gpa
+      })
+      .eq('id', educationId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  deleteEducation: async (educationId: string) => {
+    const { error } = await supabase.from('educations').delete().eq('id', educationId);
+    if (error) throw error;
   },
 
   saveResume: async (userId: string, resume: Omit<Resume, 'id' | 'userId'>) => {
@@ -181,5 +296,112 @@ export const profileService = {
     
     if (error) throw error;
     return data;
-  }
+  },
+
+  getResumeExportHistory: async (userId: string, limit = 5): Promise<ResumeExportRecord[]> => {
+    const { data, error } = await supabase
+      .from('resume_export_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('[Profile] resume export history unavailable; using local fallback.', error);
+      throw error;
+    }
+
+    return (data || []).map(mapResumeExportRecordResponse);
+  },
+
+  saveResumeExportRecord: async (record: ResumeExportRecord): Promise<ResumeExportRecord> => {
+    const { data, error } = await supabase
+      .from('resume_export_events')
+      .upsert({
+        id: record.id,
+        user_id: record.userId,
+        status: record.status,
+        method: record.method,
+        file_name: record.fileName,
+        detail: record.detail,
+        created_at: record.createdAt,
+      }, {
+        onConflict: 'id',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.warn('[Profile] resume export history not synced; using local fallback.', error);
+      throw error;
+    }
+
+    return mapResumeExportRecordResponse(data);
+  },
+
+  getResumeArtifacts: async (userId: string, limit = 5): Promise<ResumeArtifactRecord[]> => {
+    const { data, error } = await supabase
+      .from('resume_artifacts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('uploaded_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('[Profile] resume artifacts unavailable; using local fallback.', error);
+      throw error;
+    }
+
+    return (data || []).map(mapResumeArtifactRecordResponse);
+  },
+
+  saveResumeArtifactRecord: async (record: ResumeArtifactRecord): Promise<ResumeArtifactRecord> => {
+    const { data, error } = await supabase
+      .from('resume_artifacts')
+      .upsert({
+        id: record.id,
+        user_id: record.userId,
+        file_name: record.fileName,
+        file_url: record.url,
+        status: record.status,
+        uploaded_at: record.uploadedAt,
+        deleted_at: record.deletedAt || null,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.warn('[Profile] resume artifact not synced; using local fallback.', error);
+      throw error;
+    }
+
+    return mapResumeArtifactRecordResponse(data);
+  },
+
+  markResumeArtifactDeleted: async (
+    record: Pick<ResumeArtifactRecord, 'id' | 'userId'> & { deletedAt: string }
+  ): Promise<ResumeArtifactRecord> => {
+    const { data, error } = await supabase
+      .from('resume_artifacts')
+      .update({
+        status: 'deleted',
+        deleted_at: record.deletedAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', record.id)
+      .eq('user_id', record.userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn('[Profile] resume artifact delete metadata not synced; using local fallback.', error);
+      throw error;
+    }
+
+    return mapResumeArtifactRecordResponse(data);
+  },
 };

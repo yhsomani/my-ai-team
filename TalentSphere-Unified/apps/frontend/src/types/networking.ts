@@ -25,6 +25,10 @@ export interface PublicProfile {
   mutualConnections?: number;
   isConnected?: boolean;
   alignment?: number;
+  recommendationScore?: number;
+  recommendationReasons?: string[];
+  sharedSkills?: string[];
+  sharedCompanies?: string[];
   bio?: string;
   summary?: string;
 }

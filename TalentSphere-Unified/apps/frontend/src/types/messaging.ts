@@ -24,6 +24,7 @@ export interface Conversation {
     participants?: string[];
     isGroup?: boolean;
     lastMessage?: Message;
+    unreadCount?: number;
     createdAt?: string;
     updatedAt?: string;
 }

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import type { NotificationDigestFrequency } from '../lib/notificationPreferences';
 
 export interface NotificationSettings {
   id: string;
@@ -9,6 +10,10 @@ export interface NotificationSettings {
   job_alerts: boolean;
   message_notifications: boolean;
   newsletter: boolean;
+  digest_frequency?: NotificationDigestFrequency;
+  quiet_hours_enabled?: boolean;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
   updated_at: string;
 }
 
@@ -69,6 +74,10 @@ export const settingsService = {
           job_alerts: true,
           message_notifications: true,
           newsletter: false,
+          digest_frequency: 'immediate',
+          quiet_hours_enabled: false,
+          quiet_hours_start: '18:00',
+          quiet_hours_end: '09:00',
           ...settings,
           updated_at: new Date().toISOString()
         }])

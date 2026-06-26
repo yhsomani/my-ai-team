@@ -1,5 +1,6 @@
 package com.talentsphere.application.controller;
 import jakarta.validation.Valid;
+import com.talentsphere.application.entity.ApplicationStatusEvent;
 import com.talentsphere.application.entity.JobApplication;
 import com.talentsphere.application.service.ApplicationService;
 import com.talentsphere.contracts.ApiResponse;
@@ -40,7 +41,17 @@ public class ApplicationController {
   public ApiResponse<JobApplication> updateStatus(
       @PathVariable String id,
       @RequestBody Map<String, String> body) {
-    return applicationService.updateApplicationStatus(id, body.get("status"));
+    return applicationService.updateApplicationStatus(
+        id,
+        body.get("status"),
+        body.get("changedBy"),
+        body.get("reason")
+    );
+  }
+
+  @GetMapping("/{id}/events")
+  public ApiResponse<List<ApplicationStatusEvent>> getStatusEvents(@PathVariable String id) {
+    return applicationService.getApplicationStatusEvents(id);
   }
 
   @GetMapping("/health")

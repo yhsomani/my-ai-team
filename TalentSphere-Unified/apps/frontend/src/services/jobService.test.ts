@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { jobService } from './jobService';
+import { getJobPublishPolicyErrorMessage, jobService } from './jobService';
 import { supabase } from '../lib/supabaseClient';
 import { apiClient } from '../api/axios';
 
@@ -37,6 +37,7 @@ describe('jobService', () => {
       limit: vi.fn().mockReturnThis(),
       range: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       single: vi.fn().mockReturnThis(),
@@ -45,6 +46,24 @@ describe('jobService', () => {
 
     // @ts-expect-error mock
     supabase.from.mockReturnValue(mockQueryBuilder);
+  });
+
+  describe('getJobPublishPolicyErrorMessage', () => {
+    it('returns a user-facing publish policy message for the database readiness constraint', () => {
+      expect(getJobPublishPolicyErrorMessage({
+        code: '23514',
+        constraint: 'job_publish_readiness',
+        message: 'Cannot publish job without a location',
+      })).toBe('This posting is missing required publish details. Open the draft, finish the checklist, and publish again.');
+    });
+
+    it('returns a user-facing publish policy message for Supabase publish readiness errors without constraint metadata', () => {
+      expect(getJobPublishPolicyErrorMessage(new Error('Cannot publish job without at least one requirement'))).toBe('This posting is missing required publish details. Open the draft, finish the checklist, and publish again.');
+    });
+
+    it('ignores unrelated job update failures', () => {
+      expect(getJobPublishPolicyErrorMessage(new Error('Network unavailable'))).toBeNull();
+    });
   });
 
   describe('getJobs', () => {
@@ -90,6 +109,100 @@ describe('jobService', () => {
     it('should apply range if offset is provided', async () => {
       await jobService.getJobs({ offset: 10 });
       expect(mockQueryBuilder.range).toHaveBeenCalledWith(10, 19);
+    });
+
+    it('should return paginated metadata when requested', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: [
+          { id: 'job-1', title: 'Engineer', job_type: 'FULL_TIME', requirements: [], status: 'PUBLISHED' },
+          { id: 'job-2', title: 'Designer', job_type: 'CONTRACT', requirements: [], status: 'PUBLISHED' },
+        ],
+        error: null,
+        count: 8,
+      }).then(res, rej));
+
+      const result = await jobService.getJobsPage({ limit: 2, offset: 2 });
+
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
+      expect(mockQueryBuilder.order).toHaveBeenCalledWith('id', { ascending: false });
+      expect(mockQueryBuilder.range).toHaveBeenCalledWith(2, 3);
+      expect(result.jobs).toHaveLength(2);
+      expect(result.total).toBe(8);
+      expect(result.offset).toBe(2);
+      expect(result.limit).toBe(2);
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
+    });
+
+    it('should use cursor lookahead for stable job pagination', async () => {
+      mockQueryBuilder.then = vi.fn()
+        .mockImplementationOnce((res, rej) => Promise.resolve({
+          data: [
+            {
+              id: 'job-1',
+              title: 'Engineer',
+              job_type: 'FULL_TIME',
+              requirements: [],
+              status: 'PUBLISHED',
+              posted_at: '2026-06-01T10:00:00.000Z',
+            },
+          ],
+          error: null,
+          count: 3,
+        }).then(res, rej))
+        .mockImplementationOnce((res, rej) => Promise.resolve({
+          data: [
+            {
+              id: 'job-0',
+              title: 'Older Engineer',
+              job_type: 'FULL_TIME',
+              requirements: [],
+              status: 'PUBLISHED',
+              posted_at: '2026-05-31T10:00:00.000Z',
+            },
+            {
+              id: 'job-overflow',
+              title: 'Overflow Engineer',
+              job_type: 'FULL_TIME',
+              requirements: [],
+              status: 'PUBLISHED',
+              posted_at: '2026-05-30T10:00:00.000Z',
+            },
+          ],
+          error: null,
+        }).then(res, rej));
+
+      const firstPage = await jobService.getJobsPage({ limit: 1, offset: 0 });
+      const result = await jobService.getJobsPage({
+        limit: 1,
+        offset: 1,
+        cursor: firstPage.nextCursor || undefined,
+      });
+
+      expect(mockQueryBuilder.select).toHaveBeenLastCalledWith(expect.any(String));
+      expect(mockQueryBuilder.or).toHaveBeenCalledWith('posted_at.lt.2026-06-01T10:00:00.000Z,and(posted_at.eq.2026-06-01T10:00:00.000Z,id.lt.job-1)');
+      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(2);
+      expect(result.total).toBeNull();
+      expect(result.jobs).toHaveLength(1);
+      expect(result.jobs[0].id).toBe('job-0');
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
+    });
+
+    it('should preserve array return shape for getJobs', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: [
+          { id: 'job-1', title: 'Engineer', job_type: 'FULL_TIME', requirements: [], status: 'PUBLISHED' },
+        ],
+        error: null,
+        count: 1,
+      }).then(res, rej));
+
+      const result = await jobService.getJobs({ limit: 1 });
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('job-1');
     });
 
     it('should throw an error if the query fails', async () => {
@@ -147,8 +260,11 @@ describe('jobService', () => {
 
     it('should update a job successfully', async () => {
       mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({ data: { id: 'job-1', title: 'Updated' }, error: null }).then(res, rej));
-      const result = await jobService.updateJob('job-1', { title: 'Updated' });
-      expect(mockQueryBuilder.update).toHaveBeenCalled();
+      const result = await jobService.updateJob('job-1', { title: 'Updated', companyId: null });
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Updated',
+        company_id: null,
+      }));
       expect(result.id).toBe('job-1');
     });
 
@@ -159,12 +275,330 @@ describe('jobService', () => {
     });
   });
 
+  describe('job post draft history', () => {
+    it('loads recruiter draft history for a draft key', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: [
+          {
+            id: 'history-1',
+            recruiter_id: 'recruiter-1',
+            draft_key: 'draft-1',
+            job_id: 'job-1',
+            title: 'Frontend Engineer',
+            description: 'Build UI',
+            location: 'Remote',
+            salary_min: '100000',
+            salary_max: '140000',
+            requirements: '- React',
+            job_type: 'FULL_TIME',
+            company_attached: true,
+            company_id: 'company-1',
+            company_name: 'Acme',
+            reason: 'saved',
+            created_at: '2026-06-26T10:00:00.000Z',
+            updated_at: '2026-06-26T10:00:00.000Z',
+          },
+        ],
+        error: null,
+      }).then(res, rej));
+
+      const result = await jobService.getJobPostDraftHistory('recruiter-1', 'draft-1', 3);
+
+      expect(supabase.from).toHaveBeenCalledWith('job_post_draft_versions');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('draft_key', 'draft-1');
+      expect(mockQueryBuilder.order).toHaveBeenCalledWith('updated_at', { ascending: false });
+      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(3);
+      expect(result[0]).toMatchObject({
+        id: 'history-1',
+        recruiterId: 'recruiter-1',
+        draftKey: 'draft-1',
+        companyAttached: true,
+        persistedTo: 'server',
+      });
+    });
+
+    it('upserts recruiter draft history entries', async () => {
+      mockQueryBuilder.single = vi.fn().mockResolvedValue({
+        data: {
+          id: 'history-1',
+          recruiter_id: 'recruiter-1',
+          draft_key: 'draft-1',
+          job_id: 'job-1',
+          title: 'Frontend Engineer',
+          description: 'Build UI',
+          location: 'Remote',
+          salary_min: '100000',
+          salary_max: '140000',
+          requirements: '- React',
+          job_type: 'FULL_TIME',
+          company_attached: false,
+          reason: 'reviewed',
+          created_at: '2026-06-26T10:00:00.000Z',
+          updated_at: '2026-06-26T10:00:00.000Z',
+        },
+        error: null,
+      });
+
+      const result = await jobService.saveJobPostDraftHistoryEntry({
+        id: 'history-1',
+        recruiterId: 'recruiter-1',
+        draftKey: 'draft-1',
+        jobId: 'job-1',
+        title: 'Frontend Engineer',
+        description: 'Build UI',
+        location: 'Remote',
+        salaryMin: '100000',
+        salaryMax: '140000',
+        requirements: '- React',
+        jobType: 'FULL_TIME',
+        salaryRange: '',
+        category: '',
+        companyId: null,
+        companyName: '',
+        companyAttached: false,
+        reason: 'reviewed',
+        persistedTo: 'local',
+        createdAt: '2026-06-26T10:00:00.000Z',
+        updatedAt: '2026-06-26T10:00:00.000Z',
+      });
+
+      expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        id: 'history-1',
+        recruiter_id: 'recruiter-1',
+        draft_key: 'draft-1',
+        job_id: 'job-1',
+        title: 'Frontend Engineer',
+        company_attached: false,
+        reason: 'reviewed',
+      }), { onConflict: 'id' });
+      expect(result).toMatchObject({
+        id: 'history-1',
+        persistedTo: 'server',
+      });
+    });
+  });
+
+  describe('hidden Explore jobs', () => {
+    it('loads account hidden Explore preferences', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: [
+          {
+            job_id: 'job-1',
+            title: 'Frontend Engineer',
+            company_name: 'Acme Labs',
+            job_type: 'FULL_TIME',
+            location: 'Remote',
+            hidden_at: '2026-06-26T10:00:00.000Z',
+          },
+        ],
+        error: null,
+      }).then(res, rej));
+
+      const result = await jobService.getHiddenExploreJobs('user-1', 25);
+
+      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockQueryBuilder.order).toHaveBeenCalledWith('hidden_at', { ascending: false });
+      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(25);
+      expect(result).toEqual([
+        {
+          jobId: 'job-1',
+          title: 'Frontend Engineer',
+          companyName: 'Acme Labs',
+          jobType: 'FULL_TIME',
+          location: 'Remote',
+          hiddenAt: '2026-06-26T10:00:00.000Z',
+        },
+      ]);
+    });
+
+    it('upserts a hidden Explore preference for an account', async () => {
+      mockQueryBuilder.single = vi.fn().mockResolvedValue({
+        data: {
+          job_id: 'job-1',
+          title: 'Frontend Engineer',
+          company_name: 'Acme Labs',
+          job_type: 'FULL_TIME',
+          location: 'Remote',
+          hidden_at: '2026-06-26T10:00:00.000Z',
+        },
+        error: null,
+      });
+
+      const result = await jobService.saveHiddenExploreJob('user-1', {
+        jobId: 'job-1',
+        title: 'Frontend Engineer',
+        companyName: 'Acme Labs',
+        jobType: 'FULL_TIME',
+        location: 'Remote',
+        hiddenAt: '2026-06-26T10:00:00.000Z',
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        id: 'user-1:job-1',
+        user_id: 'user-1',
+        job_id: 'job-1',
+        title: 'Frontend Engineer',
+        company_name: 'Acme Labs',
+        job_type: 'FULL_TIME',
+        location: 'Remote',
+        hidden_at: '2026-06-26T10:00:00.000Z',
+      }), { onConflict: 'user_id,job_id' });
+      expect(result).toMatchObject({
+        jobId: 'job-1',
+        title: 'Frontend Engineer',
+      });
+    });
+
+    it('deletes one hidden Explore preference for an account', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        error: null,
+      }).then(res, rej));
+
+      await jobService.deleteHiddenExploreJob('user-1', 'job-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(mockQueryBuilder.delete).toHaveBeenCalled();
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('job_id', 'job-1');
+    });
+
+    it('clears account hidden Explore preferences', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        error: null,
+      }).then(res, rej));
+
+      await jobService.clearHiddenExploreJobs('user-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(mockQueryBuilder.delete).toHaveBeenCalled();
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+    });
+  });
+
+  describe('job post templates', () => {
+    it('loads recruiter job-post templates', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: [
+          {
+            id: 'template-1',
+            recruiter_id: 'recruiter-1',
+            name: 'Frontend Engineer - Remote',
+            title: 'Frontend Engineer',
+            description: 'Build UI',
+            location: 'Remote',
+            salary_min: '100000',
+            salary_max: '140000',
+            requirements: '- React',
+            job_type: 'FULL_TIME',
+            created_at: '2026-06-26T10:00:00.000Z',
+            updated_at: '2026-06-26T10:00:00.000Z',
+          },
+        ],
+        error: null,
+      }).then(res, rej));
+
+      const result = await jobService.getJobPostTemplates('recruiter-1', 4);
+
+      expect(supabase.from).toHaveBeenCalledWith('job_post_templates');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
+      expect(mockQueryBuilder.order).toHaveBeenCalledWith('updated_at', { ascending: false });
+      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(4);
+      expect(result[0]).toMatchObject({
+        id: 'template-1',
+        recruiterId: 'recruiter-1',
+        persistedTo: 'server',
+      });
+    });
+
+    it('upserts recruiter job-post templates', async () => {
+      mockQueryBuilder.single = vi.fn().mockResolvedValue({
+        data: {
+          id: 'template-1',
+          recruiter_id: 'recruiter-1',
+          name: 'Frontend Engineer - Remote',
+          title: 'Frontend Engineer',
+          description: 'Build UI',
+          location: 'Remote',
+          salary_min: '100000',
+          salary_max: '140000',
+          requirements: '- React',
+          job_type: 'FULL_TIME',
+          created_at: '2026-06-26T10:00:00.000Z',
+          updated_at: '2026-06-26T10:00:00.000Z',
+        },
+        error: null,
+      });
+
+      const result = await jobService.saveJobPostTemplate('recruiter-1', {
+        id: 'template-1',
+        recruiterId: 'recruiter-1',
+        name: 'Frontend Engineer - Remote',
+        title: 'Frontend Engineer',
+        description: 'Build UI',
+        location: 'Remote',
+        salaryMin: '100000',
+        salaryMax: '140000',
+        requirements: '- React',
+        jobType: 'FULL_TIME',
+        salaryRange: '',
+        category: '',
+        persistedTo: 'local',
+        createdAt: '2026-06-26T10:00:00.000Z',
+        updatedAt: '2026-06-26T10:00:00.000Z',
+      });
+
+      expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        id: 'template-1',
+        recruiter_id: 'recruiter-1',
+        name: 'Frontend Engineer - Remote',
+        title: 'Frontend Engineer',
+        requirements: '- React',
+      }), { onConflict: 'id' });
+      expect(result).toMatchObject({
+        id: 'template-1',
+        persistedTo: 'server',
+      });
+    });
+
+    it('deletes recruiter job-post templates', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        error: null,
+      }).then(res, rej));
+
+      await jobService.deleteJobPostTemplate('recruiter-1', 'template-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('job_post_templates');
+      expect(mockQueryBuilder.delete).toHaveBeenCalled();
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
+      expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'template-1');
+    });
+  });
+
   describe('applications', () => {
     it('should apply to job', async () => {
       mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({ data: { id: 'app-1', job_id: 'job-1' }, error: null }).then(res, rej));
       const result = await jobService.applyToJob({ jobId: 'job-1' } as any, 'user-1');
       expect(mockQueryBuilder.insert).toHaveBeenCalled();
       expect(result.id).toBe('app-1');
+    });
+
+    it('should not fabricate an application when applying fails', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: null,
+        error: new Error('database unavailable'),
+      }).then(res, rej));
+
+      await expect(jobService.applyToJob({ jobId: 'job-1' } as any, 'user-1')).rejects.toThrow('Application could not be submitted');
+
+      expect(mockQueryBuilder.insert).toHaveBeenCalledWith({
+        job_id: 'job-1',
+        user_id: 'user-1',
+        status: 'PENDING',
+        applied_at: expect.any(String),
+      });
     });
 
     it('should get user applications', async () => {

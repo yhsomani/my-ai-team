@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Menu, ArrowRight, Briefcase, UserRound, MessageSquare, GraduationCap, Trophy, Settings, ShieldCheck } from 'lucide-react';
+import {
+  getNotificationReminderDueAt,
+  getNotificationScheduleState,
+  isNotificationUrgentUnread,
+  notificationService,
+  NOTIFICATIONS_CHANGED_EVENT,
+} from '../../services/notificationService';
+import type { NotificationRecord } from '../../services/notificationService';
+
+const notificationPageSize = 8;
 
 interface HeaderProps {
   scrolled?: boolean;
@@ -21,6 +31,14 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [accountNotifications, setAccountNotifications] = useState<NotificationRecord[]>([]);
+  const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
+  const [notificationNextCursor, setNotificationNextCursor] = useState<string | null>(null);
+  const [hasMoreNotifications, setHasMoreNotifications] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = useState(false);
+  const [notificationError, setNotificationError] = useState('');
+  const [notificationNow, setNotificationNow] = useState(() => new Date());
   const roles = user?.roles || [];
 
   const searchDestinations = useMemo(() => {
@@ -55,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
       .slice(0, 6);
   }, [searchDestinations, searchTerm]);
 
-  const notifications = useMemo(() => {
+  const reminders = useMemo(() => {
     const items = [
       {
         title: 'Review your application activity',
@@ -85,6 +103,105 @@ export const Header: React.FC<HeaderProps> = ({
       !item.roles || roles.some((role: string) => item.roles?.includes(role))
     ));
   }, [roles]);
+  const unreadAccountNotifications = accountNotifications.filter(notification => isNotificationUrgentUnread(notification, notificationNow));
+  const notificationCountLabel = notificationTotal !== null
+    ? `${accountNotifications.length} of ${notificationTotal} loaded`
+    : `${accountNotifications.length} loaded`;
+
+  const formatNotificationTime = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    return parsed.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const loadAccountNotifications = React.useCallback(async () => {
+    if (!user?.id) {
+      setAccountNotifications([]);
+      setNotificationTotal(null);
+      setNotificationNextCursor(null);
+      setHasMoreNotifications(false);
+      setIsLoadingNotifications(false);
+      setNotificationError('');
+      return;
+    }
+
+    setIsLoadingNotifications(true);
+    setNotificationError('');
+    try {
+      const page = await notificationService.getNotificationsPage(user.id, {
+        limit: notificationPageSize,
+        offset: 0
+      });
+      setAccountNotifications(page.notifications);
+      setNotificationTotal(page.total);
+      setNotificationNextCursor(page.nextCursor);
+      setHasMoreNotifications(page.hasNext && Boolean(page.nextCursor));
+    } catch (error) {
+      console.warn('Unable to load account notifications:', error);
+      setNotificationError('Notifications could not load.');
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, [user?.id]);
+
+  const handleLoadMoreNotifications = async () => {
+    if (!user?.id || isLoadingMoreNotifications || !notificationNextCursor) return;
+
+    setIsLoadingMoreNotifications(true);
+    setNotificationError('');
+    try {
+      const page = await notificationService.getNotificationsPage(user.id, {
+        limit: notificationPageSize,
+        cursor: notificationNextCursor
+      });
+      setAccountNotifications(prev => {
+        const byId = new Map<string, NotificationRecord>();
+        [...prev, ...page.notifications].forEach(notification => byId.set(notification.id, notification));
+        return Array.from(byId.values()).sort((a, b) => {
+          const timeDelta = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          if (timeDelta !== 0) return timeDelta;
+          return b.id.localeCompare(a.id);
+        });
+      });
+      if (page.total !== null) {
+        setNotificationTotal(page.total);
+      }
+      setNotificationNextCursor(page.nextCursor);
+      setHasMoreNotifications(page.hasNext && Boolean(page.nextCursor));
+    } catch (error) {
+      console.warn('Unable to load more account notifications:', error);
+      setNotificationError('More notifications could not load. Retry available.');
+    } finally {
+      setIsLoadingMoreNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadAccountNotifications();
+  }, [loadAccountNotifications]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNotificationNow(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleNotificationChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string }>).detail;
+      if (!user?.id || detail?.userId === user.id) {
+        void loadAccountNotifications();
+      }
+    };
+
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationChange);
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationChange);
+  }, [loadAccountNotifications, user?.id]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -116,6 +233,33 @@ export const Header: React.FC<HeaderProps> = ({
     const firstResult = searchResults[0];
     if (firstResult) {
       navigateTo(firstResult.path);
+    }
+  };
+
+  const handleNotificationClick = async (notification: NotificationRecord) => {
+    if (user?.id && !notification.isRead) {
+      setAccountNotifications(prev => prev.map(item => (
+        item.id === notification.id ? { ...item, isRead: true } : item
+      )));
+
+      try {
+        await notificationService.markNotificationRead(user.id, notification.id);
+      } catch (error) {
+        console.warn('Unable to mark notification as read:', error);
+      }
+    }
+
+    navigateTo(notification.actionUrl || '/jobs');
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    if (!user?.id) return;
+
+    setAccountNotifications(prev => prev.map(notification => ({ ...notification, isRead: true })));
+    try {
+      await notificationService.markAllRead(user.id);
+    } catch (error) {
+      console.warn('Unable to mark notifications as read:', error);
     }
   };
 
@@ -203,7 +347,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-controls="app-shell-notifications"
           >
             <Bell size={18} />
-            {notifications.length > 0 && (
+            {unreadAccountNotifications.length > 0 && (
               <span className="absolute top-0.5 right-0.5 min-h-2 min-w-2 rounded-full bg-accent" />
             )}
           </button>
@@ -214,21 +358,98 @@ export const Header: React.FC<HeaderProps> = ({
               className="absolute right-0 top-10 z-50 w-80 overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] shadow-2xl"
             >
               <div className="border-b border-[var(--border-default)] px-4 py-3">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Notifications</p>
-                <p className="text-xs text-[var(--text-muted)]">Actionable reminders stay under your control.</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Notifications</p>
+                    <p className="text-xs text-[var(--text-muted)]">Actionable reminders stay under your control.</p>
+                    {accountNotifications.length > 0 && (
+                      <p role="status" aria-live="polite" className="mt-1 text-[10px] text-[var(--text-muted)]">
+                        {notificationCountLabel}
+                      </p>
+                    )}
+                  </div>
+                  {unreadAccountNotifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllNotificationsRead}
+                      className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-accent hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    >
+                      Mark read
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="max-h-80 overflow-y-auto p-1.5">
-                {notifications.map(item => (
-                  <button
-                    key={`${item.title}-${item.path}`}
-                    type="button"
-                    onClick={() => navigateTo(item.path)}
-                    className="w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  >
-                    <span className="block text-sm font-medium text-[var(--text-primary)]">{item.title}</span>
-                    <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.description}</span>
-                  </button>
-                ))}
+                {isLoadingNotifications ? (
+                  <div className="px-3 py-4 text-sm text-[var(--text-muted)]">Loading notifications...</div>
+                ) : (
+                  <>
+                    {notificationError && (
+                      <div role="alert" className="mb-1 rounded-lg px-3 py-2 text-xs text-destructive">
+                        {notificationError}
+                      </div>
+                    )}
+                    {accountNotifications.length > 0 && (
+                      <div className="space-y-1">
+                        {accountNotifications.map(item => {
+                          const scheduleState = getNotificationScheduleState(item, notificationNow);
+                          const dueAt = getNotificationReminderDueAt(item);
+                          const isScheduled = scheduleState === 'scheduled';
+                          const isUrgentUnread = isNotificationUrgentUnread(item, notificationNow);
+
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => handleNotificationClick(item)}
+                              className="w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+                            >
+                              <span className="flex items-center gap-2">
+                                {isUrgentUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
+                                <span className="block min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)]">{item.title}</span>
+                                {isScheduled && (
+                                  <span className="shrink-0 rounded-full border border-[var(--border-default)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">
+                                    Scheduled
+                                  </span>
+                                )}
+                              </span>
+                              <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.message}</span>
+                              <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                                {dueAt ? `${isScheduled ? 'Due' : 'Due now'} ${formatNotificationTime(dueAt.toISOString())}` : formatNotificationTime(item.createdAt)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {hasMoreNotifications && (
+                          <button
+                            type="button"
+                            onClick={handleLoadMoreNotifications}
+                            disabled={isLoadingMoreNotifications}
+                            className="mt-1 w-full rounded-lg border border-[var(--border-default)] px-3 py-2 text-center text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isLoadingMoreNotifications ? 'Loading more...' : 'Load more notifications'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {reminders.length > 0 && (
+                      <div className={accountNotifications.length > 0 ? 'mt-2 border-t border-[var(--border-default)] pt-2' : ''}>
+                        {reminders.map(item => (
+                          <button
+                            key={`${item.title}-${item.path}`}
+                            type="button"
+                            onClick={() => navigateTo(item.path)}
+                            className="w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+                          >
+                            <span className="block text-sm font-medium text-[var(--text-primary)]">{item.title}</span>
+                            <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

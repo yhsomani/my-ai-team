@@ -1,6 +1,7 @@
 package com.talentsphere.networking.controller;
 
 import jakarta.validation.Valid;
+import com.talentsphere.networking.dto.NetworkingSuggestion;
 import com.talentsphere.networking.entity.Connection;
 import com.talentsphere.networking.entity.Post;
 import com.talentsphere.networking.service.FeedService;
@@ -33,6 +34,13 @@ public class NetworkingController {
     @GetMapping("/connections/{userId}")
     public ApiResponse<List<Connection>> getConnections(@PathVariable String userId) {
         return ApiResponse.ok(networkingService.getAcceptedConnections(userId));
+    }
+
+    @GetMapping("/suggestions/{userId}")
+    public ApiResponse<List<NetworkingSuggestion>> getSuggestions(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        return ApiResponse.ok(networkingService.getSuggestions(userId, limit));
     }
 
     @PostMapping("/posts")

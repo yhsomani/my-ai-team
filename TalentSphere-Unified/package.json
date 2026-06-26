@@ -10,7 +10,15 @@
     "dev": "npm run dev --workspace talentsphere-web",
     "build": "npm run build --workspace talentsphere-web",
     "lint": "npm run lint --workspace talentsphere-web",
+    "test:unit": "npm run test:unit --workspace talentsphere-web",
     "preview": "npm run preview --workspace talentsphere-web",
+    "report:api-contracts": "node scripts/generate-api-contract-report.mjs",
+    "discover:saved-search-digests": "node scripts/discover-saved-search-digests.mjs",
+    "test:saved-search-digest-discovery": "node scripts/discover-saved-search-digests.test.mjs",
+    "run:notification-digests": "node scripts/run-notification-digests.mjs",
+    "test:notification-digests": "node scripts/run-notification-digests.test.mjs",
+    "run:networking-reminders": "node scripts/run-networking-reminders.mjs",
+    "test:networking-reminders": "node scripts/run-networking-reminders.test.mjs",
     "backend:package": "mvn package"
   }
 }

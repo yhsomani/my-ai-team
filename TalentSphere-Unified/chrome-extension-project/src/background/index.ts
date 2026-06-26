@@ -9,6 +9,12 @@ import {
   type JobScanDraft,
   type PageScanMetadata
 } from '../lib/jobTypes';
+import {
+  categorizeExtensionError,
+  recordExtensionOperationalEvent,
+  sourceCategoryFromHost,
+  textLengthBand
+} from '../lib/operationalAnalytics';
 
 console.log('[Background Service Worker] Active and listening...');
 
@@ -50,6 +56,13 @@ const getActiveTab = () =>
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (chrome.runtime.lastError) {
         console.warn('[Background Service Worker] Could not query active tab:', chrome.runtime.lastError.message);
+        void recordExtensionOperationalEvent({
+          area: 'background',
+          event: 'active_tab_query_failed',
+          metadata: {
+            error_category: categorizeExtensionError(chrome.runtime.lastError.message)
+          }
+        });
         resolve(undefined);
         return;
       }
@@ -63,11 +76,32 @@ const scrapeActiveTab = (tabId: number) =>
     chrome.tabs.sendMessage(tabId, { action: 'scrape_job_metadata' }, (response) => {
       if (chrome.runtime.lastError) {
         console.warn('[Background Service Worker] Content scrape unavailable:', chrome.runtime.lastError.message);
+        void recordExtensionOperationalEvent({
+          area: 'page_scan',
+          event: 'content_scrape_unavailable',
+          metadata: {
+            content_scrape_available: false,
+            error_category: categorizeExtensionError(chrome.runtime.lastError.message)
+          }
+        });
         resolve(undefined);
         return;
       }
 
       if (response?.status === 'success') {
+        void recordExtensionOperationalEvent({
+          area: 'page_scan',
+          event: 'content_scrape_succeeded',
+          metadata: {
+            content_scrape_available: true,
+            role_present: Boolean(response.role),
+            company_present: Boolean(response.company),
+            posting_url_present: Boolean(response.url),
+            source_category: sourceCategoryFromHost(response.source),
+            metadata_confidence: response.confidence,
+            description_length_band: textLengthBand(response.description)
+          }
+        });
         resolve(response as PageScanMetadata);
         return;
       }
@@ -115,15 +149,47 @@ const buildDraft = (metadata: PageScanMetadata | undefined, tab: chrome.tabs.Tab
 };
 
 const analyzeActivePage = async () => {
+  void recordExtensionOperationalEvent({
+    area: 'page_scan',
+    event: 'background_scan_started',
+    metadata: {
+      message_action: 'analyze_page'
+    }
+  });
+
   const tab = await getActiveTab();
 
   if (!tab?.id) {
+    void recordExtensionOperationalEvent({
+      area: 'page_scan',
+      event: 'background_scan_failed',
+      metadata: {
+        active_tab_available: false,
+        error_category: 'active_tab_unavailable'
+      }
+    });
     return { status: 'error', error: 'No active tab is available to scan.' };
   }
 
   const metadata = await scrapeActiveTab(tab.id);
   const draft = buildDraft(metadata, tab);
   await persistDraft(draft);
+  void recordExtensionOperationalEvent({
+    area: 'page_scan',
+    event: 'background_draft_persisted',
+    metadata: {
+      active_tab_available: true,
+      scrape_available: Boolean(metadata),
+      draft_confidence: draft.confidence,
+      draft_status: draft.status,
+      source_category: sourceCategoryFromHost(draft.source),
+      role_present: Boolean(draft.role),
+      company_present: Boolean(draft.company),
+      posting_url_present: Boolean(draft.url),
+      details_present: Boolean(draft.notes),
+      description_length_band: textLengthBand(draft.notes)
+    }
+  });
 
   return {
     status: 'success',
@@ -153,20 +219,51 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
       console.log('[Background Service Worker] Message received:', message);
 
       if (message.action === 'ping') {
+        void recordExtensionOperationalEvent({
+          area: 'background',
+          event: 'message_handled',
+          metadata: {
+            message_action: 'ping',
+            response_status: 'active'
+          }
+        });
         sendResponse({ status: 'active', timestamp: Date.now() });
       } else if (message.action === 'analyze_page') {
         analyzeActivePage()
           .then(sendResponse)
           .catch((err) => {
             console.error('[Background Service Worker] Page analysis failed:', err);
+            void recordExtensionOperationalEvent({
+              area: 'page_scan',
+              event: 'background_scan_failed',
+              metadata: {
+                error_category: categorizeExtensionError(err)
+              }
+            });
             sendResponse({ status: 'error', error: String(err) });
           });
       } else {
         console.warn('[Background Service Worker] Unhandled message action:', message.action);
+        void recordExtensionOperationalEvent({
+          area: 'background',
+          event: 'message_unhandled',
+          metadata: {
+            message_action: String(message.action || 'missing_action'),
+            response_status: 'unhandled'
+          }
+        });
         sendResponse({ status: 'unhandled' });
       }
     } catch (err) {
       console.error('[Background Service Worker] Exception while handling message:', err);
+      void recordExtensionOperationalEvent({
+        area: 'background',
+        event: 'message_failed',
+        metadata: {
+          message_action: String(message?.action || 'missing_action'),
+          error_category: categorizeExtensionError(err)
+        }
+      });
       sendResponse({ status: 'error', error: String(err) });
     }
     

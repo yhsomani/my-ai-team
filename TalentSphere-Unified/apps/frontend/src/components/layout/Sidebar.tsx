@@ -31,6 +31,24 @@ const bottomNav: NavItem[] = [
   { name: 'Settings', path: '/settings', icon: <Settings size={18} /> },
 ];
 
+const getMobileNavItems = (items: NavItem[], roles: string[] = []) => {
+  const hasRole = (role: string) => roles.includes(role);
+  const allItems = [...items, ...bottomNav];
+  const priorityPaths = hasRole('ROLE_RECRUITER')
+    ? ['/dashboard', '/jobs', '/candidates', '/messaging', '/networking']
+    : hasRole('ROLE_ADMIN')
+      ? ['/dashboard', '/admin', '/messaging', '/profile', '/settings']
+      : ['/dashboard', '/jobs', '/lms', '/challenges', '/messaging'];
+
+  const prioritizedItems = priorityPaths
+    .map(path => allItems.find(item => item.path === path))
+    .filter((item): item is NavItem => Boolean(item));
+
+  return [...prioritizedItems, ...allItems]
+    .filter((item, index, list) => list.findIndex(candidate => candidate.path === item.path) === index)
+    .slice(0, 5);
+};
+
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -50,6 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
     if (!item.roles) return true;
     return user?.roles?.some(role => item.roles?.includes(role));
   });
+  const mobileNavItems = getMobileNavItems(filteredNav, user?.roles || []);
 
   return (
     <>
@@ -258,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-secondary)] border-t border-[var(--border-default)] px-2 py-1.5 flex justify-around">
-        {filteredNav.slice(0, 5).map((item) => (
+        {mobileNavItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}

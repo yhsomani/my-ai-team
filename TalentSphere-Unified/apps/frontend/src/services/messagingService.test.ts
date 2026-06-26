@@ -16,6 +16,11 @@ describe('messagingService', () => {
   let mockEq: any;
   let mockIn: any;
   let mockOrder: any;
+  let mockOr: any;
+  let mockNeq: any;
+  let mockRange: any;
+  let mockIs: any;
+  let mockLimit: any;
   let mockSingle: any;
   let mockInsert: any;
   let mockUpdate: any;
@@ -24,14 +29,34 @@ describe('messagingService', () => {
     vi.clearAllMocks();
 
     mockSingle = vi.fn();
+    mockRange = vi.fn();
+    mockLimit = vi.fn().mockReturnValue({ range: mockRange });
     mockOrder = vi.fn();
-    mockIn = vi.fn().mockReturnValue({ order: mockOrder });
-    mockEq = vi.fn().mockReturnValue({ order: mockOrder, single: mockSingle });
+    mockOr = vi.fn().mockReturnValue({ limit: mockLimit, range: mockRange });
+    mockOrder.mockReturnValue({ order: mockOrder, limit: mockLimit, range: mockRange, or: mockOr });
+    mockIs = vi.fn().mockReturnValue({
+      order: mockOrder,
+      then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
+    });
+    mockEq = vi.fn();
+    mockNeq = vi.fn();
+    mockNeq.mockReturnValue({ is: mockIs, eq: mockEq });
+    mockIn = vi.fn().mockReturnValue({
+      order: mockOrder,
+      neq: mockNeq,
+      then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
+    });
+    mockEq.mockReturnValue({ is: mockIs, order: mockOrder, single: mockSingle, or: mockOr, neq: mockNeq, eq: mockEq });
 
     mockSelect = vi.fn().mockReturnValue({
       eq: mockEq,
       in: mockIn,
+      is: mockIs,
+      neq: mockNeq,
       order: mockOrder,
+      or: mockOr,
+      limit: mockLimit,
+      range: mockRange,
       single: mockSingle,
     });
 
@@ -65,64 +90,130 @@ describe('messagingService', () => {
 
   describe('getConversations', () => {
     it('returns empty array if user has no conversations', async () => {
-      mockEq.mockResolvedValueOnce({ data: [], error: null });
+      mockRange.mockResolvedValueOnce({ data: [], error: null, count: 0 });
 
       const result = await messagingService.getConversations('user-1');
 
       expect(result).toEqual([]);
       expect(supabase.from).toHaveBeenCalledWith('conversation_participants');
-      expect(mockSelect).toHaveBeenCalledWith('conversation_id');
+      expect(mockSelect).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
       expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockIs).toHaveBeenCalledWith('left_at', null);
+      expect(mockOrder).toHaveBeenCalledWith('updated_at', { referencedTable: 'conversations', ascending: false });
+      expect(mockOrder).toHaveBeenCalledWith('id', { referencedTable: 'conversations', ascending: false });
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { referencedTable: 'messages', ascending: false });
+      expect(mockLimit).toHaveBeenCalledWith(1, { referencedTable: 'messages' });
+      expect(mockRange).toHaveBeenCalledWith(0, 19);
       expect(supabase.from).toHaveBeenCalledTimes(1);
     });
 
-    it('returns conversations with mapped participants and last message', async () => {
-      mockEq.mockResolvedValueOnce({
-        data: [{ conversation_id: 'conv-1' }, { conversation_id: 'conv-2' }],
-        error: null,
-      });
+    it('returns paginated conversations with mapped participants and last message', async () => {
+      mockIs
+        .mockReturnValueOnce({ order: mockOrder })
+        .mockResolvedValueOnce({
+          data: [
+            { id: 'unread-1', conversation_id: 'conv-1' },
+            { id: 'unread-2', conversation_id: 'conv-1' },
+            { id: 'unread-3', conversation_id: 'conv-2' },
+          ],
+          error: null,
+        });
+      mockIn
+        .mockReturnValueOnce({ order: mockOrder, neq: mockNeq })
+        .mockResolvedValueOnce({
+          data: [
+            {
+              id: 'user-2',
+              full_name: 'Ada Lovelace',
+              first_name: 'Ada',
+              last_name: 'Lovelace',
+              email: 'ada@example.com',
+              avatar_url: 'ada.png',
+            },
+            {
+              id: 'user-3',
+              full_name: 'Grace Hopper',
+              first_name: 'Grace',
+              last_name: 'Hopper',
+              email: 'grace@example.com',
+              avatar_url: 'grace.png',
+            },
+          ],
+          error: null,
+        });
 
-      mockOrder.mockResolvedValueOnce({
+      mockRange.mockResolvedValueOnce({
         data: [
           {
-            id: 'conv-1',
-            is_group: false,
-            created_at: '2023-01-01',
-            updated_at: '2023-01-02',
-            conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-2' }],
-            messages: [
-              {
-                id: 'msg-1',
-                content: 'Hello',
-                sender_id: 'user-2',
-                created_at: '2023-01-02',
-              },
-            ],
+            conversation_id: 'conv-1',
+            conversations: {
+              id: 'conv-1',
+              is_group: false,
+              created_at: '2023-01-01',
+              updated_at: '2023-01-02',
+              conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-2' }],
+              messages: [
+                {
+                  id: 'msg-1',
+                  content: 'Hello',
+                  sender_id: 'user-2',
+                  created_at: '2023-01-02',
+                },
+              ],
+            },
           },
           {
-            id: 'conv-2',
-            is_group: true,
-            created_at: '2023-01-01',
-            updated_at: '2023-01-01',
-            conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-3' }],
-            messages: [],
+            conversation_id: 'conv-2',
+            conversations: {
+              id: 'conv-2',
+              is_group: true,
+              created_at: '2023-01-01',
+              updated_at: '2023-01-01',
+              conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-3' }],
+              messages: [],
+            },
           },
         ],
         error: null,
+        count: 4,
       });
 
-      const result = await messagingService.getConversations('user-1');
+      const result = await messagingService.getConversationsPage('user-1', {
+        limit: 2,
+        offset: 0,
+      });
 
-      expect(supabase.from).toHaveBeenCalledWith('conversations');
-      expect(mockIn).toHaveBeenCalledWith('id', ['conv-1', 'conv-2']);
+      expect(supabase.from).toHaveBeenCalledWith('conversation_participants');
+      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockIs).toHaveBeenCalledWith('left_at', null);
+      expect(mockRange).toHaveBeenCalledWith(0, 1);
+      expect(supabase.from).toHaveBeenCalledWith('messages');
+      expect(mockSelect).toHaveBeenCalledWith('id, conversation_id');
+      expect(mockIn).toHaveBeenCalledWith('conversation_id', ['conv-1', 'conv-2']);
+      expect(mockNeq).toHaveBeenCalledWith('sender_id', 'user-1');
+      expect(mockIs).toHaveBeenCalledWith('read_at', null);
+      expect(supabase.from).toHaveBeenCalledWith('profiles');
+      expect(mockSelect).toHaveBeenCalledWith('id, full_name, first_name, last_name, email, avatar_url');
+      expect(mockIn).toHaveBeenCalledWith('id', ['user-2', 'user-3']);
 
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(result.total).toBe(4);
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(0);
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
+      expect(result.conversations).toHaveLength(2);
+      expect(result.conversations[0]).toEqual({
         id: 'conv-1',
         isGroup: false,
         createdAt: '2023-01-01',
         updatedAt: '2023-01-02',
         participants: ['user-1', 'user-2'],
+        participant: {
+          id: 'user-2',
+          fullName: 'Ada Lovelace',
+          avatarUrl: 'ada.png',
+          status: 'offline',
+        },
         lastMessage: {
           id: 'msg-1',
           content: 'Hello',
@@ -130,37 +221,157 @@ describe('messagingService', () => {
           timestamp: '2023-01-02',
           status: 'SENT',
         },
+        unreadCount: 2,
       });
-      expect(result[1]).toEqual({
+      expect(result.conversations[1]).toEqual({
         id: 'conv-2',
         isGroup: true,
         createdAt: '2023-01-01',
         updatedAt: '2023-01-01',
         participants: ['user-1', 'user-3'],
-        lastMessage: null,
+        participant: {
+          id: 'user-3',
+          fullName: '1 participant',
+          avatarUrl: 'grace.png',
+          status: 'offline',
+        },
+        lastMessage: undefined,
+        unreadCount: 1,
       });
     });
 
-    it('throws error if fetching conversation participants fails', async () => {
-      const dbError = new Error('Database error');
-      mockEq.mockResolvedValueOnce({ data: null, error: dbError });
+    it('preserves array return shape for getConversations', async () => {
+      mockRange.mockResolvedValueOnce({
+        data: [
+          {
+            conversation_id: 'conv-1',
+            conversations: {
+              id: 'conv-1',
+              is_group: false,
+              created_at: '2023-01-01',
+              updated_at: '2023-01-02',
+              conversation_participants: [{ user_id: 'user-1' }],
+              messages: [],
+            },
+          },
+        ],
+        error: null,
+        count: 1,
+      });
 
-      await expect(messagingService.getConversations('user-1')).rejects.toThrow('Database error');
+      const result = await messagingService.getConversations('user-1');
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(mockRange).toHaveBeenCalledWith(0, 19);
+      expect(result[0].id).toBe('conv-1');
+    });
+
+    it('uses cursor lookahead for stable older conversation pagination', async () => {
+      mockRange
+        .mockResolvedValueOnce({
+          data: [
+            {
+              conversation_id: 'conv-2',
+              conversations: {
+                id: 'conv-2',
+                is_group: false,
+                created_at: '2023-01-01',
+                updated_at: '2023-01-03',
+                conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-2' }],
+                messages: [
+                  {
+                    id: 'msg-2',
+                    content: 'Newest conversation',
+                    sender_id: 'user-2',
+                    created_at: '2023-01-03',
+                  },
+                ],
+              },
+            },
+          ],
+          error: null,
+          count: 3,
+        })
+        .mockResolvedValueOnce({
+          data: [
+            {
+              conversation_id: 'conv-1',
+              conversations: {
+                id: 'conv-1',
+                is_group: false,
+                created_at: '2023-01-01',
+                updated_at: '2023-01-02',
+                conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-3' }],
+                messages: [
+                  {
+                    id: 'msg-1',
+                    content: 'Older conversation',
+                    sender_id: 'user-3',
+                    created_at: '2023-01-02',
+                  },
+                ],
+              },
+            },
+            {
+              conversation_id: 'conv-overflow',
+              conversations: {
+                id: 'conv-overflow',
+                is_group: true,
+                created_at: '2023-01-01',
+                updated_at: '2023-01-01',
+                conversation_participants: [{ user_id: 'user-1' }, { user_id: 'user-4' }],
+                messages: [],
+              },
+            },
+          ],
+          error: null,
+        });
+
+      const firstPage = await messagingService.getConversationsPage('user-1', {
+        limit: 1,
+        offset: 0,
+      });
+      const result = await messagingService.getConversationsPage('user-1', {
+        limit: 1,
+        offset: 1,
+        cursor: firstPage.nextCursor || undefined,
+      });
+
+      expect(mockSelect).toHaveBeenLastCalledWith(expect.any(String));
+      expect(mockOr).toHaveBeenCalledWith(
+        'updated_at.lt.2023-01-03,and(updated_at.eq.2023-01-03,id.lt.conv-2)',
+        { referencedTable: 'conversations' }
+      );
+      expect(mockRange).toHaveBeenCalledWith(0, 1);
+      expect(result.total).toBeNull();
+      expect(result.conversations).toHaveLength(1);
+      expect(result.conversations[0].id).toBe('conv-1');
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
     });
 
     it('throws error if fetching conversations fails', async () => {
-      mockEq.mockResolvedValueOnce({ data: [{ conversation_id: 'conv-1' }], error: null });
-      const dbError = new Error('Database error 2');
-      mockOrder.mockResolvedValueOnce({ data: null, error: dbError });
+      const dbError = new Error('Database error');
+      mockRange.mockResolvedValueOnce({ data: null, error: dbError });
 
-      await expect(messagingService.getConversations('user-1')).rejects.toThrow('Database error 2');
+      await expect(messagingService.getConversations('user-1')).rejects.toThrow('Database error');
     });
   });
 
   describe('getMessages', () => {
-    it('returns formatted messages for a conversation', async () => {
-      mockOrder.mockResolvedValueOnce({
+    it('returns paginated formatted messages for a conversation', async () => {
+      mockRange.mockResolvedValueOnce({
         data: [
+          {
+            id: 'msg-2',
+            conversation_id: 'conv-1',
+            sender_id: 'user-2',
+            content: 'No profiles test',
+            message_type: 'TEXT',
+            status: 'SENT',
+            created_at: '2023-01-02T10:05:00Z',
+            profiles: null,
+          },
           {
             id: 'msg-1',
             conversation_id: 'conv-1',
@@ -174,29 +385,31 @@ describe('messagingService', () => {
               full_name: 'John Doe',
               avatar_url: 'avatar.jpg',
             },
-          },
-          {
-            id: 'msg-2',
-            conversation_id: 'conv-1',
-            sender_id: 'user-2',
-            content: 'No profiles test',
-            message_type: 'TEXT',
-            status: 'SENT',
-            created_at: '2023-01-02T10:05:00Z',
-            profiles: null,
           }
         ],
         error: null,
+        count: 3,
       });
 
-      const result = await messagingService.getMessages('conv-1', 'user-1');
+      const result = await messagingService.getMessagesPage('conv-1', 'user-1', {
+        limit: 2,
+        offset: 0,
+      });
 
       expect(supabase.from).toHaveBeenCalledWith('messages');
+      expect(mockSelect).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
       expect(mockEq).toHaveBeenCalledWith('conversation_id', 'conv-1');
-      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: true });
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockOrder).toHaveBeenCalledWith('id', { ascending: false });
+      expect(mockRange).toHaveBeenCalledWith(0, 1);
 
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(result.total).toBe(3);
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(0);
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
+      expect(result.messages).toHaveLength(2);
+      expect(result.messages[0]).toEqual({
         id: 'msg-1',
         conversationId: 'conv-1',
         senderId: 'user-2',
@@ -213,11 +426,99 @@ describe('messagingService', () => {
           status: 'offline',
         },
       });
-      expect(result[1].sender).toBeUndefined();
+      expect(result.messages[1].sender).toBeUndefined();
+    });
+
+    it('uses cursor lookahead for stable older message pagination', async () => {
+      mockRange.mockResolvedValueOnce({
+        data: [
+          {
+            id: 'msg-2',
+            conversation_id: 'conv-1',
+            sender_id: 'user-2',
+            content: 'Newest',
+            message_type: 'TEXT',
+            status: 'SENT',
+            created_at: '2023-01-02T10:05:00Z',
+            profiles: null,
+          },
+        ],
+        error: null,
+        count: 3,
+      });
+      mockLimit.mockResolvedValueOnce({
+        data: [
+          {
+            id: 'msg-1',
+            conversation_id: 'conv-1',
+            sender_id: 'user-2',
+            content: 'Older',
+            message_type: 'TEXT',
+            status: 'SENT',
+            created_at: '2023-01-02T10:00:00Z',
+            profiles: null,
+          },
+          {
+            id: 'msg-overflow',
+            conversation_id: 'conv-1',
+            sender_id: 'user-2',
+            content: 'Overflow',
+            message_type: 'TEXT',
+            status: 'SENT',
+            created_at: '2023-01-02T09:55:00Z',
+            profiles: null,
+          },
+        ],
+        error: null,
+      });
+
+      const firstPage = await messagingService.getMessagesPage('conv-1', 'user-1', {
+        limit: 1,
+        offset: 0,
+      });
+      const result = await messagingService.getMessagesPage('conv-1', 'user-1', {
+        limit: 1,
+        offset: 1,
+        cursor: firstPage.nextCursor || undefined,
+      });
+
+      expect(mockSelect).toHaveBeenLastCalledWith(expect.any(String));
+      expect(mockOr).toHaveBeenCalledWith('created_at.lt.2023-01-02T10:05:00Z,and(created_at.eq.2023-01-02T10:05:00Z,id.lt.msg-2)');
+      expect(mockLimit).toHaveBeenCalledWith(2);
+      expect(result.total).toBeNull();
+      expect(result.messages).toHaveLength(1);
+      expect(result.messages[0].id).toBe('msg-1');
+      expect(result.hasNext).toBe(true);
+      expect(result.nextCursor).toEqual(expect.any(String));
+    });
+
+    it('preserves array return shape for getMessages', async () => {
+      mockRange.mockResolvedValueOnce({
+        data: [
+          {
+            id: 'msg-1',
+            conversation_id: 'conv-1',
+            sender_id: 'user-2',
+            content: 'Hello',
+            message_type: 'TEXT',
+            status: 'SENT',
+            created_at: '2023-01-02T10:00:00Z',
+            profiles: null,
+          }
+        ],
+        error: null,
+        count: 1,
+      });
+
+      const result = await messagingService.getMessages('conv-1', 'user-1');
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(mockRange).toHaveBeenCalledWith(0, 49);
+      expect(result[0].id).toBe('msg-1');
     });
 
     it('throws an error if fetching messages fails', async () => {
-      mockOrder.mockResolvedValueOnce({ data: null, error: new Error('Msg error') });
+      mockRange.mockResolvedValueOnce({ data: null, error: new Error('Msg error') });
 
       await expect(messagingService.getMessages('conv-1', 'user-1')).rejects.toThrow('Msg error');
     });
@@ -298,6 +599,32 @@ describe('messagingService', () => {
       mockEq.mockResolvedValueOnce({ error: new Error('Update failed') });
 
       await expect(messagingService.markMessageAsRead('msg-1')).rejects.toThrow('Update failed');
+    });
+
+    it('marks incoming conversation messages read and updates the participant marker', async () => {
+      await messagingService.markConversationMessagesAsRead('conv-1', 'user-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('messages');
+      expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        read_at: expect.any(String),
+        status: 'READ',
+      });
+      expect(mockEq).toHaveBeenCalledWith('conversation_id', 'conv-1');
+      expect(mockNeq).toHaveBeenCalledWith('sender_id', 'user-1');
+      expect(mockIs).toHaveBeenCalledWith('read_at', null);
+      expect(supabase.from).toHaveBeenCalledWith('conversation_participants');
+      expect(mockUpdate).toHaveBeenNthCalledWith(2, {
+        last_read_at: expect.any(String),
+      });
+      expect(mockEq).toHaveBeenCalledWith('user_id', 'user-1');
+    });
+
+    it('throws if conversation messages cannot be marked read', async () => {
+      mockIs.mockResolvedValueOnce({ error: new Error('Read failed') });
+
+      await expect(messagingService.markConversationMessagesAsRead('conv-1', 'user-1')).rejects.toThrow('Read failed');
+
+      expect(supabase.from).not.toHaveBeenCalledWith('conversation_participants');
     });
   });
 

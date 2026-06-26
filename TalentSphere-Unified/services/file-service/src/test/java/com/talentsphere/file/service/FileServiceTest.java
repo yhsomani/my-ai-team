@@ -1,6 +1,7 @@
 package com.talentsphere.file.service;
 
 import com.talentsphere.contracts.ApiResponse;
+import org.springframework.core.io.Resource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,51 @@ class FileServiceTest {
     }
 
     @Test
+    void uploadFile_RejectsOversizedFile() {
+        MockMultipartFile largeFile = new MockMultipartFile(
+                "file",
+                "large.pdf",
+                "application/pdf",
+                new byte[(10 * 1024 * 1024) + 1]
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(largeFile, "messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File exceeds 10 MB upload limit", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsUnsafeFolder() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "message.txt",
+                "text/plain",
+                "content".getBytes()
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "../messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("Invalid upload folder", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsBlockedFileTypes() {
+        MockMultipartFile script = new MockMultipartFile(
+                "file",
+                "payload.js",
+                "application/javascript",
+                "alert('x')".getBytes()
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(script, "messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File type is not allowed", response.getMessage());
+    }
+
+    @Test
     void uploadFile_ToAvatarsFolder() {
         MockMultipartFile avatar = new MockMultipartFile(
                 "file",
@@ -103,13 +149,44 @@ class FileServiceTest {
     }
 
     @Test
-    void deleteFile_Success() {
+    void deleteFile_RemovesUploadedLocalFile() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "resume.pdf",
+                "application/pdf",
+                "PDF content".getBytes()
+        );
+        ApiResponse<String> uploadResponse = fileService.uploadFile(file, "resumes");
+        assertTrue(uploadResponse.isSuccess());
+
+        String fileName = uploadResponse.getData().substring(uploadResponse.getData().lastIndexOf("/") + 1);
+        assertDoesNotThrow(() -> fileService.loadFile("resumes", fileName));
+
+        ApiResponse<Void> response = fileService.deleteFile(uploadResponse.getData());
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        assertThrows(IllegalArgumentException.class, () -> fileService.loadFile("resumes", fileName));
+    }
+
+    @Test
+    void deleteFile_RejectsUnknownProviderUrl() {
         String fileUrl = "https://talentsphere-storage.supabase.co/storage/v1/object/public/talentsphere/resumes/file123.pdf";
 
         ApiResponse<Void> response = fileService.deleteFile(fileUrl);
 
-        assertTrue(response.isSuccess());
-        assertNull(response.getData());
+        assertFalse(response.isSuccess());
+        assertEquals("Invalid file URL", response.getMessage());
+    }
+
+    @Test
+    void deleteFile_RejectsUnsafeDownloadPath() {
+        String fileUrl = "http://localhost:8080/api/v1/files/download/resumes/../secrets.txt";
+
+        ApiResponse<Void> response = fileService.deleteFile(fileUrl);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Invalid file path", response.getMessage());
     }
 
     @Test
@@ -140,5 +217,29 @@ class FileServiceTest {
         MockMultipartFile doc = new MockMultipartFile(
                 "file", "doc.txt", "text/plain", "TXT".getBytes());
         assertTrue(fileService.uploadFile(doc, "documents").isSuccess());
+    }
+
+    @Test
+    void loadFile_ReturnsUploadedFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "message.txt",
+                "text/plain",
+                "message attachment".getBytes()
+        );
+        ApiResponse<String> response = fileService.uploadFile(file, "messages");
+        assertTrue(response.isSuccess());
+
+        String fileName = response.getData().substring(response.getData().lastIndexOf("/") + 1);
+        Resource resource = fileService.loadFile("messages", fileName);
+
+        assertTrue(resource.exists());
+        assertEquals("message attachment", new String(resource.getInputStream().readAllBytes()));
+    }
+
+    @Test
+    void loadFile_RejectsUnsafePathParts() {
+        assertThrows(IllegalArgumentException.class, () -> fileService.loadFile("..", "message.txt"));
+        assertThrows(IllegalArgumentException.class, () -> fileService.loadFile("messages", "../message.txt"));
     }
 }
