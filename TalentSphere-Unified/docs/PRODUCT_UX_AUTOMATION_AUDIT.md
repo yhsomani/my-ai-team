@@ -5610,3 +5610,32 @@ Validation:
 - Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
 
 User effort is reduced because learners no longer see a completed lesson or saved progress state that must later be reconciled after persistence failed. User control is preserved because enrollment and lesson completion still require explicit clicks, failed progress does not update local completion state, retry remains user-initiated, and the service does not fabricate enrollments, mark lessons complete, issue certificates, create notifications, change profile data, or mutate other workflows when LMS persistence is unavailable.
+
+## 196. One-Hundred-Eighty-Ninth Implementation Batch
+
+The one-hundred-eighty-ninth implementation batch focused on LMS enrollment/progress load failure visibility:
+
+1. Changed `lmsService.getUserEnrollments` to throw an explicit error when both LMS enrollment-read backends are unavailable instead of returning an empty list.
+2. Added an LMS progress-load failure state with a visible Learning progress unavailable panel.
+3. Added a Retry Progress action so users can refresh enrolled-course state in context.
+4. Preserved already loaded enrollments when a later progress refresh fails.
+5. Cleared stale progress-load errors after successful enrollment or lesson-completion updates.
+6. Added focused regression coverage proving failed enrollment loading no longer resolves to an empty progress state.
+
+Status: completed on 2026-06-27.
+
+Validation:
+
+- Focused validation passed: `npx vitest run src/services/lmsService.test.ts` in `apps/frontend` passed: 1 test file, 9 tests.
+- `npm run lint --workspace talentsphere-web` passed.
+- `npm run build --workspace talentsphere-web` passed.
+- `npm run test:unit --workspace talentsphere-web` passed: 60 test files, 389 tests.
+- Focused validation passed: `npx tsc --noEmit --pretty false` in `chrome-extension-project` passed.
+- `npm run build` in `chrome-extension-project` passed (`tsc && vite build`).
+- `npm run report:api-contracts` passed and generated `docs/API_CONTRACT_MISMATCH_REPORT.md` with 19 frontend API client calls, 126 backend controller routes, 0 unmatched frontend API client calls, and 0 legacy security matcher paths.
+- `git diff --check` passed.
+- `http://127.0.0.1:3000/` returned `HTTP/1.1 200 OK` from the running Vite dev server.
+- Backend Maven tests could not run because `mvn` is not installed and the repo has no Maven or Gradle wrapper.
+- Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
+
+User effort is reduced because learners no longer have to infer whether empty Continue Learning/progress tabs mean no enrolled courses or a failed progress load. User control is preserved because Retry Progress is explicit, failed loads do not clear existing progress, enrollment and lesson completion still require user action, and the page does not fabricate enrollments, mark lessons complete, issue certificates, create notifications, change profile data, or mutate other workflows when LMS progress loading is unavailable.
