@@ -18,7 +18,7 @@ The repository currently has a hybrid and partially duplicated schema surface:
 | Data ownership manifest | `data-ownership-manifest.json`, `docs/DATA_OWNERSHIP.md`, `scripts/validate-data-ownership.mjs` | Classifies 59 observed tables across frontend direct access and reviewed SQL files with target owner, target access mode, SQL source list, migration status, RLS status, and index status. |
 | Reviewed product schema | `supabase-schema.sql` | Defines 49 table declarations, many indexes, RLS enablement, policies, triggers, seed-aligned billing tables, and product-facing tables used by current frontend services. |
 | Initial baseline migration | `infra/db/migrations/0001_initial_baseline.sql` | Mirrors `supabase-schema.sql` and is validated by `npm run validate:schema-migrations` until the baseline is decomposed into smaller ordered migrations. |
-| Source-derived database types | `infra/db/generated/database.types.ts`, `scripts/generate-db-types.mjs`, `apps/frontend/src/lib/supabaseClient.ts` | Generated from `infra/db/migrations/0001_initial_baseline.sql` by `npm run report:db-types` with table, enum, and public FK relationship metadata, drift-checked by `npm run validate:schema-migrations`, and exposed through the frontend `typedSupabase` migration boundary while legacy services keep the compatibility export. |
+| Source-derived database types | `infra/db/generated/database.types.ts`, `scripts/generate-db-types.mjs`, `apps/frontend/src/lib/supabaseClient.ts` | Generated from `infra/db/migrations/0001_initial_baseline.sql` by `npm run report:db-types` with table, enum, public FK relationship, and mutual-count RPC metadata, drift-checked by `npm run validate:schema-migrations`, and exposed through the frontend `typedSupabase` migration boundary; the untyped export remains only as a legacy/test compatibility surface. |
 | Legacy schema disposition | `infra/db/legacy-schema-disposition.json`, `scripts/validate-legacy-schema-disposition.mjs` | Classifies 10 legacy-master-only tables and 15 duplicate reviewed SQL-source tables with service-local evidence and required migration/retirement resolution. |
 | Legacy master schema | `infra/supabase_master.sql` | Defines 25 older table declarations, including legacy identity/chat tables and duplicates of several product tables. |
 | Docker init schema | `docker/init-db.sql` | Is reviewed by the data ownership validator but currently contributes no `CREATE TABLE` declarations. |
@@ -38,7 +38,7 @@ This means:
 3. `infra/supabase_master.sql` is legacy historical schema evidence. It must not receive new product schema changes, and its remaining unique tables must be migrated, intentionally retained as legacy, or retired through explicit follow-up work.
 4. `docker/init-db.sql` may remain bootstrap/integration support, but it is not the schema authority unless it is generated from or references the canonical migrations.
 5. `data-ownership-manifest.json` remains the table ownership and migration-readiness control plane. Every table must keep an owner, target access mode, schema source list, migration status, RLS status, and index status.
-6. Generated TypeScript database types must remain source-derived from the canonical migration baseline now, including source-derived public FK relationship metadata, and must be regenerated from a live migration-applied schema before frontend repositories are treated as production type-safe.
+6. Generated TypeScript database types must remain source-derived from the canonical migration baseline now, including source-derived public FK relationship and RPC metadata, and must be regenerated from a live migration-applied schema before frontend repositories are treated as production type-safe.
 7. RLS/security policy source must live with the migration source and be validated table by table for any table that remains directly readable or writable from the frontend.
 8. Backend services and repository adapters must validate business invariants even when RLS exists; RLS is a database safety boundary, not a replacement for domain authorization.
 
@@ -68,7 +68,7 @@ Current status:
 - `infra/db/migrations/0001_initial_baseline.sql` exists and mirrors `supabase-schema.sql`.
 - `infra/db/generated/database.types.ts` exists and is generated from the baseline migration.
 - `infra/db/legacy-schema-disposition.json` exists and classifies all current legacy-only and duplicate reviewed SQL-source tables.
-- `npm run validate:schema-migrations` checks baseline drift, generated type drift, generated relationship metadata, source-level RLS enablement coverage, source-level index coverage, SQL insert-column references, and the frontend `typedSupabase` boundary.
+- `npm run validate:schema-migrations` checks baseline drift, generated type drift, generated relationship metadata, generated RPC metadata, source-level RLS enablement coverage, source-level index coverage, SQL insert-column references, and the frontend `typedSupabase` boundary.
 - `npm run validate:legacy-schema-disposition` checks disposition coverage against `data-ownership-manifest.json`, `infra/supabase_master.sql`, the canonical baseline, service-local SQL evidence, and ADR-004 chat-service orphaning.
 - Supabase migration execution, live database-generated types, live RLS behavior, and query-plan/index adequacy are Not verified from the codebase.
 
@@ -119,7 +119,7 @@ Current status:
 - `PLAN.md`, `docs/ARCHITECTURE_STATUS_INDEX.md`, `docs/DATA_OWNERSHIP.md`, and `docs/MODULE_MANIFEST.md` all reference the accepted decision.
 - No new product schema change is documented as authoritative in `infra/supabase_master.sql`.
 - Every table remains classified in `data-ownership-manifest.json`.
-- Baseline migration and source-derived generated database types with public FK relationship metadata are present; smaller domain-ordered migrations, live database-generated relationship types, live RLS validation, query-plan/index validation, rollback execution, runtime Supabase execution, and repository-wide generated-type adoption remain explicit follow-up work until proven.
+- Baseline migration and source-derived generated database types with public FK relationship and mutual-count RPC metadata are present; smaller domain-ordered migrations, live database-generated relationship/function types, live RLS validation, query-plan/index validation, rollback execution, runtime Supabase execution, and repository-wide generated-type adoption remain explicit follow-up work until proven.
 
 ## Validation Commands
 
@@ -133,4 +133,4 @@ npm run validate:docs-lifecycle
 npm run validate:module-manifest
 ```
 
-Runtime Supabase migration execution, Supabase CLI-generated types from a live migration-applied database, live database-generated relationship metadata, query plans, live RLS behavior, and repository-wide generated-type adoption are Not verified from the codebase in the current workspace environment.
+Runtime Supabase migration execution, Supabase CLI-generated types from a live migration-applied database, live database-generated relationship/function metadata, query plans, live RLS behavior, and repository-wide generated-type adoption are Not verified from the codebase in the current workspace environment.

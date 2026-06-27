@@ -67,8 +67,7 @@ export const typedSupabase: TalentSphereSupabaseClient = createClient<Database>(
   },
 });
 
-// Existing services still contain direct dynamic table access and legacy row mappers.
-// Keep the compatibility export untyped until those repositories adopt Database.
+// Legacy/test compatibility export. Production frontend imports should use typedSupabase.
 export const supabase: SupabaseClient = typedSupabase as SupabaseClient;
 
 // Export connectivity state for other modules

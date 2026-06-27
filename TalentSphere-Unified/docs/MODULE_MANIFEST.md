@@ -15,6 +15,7 @@ npm run validate:observability-contract
 npm run validate:backend-topology-adr
 npm run validate:schema-authority-adr
 npm run validate:schema-migrations
+npm run validate:typed-supabase-boundary
 npm run validate:legacy-schema-disposition
 npm run validate:messaging-boundary-adr
 npm run validate:payment-mode-adr
@@ -36,7 +37,7 @@ npm run report:db-types
 | Orphaned backend source | `services/chat-service` has a `pom.xml` and source tree but is not listed in the root Maven reactor |
 | Active CI | `.github/workflows/talentsphere-ci.yml` at the actual git root |
 | Infrastructure references | Compose module references, frontend dev bind mounts, Kustomize service resources, and scheduler npm commands are validated against the manifest |
-| Data ownership | `data-ownership-manifest.json` classifies observed Supabase/Postgres tables, direct frontend access, reviewed SQL sources, and target owners |
+| Data ownership | `data-ownership-manifest.json` classifies observed Supabase/Postgres tables, direct frontend access, reviewed SQL sources, and target owners; `npm run validate:data-ownership` also guards frontend production source against regressing from `typedSupabase` to the untyped compatibility export |
 | API contracts | `docs/API_CONTRACT_MISMATCH_REPORT.md` validates frontend/backend/gateway/security route drift, while `docs/API_OPENAPI_CONTRACT.json` captures source-derived OpenAPI 3.1 paths, parameters, request bodies, response bodies, and component schemas for active backend controllers |
 | Auth contract | ADR-001, frontend Supabase Auth usage, Gateway HMAC verifier config, exact public-route matching, normalized `ROLE_*` forwarding, sensitive-route rate-limit wiring, and default-disabled backend local credentials are validated by `npm run validate:auth-contract` |
 | Security contract | Production startup secret validation, safe public error handling, file upload content/security policy, audited service-role scheduler runs, CI dependency/secret/container scan gates, shared validator tests, Kubernetes runtime secret references, and absence of committed production placeholder secrets are validated by `npm run validate:security-contract` |
@@ -45,7 +46,7 @@ npm run report:db-types
 | Incident runbooks | `docs/runbooks/INCIDENT_RUNBOOKS.md` is the current source-backed incident runbook and is validated by `npm run validate:runbooks`; `docs/OPERATIONAL_RUNBOOK.md` remains a draft/unverified environment runbook |
 | Observability contract | `infra/observability/alerts/critical-alerts.json` and `infra/observability/dashboards/critical-flows-dashboard.json` define source-level critical alert and dashboard coverage, validated by `npm run validate:observability-contract`; deployed Prometheus/Grafana/Alertmanager behavior remains unverified |
 | Backend topology ADR | ADR-002 accepts modular monolith first with extractable service boundaries while preserving the current service tree as migration source evidence; validated by `npm run validate:backend-topology-adr` |
-| Schema authority ADR | ADR-003 accepts migration-first Supabase/Postgres authority with generated TypeScript types and backend validation; `infra/db/README.md` marks the schema workspace; `infra/db/migrations/0001_initial_baseline.sql` and `infra/db/generated/database.types.ts` are source-validated by `npm run validate:schema-migrations`; `infra/db/legacy-schema-disposition.json` is source-validated by `npm run validate:legacy-schema-disposition` |
+| Schema authority ADR | ADR-003 accepts migration-first Supabase/Postgres authority with generated TypeScript types and backend validation; `infra/db/README.md` marks the schema workspace; `infra/db/migrations/0001_initial_baseline.sql` and `infra/db/generated/database.types.ts` are source-validated by `npm run validate:schema-migrations`; frontend table and generated RPC access are guarded by `npm run validate:typed-supabase-boundary`; `infra/db/legacy-schema-disposition.json` is source-validated by `npm run validate:legacy-schema-disposition` |
 | Messaging boundary ADR | ADR-004 accepts one messaging domain boundary; `messaging-service` remains active while `chat-service` remains orphaned until retired or merged as adapter code; validated by `npm run validate:messaging-boundary-adr` |
 | Payment mode ADR | ADR-005 accepts explicit demo billing mode; provider-backed checkout and webhook-owned payment state remain pending; validated by `npm run validate:payment-mode-adr` |
 | Dev-only artifacts | Workspace-root repair scripts, task notes, generated snapshots, generated analysis reports, and local agent/cookie artifacts are classified under `developmentArtifacts` |
@@ -119,6 +120,13 @@ The schema migration validator fails when:
 - directly exposed baseline tables lose source-level RLS enablement
 - baseline tables lose source-level index coverage for expected filter or ordering paths
 - `infra/db/generated/database.types.ts` drifts from `npm run report:db-types`
+
+The typed Supabase boundary validator fails when:
+
+- a production frontend file uses the untyped compatibility Supabase client for table access
+- a production frontend file imports the untyped compatibility Supabase client
+- a production frontend file calls a Supabase RPC that is not present in the generated `Database` function types
+- a generated RPC is called without `typedSupabase`
 
 The legacy schema disposition validator fails when:
 

@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { apiClient } from '../api/axios';
 import { typedSupabase } from '../lib/supabaseClient';
 import { aiService } from './aiService';
+
+vi.mock('../api/axios', () => ({
+  apiClient: {
+    post: vi.fn(),
+  },
+}));
 
 vi.mock('../lib/supabaseClient', () => {
   const typedClient = {
     from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
   };
   const compatibilityClient = {
     from: vi.fn(),
@@ -23,6 +33,65 @@ vi.mock('../lib/supabaseClient', () => {
 describe('aiService typed persistence', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('routes resume analysis through the backend AI API', async () => {
+    (apiClient.post as any).mockResolvedValueOnce({
+      data: {
+        data: '{"summary":"Backend analysis","skills":["TypeScript"],"suggestedJobs":["Frontend Engineer"]}',
+      },
+    });
+
+    const result = await aiService.analyzeResume('TypeScript resume text');
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/v1/ai/analyze-resume',
+      'TypeScript resume text',
+      {
+        headers: { 'Content-Type': 'text/plain' },
+        timeout: 10000,
+      },
+    );
+    expect(result).toEqual({
+      summary: 'Backend analysis',
+      skills: ['TypeScript'],
+      suggestedJobs: ['Frontend Engineer'],
+      isFallback: false,
+    });
+  });
+
+  it('uses explicit client heuristics when resume analysis API is unavailable', async () => {
+    (apiClient.post as any).mockRejectedValueOnce(new Error('API unavailable'));
+
+    const result = await aiService.analyzeResume('Experienced developer with 4 years in TypeScript and Python.');
+
+    expect(result).toEqual({
+      skills: ['typescript', 'python'],
+      experience_years: 4,
+      isFallback: true,
+    });
+  });
+
+  it('invokes AI Edge Functions through the typed Supabase client', async () => {
+    const invoke = typedSupabase.functions.invoke as any;
+    invoke
+      .mockResolvedValueOnce({ data: { score: 91 }, error: null })
+      .mockResolvedValueOnce({ data: { path: ['Learn React'] }, error: null })
+      .mockResolvedValueOnce({ data: { reply: 'Draft a concise follow-up.' }, error: null });
+
+    await expect(aiService.getMatchScore('resume text', 'job description')).resolves.toEqual({ score: 91 });
+    await expect(aiService.generateCareerPath('user-1')).resolves.toEqual({ path: ['Learn React'] });
+    await expect(aiService.getChatResponse('Help me follow up')).resolves.toEqual({ reply: 'Draft a concise follow-up.' });
+
+    expect(invoke).toHaveBeenNthCalledWith(1, 'get-match-score', {
+      body: { resumeText: 'resume text', jobDescription: 'job description' },
+    });
+    expect(invoke).toHaveBeenNthCalledWith(2, 'generate-career-path', {
+      body: { userId: 'user-1' },
+    });
+    expect(invoke).toHaveBeenNthCalledWith(3, 'chat-assistant', {
+      body: { message: 'Help me follow up' },
+    });
   });
 
   it('upserts AI chat sessions through the generated ai_sessions table', async () => {

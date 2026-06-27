@@ -20,6 +20,7 @@
     "validate:backend-topology-adr": "node scripts/validate-backend-topology-adr.mjs",
     "validate:schema-authority-adr": "node scripts/validate-schema-authority-adr.mjs",
     "validate:schema-migrations": "node scripts/validate-schema-migrations.mjs",
+    "validate:typed-supabase-boundary": "node scripts/validate-typed-supabase-boundary.mjs",
     "validate:legacy-schema-disposition": "node scripts/validate-legacy-schema-disposition.mjs",
     "validate:messaging-boundary-adr": "node scripts/validate-messaging-boundary-adr.mjs",
     "validate:payment-mode-adr": "node scripts/validate-payment-mode-adr.mjs",

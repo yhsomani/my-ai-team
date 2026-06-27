@@ -1,4 +1,4 @@
-import { supabase as compatibilitySupabase, typedSupabase as supabase, type Database } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import { Connection, FeedItem, PublicProfile } from '../types/networking';
 import { apiClient } from '../api/axios';
 
@@ -208,7 +208,7 @@ const getMutualConnectionCounts = async (userId: string, candidateIds: string[])
   const uniqueCandidateIds = Array.from(new Set(candidateIds.filter(Boolean)));
   if (uniqueCandidateIds.length === 0) return new Map<string, number>();
 
-  const { data, error } = await compatibilitySupabase.rpc('get_mutual_connection_counts', {
+  const { data, error } = await supabase.rpc('get_mutual_connection_counts', {
     p_current_user_id: userId,
     p_candidate_ids: uniqueCandidateIds,
   });

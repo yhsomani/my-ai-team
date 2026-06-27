@@ -1,4 +1,5 @@
-import { supabase, typedSupabase, type Database, type Json } from '../lib/supabaseClient';
+import { apiClient } from '../api/axios';
+import { typedSupabase, type Database, type Json } from '../lib/supabaseClient';
 
 type AISessionRow = Database['public']['Tables']['ai_sessions']['Row'];
 type AISessionInsert = Database['public']['Tables']['ai_sessions']['Insert'];
@@ -105,6 +106,27 @@ export const estimateExperienceYears = (text: string): number => {
         return parseInt(yearsMatch[1], 10);
     }
     return 0;
+};
+
+const parseResumeAnalysisPayload = (payload: unknown): Record<string, unknown> => {
+    if (typeof payload === 'string') {
+        try {
+            const parsed = JSON.parse(payload);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed as Record<string, unknown>;
+            }
+        } catch {
+            return { summary: payload };
+        }
+
+        return { summary: payload };
+    }
+
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        return payload as Record<string, unknown>;
+    }
+
+    return {};
 };
 
 export const aiService = {
@@ -237,27 +259,35 @@ export const aiService = {
     },
 
     analyzeResume: async (text: string) => {
-        // Store resume analysis in a table for tracking
-        const { data, error } = await supabase
-            .rpc('analyze_resume', { resume_text: text });
-        
-        if (error) {
-            // Fallback: basic client-side analysis
+        try {
+            const response = await apiClient.post<{ data?: unknown }>(
+                '/api/v1/ai/analyze-resume',
+                text,
+                {
+                    headers: { 'Content-Type': 'text/plain' },
+                    timeout: 10000,
+                }
+            );
+            const payload = response.data && typeof response.data === 'object' && 'data' in response.data
+                ? response.data.data
+                : response.data;
+
+            return {
+                ...parseResumeAnalysisPayload(payload),
+                isFallback: false,
+            };
+        } catch (error) {
+            console.warn('[AI] resume analysis API unavailable; using client heuristic.', error);
             return {
                 skills: extractSkillsFromText(text),
                 experience_years: estimateExperienceYears(text),
                 isFallback: true
             };
         }
-
-        return {
-            ...data,
-            isFallback: false
-        };
     },
 
     getMatchScore: async (resumeText: string, jobDescription: string) => {
-        const { data, error } = await supabase.functions.invoke('get-match-score', {
+        const { data, error } = await typedSupabase.functions.invoke('get-match-score', {
             body: { resumeText, jobDescription }
         });
         
@@ -266,7 +296,7 @@ export const aiService = {
     },
 
     generateCareerPath: async (userId: string) => {
-        const { data, error } = await supabase.functions.invoke('generate-career-path', {
+        const { data, error } = await typedSupabase.functions.invoke('generate-career-path', {
             body: { userId }
         });
         
@@ -275,7 +305,7 @@ export const aiService = {
     },
 
     getChatResponse: async (message: string) => {
-        const { data, error } = await supabase.functions.invoke('chat-assistant', {
+        const { data, error } = await typedSupabase.functions.invoke('chat-assistant', {
             body: { message }
         });
         

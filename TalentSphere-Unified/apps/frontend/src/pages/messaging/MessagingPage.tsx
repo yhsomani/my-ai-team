@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AlertCircle, ArrowLeft, CheckCheck, ChevronUp, Clock, ExternalLink, MessageSquare, Paperclip, Search, Send, Phone, RotateCcw, Sparkles, Video, MoreVertical, UploadCloud, X } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { typedSupabase as supabase } from '../../lib/supabaseClient';
 import { messageReceived } from '../../store/slices/messagingSlice';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';

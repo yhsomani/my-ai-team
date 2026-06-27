@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { supabase } from './supabaseClient';
+import { typedSupabase as supabase } from './supabaseClient';
 
 export const getOAuthLoginUrl = (provider: 'google' | 'github'): string => {
   return `${window.location.origin}/auth/callback`;

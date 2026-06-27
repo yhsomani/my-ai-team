@@ -126,6 +126,19 @@ for (const requiredRelationship of [
   }
 }
 
+const requiredGeneratedFunctionSnippets = [
+  'get_mutual_connection_counts: {',
+  'p_current_user_id: string',
+  'p_candidate_ids: string[]',
+  'suggested_user_id: string',
+  'mutual_count: number',
+];
+for (const requiredFunctionSnippet of requiredGeneratedFunctionSnippets) {
+  if (!expectedGeneratedTypes.includes(requiredFunctionSnippet)) {
+    fail(`generated DB types are missing required RPC metadata: ${requiredFunctionSnippet}`);
+  }
+}
+
 const frontendSupabaseClient = readText(frontendSupabaseClientPath);
 if (!frontendSupabaseClient.includes("import type { Database } from '../../../../infra/db/generated/database.types'")) {
   fail('frontend Supabase client must import the generated Database type');

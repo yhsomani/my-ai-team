@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { aiService, extractSkillsFromText, estimateExperienceYears } from '../src/services/aiService';
-import { supabase } from '../src/lib/supabaseClient';
+import { apiClient } from '../src/api/axios';
 
 test.describe('aiService', () => {
 
@@ -31,25 +31,27 @@ test.describe('aiService', () => {
     });
 
     test.describe('analyzeResume', () => {
-        const originalRpc = supabase.rpc;
+        const originalPost = apiClient.post;
 
         test.afterEach(() => {
-            // Restore original rpc function
-            supabase.rpc = originalRpc;
+            apiClient.post = originalPost;
         });
 
-        test('should return data from supabase rpc when successful', async () => {
+        test('should return data from backend AI API when successful', async () => {
             const mockData = {
+                summary: 'Backend analysis',
                 skills: ['javascript', 'react'],
-                experience_years: 3,
-                score: 85
+                suggestedJobs: ['Frontend Engineer']
             };
 
-            // Mock the successful RPC call
-            supabase.rpc = async (rpcName, params) => {
-                expect(rpcName).toBe('analyze_resume');
-                expect(params).toEqual({ resume_text: 'My resume text' });
-                return { data: mockData, error: null } as any;
+            apiClient.post = async (url, body, config) => {
+                expect(url).toBe('/api/v1/ai/analyze-resume');
+                expect(body).toBe('My resume text');
+                expect(config).toEqual({
+                    headers: { 'Content-Type': 'text/plain' },
+                    timeout: 10000,
+                });
+                return { data: { data: mockData } } as any;
             };
 
             const result = await aiService.analyzeResume('My resume text');
@@ -60,13 +62,11 @@ test.describe('aiService', () => {
             });
         });
 
-        test('should execute fallback logic when supabase rpc fails', async () => {
+        test('should execute fallback logic when backend AI API fails', async () => {
             const resumeText = "Experienced developer with 4 years of coding in TypeScript and Python.";
 
-            // Mock the failed RPC call
-            supabase.rpc = async (rpcName, params) => {
-                expect(rpcName).toBe('analyze_resume');
-                return { data: null, error: new Error('RPC Failed') } as any;
+            apiClient.post = async () => {
+                throw new Error('API unavailable');
             };
 
             const result = await aiService.analyzeResume(resumeText);

@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase } from '../lib/supabaseClient';
 import type { store as reduxStore } from '../store';
 import { logout } from '../store/slices/authSlice';
 

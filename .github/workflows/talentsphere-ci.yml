@@ -56,6 +56,9 @@ jobs:
       - name: Validate schema migrations and generated DB types
         run: npm run validate:schema-migrations
 
+      - name: Validate typed Supabase boundary
+        run: npm run validate:typed-supabase-boundary
+
       - name: Validate legacy schema disposition
         run: npm run validate:legacy-schema-disposition
 

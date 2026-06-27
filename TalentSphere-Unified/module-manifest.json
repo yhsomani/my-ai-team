@@ -205,7 +205,8 @@
       "kind": "node-script",
       "status": "active",
       "path": "scripts/validate-data-ownership.mjs",
-      "required": true
+      "required": true,
+      "note": "Validates table ownership coverage and rejects frontend production imports of the untyped Supabase compatibility export."
     },
     {
       "id": "schema-authority-adr-validation",
@@ -226,6 +227,13 @@
       "kind": "node-script",
       "status": "active",
       "path": "scripts/validate-schema-migrations.mjs",
+      "required": true
+    },
+    {
+      "id": "typed-supabase-boundary-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-typed-supabase-boundary.mjs",
       "required": true
     },
     {

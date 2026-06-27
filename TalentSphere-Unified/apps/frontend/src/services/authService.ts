@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase } from '../lib/supabaseClient';
 
 export const authService = {
   register: async (email: string, pass: string, fullName: string, role: string) => {

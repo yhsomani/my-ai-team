@@ -49,6 +49,34 @@ const walk = (dir, extensions) => {
   return results.sort();
 };
 
+const extractSupabaseClientImportLocals = (content, exportedName) => {
+  const localNames = new Set();
+  const importRegex = /import\s*\{([\s\S]*?)\}\s*from\s*['"][^'"]*supabaseClient['"]/g;
+  let match;
+
+  while ((match = importRegex.exec(content)) !== null) {
+    for (const rawSpecifier of match[1].split(',')) {
+      const specifier = rawSpecifier.trim().replace(/^type\s+/, '');
+      if (!specifier) continue;
+
+      const [importedName, localName] = specifier.split(/\s+as\s+/).map((part) => part.trim());
+      if (importedName === exportedName) {
+        localNames.add(localName || importedName);
+      }
+    }
+  }
+
+  return localNames;
+};
+
+const validateTypedSupabaseClientBoundary = (filePath, content) => {
+  const compatibilityClientLocals = extractSupabaseClientImportLocals(content, 'supabase');
+
+  if (compatibilityClientLocals.size > 0) {
+    fail(`frontend production Supabase access must use typedSupabase, found compatibility import(s) ${Array.from(compatibilityClientLocals).join(', ')} in ${relativeToRepo(filePath)}`);
+  }
+};
+
 const assertSameList = (label, actual, expected) => {
   const actualSorted = [...actual].sort();
   const expectedSorted = [...expected].sort();
@@ -68,6 +96,8 @@ const extractFrontendTables = () => {
   for (const filePath of files) {
     const content = readText(filePath);
     let match;
+
+    validateTypedSupabaseClientBoundary(filePath, content);
 
     while ((match = tableRegex.exec(content)) !== null) {
       tables.add(match[2]);

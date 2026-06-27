@@ -1,15 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { apiClient, setupInterceptors } from './axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase } from '../lib/supabaseClient';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     auth: {
       getSession: vi.fn(),
     },
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('apiClient interceptors', () => {
   const originalAdapter = apiClient.defaults.adapter;

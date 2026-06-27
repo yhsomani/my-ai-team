@@ -1,7 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from './store/hooks';
-import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
+import { typedSupabase as supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { setUser, setLoading } from './store/slices/authSlice';
 import { ResponsiveLayout } from './components/shared/ResponsiveLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
