@@ -89,7 +89,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - The Jobs route now presents tabs, route search, Explore filters, saved searches, hidden preference controls, and status summaries as one framed workspace tool instead of disconnected blocks.
 - Job, application, and recruiter posting cards now share stable dimensions and token-backed card styling so result grids scan consistently across tabs.
 - Application review and application-detail modals use token-backed text color and inset surfaces for light/dark readability.
-- Browser-level Jobs coverage in `tests/job-application.spec.ts` verifies the core apply workflow from Explore through editable review, submit payload, details receipt, and Applied tab entry across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- Browser-level Jobs coverage in `tests/job-application.spec.ts` verifies the core apply workflow, saved-search create/apply/review-cancel/delete paths, and hidden Explore hide/restore paths across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - Browser-level recruiter publish coverage in `tests/recruiter-publish.spec.ts` verifies My Posts publish review, complete-draft checklist, publish update payload, success receipt, published badge, and View Checklist state across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - No Jobs tab, service call, route parameter, saved-search behavior, hidden preference behavior, application draft behavior, application submission behavior, recruiter publish review behavior, or analytics call was removed in this Jobs UI pass.
 
@@ -99,6 +99,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Jobs remains the discovery/list owner for recruiter postings; Post Job owns draft creation/edit review and returns to Jobs postings after save.
 - The Post Job route now uses token-backed form controls, framed template/history/company panels, compact review-state summaries, warning duplicate panels, and stable mobile footer actions.
 - Company profile creation/update remains separate from job draft save and does not publish a role, contact candidates, send messages, or create notifications.
+- Browser-level Post Job coverage in `tests/post-job-workflow.spec.ts` verifies company context create/attach payloads, template save/apply/delete review, draft-history restore, duplicate warning review, reviewed draft save payloads, and the return to Jobs postings across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - No Post Job route parameter, template local/account sync behavior, draft-history local/account sync behavior, company setup onboarding analytics, company create/update behavior, duplicate check behavior, review-before-save behavior, draft save/update behavior, navigation behavior, or service call was removed in this UI pass.
 
 ## Candidates Implementation Notes
@@ -108,7 +109,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - The Candidates route now presents search, focus, sort, and pagination as one framed workspace tool; review analytics, bulk actions, candidate rows, detail sections, and confirmation modals use token-backed surfaces and status colors.
 - Candidate rows keep stable dimensions and preserve visible review metadata for notes, scorecards, advisory signal, resume access, and status actions without moving those actions to Dashboard or Jobs.
 - Candidate detail and bulk-status review modals use inset panels for identity, materials, advisory signal, interview plans, scorecards, notes, eligible applications, skipped applications, and status-change consequences.
-- `apps/frontend/tests/candidate-review.spec.ts` now verifies deterministic candidate rendering, Candidate Details review, scorecard save payloads, private note save payloads, status confirmation, application status update payloads, status-event audit payloads, first-candidate queue handoff, Previous/Next queue navigation, Select visible, bulk Offer eligibility/skipped review, single eligible bulk update payload, bulk status-event audit payload, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
+- `apps/frontend/tests/candidate-review.spec.ts` now verifies deterministic candidate rendering, Candidate Details review, scorecard save payloads, scorecard local fallback and retry, private note save/delete payloads, status confirmation, application status update payloads, failed status handling, status-event audit payloads, first-candidate queue handoff, Previous/Next queue navigation, keyboard pagination/search/details/queue navigation, Select visible, bulk Interview/Offer/Rejection eligibility and skipped reviews, bulk partial-failure handling, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
 - No candidate route, service call, cursor state, review focus behavior, note persistence behavior, scorecard persistence behavior, interview-plan draft behavior, status update behavior, bulk review behavior, reset-review behavior, or analytics call was removed in this Candidates UI pass.
 
 ## Profile Implementation Notes
@@ -117,7 +118,16 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Resume remains the owner for document import/export artifacts; Profile may link to or receive reviewed profile row imports, but it should not duplicate Resume Builder editing and export flows.
 - The Profile route now has no remaining legacy letter-spacing classes, and the shared shell/header/app-page constraints were tightened so Profile tabs, header actions, avatar controls, and metrics do not create mobile horizontal overflow.
 - Existing token-backed profile cards, modals, tabs, avatar crop/remove reviews, suggestion panels, completion tasks, and row edit/delete controls remain in place.
+- `apps/frontend/tests/profile-workflow.spec.ts` now verifies deterministic AI profile draft save/discard, reviewed profile field saves, profile suggestion application, skill edit/delete, experience edit/delete, education add/edit/delete, tab switching, and avatar upload/crop/remove payloads across Chromium, Firefox, and WebKit.
+- `profileAvatarCrop` now has unit coverage for the canvas `toBlob` path plus a data URL export fallback so reviewed avatar uploads do not hang when a browser never resolves `toBlob`.
 - No Profile route parameter, profile load behavior, edit modal behavior, AI draft review/discard/save behavior, local suggestion prefill behavior, avatar upload/crop/remove behavior, skill/experience/education create/edit/delete behavior, tab behavior, toast behavior, or analytics call was removed in this UI pass.
+
+## Resume Implementation Notes
+
+- `/resume` remains necessary as the focused document workspace for profile-backed editor fields, reviewed text/file import, AI resume draft review, PDF/HTML/print export commands, uploaded artifact links, delete receipts, and preview.
+- Profile remains the owner for durable skills, experience, and education rows; Resume may save reviewed detected profile rows through existing Profile services, but it should not duplicate Profile row editing or deletion surfaces.
+- `apps/frontend/tests/resume-workflow.spec.ts` now verifies deterministic import text review, selected field application, imported skill/experience/education save payloads, editor save payloads, Preview tab rendering, native PDF and HTML download file names, provider PDF upload payloads, export-event sync payloads, uploaded artifact metadata payloads, Copy Link clipboard behavior, reviewed uploaded-PDF delete cancel/confirm, provider delete payloads, deleted metadata payloads, AI resume draft apply/save, and AI resume draft discard across Chromium, Firefox, and WebKit.
+- No Resume route behavior, profile load/update behavior, import parser behavior, selected-field application behavior, imported skill/row save behavior, AI handoff review behavior, PDF/HTML export behavior, provider upload/delete behavior, artifact copy behavior, local/account sync fallback, toast behavior, or analytics call was removed in this UI pass.
 
 ## Settings Implementation Notes
 
@@ -125,6 +135,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Billing remains the owner for plan and payment management; Settings shows only a summary and deep-link action.
 - Profile remains the durable public profile owner; Settings edits account/profile preference fields without duplicating the full Profile editing surface.
 - The Settings route and its profile, notification, security, and billing subcomponents now use token-backed nav rows, panels, custom switches, delivery controls, summary tiles, and destructive review surfaces without legacy hard-coded color classes or oversized rounded controls.
+- `apps/frontend/tests/settings-workflow.spec.ts` now verifies deterministic profile settings save payloads, keyboard-accessible notification switch changes, digest and quiet-hours delivery preference save payloads, Billing summary/handoff, password reset review cancel/send behavior, account deactivation review cancel/confirm behavior, notification save failure retention, retry success, and settings workflow analytics across Chromium, Firefox, and WebKit.
 - No Settings tab behavior, profile settings save behavior, notification preference/delivery save behavior, password reset review behavior, account deactivation confirmation behavior, billing handoff behavior, toast behavior, or analytics call was removed in this UI pass.
 
 ## Learning Implementation Notes
@@ -134,7 +145,8 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - The Learning route now presents tabs, catalog search, result counts, page-size selection, and pagination as one framed catalog workspace instead of disconnected controls.
 - Continue Learning, Recommended Next, catalog cards, loading skeletons, progress warnings, and course-detail modal sections use token-backed surfaces, stable card dimensions, and shared progress-track styling.
 - AI learning-plan suggestions remain review-only: applying a suggestion changes only catalog search, and enrollment/progress actions remain explicit Learning commands.
-- No LMS route, service call, Redux query state, cursor behavior, tab behavior, search behavior, enrollment behavior, lesson-completion behavior, AI suggestion review behavior, toast behavior, or analytics call was removed in this Learning UI pass.
+- Browser-level Learning coverage in `tests/lms-workflow.spec.ts` verifies the AI Assistant to Learning handoff, explicit AI catalog-search application, course search and pagination controls, enrollment payloads, failed enrollment recovery, lesson-completion payloads, failed progress-persistence recovery, keyboard lesson selection/completion, progress updates, and In Progress filtering across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- No LMS route, Redux query state, cursor behavior, tab behavior, search behavior, enrollment behavior, lesson-completion behavior, AI suggestion review behavior, toast behavior, or analytics call was removed in this Learning UI pass. LMS progress persistence now treats Supabase fallback read/write errors as failed saves instead of presenting unsaved lesson progress as complete.
 
 ## Challenges Implementation Notes
 
@@ -143,7 +155,8 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Dashboard challenge widgets remain summary handoffs only; detailed category filtering, solving, reset review, sample checks, submissions, and retry history stay in Challenges.
 - The Challenges route now presents category filters as one framed assessment workspace control; challenge cards, loading skeletons, prompt/editor panels, sample cases, local-check results, latest submission, retry history, and reset review use token-backed surfaces and stable dimensions.
 - Reset Code remains a reviewed confirmation that only restores the editor to starter code; it does not submit work or mutate retry history.
-- No Challenges route, Redux fetch behavior, category analytics, workspace open behavior, language selection, starter-code reset review, local sample check behavior, submission behavior, retry-history behavior, toast behavior, or analytics call was removed in this Challenges UI pass.
+- Browser-level Challenges coverage in `tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit with deterministic local data boundaries. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
+- No Challenges route, Redux fetch behavior, category analytics, workspace open behavior, language selection, starter-code reset review, local sample check behavior, hidden-sample messaging, submission behavior, submission failure behavior, retry-history behavior, toast behavior, or analytics call was removed in this Challenges UI pass.
 
 ## Networking Implementation Notes
 
@@ -151,6 +164,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Messaging remains the owner for direct conversations; Networking can identify people and manage relationship state, but it should not duplicate thread reading, sending, attachments, or message retry behavior.
 - The Networking route now presents tabs, counts, search, hidden-suggestion restore, and reminder status as one framed workspace control; suggestion, incoming request, sent request, and accepted-connection cards use token-backed surfaces, stable dimensions, truncation, and shared empty/loading/error states.
 - Exported networking subcomponents under `pages/networking/components` have been normalized to product-language token surfaces so the older themed networking UI does not return if those components are reused.
+- Browser-level Networking coverage in `tests/networking-workflow.spec.ts` verifies deterministic suggestion rendering, profile preview, hidden-suggestion hide/restore preference sync, reviewed connection request payloads, incoming accept/decline payloads, sent reminder set/clear status, withdraw payloads, accepted connection profile preview, keyboard preview activation, and full-profile popup route targets across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - No Networking route, Redux suggestion fetch behavior, connection-state load behavior, connect request behavior, incoming accept/decline behavior, sent withdraw behavior, local/account hidden-suggestion preference behavior, local/account reminder sync behavior, profile preview behavior, toast behavior, or analytics call was removed in this Networking UI pass.
 
 ## Messaging Implementation Notes
@@ -159,7 +173,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Header, dashboard, and Networking surfaces may summarize unread activity or link into Messages, but conversation reading, sending, attachment review, and retry behavior stay in Messaging.
 - The Messaging route now presents the conversation list and active thread as one framed workspace with token-backed list rows, bounded message bubbles, attachment and suggested-reply composer panels, visible realtime subscription state, stable mobile panel switching, and normalized loading, empty, error, and retry states. Opening the attachment panel moves focus to the link field, and the hidden file input stays behind the visible Upload file button instead of becoming an extra tab stop.
 - Exported messaging subcomponents under `pages/messaging/components` have been normalized to the same product-language token surfaces so the older themed messaging UI does not return if those components are reused.
-- Browser-level Messaging coverage in `tests/messaging-workflow.spec.ts` verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, keyboard attachment-link focus order, attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- Browser-level Messaging coverage in `tests/messaging-workflow.spec.ts` verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, failed-send retry, keyboard attachment-link focus order, uploaded-file and linked attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - No Messaging route, Redux fetch behavior, Supabase realtime subscription behavior, message-history pagination, unread mark-read behavior, optimistic send/retry behavior, attachment link/upload behavior, suggested-reply behavior, file upload service call, or analytics call was removed in this Messaging UI pass.
 
 ## Billing Implementation Notes
@@ -168,6 +182,7 @@ This checklist turns the UI redesign objective into repeatable review criteria. 
 - Settings may link to Billing or show a summary, but plan review, checkout handoff, payment-method review, retry behavior, and history inspection stay in Billing.
 - The Billing route now presents plan comparison, payment method, and transaction history with token-backed sections, mobile-safe card grids, wrapped user/provider text, status badges, inline demo/degraded state, and stable modal action layouts.
 - Demo billing mode remains explicit. Plan changes and billing portal actions are still requests or handoffs until provider-backed checkout and webhook-owned subscription/payment state are implemented.
+- `apps/frontend/tests/billing-workflow.spec.ts` now verifies deterministic plan catalog/current-plan rendering, populated transaction history, plan review cancel/checkout handoff payloads, billing portal handoff payloads, provider checkout failure retention and retry, popup-blocked checkout warning, provider-unavailable load state, retry recovery, explicit demo-mode copy, and billing workflow analytics across Chromium, Firefox, and WebKit.
 - No Billing route, payment-service call, Supabase plan/history/subscription load, checkout/session command, billing portal command, review modal behavior, toast behavior, retry behavior, or analytics call was removed in this Billing UI pass.
 
 ## Resume Implementation Notes

@@ -737,6 +737,8 @@ Outputs:
 Implementation note:
 
 - Profile photo upload uses explicit crop preview confirmation, image validation, local square crop generation, and file-service upload; photo removal uses explicit confirmation and clears the persisted avatar before provider cleanup; provider retention proof remains a follow-up.
+- Browser-level Profile workflow coverage verifies AI profile draft save/discard, reviewed profile field saves, profile suggestion application, skill edit/delete, experience edit/delete, education add/edit/delete, tab switching, and avatar upload/crop/remove payloads across Chromium, Firefox, and WebKit.
+- Unit coverage verifies the reviewed avatar crop exporter can fall back from unresolved canvas `toBlob` calls to data URL export before file-service upload.
 - Profile workflow analytics is append-only and non-blocking; it does not edit profile fields, insert suggestions without a click, save AI drafts automatically, create profile rows, delete rows, upload or remove photos by itself, send messages, create notifications, or mutate profile data by itself.
 
 Backend support:
@@ -883,6 +885,7 @@ Implementation note:
 - Resume-imported profile rows require usable date ranges, are saved only through the reviewed Save Rows action, and remain editable/removable from Profile.
 - Native PDF export is generated locally from the current reviewed editor/profile data after an explicit click; Upload PDF uses the same reviewed data and a separate explicit provider-upload click.
 - Uploaded PDF links are retained in a small account-synced/local-fallback current-user library and can be explicitly opened, copied, or deleted; deletion uses the shared app modal with dialog semantics and focus containment before provider cleanup, recent local delete receipts show confirmed provider deletion without exposing deleted artifact URLs, and formal provider retention policy plus backend lifecycle audit remain follow-up work.
+- Browser-level Resume workflow coverage verifies import text review, selected field application, imported skill/experience/education save payloads, editor save payloads, Preview tab rendering, native PDF and HTML download file names, provider PDF upload payloads, export-event sync payloads, uploaded artifact metadata payloads, Copy Link clipboard behavior, reviewed uploaded-PDF delete cancel/confirm, provider delete payloads, deleted metadata payloads, AI resume draft apply/save, and AI resume draft discard across Chromium, Firefox, and WebKit.
 - Export sync records only status metadata for explicit user-triggered export actions. Generated PDF/HTML files remain local unless the user explicitly chooses Upload PDF.
 - Resume workflow analytics is append-only and non-blocking; it records source labels, field keys/counts, skill counts, detected/selected/saved/failed profile row counts, export method/status, persistence target, artifact counts, artifact delete review/cancel decisions, input length band, normalized file type including PDF, and error category, not resume text, extracted PDF text, contact details, file names, skill names, row titles, company names, institution names, descriptions, generated files, upload URLs, artifact URLs, clipboard contents, or raw errors.
 
@@ -1014,7 +1017,7 @@ Jobs page contents:
   - Timeline for Submitted, Reviewed, Interview, and Offer stages.
   - Rejected state when applicable.
   - Submitted resume link and cover letter when available.
-- Browser-level application workflow coverage lives in `apps/frontend/tests/job-application.spec.ts`; it verifies Explore job rendering, Review Application draft editing, application submit payload, success receipt, Application Details content, and the Applied tab entry across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- Browser-level Jobs workflow coverage lives in `apps/frontend/tests/job-application.spec.ts`; it verifies Explore job rendering, Review Application draft editing, application submit payload, success receipt, Application Details content, the Applied tab entry, saved-search create/apply/review-cancel/delete payloads, and hidden Explore hide/restore payloads across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - Full post job page:
   - Company setup onboarding panel when opened with `companySetup=1`, including Dashboard and Continue to Role Draft controls.
 - Job template selector.
@@ -1037,6 +1040,7 @@ Jobs page contents:
   - Changes to Save panel in draft edit mode, comparing normalized field values before updating an existing draft.
   - Advisory duplicate warning when an active recruiter job already matches title, location, and job type.
   - Back to Edit and Save Draft or Save Changes actions.
+- Browser-level Post Job workflow coverage lives in `apps/frontend/tests/post-job-workflow.spec.ts`; it verifies company context create/attach payloads, template save/apply/delete review, draft-history restore, duplicate warning review, reviewed draft save payloads, and return to Jobs postings across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
 How it works:
 
@@ -1065,7 +1069,7 @@ How it works:
 23. Active current-view preference refinements appear as visible chips with clear buttons.
 24. Restore Last clears a matching current-view job-type refinement.
 25. Hide, Restore Last, Restore All, and current-view refinement apply/clear actions emit append-only `preference_updated` product analytics events; analytics failures never block the preference change.
-26. Save Search opens a review modal that stores the current search text and filters in browser local storage under a user-specific saved-search key.
+26. Save Search opens a review modal that stores the current search text and filters under a user-specific saved-search key and syncs the record to `saved_job_searches` when account sync is available.
 27. Saved-search create/update actions emit append-only analytics with filter-count metadata but without raw search text or saved-search names.
 28. Saved-search new-match delivery checks the Job Alerts channel and digest frequency: immediate/no-digest settings can create an in-app alert, while daily/weekly digest settings queue a `notification_digest_items` row, update the reviewed match baseline, and show an immediate-alert paused status instead.
 29. `npm run discover:saved-search-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to discover new matches for alert-enabled saved searches, queue digest items, and update saved-search baselines.
@@ -1158,9 +1162,9 @@ Outputs:
 | Publish analytics | Append-only task lifecycle event with checklist issue metadata; no job mutation by itself |
 | Update job | Updated `Job` |
 | Delete job | Empty success |
-| Save search | `SavedJobSearch` stored in local browser storage |
+| Save search | `SavedJobSearch` stored in user-scoped local storage and synced to `saved_job_searches` when account sync is available |
 | Apply saved search | Search text and filters restored in the Jobs Explore tab |
-| Delete saved search | Selected saved search removed from local browser storage after explicit confirmation |
+| Delete saved search | Selected saved search removed from user-scoped local storage and `saved_job_searches` when account sync is available after explicit confirmation |
 | Saved-search analytics | Append-only preference/task event with non-sensitive filter metadata; no workflow mutation by itself |
 | Save job post template | Account-synced/local-fallback reusable recruiter-scoped template; no job is created |
 | Apply job post template | Editable full post form fields; no job is created |
@@ -1435,7 +1439,7 @@ Implementation note:
 - Candidate Details opens in-page and can also open `/profile/{candidate.userId}` in read-only mode for non-owners.
 - Interview planning is draft-only: it does not create video sessions, messages, notifications, or status changes until the recruiter explicitly saves notes or confirms a status update.
 - Candidate scorecards are private recruiter aids; they sync through `candidate_scorecards` when available and stay browser-local when server sync is unavailable.
-- Browser-level coverage in `apps/frontend/tests/candidate-review.spec.ts` verifies deterministic candidate rendering, Candidate Details review, scorecard upsert payload, private note upsert payload, status confirmation, application status update payload, status-event audit payload, first-candidate queue handoff, Previous/Next queue navigation, Select visible, bulk Offer eligibility/skipped review, single eligible bulk update payload, bulk status-event audit payload, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
+- Browser-level coverage in `apps/frontend/tests/candidate-review.spec.ts` verifies deterministic candidate rendering, Candidate Details review, scorecard upsert payload, scorecard local fallback and retry, private note upsert/delete payloads, status confirmation, application status update payload, failed status handling, status-event audit payload, first-candidate queue handoff, Previous/Next queue navigation, keyboard pagination/search/details/queue navigation, Select visible, bulk Interview/Offer/Rejection eligibility and skipped review, bulk partial-failure handling, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
 - Advisory signals are private recruiter aids; they only affect displayed priority order and never change candidate status or contact candidates automatically.
 - Candidate review focus filters are display-only current-page controls; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
 - Candidate analytics focus actions only change display focus; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
@@ -1566,6 +1570,10 @@ How it works:
 23. LMS workflow analytics records catalog load/failure, tab selection, search submission, page navigation, page-size changes, AI learning-plan review/apply/dismiss, course opening, enrollment outcomes, lesson selection, and lesson completion outcomes.
 24. LMS workflow analytics stores only bounded metadata: tab ID, course ID, lesson ID, entry point, category, difficulty, progress band, lesson/page counts, total/next-page flags, search presence and length band, progress filter, suggestion count/label/index, enrollment flags, completion status, and error category.
 25. Raw search terms, course titles, lesson titles, provider names, recommendation text, suggestion text, and raw error messages are not recorded.
+
+Browser validation:
+
+- `apps/frontend/tests/lms-workflow.spec.ts` verifies the AI Assistant to Learning handoff, explicit AI catalog-search application, course search and pagination controls, enrollment payloads, failed enrollment recovery, lesson-completion payloads, failed progress-persistence recovery, local progress updates, keyboard lesson selection/completion, and In Progress filtering across Chromium, Firefox, and WebKit fixtures without relying on live LMS API or Supabase services. LMS progress persistence now treats Supabase fallback read/write errors as failed saves instead of presenting unsaved lesson progress as complete.
 
 Output data shape:
 
@@ -1707,6 +1715,7 @@ How it works:
 17. Latest submission status and score are shown after a successful submission.
 18. The new submission is added to Retry History immediately after a successful submit.
 19. Challenge workflow analytics records explicit filter, workspace, language, reset review/cancel/confirm, local-check, retry-history, and submission decisions without storing code, starter code, prompt text, sample values, feedback text, or raw error messages.
+20. Browser workflow coverage in `apps/frontend/tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit fixtures without relying on live challenge API or Supabase services. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
 
 Outputs:
 
@@ -2047,6 +2056,10 @@ How it works:
 28. Networking workflow analytics stores only bounded metadata: entry point, tab, request direction/status, visible/hidden suggestion counts, incoming/sent/connection/pending counts, search length band, request-note presence and length band, recommendation-score band, mutual-connection band, reason/shared-skill/profile-skill counts, reminder delay, sync status, and error category.
 29. Names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, and raw error messages are not recorded.
 
+Browser validation:
+
+- `apps/frontend/tests/networking-workflow.spec.ts` verifies deterministic suggestion preview, hidden-suggestion hide/restore preference sync, reviewed connection request payloads, incoming accept/decline payloads, sent reminder set/clear status, withdraw payloads, accepted connection profile preview, keyboard preview activation, and full-profile popup route targets across Chromium, Firefox, and WebKit fixtures without relying on live Supabase or backend services.
+
 Outputs:
 
 ```ts
@@ -2169,7 +2182,7 @@ Page contents:
   - Suggested reply drafts when the latest visible message is incoming and the composer is empty.
   - Explicit attachment panel with URL validation, file upload, upload status, server-side size/folder/blocked-extension guardrails, removable draft state, hidden-draft clearing, labeled text composer, and accessible send button.
 - Empty state when no conversation is selected.
-- Browser-level messaging workflow coverage lives in `apps/frontend/tests/messaging-workflow.spec.ts`; it verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, keyboard attachment-link focus order, attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- Browser-level messaging workflow coverage lives in `apps/frontend/tests/messaging-workflow.spec.ts`; it verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, failed-send retry, keyboard attachment-link focus order, uploaded-file and linked attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
 How it works:
 
@@ -2437,6 +2450,7 @@ Analytics output:
 Implementation note:
 
 - Billing workflow analytics is append-only and non-blocking; it does not change plans, open provider URLs without a click, retry automatically, edit payment methods, create subscriptions, change invoices, send messages, create notifications, or mutate billing data by itself.
+- Browser-level Billing workflow coverage verifies plan catalog/current-plan rendering, populated transaction history, plan review cancel/checkout handoff payloads, billing portal handoff payloads, provider checkout failure retention and retry, popup-blocked checkout warning, provider-unavailable load state, retry recovery, explicit demo-mode copy, and billing workflow analytics across Chromium, Firefox, and WebKit.
 
 ### 5.13 Settings
 
@@ -2533,6 +2547,7 @@ Outputs:
 Implementation notes:
 
 - Settings workflow analytics is append-only and non-blocking; it does not edit profile values, change notification settings, send reset emails, deactivate accounts, open Billing, change plans, mark notifications read, send messages, create notifications, or mutate settings by itself.
+- Browser-level Settings workflow coverage verifies profile settings save payloads, keyboard-accessible notification switch changes, digest and quiet-hours delivery preference save payloads, Billing summary and handoff, password reset review cancel/send behavior, account deactivation review cancel/confirm behavior, notification save failure retention, retry success, and settings workflow analytics across Chromium, Firefox, and WebKit.
 
 ### 5.14 Companies
 

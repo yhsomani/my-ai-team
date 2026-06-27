@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { Buffer } from 'node:buffer';
 import { USER_ROLES } from '../src/navigation/routeRegistry';
 import { installE2EAuth, installNetworkStubs } from './helpers/e2e';
 
@@ -141,6 +142,80 @@ test.describe('messaging workflow', () => {
     await expect(messageLog.getByText('Sent').last()).toBeVisible();
   });
 
+  test('keeps a failed optimistic message available for retry', async ({ page }) => {
+    const sendAttempts: Record<string, unknown>[] = [];
+    const reply = 'Retrying with the portfolio link now.';
+
+    await installNetworkStubs(page, {
+      rest: {
+        conversationParticipants,
+        messages: existingMessages,
+        profiles: [participantProfile],
+        onMessageInsert: (payload) => {
+          sendAttempts.push(payload);
+          if (sendAttempts.length === 1) {
+            throw new Error('Message insert unavailable');
+          }
+
+          return {
+            id: 'message-e2e-retry-001',
+            conversation_id: payload.conversation_id,
+            sender_id: payload.sender_id,
+            content: payload.content,
+            message_type: payload.message_type || 'TEXT',
+            attachment_url: payload.attachment_url || null,
+            status: 'SENT',
+            created_at: '2026-06-27T10:03:00.000Z',
+            read_at: null,
+            profiles: {
+              id: currentUserId,
+              full_name: 'E2E User',
+              avatar_url: null,
+            },
+          };
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.user]);
+
+    await page.goto('/messaging');
+
+    const conversationButton = page.getByRole('button', { name: /Lena Ortiz/ }).first();
+    await conversationButton.click();
+
+    const messageLog = page.getByRole('log', { name: 'Messages with Lena Ortiz' });
+    await expect(messageLog).toBeVisible();
+
+    await page.getByLabel('Message text').fill(reply);
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => sendAttempts.length).toBe(1);
+    expect(sendAttempts[0]).toMatchObject({
+      conversation_id: conversationId,
+      sender_id: currentUserId,
+      content: reply,
+      message_type: 'TEXT',
+      status: 'SENT',
+    });
+    await expect(page.locator('#message-send-status')).toHaveText('Message failed to send. Retry available.');
+    await expect(messageLog.getByText(reply)).toBeVisible();
+    await expect(messageLog.getByText('Failed to send')).toBeVisible();
+
+    await messageLog.getByRole('button', { name: 'Retry' }).click();
+
+    await expect.poll(() => sendAttempts.length).toBe(2);
+    expect(sendAttempts[1]).toMatchObject({
+      conversation_id: conversationId,
+      sender_id: currentUserId,
+      content: reply,
+      message_type: 'TEXT',
+      status: 'SENT',
+    });
+    await expect(page.locator('#message-send-status')).toHaveText('Message sent.');
+    await expect(messageLog.getByText('Failed to send')).toBeHidden();
+    await expect(messageLog.getByText(reply)).toBeVisible();
+  });
+
   test('sends a reviewed attachment link from the keyboard composer path', async ({ page }) => {
     const sentMessages: Record<string, unknown>[] = [];
     const attachmentUrl = 'https://portfolio.example/lena/portfolio.pdf';
@@ -216,6 +291,89 @@ test.describe('messaging workflow', () => {
 
     await expect(page.locator('#message-send-status')).toHaveText('Message sent.');
     await expect(messageLog.getByRole('link', { name: /portfolio\.pdf/ })).toBeVisible();
+    await expect(messageLog.getByText(caption)).toBeVisible();
+  });
+
+  test('uploads and sends a reviewed file attachment', async ({ page }) => {
+    const uploadedUrl = 'https://files.example/messages/portfolio-upload.pdf';
+    const uploadRequests: Array<{ contentType?: string; postData?: string }> = [];
+    const sentMessages: Record<string, unknown>[] = [];
+    const caption = 'Uploaded portfolio attached.';
+
+    await installNetworkStubs(page, {
+      api: {
+        onFileUpload: (context) => {
+          uploadRequests.push(context);
+          return {
+            data: {
+              url: uploadedUrl,
+            },
+          };
+        },
+      },
+      rest: {
+        conversationParticipants,
+        messages: existingMessages,
+        profiles: [participantProfile],
+        onMessageInsert: (payload) => {
+          sentMessages.push(payload);
+          return {
+            id: 'message-e2e-upload-001',
+            conversation_id: payload.conversation_id,
+            sender_id: payload.sender_id,
+            content: payload.content,
+            message_type: payload.message_type || 'TEXT',
+            attachment_url: payload.attachment_url || null,
+            status: 'SENT',
+            created_at: '2026-06-27T10:06:00.000Z',
+            read_at: null,
+            profiles: {
+              id: currentUserId,
+              full_name: 'E2E User',
+              avatar_url: null,
+            },
+          };
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.user]);
+
+    await page.goto('/messaging');
+    await expect(page.getByRole('heading', { name: /^Messages$/ })).toBeVisible();
+
+    await page.getByRole('button', { name: /Lena Ortiz/ }).first().click();
+    const messageLog = page.getByRole('log', { name: 'Messages with Lena Ortiz' });
+    await expect(messageLog).toBeVisible();
+
+    await page.getByRole('button', { name: 'Add attachment link' }).click();
+    await page.setInputFiles('#message-attachment-file', {
+      name: 'portfolio-upload.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('portfolio upload fixture'),
+    });
+
+    await expect.poll(() => uploadRequests.length).toBe(1);
+    expect(uploadRequests[0].contentType).toContain('multipart/form-data');
+    await expect(page.getByText('portfolio-upload.pdf uploaded. Review before sending.')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Attachment link' })).toHaveValue(uploadedUrl);
+
+    const messageInput = page.getByLabel('Message text');
+    await expect(messageInput).toBeFocused();
+    await messageInput.fill(caption);
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => sentMessages.length).toBe(1);
+    expect(sentMessages[0]).toMatchObject({
+      conversation_id: conversationId,
+      sender_id: currentUserId,
+      content: caption,
+      message_type: 'FILE',
+      attachment_url: uploadedUrl,
+      status: 'SENT',
+    });
+
+    await expect(page.locator('#message-send-status')).toHaveText('Message sent.');
+    await expect(messageLog.getByRole('link', { name: /portfolio-upload\.pdf/ })).toBeVisible();
     await expect(messageLog.getByText(caption)).toBeVisible();
   });
 

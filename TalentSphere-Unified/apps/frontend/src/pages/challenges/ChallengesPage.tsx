@@ -264,7 +264,7 @@ const ChallengesPage: React.FC = () => {
     }
   }, [dispatch, status]);
 
-  const filtered = challenges.filter(c => 
+  const filtered = challenges.filter(c =>
     filter === 'all' || (c.category && c.category.toLowerCase() === filter.toLowerCase())
   );
 
@@ -636,6 +636,7 @@ const ChallengesPage: React.FC = () => {
               <button
                 key={tab}
                 type="button"
+                aria-pressed={filter === tab}
                 onClick={() => {
                   recordChallengeAction('challenge_category_selected', {
                     category: tab,
@@ -693,6 +694,7 @@ const ChallengesPage: React.FC = () => {
                 <Button
                   size="sm"
                   className="h-8 text-[10px]"
+                  aria-label={`Solve ${challenge.title}`}
                   onClick={() => handleSolve(challenge)}
                 >
                   <Play size={12} />
@@ -788,6 +790,7 @@ const ChallengesPage: React.FC = () => {
                     </div>
                   )}
                   <textarea
+                    aria-label="Solution code"
                     value={solution}
                     onChange={(event) => {
                       setSolution(event.target.value);

@@ -943,12 +943,14 @@ export const lmsService = {
 
     if (_supabaseReachable !== false) {
       try {
-        const { data: existing } = await supabase
+        const { data: existing, error: existingError } = await supabase
           .from('lesson_progress')
           .select('id')
           .eq('enrollment_id', enrollmentId)
           .eq('lesson_id', lessonId)
-          .single();
+          .maybeSingle();
+
+        if (existingError) throw existingError;
 
         if (existing) {
           const update: LessonProgressUpdate = {
@@ -956,11 +958,13 @@ export const lmsService = {
             completed_at: new Date().toISOString(),
           };
 
-          await supabase
+          const { error: updateError } = await supabase
             .from('lesson_progress')
             .update(update)
             .eq('enrollment_id', enrollmentId)
             .eq('lesson_id', lessonId);
+
+          if (updateError) throw updateError;
         } else {
           const insert: LessonProgressInsert = {
             enrollment_id: enrollmentId,
@@ -969,29 +973,37 @@ export const lmsService = {
             completed_at: new Date().toISOString(),
           };
 
-          await supabase
+          const { error: insertError } = await supabase
             .from('lesson_progress')
             .insert(insert);
+
+          if (insertError) throw insertError;
         }
 
         // Update enrollment progress percentage
-        const { data: enrollmentData } = await supabase
+        const { data: enrollmentData, error: enrollmentLookupError } = await supabase
           .from('enrollments')
           .select('course_id')
           .eq('id', enrollmentId)
           .single();
 
+        if (enrollmentLookupError) throw enrollmentLookupError;
+
         if (enrollmentData) {
-          const { count: totalLessons } = await supabase
+          const { count: totalLessons, error: totalLessonsError } = await supabase
             .from('lessons')
             .select('*', { count: 'exact', head: true })
             .eq('course_id', enrollmentData.course_id);
 
-          const { count: completedLessons } = await supabase
+          if (totalLessonsError) throw totalLessonsError;
+
+          const { count: completedLessons, error: completedLessonsError } = await supabase
             .from('lesson_progress')
             .select('*', { count: 'exact', head: true })
             .eq('enrollment_id', enrollmentId)
             .eq('completed', true);
+
+          if (completedLessonsError) throw completedLessonsError;
 
           const progress = totalLessons ? Math.round((completedLessons || 0) / totalLessons * 100) : 0;
           const enrollmentUpdate: EnrollmentUpdate = {
@@ -1000,10 +1012,12 @@ export const lmsService = {
             completed_at: progress === 100 ? new Date().toISOString() : null,
           };
 
-          await supabase
+          const { error: enrollmentUpdateError } = await supabase
             .from('enrollments')
             .update(enrollmentUpdate)
             .eq('id', enrollmentId);
+
+          if (enrollmentUpdateError) throw enrollmentUpdateError;
         }
 
         _supabaseReachable = true;

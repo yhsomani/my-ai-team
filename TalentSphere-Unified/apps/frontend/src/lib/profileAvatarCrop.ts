@@ -80,10 +80,75 @@ const loadImageFromFile = async (file: File) => {
   }
 };
 
+const dataUrlToBlob = (dataUrl: string) => {
+  const [metadata = '', payload = ''] = dataUrl.split(',');
+  const mimeType = metadata.match(/^data:([^;]+)/)?.[1] || 'image/jpeg';
+  const binary = window.atob(payload);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+};
+
+const exportCanvasToBlob = (
+  canvas: HTMLCanvasElement,
+  mimeType: string,
+  quality: number,
+  timeoutMs: number,
+) => new Promise<Blob>((resolve, reject) => {
+  let settled = false;
+
+  const finish = (blob: Blob) => {
+    if (settled) return;
+    settled = true;
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+    resolve(blob);
+  };
+
+  const fail = (error: unknown) => {
+    if (settled) return;
+    settled = true;
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+    reject(error instanceof Error ? error : new Error('Avatar crop could not be exported.'));
+  };
+
+  const finishFromDataUrl = () => {
+    try {
+      finish(dataUrlToBlob(canvas.toDataURL(mimeType, quality)));
+    } catch (error) {
+      fail(error);
+    }
+  };
+
+  const timeoutId = window.setTimeout(finishFromDataUrl, timeoutMs);
+
+  if (typeof canvas.toBlob !== 'function') {
+    finishFromDataUrl();
+    return;
+  }
+
+  canvas.toBlob((nextBlob) => {
+    if (nextBlob) {
+      finish(nextBlob);
+      return;
+    }
+
+    finishFromDataUrl();
+  }, mimeType, quality);
+});
+
 export const createCroppedProfileAvatarFile = async (
   file: File,
   crop: ProfileAvatarCrop,
-  outputSize = 512
+  outputSize = 512,
+  exportTimeoutMs = 1500
 ) => {
   const image = await loadImageFromFile(file);
   const canvas = document.createElement('canvas');
@@ -113,12 +178,7 @@ export const createCroppedProfileAvatarFile = async (
     outputSize
   );
 
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((nextBlob) => {
-      if (nextBlob) resolve(nextBlob);
-      else reject(new Error('Avatar crop could not be exported.'));
-    }, 'image/jpeg', 0.9);
-  });
+  const blob = await exportCanvasToBlob(canvas, 'image/jpeg', 0.9, exportTimeoutMs);
 
   return new File([blob], getProfileAvatarUploadFileName(file.name), {
     type: 'image/jpeg',

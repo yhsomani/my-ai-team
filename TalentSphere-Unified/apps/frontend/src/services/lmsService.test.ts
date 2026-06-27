@@ -72,6 +72,7 @@ const makeMutationQueryBuilder = (singleResponse: Record<string, unknown> | Prom
   insert: vi.fn().mockReturnThis(),
   select: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
+  maybeSingle: vi.fn().mockImplementation(() => singleResponse instanceof Promise ? singleResponse : Promise.resolve(singleResponse)),
   single: vi.fn().mockImplementation(() => singleResponse instanceof Promise ? singleResponse : Promise.resolve(singleResponse)),
 });
 
@@ -368,7 +369,10 @@ describe('lmsService', () => {
 
   it('does not silently complete lessons when progress persistence fails', async () => {
     (apiClient.post as any).mockRejectedValueOnce(new Error('Network Error'));
-    const progressQuery = makeMutationQueryBuilder(Promise.reject(new Error('Network Error')));
+    const progressQuery = makeMutationQueryBuilder({
+      data: null,
+      error: new Error('Network Error'),
+    });
     (typedSupabase.from as any).mockReturnValue(progressQuery);
 
     await expect(lmsService.markLessonComplete(

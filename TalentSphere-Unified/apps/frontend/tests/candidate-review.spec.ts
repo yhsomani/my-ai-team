@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { USER_ROLES } from '../src/navigation/routeRegistry';
 import { installE2EAuth, installNetworkStubs } from './helpers/e2e';
 
@@ -100,6 +100,11 @@ const buildCandidateProfileRows = (applicationRows: Record<string, unknown>[]) =
     avatar_url: null,
   };
 });
+
+const candidateCard = (page: Page, name: string) => page
+  .locator('.surface-card')
+  .filter({ has: page.getByRole('heading', { name }) })
+  .first();
 
 const setRating = async (rating: Locator, targetValue: number) => {
   await rating.evaluate((input, value) => {
@@ -360,6 +365,150 @@ test.describe('candidate review workflow', () => {
     await expect(page.getByRole('heading', { name: 'Selected candidates moved' })).toBeVisible();
   });
 
+  test('bulk reviews interview and rejection moves with eligible and failed candidates separated', async ({ page }) => {
+    const applicationRows = [
+      buildCandidateApplicationRow({
+        id: 'application-iris-pending',
+        name: 'Iris Park',
+        email: 'iris.park@example.com',
+        status: 'PENDING',
+        createdAt: '2026-06-27T12:00:00.000Z',
+      }),
+      buildCandidateApplicationRow({
+        id: 'application-jonas-interview',
+        name: 'Jonas Reed',
+        email: 'jonas.reed@example.com',
+        status: 'INTERVIEW',
+        createdAt: '2026-06-27T11:00:00.000Z',
+      }),
+      buildCandidateApplicationRow({
+        id: 'application-kai-offer',
+        name: 'Kai Stone',
+        email: 'kai.stone@example.com',
+        status: 'OFFER',
+        createdAt: '2026-06-27T10:00:00.000Z',
+      }),
+      buildCandidateApplicationRow({
+        id: 'application-lina-rejected',
+        name: 'Lina Shah',
+        email: 'lina.shah@example.com',
+        status: 'REJECTED',
+        createdAt: '2026-06-27T09:00:00.000Z',
+      }),
+    ];
+    const rowById = new Map(applicationRows.map(row => [row.id, row]));
+    const applicationUpdates: Array<{ id?: string; payload: Record<string, unknown> }> = [];
+    const statusEvents: Record<string, unknown>[] = [];
+
+    await installNetworkStubs(page, {
+      rest: {
+        jobs: [jobRow],
+        applications: applicationRows,
+        candidateNotes: [],
+        candidateScorecards: [],
+        applicationStatusEvents: [],
+        onApplicationUpdate: (payload, context) => {
+          applicationUpdates.push({ id: context.id, payload });
+          if (context.id === 'application-jonas-interview' && payload.status === 'REJECTED') {
+            throw new Error('Rejected status update unavailable');
+          }
+
+          return {
+            ...(rowById.get(context.id) || applicationRows[0]),
+            ...payload,
+            id: context.id || applicationRows[0].id,
+            updated_at: '2026-06-27T12:45:00.000Z',
+          };
+        },
+        onApplicationStatusEventInsert: (payload) => {
+          statusEvents.push(payload);
+          return {
+            id: `status-event-bulk-${statusEvents.length}`,
+            ...payload,
+            created_at: '2026-06-27T12:45:00.000Z',
+          };
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.recruiter]);
+
+    await page.goto('/candidates');
+    await page.getByLabel('Select visible').check();
+    await expect(page.getByText('4 selected')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Review Interview Move' }).click();
+
+    const interviewDialog = page.getByRole('dialog', { name: 'Review Bulk Interview Move' });
+    await expect(interviewDialog).toBeVisible();
+    await expect(interviewDialog.getByText('Move selected eligible applications to Interview?')).toBeVisible();
+    await expect(interviewDialog.getByText('Iris Park')).toBeVisible();
+    await expect(interviewDialog.getByText('Jonas Reed')).toBeVisible();
+    await expect(interviewDialog.getByText('Kai Stone')).toBeVisible();
+    await expect(interviewDialog.getByText('Lina Shah')).toBeVisible();
+    await expect(interviewDialog.getByText('Already INTERVIEW.')).toBeVisible();
+    await expect(interviewDialog.getByText('Already OFFER.')).toBeVisible();
+    await expect(interviewDialog.getByText('Already REJECTED.')).toBeVisible();
+    await interviewDialog.getByRole('button', { name: 'Confirm Interview Moves (1)' }).click();
+
+    await expect.poll(() => applicationUpdates.length).toBe(1);
+    expect(applicationUpdates[0]).toMatchObject({
+      id: 'application-iris-pending',
+      payload: {
+        status: 'INTERVIEW',
+      },
+    });
+    await expect.poll(() => statusEvents.length).toBe(1);
+    expect(statusEvents[0]).toMatchObject({
+      application_id: 'application-iris-pending',
+      previous_status: 'PENDING',
+      status: 'INTERVIEW',
+      changed_by: recruiterId,
+      reason: 'Recruiter moved selected candidates to interview',
+    });
+    await expect(interviewDialog).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Selected candidates moved' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Clear' }).click();
+    await page.getByLabel('Select visible').check();
+    await expect(page.getByText('4 selected')).toBeVisible();
+    await page.getByRole('button', { name: 'Review Rejection' }).click();
+
+    const rejectionDialog = page.getByRole('dialog', { name: 'Review Bulk Rejection' });
+    await expect(rejectionDialog).toBeVisible();
+    await expect(rejectionDialog.getByText('Reject selected eligible applications?')).toBeVisible();
+    await expect(rejectionDialog.getByText('Iris Park')).toBeVisible();
+    await expect(rejectionDialog.getByText('Jonas Reed')).toBeVisible();
+    await expect(rejectionDialog.getByText('Kai Stone')).toBeVisible();
+    await expect(rejectionDialog.getByText('Lina Shah')).toBeVisible();
+    await expect(rejectionDialog.getByText('Offered candidates are skipped to avoid accidental offer rescinds.')).toBeVisible();
+    await expect(rejectionDialog.getByText('Already REJECTED.')).toBeVisible();
+    await rejectionDialog.getByRole('button', { name: 'Confirm Rejections (2)' }).click();
+
+    await expect.poll(() => applicationUpdates.length).toBe(3);
+    expect(applicationUpdates[1]).toMatchObject({
+      id: 'application-iris-pending',
+      payload: {
+        status: 'REJECTED',
+      },
+    });
+    expect(applicationUpdates[2]).toMatchObject({
+      id: 'application-jonas-interview',
+      payload: {
+        status: 'REJECTED',
+      },
+    });
+    await expect.poll(() => statusEvents.length).toBe(2);
+    expect(statusEvents[1]).toMatchObject({
+      application_id: 'application-iris-pending',
+      previous_status: 'INTERVIEW',
+      status: 'REJECTED',
+      changed_by: recruiterId,
+      reason: 'Recruiter rejected selected candidates',
+    });
+    await expect(rejectionDialog.getByRole('alert')).toContainText('1 selected application could not be moved to REJECTED. Successful updates were saved.');
+    await expect(page.getByRole('heading', { name: 'Bulk update partially saved' })).toBeVisible();
+  });
+
   test('reviews and resets unsaved private candidate notes without saving', async ({ page }) => {
     const noteUpserts: Record<string, unknown>[] = [];
     const draftNote = 'Draft-only calibration note for the interview panel.';
@@ -406,6 +555,163 @@ test.describe('candidate review workflow', () => {
     await expect(detailsDialog.getByText('Unsaved note changes')).toBeHidden();
     await expect(page.getByRole('heading', { name: 'Review drafts reset' })).toBeVisible();
     expect(noteUpserts).toHaveLength(0);
+  });
+
+  test('removes saved private notes through the note delete sync path', async ({ page }) => {
+    const noteDeletes: Array<{ applicationId?: string; recruiterId?: string }> = [];
+
+    await installNetworkStubs(page, {
+      rest: {
+        jobs: [jobRow],
+        applications: [candidateApplicationRow],
+        candidateNotes: [
+          {
+            recruiter_id: recruiterId,
+            application_id: 'application-ava-001',
+            note: 'Existing screening note for calibration.',
+            created_at: '2026-06-27T09:00:00.000Z',
+            updated_at: '2026-06-27T09:00:00.000Z',
+          },
+        ],
+        candidateScorecards: [],
+        applicationStatusEvents: [],
+        onCandidateNoteDelete: (context) => {
+          noteDeletes.push(context);
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.recruiter]);
+
+    await page.goto('/candidates');
+    await page.getByRole('button', { name: 'Details' }).click();
+
+    const detailsDialog = page.getByRole('dialog', { name: 'Candidate Details' });
+    const notesField = detailsDialog.getByLabel('Private recruiter notes');
+
+    await expect(detailsDialog).toBeVisible();
+    await expect(notesField).toHaveValue('Existing screening note for calibration.');
+    await notesField.fill('');
+    await detailsDialog.getByRole('button', { name: 'Save Note' }).last().click();
+
+    await expect.poll(() => noteDeletes.length).toBe(1);
+    expect(noteDeletes[0]).toEqual({
+      applicationId: 'application-ava-001',
+      recruiterId,
+    });
+    await expect(page.getByRole('heading', { name: 'Recruiter note removed' })).toBeVisible();
+    await expect(notesField).toHaveValue('');
+  });
+
+  test('keeps scorecards locally after sync failure and retries successfully', async ({ page }) => {
+    const scorecardUpserts: Record<string, unknown>[] = [];
+    const firstEvidence = 'Strong collaboration evidence from portfolio and stakeholder examples.';
+    const retryEvidence = 'Retry confirms the same signal with clearer launch detail.';
+
+    await installNetworkStubs(page, {
+      rest: {
+        jobs: [jobRow],
+        applications: [candidateApplicationRow],
+        candidateNotes: [],
+        candidateScorecards: [],
+        applicationStatusEvents: [],
+        onCandidateScorecardUpsert: (payload) => {
+          scorecardUpserts.push(payload);
+          if (scorecardUpserts.length === 1) {
+            throw new Error('Scorecard sync unavailable');
+          }
+
+          return {
+            ...payload,
+            created_at: '2026-06-27T10:05:00.000Z',
+            updated_at: '2026-06-27T10:05:00.000Z',
+          };
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.recruiter]);
+
+    await page.goto('/candidates');
+    await page.getByRole('button', { name: 'Details' }).click();
+
+    const detailsDialog = page.getByRole('dialog', { name: 'Candidate Details' });
+    await expect(detailsDialog).toBeVisible();
+
+    await setRating(detailsDialog.getByLabel('Role Fit'), 5);
+    await setRating(detailsDialog.getByLabel('Technical Depth'), 4);
+    await detailsDialog.getByLabel('Evidence notes').fill(firstEvidence);
+    await detailsDialog.getByRole('button', { name: 'Save Scorecard' }).last().click();
+
+    await expect.poll(() => scorecardUpserts.length).toBe(1);
+    expect(scorecardUpserts[0]).toMatchObject({
+      recruiter_id: recruiterId,
+      application_id: 'application-ava-001',
+      evidence: firstEvidence,
+    });
+    await expect(page.getByRole('heading', { name: 'Scorecard saved locally' })).toBeVisible();
+    await expect(detailsDialog.getByText(/Saved .* local/)).toBeVisible();
+
+    await detailsDialog.getByLabel('Evidence notes').fill(retryEvidence);
+    await detailsDialog.getByRole('button', { name: 'Save Scorecard' }).last().click();
+
+    await expect.poll(() => scorecardUpserts.length).toBe(2);
+    expect(scorecardUpserts[1]).toMatchObject({
+      recruiter_id: recruiterId,
+      application_id: 'application-ava-001',
+      evidence: retryEvidence,
+    });
+    await expect(page.getByRole('heading', { name: /^Scorecard saved$/ })).toBeVisible();
+    await expect(detailsDialog.getByText(/Saved .* synced/)).toBeVisible();
+  });
+
+  test('keeps status review open when a single status update fails', async ({ page }) => {
+    const applicationUpdates: Array<{ id?: string; payload: Record<string, unknown> }> = [];
+    const statusEvents: Record<string, unknown>[] = [];
+
+    await installNetworkStubs(page, {
+      rest: {
+        jobs: [jobRow],
+        applications: [candidateApplicationRow],
+        candidateNotes: [],
+        candidateScorecards: [],
+        applicationStatusEvents: [],
+        onApplicationUpdate: (payload, context) => {
+          applicationUpdates.push({ id: context.id, payload });
+          throw new Error('Application status provider unavailable');
+        },
+        onApplicationStatusEventInsert: (payload) => {
+          statusEvents.push(payload);
+          return {
+            id: 'status-event-should-not-save',
+            ...payload,
+            created_at: '2026-06-27T10:07:00.000Z',
+          };
+        },
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.recruiter]);
+
+    await page.goto('/candidates');
+    await page.getByRole('button', { name: 'Details' }).click();
+
+    const detailsDialog = page.getByRole('dialog', { name: 'Candidate Details' });
+    await expect(detailsDialog).toBeVisible();
+    await detailsDialog.getByRole('button', { name: /^Reject$/ }).click();
+
+    const statusDialog = page.getByRole('dialog', { name: 'Confirm Rejection' });
+    await expect(statusDialog).toBeVisible();
+    await statusDialog.getByRole('button', { name: 'Confirm Rejection' }).click();
+
+    await expect.poll(() => applicationUpdates.length).toBe(1);
+    expect(applicationUpdates[0]).toMatchObject({
+      id: 'application-ava-001',
+      payload: {
+        status: 'REJECTED',
+      },
+    });
+    expect(statusEvents).toHaveLength(0);
+    await expect(statusDialog.getByRole('alert')).toContainText('The application status could not be updated. No change was saved.');
+    await expect(statusDialog.locator('span').filter({ hasText: /^PENDING$/ })).toBeVisible();
+    await expect(detailsDialog.locator('span').filter({ hasText: /^PENDING$/ })).toBeVisible();
   });
 
   test('paginates, searches, and applies review focus without mutating candidates', async ({ page }) => {
@@ -475,5 +781,74 @@ test.describe('candidate review workflow', () => {
     await page.getByLabel('Show all candidates on the current page').click();
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
     await expect(page.getByText(/Showing\s+1-10\s+candidates/)).toBeVisible();
+  });
+
+  test('supports keyboard pagination, search, and review queue navigation', async ({ page }) => {
+    const applicationRows = buildCandidatePaginationRows(12);
+    const profiles = buildCandidateProfileRows(applicationRows);
+
+    await installNetworkStubs(page, {
+      rest: {
+        jobs: [jobRow],
+        applications: applicationRows,
+        profiles,
+        candidateNotes: [],
+        candidateScorecards: [],
+        applicationStatusEvents: [],
+      },
+    });
+    await installE2EAuth(page, [USER_ROLES.recruiter]);
+
+    await page.goto('/candidates');
+
+    await expect(page.getByRole('heading', { name: /^Candidates$/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
+
+    const nextPageButton = page.getByLabel('Next candidates page');
+    await nextPageButton.focus();
+    await expect(nextPageButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Candidate 11' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Zara Page' })).toBeVisible();
+
+    const previousPageButton = page.getByLabel('Previous candidates page');
+    await previousPageButton.focus();
+    await expect(previousPageButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
+
+    const searchCandidates = page.getByLabel('Search candidates');
+    await searchCandidates.focus();
+    await expect(searchCandidates).toBeFocused();
+    await page.keyboard.type('Zara');
+    await expect(page.getByRole('heading', { name: 'Zara Page' })).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-1\s+matching candidates/)).toBeVisible();
+
+    await searchCandidates.fill('');
+    await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
+
+    const detailsButton = candidateCard(page, 'Candidate 01').getByRole('button', { name: 'Details' });
+    await detailsButton.focus();
+    await expect(detailsButton).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    const detailsDialog = page.getByRole('dialog', { name: 'Candidate Details' });
+    await expect(detailsDialog).toBeVisible();
+    await expect(detailsDialog.getByText('Candidate 1 of 10 in current queue')).toBeVisible();
+    await expect(detailsDialog.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
+
+    const nextCandidateButton = detailsDialog.getByRole('button', { name: 'Review next candidate in current queue' });
+    await nextCandidateButton.focus();
+    await expect(nextCandidateButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(detailsDialog.getByText('Candidate 2 of 10 in current queue')).toBeVisible();
+    await expect(detailsDialog.getByRole('heading', { name: 'Candidate 02' })).toBeVisible();
+
+    const previousCandidateButton = detailsDialog.getByRole('button', { name: 'Review previous candidate in current queue' });
+    await previousCandidateButton.focus();
+    await expect(previousCandidateButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(detailsDialog.getByText('Candidate 1 of 10 in current queue')).toBeVisible();
+    await expect(detailsDialog.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
   });
 });

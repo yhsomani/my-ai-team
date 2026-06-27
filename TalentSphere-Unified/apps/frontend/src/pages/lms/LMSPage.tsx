@@ -1013,6 +1013,8 @@ const LMSPage: React.FC = () => {
                       <button
                         key={lesson.id || i}
                         type="button"
+                        aria-current={activeLessonIndex === i ? 'step' : undefined}
+                        aria-label={`Select lesson ${i + 1}: ${lesson.title}${isCompleted ? ', completed' : ''}`}
                         onClick={() => {
                           recordLmsAction('lms_lesson_selected', {
                             ...getCourseAnalyticsContext(selectedCourse),

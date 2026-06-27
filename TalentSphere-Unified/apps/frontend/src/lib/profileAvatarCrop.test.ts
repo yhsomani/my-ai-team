@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createCroppedProfileAvatarFile,
   defaultProfileAvatarCrop,
   getProfileAvatarCropPreviewStyle,
   getProfileAvatarCropSourceRect,
@@ -7,6 +8,11 @@ import {
 } from './profileAvatarCrop';
 
 describe('profileAvatarCrop', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('normalizes crop controls to safe bounds', () => {
     expect(normalizeProfileAvatarCrop({ zoom: 0, focalX: -20, focalY: 140 })).toEqual({
       zoom: 1,
@@ -53,5 +59,55 @@ describe('profileAvatarCrop', () => {
       transform: 'scale(1.5)',
       transformOrigin: '25% 75%',
     });
+  });
+
+  it('falls back to data URL export when canvas toBlob does not resolve', async () => {
+    class MockImage {
+      decoding = 'async';
+      naturalWidth = 2;
+      naturalHeight = 2;
+      width = 2;
+      height = 2;
+      onload: (() => void) | null = null;
+
+      set src(_value: string) {
+        window.setTimeout(() => this.onload?.(), 0);
+      }
+    }
+
+    const drawImage = vi.fn();
+    const toBlob = vi.fn();
+    const toDataURL = vi.fn().mockReturnValue('data:image/jpeg;base64,ZmFsbGJhY2s=');
+    const fakeCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage })),
+      toBlob,
+      toDataURL,
+    } as unknown as HTMLCanvasElement;
+    const originalCreateElement = Document.prototype.createElement;
+
+    vi.stubGlobal('Image', MockImage);
+    vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:profile-avatar');
+    vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => (
+      tagName === 'canvas'
+        ? fakeCanvas
+        : originalCreateElement.call(document, tagName)
+    )) as typeof document.createElement);
+
+    const file = await createCroppedProfileAvatarFile(
+      new File(['avatar'], 'profile-photo.png', { type: 'image/png' }),
+      defaultProfileAvatarCrop,
+      16,
+      0,
+    );
+
+    expect(toBlob).toHaveBeenCalled();
+    expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.9);
+    expect(drawImage).toHaveBeenCalled();
+    expect(file.name).toBe('profile-photo-cropped.jpg');
+    expect(file.type).toBe('image/jpeg');
+    await expect(file.text()).resolves.toBe('fallback');
   });
 });
