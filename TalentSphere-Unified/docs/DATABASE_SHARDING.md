@@ -1,5 +1,7 @@
 # TalentSphere Database Sharding (Citus)
 
+> Documentation status: Proposal/unverified. Production Citus deployment is not verified from the codebase; use `../../PLAN.md` for current data ownership work.
+
 ## Overview
 TalentSphere uses **Citus** for horizontal scaling of PostgreSQL.
 

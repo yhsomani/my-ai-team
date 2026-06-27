@@ -1,5 +1,7 @@
 # TalentSphere Backend Documentation
 
+> Documentation status: Historical/stale extracted reference. Use backend controllers, `../API_CONTRACT_MISMATCH_REPORT.md`, and `../../../PLAN.md` for current route evidence.
+
 ## Overview
 
 Auto-generated using **SpringDoc OpenAPI** for Spring Boot backend services.

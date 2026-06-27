@@ -1,3 +1,10 @@
+import {
+  migrateExtensionStorageSnapshot,
+  summarizeExtensionStorageMigration,
+  type ExtensionStorageMigrationPatch,
+  type ExtensionStorageSnapshot
+} from './storageMigrations';
+
 /**
  * Dual-mode storage helper
  * Automatically falls back to standard browser localStorage when Chrome Extension Storage is unavailable.
@@ -101,4 +108,102 @@ export const extStorage = {
       localStorage.clear();
     }
   }
+};
+
+const hasChromeLocalStorage = () => (
+  typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local
+);
+
+const readChromeStorageSnapshot = async (): Promise<ExtensionStorageSnapshot> => new Promise((resolve, reject) => {
+  try {
+    chrome.storage.local.get(null, (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+
+      resolve(result || {});
+    });
+  } catch (err) {
+    reject(err);
+  }
+});
+
+const readWebStorageSnapshot = (): ExtensionStorageSnapshot => {
+  const snapshot: ExtensionStorageSnapshot = {};
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+
+    const value = localStorage.getItem(key);
+    try {
+      snapshot[key] = value ? JSON.parse(value) : value;
+    } catch {
+      snapshot[key] = value;
+    }
+  }
+
+  return snapshot;
+};
+
+const applyChromeStoragePatch = async (patch: ExtensionStorageMigrationPatch) => new Promise<void>((resolve, reject) => {
+  try {
+    const applySet = () => {
+      if (Object.keys(patch.set).length === 0) {
+        resolve();
+        return;
+      }
+
+      chrome.storage.local.set(patch.set, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        resolve();
+      });
+    };
+
+    if (patch.remove.length > 0) {
+      chrome.storage.local.remove(patch.remove, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        applySet();
+      });
+      return;
+    }
+
+    applySet();
+  } catch (err) {
+    reject(err);
+  }
+});
+
+const applyWebStoragePatch = (patch: ExtensionStorageMigrationPatch) => {
+  for (const key of patch.remove) {
+    localStorage.removeItem(key);
+  }
+
+  for (const [key, value] of Object.entries(patch.set)) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+export const migrateExtensionStorage = async (nowIso = new Date().toISOString()) => {
+  const snapshot = hasChromeLocalStorage()
+    ? await readChromeStorageSnapshot()
+    : readWebStorageSnapshot();
+  const patch = migrateExtensionStorageSnapshot(snapshot, nowIso);
+
+  if (patch.changed) {
+    if (hasChromeLocalStorage()) {
+      await applyChromeStoragePatch(patch);
+    } else {
+      applyWebStoragePatch(patch);
+    }
+  }
+
+  return summarizeExtensionStorageMigration(patch);
 };

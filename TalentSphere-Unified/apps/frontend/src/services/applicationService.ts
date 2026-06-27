@@ -1,8 +1,141 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import type { ApplicationDraftHistoryEntry, ApplicationDraftHistoryReason } from '../lib/applicationDraftHistory';
-import type { ApplicationStatusEvent, JobApplication, CreateApplicationRequest } from '../types/job';
+import type { ApplicationStatusEvent, Job, JobApplication, CreateApplicationRequest } from '../types/job';
 
 export type ApplicationDraftSource = 'manual' | 'profile' | 'ai';
+
+type ApplicationStatus = Database['public']['Enums']['application_status'];
+type JobApplicationRow = Database['public']['Tables']['job_applications']['Row'];
+type JobApplicationInsert = Database['public']['Tables']['job_applications']['Insert'];
+type JobApplicationUpdate = Database['public']['Tables']['job_applications']['Update'];
+type ApplicationStatusEventRow = Database['public']['Tables']['application_status_events']['Row'];
+type ApplicationStatusEventInsert = Database['public']['Tables']['application_status_events']['Insert'];
+type ApplicationDraftRow = Database['public']['Tables']['application_drafts']['Row'];
+type ApplicationDraftInsert = Database['public']['Tables']['application_drafts']['Insert'];
+type ApplicationDraftVersionRow = Database['public']['Tables']['application_draft_versions']['Row'];
+type ApplicationDraftVersionInsert = Database['public']['Tables']['application_draft_versions']['Insert'];
+
+type CompanyReference = {
+  name?: string | null;
+  logo_url?: string | null;
+};
+
+type JobReference = {
+  id?: string | null;
+  title?: string | null;
+  description?: string | null;
+  company_id?: string | null;
+  companyId?: string | null;
+  companyName?: string | null;
+  companyLogoUrl?: string | null;
+  location?: string | null;
+  job_type?: string | null;
+  jobType?: string | null;
+  salary_min?: number | string | null;
+  salaryMin?: number | string | null;
+  salary_max?: number | string | null;
+  salaryMax?: number | string | null;
+  salary_range?: string | null;
+  salaryRange?: string | null;
+  requirements?: string[] | string | null;
+  posted_at?: string | null;
+  postedAt?: string | null;
+  status?: string | null;
+  companies?: CompanyReference | CompanyReference[] | null;
+};
+
+type ApplicationResponse = Partial<JobApplicationRow> & {
+  jobId?: string;
+  userId?: string;
+  resumeUrl?: string | null;
+  coverLetter?: string | null;
+  jobs?: unknown;
+  job?: JobReference | null;
+};
+
+const APPLICATION_STATUSES: JobApplication['status'][] = ['PENDING', 'REVIEWED', 'INTERVIEW', 'OFFER', 'REJECTED'];
+
+const normalizeApplicationStatus = (status: string | null | undefined): JobApplication['status'] => {
+  return APPLICATION_STATUSES.includes(status as JobApplication['status'])
+    ? status as JobApplication['status']
+    : 'PENDING';
+};
+
+const toApplicationStatus = (status: string): ApplicationStatus => normalizeApplicationStatus(status) as ApplicationStatus;
+
+const normalizeRequirements = (requirements: string[] | string | null | undefined): string[] => {
+  if (Array.isArray(requirements)) return requirements;
+  if (!requirements) return [];
+  return requirements.split('\n').map((item) => item.trim()).filter(Boolean);
+};
+
+const normalizeOptionalNumber = (value: number | string | null | undefined): number | undefined => {
+  if (typeof value === 'number') return value;
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeDraftSource = (source: string | null | undefined): ApplicationDraftSource => {
+  return source === 'profile' || source === 'ai' ? source : 'manual';
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+);
+
+const toNullableString = (value: unknown): string | null | undefined => (
+  typeof value === 'string' ? value : value === null ? null : undefined
+);
+
+const toJobReference = (value: unknown): JobReference | null => {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (!isRecord(candidate) || !('id' in candidate || 'title' in candidate)) {
+    return null;
+  }
+
+  const companiesValue = candidate.companies;
+  const companies = Array.isArray(companiesValue)
+    ? companiesValue.filter(isRecord).map((company) => ({
+        name: toNullableString(company.name),
+        logo_url: toNullableString(company.logo_url),
+      }))
+    : isRecord(companiesValue)
+      ? {
+          name: toNullableString(companiesValue.name),
+          logo_url: toNullableString(companiesValue.logo_url),
+        }
+      : null;
+  const requirements = Array.isArray(candidate.requirements)
+    ? candidate.requirements.filter((requirement): requirement is string => typeof requirement === 'string')
+    : typeof candidate.requirements === 'string' || candidate.requirements === null
+      ? candidate.requirements
+      : undefined;
+
+  return {
+    id: toNullableString(candidate.id),
+    title: toNullableString(candidate.title),
+    description: toNullableString(candidate.description),
+    company_id: toNullableString(candidate.company_id),
+    companyId: toNullableString(candidate.companyId),
+    companyName: toNullableString(candidate.companyName),
+    companyLogoUrl: toNullableString(candidate.companyLogoUrl),
+    location: toNullableString(candidate.location),
+    job_type: toNullableString(candidate.job_type),
+    jobType: toNullableString(candidate.jobType),
+    salary_min: typeof candidate.salary_min === 'number' || typeof candidate.salary_min === 'string' || candidate.salary_min === null ? candidate.salary_min : undefined,
+    salaryMin: typeof candidate.salaryMin === 'number' || typeof candidate.salaryMin === 'string' || candidate.salaryMin === null ? candidate.salaryMin : undefined,
+    salary_max: typeof candidate.salary_max === 'number' || typeof candidate.salary_max === 'string' || candidate.salary_max === null ? candidate.salary_max : undefined,
+    salaryMax: typeof candidate.salaryMax === 'number' || typeof candidate.salaryMax === 'string' || candidate.salaryMax === null ? candidate.salaryMax : undefined,
+    salary_range: toNullableString(candidate.salary_range),
+    salaryRange: toNullableString(candidate.salaryRange),
+    requirements,
+    posted_at: toNullableString(candidate.posted_at),
+    postedAt: toNullableString(candidate.postedAt),
+    status: toNullableString(candidate.status),
+    companies,
+  };
+};
 
 export interface ApplicationDraftRecord {
   jobId: string;
@@ -13,68 +146,81 @@ export interface ApplicationDraftRecord {
   updatedAt: string;
 }
 
-const mapApplicationResponse = (application: Record<string, any>): JobApplication => {
-  const job = application.jobs || application.job;
+const mapApplicationResponse = (application: ApplicationResponse): JobApplication => {
+  const job = toJobReference(application.jobs) || application.job || null;
   const company = Array.isArray(job?.companies) ? job.companies[0] : job?.companies;
 
-  return {
-    id: application.id,
+  const mapped: JobApplication = {
+    id: application.id || '',
     jobId: application.job_id || application.jobId || '',
     userId: application.user_id || application.userId || '',
-    status: application.status || 'PENDING',
+    status: normalizeApplicationStatus(application.status),
     appliedAt: application.applied_at || application.created_at || new Date().toISOString(),
-    resumeUrl: application.resume_url || application.resumeUrl,
-    coverLetter: application.cover_letter || application.coverLetter,
-    job: job
-      ? {
-          id: job.id,
-          title: job.title,
-          description: job.description || '',
-          companyId: job.company_id || job.companyId || '',
-          companyName: company?.name || job.companyName,
-          companyLogoUrl: company?.logo_url || job.companyLogoUrl,
-          location: job.location || '',
-          jobType: job.job_type || job.jobType || '',
-          salaryMin: job.salary_min || job.salaryMin,
-          salaryMax: job.salary_max || job.salaryMax,
-          salaryRange: job.salary_range || job.salaryRange,
-          requirements: job.requirements || [],
-          postedAt: job.posted_at || job.postedAt || '',
-          status: job.status || '',
-        }
-      : undefined,
   };
+
+  const resumeUrl = application.resume_url || application.resumeUrl;
+  if (resumeUrl) mapped.resumeUrl = resumeUrl;
+
+  const coverLetter = application.cover_letter || application.coverLetter;
+  if (coverLetter) mapped.coverLetter = coverLetter;
+
+  if (job) {
+    const mappedJob: Job = {
+      id: job.id || '',
+      title: job.title || '',
+      description: job.description || '',
+      companyId: job.company_id || job.companyId || '',
+      location: job.location || '',
+      jobType: job.job_type || job.jobType || '',
+      requirements: normalizeRequirements(job.requirements),
+      postedAt: job.posted_at || job.postedAt || '',
+      status: job.status || '',
+    };
+    const companyName = company?.name || job.companyName;
+    if (companyName) mappedJob.companyName = companyName;
+    const companyLogoUrl = company?.logo_url || job.companyLogoUrl;
+    if (companyLogoUrl) mappedJob.companyLogoUrl = companyLogoUrl;
+    const salaryMin = normalizeOptionalNumber(job.salary_min || job.salaryMin);
+    if (salaryMin !== undefined) mappedJob.salaryMin = salaryMin;
+    const salaryMax = normalizeOptionalNumber(job.salary_max || job.salaryMax);
+    if (salaryMax !== undefined) mappedJob.salaryMax = salaryMax;
+    const salaryRange = job.salary_range || job.salaryRange;
+    if (salaryRange) mappedJob.salaryRange = salaryRange;
+    mapped.job = mappedJob;
+  }
+
+  return mapped;
 };
 
-const mapStatusEventResponse = (event: Record<string, any>): ApplicationStatusEvent => ({
+const mapStatusEventResponse = (event: ApplicationStatusEventRow): ApplicationStatusEvent => ({
   id: event.id,
-  applicationId: event.application_id || event.applicationId || '',
-  previousStatus: event.previous_status ?? event.previousStatus ?? null,
+  applicationId: event.application_id || '',
+  previousStatus: event.previous_status ?? null,
   status: event.status,
-  changedBy: event.changed_by ?? event.changedBy ?? null,
+  changedBy: event.changed_by ?? null,
   reason: event.reason ?? null,
-  createdAt: event.created_at || event.createdAt || new Date().toISOString(),
+  createdAt: event.created_at || new Date().toISOString(),
 });
 
-const mapApplicationDraftResponse = (draft: Record<string, any>): ApplicationDraftRecord => ({
-  jobId: draft.job_id || draft.jobId || '',
-  userId: draft.user_id || draft.userId || '',
-  resumeUrl: draft.resume_url || draft.resumeUrl || '',
-  coverLetter: draft.cover_letter || draft.coverLetter || '',
-  source: draft.source === 'profile' || draft.source === 'ai' ? draft.source : 'manual',
-  updatedAt: draft.updated_at || draft.updatedAt || new Date().toISOString(),
+const mapApplicationDraftResponse = (draft: ApplicationDraftRow): ApplicationDraftRecord => ({
+  jobId: draft.job_id || '',
+  userId: draft.user_id || '',
+  resumeUrl: draft.resume_url || '',
+  coverLetter: draft.cover_letter || '',
+  source: normalizeDraftSource(draft.source),
+  updatedAt: draft.updated_at || new Date().toISOString(),
 });
 
-const mapApplicationDraftHistoryResponse = (draft: Record<string, any>): ApplicationDraftHistoryEntry => ({
+const mapApplicationDraftHistoryResponse = (draft: ApplicationDraftVersionRow): ApplicationDraftHistoryEntry => ({
   id: draft.id,
-  jobId: draft.job_id || draft.jobId || '',
-  userId: draft.user_id || draft.userId || '',
-  resumeUrl: draft.resume_url || draft.resumeUrl || '',
-  coverLetter: draft.cover_letter || draft.coverLetter || '',
-  source: draft.source === 'profile' || draft.source === 'ai' ? draft.source : 'manual',
-  reason: (draft.reason || draft.reasonCode || 'autosave') as ApplicationDraftHistoryReason,
-  createdAt: draft.created_at || draft.createdAt || new Date().toISOString(),
-  updatedAt: draft.updated_at || draft.updatedAt || draft.created_at || draft.createdAt || new Date().toISOString(),
+  jobId: draft.job_id || '',
+  userId: draft.user_id || '',
+  resumeUrl: draft.resume_url || '',
+  coverLetter: draft.cover_letter || '',
+  source: normalizeDraftSource(draft.source),
+  reason: (draft.reason || 'autosave') as ApplicationDraftHistoryReason,
+  createdAt: draft.created_at || new Date().toISOString(),
+  updatedAt: draft.updated_at || draft.created_at || new Date().toISOString(),
 });
 
 const recordApplicationStatusEvent = async (event: {
@@ -85,15 +231,17 @@ const recordApplicationStatusEvent = async (event: {
   reason?: string;
 }) => {
   try {
+    const payload: ApplicationStatusEventInsert = {
+      application_id: event.applicationId,
+      previous_status: event.previousStatus ? toApplicationStatus(event.previousStatus) : null,
+      status: toApplicationStatus(event.status),
+      changed_by: event.changedBy || null,
+      reason: event.reason,
+    };
+
     const { error } = await supabase
       .from('application_status_events')
-      .insert({
-        application_id: event.applicationId,
-        previous_status: event.previousStatus || null,
-        status: event.status,
-        changed_by: event.changedBy || null,
-        reason: event.reason,
-      });
+      .insert(payload);
 
     if (error) throw error;
   } catch (error) {
@@ -104,15 +252,17 @@ const recordApplicationStatusEvent = async (event: {
 export const applicationService = {
   submitApplication: async (request: CreateApplicationRequest & { userId: string }): Promise<JobApplication> => {
     try {
+      const payload: JobApplicationInsert = {
+        user_id: request.userId,
+        job_id: request.jobId,
+        resume_url: request.resumeUrl,
+        cover_letter: request.coverLetter,
+        status: 'PENDING',
+      };
+
       const { data, error } = await supabase
         .from('job_applications')
-        .insert({
-          user_id: request.userId,
-          job_id: request.jobId,
-          resume_url: request.resumeUrl,
-          cover_letter: request.coverLetter,
-          status: 'PENDING'
-        })
+        .insert(payload)
         .select()
         .single();
 
@@ -157,7 +307,7 @@ export const applicationService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map(mapApplicationResponse);
+      return ((data || []) as unknown as ApplicationResponse[]).map(mapApplicationResponse);
     } catch (err) {
       console.warn('[Applications] getUserApplications failed; applications were not loaded.', err);
       throw new Error('Applications could not be loaded. Please try again.');
@@ -205,15 +355,17 @@ export const applicationService = {
       source: ApplicationDraftSource;
     }
   ): Promise<ApplicationDraftRecord> => {
+    const payload: ApplicationDraftInsert = {
+      user_id: userId,
+      job_id: jobId,
+      resume_url: draft.resumeUrl,
+      cover_letter: draft.coverLetter,
+      source: draft.source,
+    };
+
     const { data, error } = await supabase
       .from('application_drafts')
-      .upsert({
-        user_id: userId,
-        job_id: jobId,
-        resume_url: draft.resumeUrl,
-        cover_letter: draft.coverLetter,
-        source: draft.source,
-      }, {
+      .upsert(payload, {
         onConflict: 'user_id,job_id'
       })
       .select()
@@ -264,19 +416,21 @@ export const applicationService = {
   saveApplicationDraftHistoryEntry: async (
     entry: ApplicationDraftHistoryEntry
   ): Promise<ApplicationDraftHistoryEntry> => {
+    const payload: ApplicationDraftVersionInsert = {
+      id: entry.id,
+      user_id: entry.userId,
+      job_id: entry.jobId,
+      resume_url: entry.resumeUrl,
+      cover_letter: entry.coverLetter,
+      source: entry.source,
+      reason: entry.reason,
+      created_at: entry.createdAt,
+      updated_at: entry.updatedAt,
+    };
+
     const { data, error } = await supabase
       .from('application_draft_versions')
-      .upsert({
-        id: entry.id,
-        user_id: entry.userId,
-        job_id: entry.jobId,
-        resume_url: entry.resumeUrl,
-        cover_letter: entry.coverLetter,
-        source: entry.source,
-        reason: entry.reason,
-        created_at: entry.createdAt,
-        updated_at: entry.updatedAt,
-      }, {
+      .upsert(payload, {
         onConflict: 'id',
       })
       .select()
@@ -296,9 +450,14 @@ export const applicationService = {
     options?: { changedBy?: string; previousStatus?: string; reason?: string }
   ): Promise<JobApplication> => {
     try {
+      const payload: JobApplicationUpdate = {
+        status: toApplicationStatus(status),
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('job_applications')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq('id', applicationId)
         .select()
         .single();

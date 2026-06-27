@@ -1,5 +1,7 @@
 # TalentSphere System Architecture
 
+> Documentation status: Historical/stale generated reference. Use `../../../PLAN.md` and `../ARCHITECTURE_STATUS_INDEX.md` for current architecture status.
+
 ## Overview
 
 This documents the complete TalentSphere microservices architecture.

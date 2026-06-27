@@ -29,19 +29,24 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         }
         List<String> authHeaders = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
         String authHeader = (authHeaders != null && !authHeaders.isEmpty()) ? authHeaders.get(0) : null;
-        
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
           authHeader = authHeader.substring(7);
         }
         try {
           jwtUtils.validateToken(authHeader);
           JWTClaimsSet claims = jwtUtils.getClaims(authHeader);
-          
+
           if (claims != null) {
+              String authenticatedUserId = jwtUtils.getAuthenticatedUserId(claims);
+              if (authenticatedUserId == null) {
+                  throw new RuntimeException("Missing authenticated user id");
+              }
+
               ServerHttpRequest request = exchange.getRequest()
                   .mutate()
-                  .header("X-User-Id", claims.getSubject())
-                  .header("X-User-Role", claims.getStringClaim("role") != null ? claims.getStringClaim("role") : "USER")
+                  .header("X-User-Id", authenticatedUserId)
+                  .header("X-User-Role", jwtUtils.getPrimaryRole(claims))
                   .build();
               exchange = exchange.mutate().request(request).build();
           }

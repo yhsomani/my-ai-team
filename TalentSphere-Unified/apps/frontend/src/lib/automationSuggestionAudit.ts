@@ -1,4 +1,7 @@
-import { supabase } from './supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from './supabaseClient';
+
+type AutomationSuggestionAuditRow = Database['public']['Tables']['automation_suggestion_audit_events']['Row'];
+type AutomationSuggestionAuditInsert = Database['public']['Tables']['automation_suggestion_audit_events']['Insert'];
 
 export type AutomationSuggestionAuditEventType =
   | 'created'
@@ -51,9 +54,9 @@ const createAuditEventId = () => {
   return `automation-audit-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
-const safeMetadata = (metadata?: Record<string, unknown>): Record<string, unknown> => (
+const safeMetadata = (metadata?: unknown): Record<string, unknown> => (
   metadata && typeof metadata === 'object' && !Array.isArray(metadata)
-    ? metadata
+    ? metadata as Record<string, unknown>
     : {}
 );
 
@@ -133,26 +136,26 @@ export const buildAutomationSuggestionAuditEvent = ({
 
 const mapAuditResponse = (
   fallback: AutomationSuggestionAuditEventRecord,
-  data?: Record<string, any> | null
+  data?: AutomationSuggestionAuditRow | null
 ): AutomationSuggestionAuditEventRecord => {
   if (!data) return fallback;
 
   return {
     id: data.id || fallback.id,
-    userId: data.user_id || data.userId || fallback.userId,
-    suggestionId: data.suggestion_id || data.suggestionId || fallback.suggestionId,
-    eventType: isAuditEventType(data.event_type || data.eventType)
-      ? (data.event_type || data.eventType)
+    userId: data.user_id || fallback.userId,
+    suggestionId: data.suggestion_id || fallback.suggestionId,
+    eventType: isAuditEventType(data.event_type)
+      ? data.event_type
       : fallback.eventType,
-    previousReviewStatus: isReviewStatus(data.previous_review_status || data.previousReviewStatus)
-      ? (data.previous_review_status || data.previousReviewStatus)
+    previousReviewStatus: isReviewStatus(data.previous_review_status)
+      ? data.previous_review_status
       : fallback.previousReviewStatus,
-    nextReviewStatus: isReviewStatus(data.next_review_status || data.nextReviewStatus)
-      ? (data.next_review_status || data.nextReviewStatus)
+    nextReviewStatus: isReviewStatus(data.next_review_status)
+      ? data.next_review_status
       : fallback.nextReviewStatus,
     source: data.source || fallback.source,
     metadata: safeMetadata(data.metadata),
-    occurredAt: data.occurred_at || data.occurredAt || fallback.occurredAt,
+    occurredAt: data.occurred_at || fallback.occurredAt,
   };
 };
 
@@ -160,20 +163,30 @@ export const automationSuggestionAudit = {
   recordEvent: async (input: AutomationSuggestionAuditEventInput): Promise<AutomationSuggestionAuditResult> => {
     const event = buildAutomationSuggestionAuditEvent(input);
 
+    if (!event.userId) {
+      writeLocalAuditEvent(event);
+      return {
+        event,
+        persistedTo: 'local',
+      };
+    }
+
     try {
+      const payload: AutomationSuggestionAuditInsert = {
+        id: event.id,
+        user_id: event.userId,
+        suggestion_id: event.suggestionId,
+        event_type: event.eventType,
+        previous_review_status: event.previousReviewStatus || null,
+        next_review_status: event.nextReviewStatus || null,
+        source: event.source,
+        metadata: event.metadata as Json,
+        occurred_at: event.occurredAt,
+      };
+
       const { data, error } = await supabase
         .from('automation_suggestion_audit_events')
-        .insert({
-          id: event.id,
-          user_id: event.userId || null,
-          suggestion_id: event.suggestionId,
-          event_type: event.eventType,
-          previous_review_status: event.previousReviewStatus || null,
-          next_review_status: event.nextReviewStatus || null,
-          source: event.source,
-          metadata: event.metadata,
-          occurred_at: event.occurredAt,
-        })
+        .insert(payload)
         .select()
         .single();
 

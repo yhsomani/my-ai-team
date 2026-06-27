@@ -1,5 +1,7 @@
 # TalentSphere Alignment & Decoupling Implementation Plan
 
+> Documentation status: Historical working note. Not current completion evidence; validate all dependency claims from source and `../../../../PLAN.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Synchronize documentation with actual implementation, resolve class duplication in shared libraries, and decouple the microservices build system for independent deployments.

@@ -1,15 +1,20 @@
 import { apiClient } from '../api/axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
 
-export type NotificationType =
-  | 'JOB_APPLICATION'
-  | 'JOB_ALERT'
-  | 'MESSAGE'
-  | 'CONNECTION'
-  | 'COURSE_UPDATE'
-  | 'CHALLENGE'
-  | 'ACHIEVEMENT'
-  | 'SYSTEM';
+export type NotificationType = Database['public']['Enums']['notification_type'];
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
+type NotificationInsert = Database['public']['Tables']['notifications']['Insert'];
+type NotificationUpdate = Database['public']['Tables']['notifications']['Update'];
+type NotificationResponse = Omit<Partial<NotificationRow>, 'type' | 'metadata'> & {
+  type?: string | null;
+  body?: string | null;
+  userId?: string;
+  isRead?: boolean;
+  read?: boolean;
+  actionUrl?: string | null;
+  metadata?: unknown;
+  createdAt?: string;
+};
 
 export interface NotificationRecord {
   id: string;
@@ -51,6 +56,16 @@ export const NOTIFICATIONS_CHANGED_EVENT = 'talentsphere.notifications.changed';
 export type NotificationScheduleState = 'unscheduled' | 'scheduled' | 'due';
 
 const localNotificationPrefix = 'talentsphere.notifications';
+const NOTIFICATION_TYPES: NotificationType[] = [
+  'JOB_APPLICATION',
+  'JOB_ALERT',
+  'MESSAGE',
+  'CONNECTION',
+  'COURSE_UPDATE',
+  'CHALLENGE',
+  'ACHIEVEMENT',
+  'SYSTEM',
+];
 
 const getLocalNotificationKey = (userId: string) => `${localNotificationPrefix}.${userId}`;
 
@@ -73,6 +88,14 @@ const normalizeMetadata = (value: unknown): Record<string, unknown> | undefined 
   value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : undefined
+);
+
+const toNotificationType = (type: string | null | undefined): NotificationType => (
+  NOTIFICATION_TYPES.includes(type as NotificationType) ? type as NotificationType : 'SYSTEM'
+);
+
+const toNotificationMetadata = (metadata: Record<string, unknown> | undefined): Json | null => (
+  metadata ? metadata as Json : null
 );
 
 export const getNotificationReminderDueAt = (notification: NotificationRecord): Date | null => {
@@ -102,13 +125,13 @@ export const isNotificationUrgentUnread = (
   now = new Date()
 ) => !notification.isRead && getNotificationScheduleState(notification, now) !== 'scheduled';
 
-const mapNotificationResponse = (data: Record<string, any>): NotificationRecord => {
+const mapNotificationResponse = (data: NotificationResponse): NotificationRecord => {
   const message = data.message || data.body || '';
 
   return {
-    id: data.id,
+    id: data.id || '',
     userId: data.user_id || data.userId || '',
-    type: (data.type || 'SYSTEM') as NotificationType,
+    type: toNotificationType(data.type),
     title: data.title || message || 'Notification',
     message,
     isRead: Boolean(data.is_read ?? data.isRead ?? data.read),
@@ -367,7 +390,7 @@ export const notificationService = {
           : typeof response.data?.totalElements === 'number'
             ? response.data.totalElements
             : null;
-        const mappedNotifications = rawNotifications.map(mapNotificationResponse);
+        const mappedNotifications = (rawNotifications as NotificationResponse[]).map(mapNotificationResponse);
         const paged = decodedCursor
           ? paginateNotifications(mappedNotifications, { limit, offset, cursor: decodedCursor })
           : null;
@@ -430,14 +453,14 @@ export const notificationService = {
 
       if (existingError) throw existingError;
 
-      const payload = {
+      const payload: NotificationInsert = {
         user_id: userId,
         type: 'JOB_ALERT',
         title: fallbackNotification.title,
         message: fallbackNotification.message,
         is_read: false,
         action_url: fallbackNotification.actionUrl,
-        metadata: fallbackNotification.metadata,
+        metadata: toNotificationMetadata(fallbackNotification.metadata),
       };
 
       const result = existing?.id
@@ -484,14 +507,14 @@ export const notificationService = {
 
       if (existingError) throw existingError;
 
-      const payload = {
+      const payload: NotificationInsert = {
         user_id: userId,
         type: 'CONNECTION',
         title: fallbackNotification.title,
         message: fallbackNotification.message,
         is_read: false,
         action_url: fallbackNotification.actionUrl,
-        metadata: fallbackNotification.metadata,
+        metadata: toNotificationMetadata(fallbackNotification.metadata),
       };
 
       const result = existing?.id
@@ -551,9 +574,11 @@ export const notificationService = {
       if (existingError) throw existingError;
       if (!existing?.id) return;
 
+      const payload: NotificationUpdate = { is_read: true };
+
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update(payload)
         .eq('user_id', userId)
         .eq('id', existing.id);
 
@@ -577,9 +602,11 @@ export const notificationService = {
 
     if (!isUuid(notificationId)) return;
 
+    const payload: NotificationUpdate = { is_read: true };
+
     const { error } = await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update(payload)
       .eq('user_id', userId)
       .eq('id', notificationId);
 
@@ -597,9 +624,11 @@ export const notificationService = {
       emitNotificationChange(userId);
     }
 
+    const payload: NotificationUpdate = { is_read: true };
+
     const { error } = await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update(payload)
       .eq('user_id', userId)
       .eq('is_read', false);
 

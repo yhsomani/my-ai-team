@@ -1,0 +1,832 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-27",
+  "description": "Source ownership manifest for the TalentSphere-Unified repository. Paths are relative to this directory unless they begin with ../.",
+  "applications": [
+    {
+      "id": "frontend",
+      "kind": "react-vite-web",
+      "status": "active",
+      "path": "apps/frontend",
+      "packageName": "talentsphere-web",
+      "workspacePackage": true,
+      "required": true,
+      "validation": ["npm run lint", "npm run test:unit", "npm run build"]
+    },
+    {
+      "id": "chrome-extension",
+      "kind": "manifest-v3-extension",
+      "status": "active",
+      "path": "chrome-extension-project",
+      "packageName": "talentsphere-companion",
+      "workspacePackage": false,
+      "required": true,
+      "validation": [
+        "cd chrome-extension-project && npm run test:messaging",
+        "cd chrome-extension-project && npm run test:portal-fixtures",
+        "cd chrome-extension-project && npm run test:storage-migrations",
+        "cd chrome-extension-project && npm run test:contract",
+        "cd chrome-extension-project && npm run test:runtime-smoke",
+        "cd chrome-extension-project && npm run build"
+      ]
+    }
+  ],
+  "backend": {
+    "reactorPom": "pom.xml",
+    "mavenReactorModules": [
+      "services/service-parent",
+      "services/bom",
+      "services/shared",
+      "services/shared-security",
+      "services/shared-messaging",
+      "services/shared-resilience",
+      "services/contracts",
+      "services/schemas",
+      "services/auth-service",
+      "services/user-service",
+      "services/profile-service",
+      "services/job-service",
+      "services/application-service",
+      "services/company-service",
+      "services/notification-service",
+      "services/search-service",
+      "services/gamification-service",
+      "services/challenge-service",
+      "services/lms-service",
+      "services/video-service",
+      "services/file-service",
+      "services/messaging-service",
+      "services/networking-service",
+      "services/payment-service",
+      "services/ai-service",
+      "services/api-gateway"
+    ],
+    "orphanedMavenModules": [
+      {
+        "id": "chat-service",
+        "path": "services/chat-service",
+        "reason": "ADR-004 accepts one messaging domain boundary. The service has a pom.xml and source tree, but the root Maven reactor does not include services/chat-service, and Gateway/deployment references remain intentionally removed.",
+        "requiredResolution": "Retire services/chat-service or merge useful realtime adapter code into messaging-service after migration validation; do not add it to the reactor without a superseding ADR-004 decision."
+      }
+    ]
+  },
+  "infrastructure": [
+    {
+      "id": "root-ci",
+      "kind": "github-actions",
+      "status": "active",
+      "path": "../.github/workflows/talentsphere-ci.yml",
+      "required": true
+    },
+    {
+      "id": "root-compose",
+      "kind": "docker-compose",
+      "status": "partial",
+      "path": "docker-compose.yml",
+      "required": true,
+      "note": "Module references and frontend workspace bind mounts are validated by npm run validate:infrastructure-manifest; Docker runtime remains unverified."
+    },
+    {
+      "id": "infra-compose",
+      "kind": "docker-compose",
+      "status": "partial",
+      "path": "infra/docker/docker-compose.yml",
+      "required": true,
+      "note": "Missing analytics-service and email-service references were removed; module references are validated by npm run validate:infrastructure-manifest; Docker runtime remains unverified."
+    },
+    {
+      "id": "dockerfiles",
+      "kind": "container-build",
+      "status": "active",
+      "path": "docker",
+      "required": true
+    },
+    {
+      "id": "kubernetes",
+      "kind": "kustomize",
+      "status": "partial",
+      "path": "infra/k8s",
+      "required": true,
+      "note": "Base service resources and API Gateway lb:// targets are validated against active deployable modules by npm run validate:infrastructure-manifest; cluster runtime remains unverified."
+    },
+    {
+      "id": "schema-authority-workspace",
+      "kind": "schema-governance",
+      "status": "current",
+      "path": "infra/db/README.md",
+      "required": true,
+      "note": "Current schema authority workspace marker and limitations for migration-first Supabase/Postgres rebuild work."
+    },
+    {
+      "id": "schema-initial-baseline-migration",
+      "kind": "schema-migration",
+      "status": "source-validated",
+      "path": "infra/db/migrations/0001_initial_baseline.sql",
+      "required": true,
+      "note": "Initial migration baseline copied from supabase-schema.sql and validated by npm run validate:schema-migrations until the baseline is decomposed into smaller ordered migrations."
+    },
+    {
+      "id": "legacy-schema-disposition",
+      "kind": "schema-governance",
+      "status": "source-validated",
+      "path": "infra/db/legacy-schema-disposition.json",
+      "required": true,
+      "note": "Source-validated disposition matrix for 10 legacy-master-only tables and 15 duplicate reviewed SQL-source tables."
+    },
+    {
+      "id": "observability-config",
+      "kind": "logging",
+      "status": "partial",
+      "path": "infra/fluentd",
+      "required": true
+    },
+    {
+      "id": "observability-critical-alerts",
+      "kind": "alert-catalog",
+      "status": "source-validated",
+      "path": "infra/observability/alerts/critical-alerts.json",
+      "required": true,
+      "note": "Source-level critical alert catalog validated by npm run validate:observability-contract; deployed Alertmanager routing remains unverified."
+    },
+    {
+      "id": "observability-critical-dashboard",
+      "kind": "dashboard-catalog",
+      "status": "source-validated",
+      "path": "infra/observability/dashboards/critical-flows-dashboard.json",
+      "required": true,
+      "note": "Source-level critical dashboard catalog validated by npm run validate:observability-contract; deployed dashboard provisioning remains unverified."
+    },
+    {
+      "id": "security-templates",
+      "kind": "security-template",
+      "status": "partial",
+      "path": "infra/security",
+      "required": true
+    }
+  ],
+  "tooling": [
+    {
+      "id": "api-contract-report",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/generate-api-contract-report.mjs",
+      "required": true
+    },
+    {
+      "id": "api-openapi-contract-generation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/generate-openapi-contract.mjs",
+      "required": true
+    },
+    {
+      "id": "api-openapi-contract-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-openapi-contract.mjs",
+      "required": true
+    },
+    {
+      "id": "infrastructure-manifest-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-infrastructure-manifest.mjs",
+      "required": true
+    },
+    {
+      "id": "data-ownership-manifest",
+      "kind": "source-manifest",
+      "status": "active",
+      "path": "data-ownership-manifest.json",
+      "required": true
+    },
+    {
+      "id": "data-ownership-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-data-ownership.mjs",
+      "required": true
+    },
+    {
+      "id": "schema-authority-adr-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-schema-authority-adr.mjs",
+      "required": true
+    },
+    {
+      "id": "schema-db-type-generation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/generate-db-types.mjs",
+      "required": true
+    },
+    {
+      "id": "schema-migration-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-schema-migrations.mjs",
+      "required": true
+    },
+    {
+      "id": "legacy-schema-disposition-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-legacy-schema-disposition.mjs",
+      "required": true
+    },
+    {
+      "id": "messaging-boundary-adr-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-messaging-boundary-adr.mjs",
+      "required": true
+    },
+    {
+      "id": "payment-mode-adr-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-payment-mode-adr.mjs",
+      "required": true
+    },
+    {
+      "id": "runbook-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-runbooks.mjs",
+      "required": true
+    },
+    {
+      "id": "observability-contract-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-observability-contract.mjs",
+      "required": true
+    },
+    {
+      "id": "backend-topology-adr-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-backend-topology-adr.mjs",
+      "required": true
+    },
+    {
+      "id": "auth-contract-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-auth-contract.mjs",
+      "required": true
+    },
+    {
+      "id": "security-contract-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-security-contract.mjs",
+      "required": true
+    },
+    {
+      "id": "scheduler-audit-helper",
+      "kind": "node-helper",
+      "status": "active",
+      "path": "scripts/scheduler-audit.mjs",
+      "required": true
+    },
+    {
+      "id": "scheduler-audit-test",
+      "kind": "node-test",
+      "status": "active",
+      "path": "scripts/scheduler-audit.test.mjs",
+      "required": true
+    },
+    {
+      "id": "saved-search-digest-discovery",
+      "kind": "node-scheduler",
+      "status": "active",
+      "path": "scripts/discover-saved-search-digests.mjs",
+      "required": true
+    },
+    {
+      "id": "notification-digest-delivery",
+      "kind": "node-scheduler",
+      "status": "active",
+      "path": "scripts/run-notification-digests.mjs",
+      "required": true
+    },
+    {
+      "id": "networking-reminder-delivery",
+      "kind": "node-scheduler",
+      "status": "active",
+      "path": "scripts/run-networking-reminders.mjs",
+      "required": true
+    }
+  ],
+  "legacySources": [
+    {
+      "id": "apps-backend-stub",
+      "kind": "spring-boot-stub",
+      "status": "legacy-stub",
+      "path": "apps/backend",
+      "required": true,
+      "note": "Modular-monolith shell exists, but root docs say the single backend rebuild is not implemented."
+    },
+    {
+      "id": "root-vite-shell",
+      "kind": "legacy-frontend-shell",
+      "status": "legacy",
+      "path": "index.html",
+      "required": true,
+      "note": "Root Vite shell duplicates the active apps/frontend app and remains a cleanup item."
+    },
+    {
+      "id": "root-vite-config",
+      "kind": "legacy-frontend-config",
+      "status": "legacy",
+      "path": "vite.config.ts",
+      "required": true,
+      "note": "Root Vite config duplicates the active apps/frontend Vite config."
+    }
+  ],
+  "documentation": [
+    {
+      "id": "readme",
+      "kind": "onboarding",
+      "status": "current",
+      "path": "README.md",
+      "required": true,
+      "note": "Repository onboarding entry. Current architecture precedence is delegated to docs/ARCHITECTURE_STATUS_INDEX.md and PLAN.md."
+    },
+    {
+      "id": "seed-data-guide",
+      "kind": "seed-data-guide",
+      "status": "current",
+      "path": "SEED_DATA_GUIDE.md",
+      "required": true,
+      "note": "Guide for seed-data.sql. Validate coverage claims against seed-data.sql and current schema before production use."
+    },
+    {
+      "id": "agent-ownership-map",
+      "kind": "historical-agent-context",
+      "status": "historical-stale",
+      "path": "AGENT_OWNERSHIP.md",
+      "required": true,
+      "note": "Historical multi-agent ownership map with stale service/module references."
+    },
+    {
+      "id": "claude-agent-context",
+      "kind": "historical-agent-context",
+      "status": "historical-stale",
+      "path": "CLAUDE.md",
+      "required": true,
+      "note": "Historical agent context with stale environment and Maven-wrapper assumptions."
+    },
+    {
+      "id": "gemini-agent-context",
+      "kind": "historical-agent-context",
+      "status": "historical-stale",
+      "path": "GEMINI.md",
+      "required": true,
+      "note": "Historical assistant context with stale stack and architecture assumptions."
+    },
+    {
+      "id": "issues-tracker",
+      "kind": "historical-issue-tracker",
+      "status": "historical-stale",
+      "path": "ISSUES.md",
+      "required": true,
+      "note": "Historical issue tracker with stale fixed/completion claims; use PLAN.md for current work tracking."
+    },
+    {
+      "id": "historical-ssot",
+      "kind": "historical-reference",
+      "status": "historical-stale",
+      "path": "SSOT.md",
+      "required": true,
+      "note": "Historical consolidated reference with stale completion claims; not current architecture authority."
+    },
+    {
+      "id": "architecture-status-index",
+      "kind": "current-index",
+      "status": "current",
+      "path": "docs/ARCHITECTURE_STATUS_INDEX.md",
+      "required": true,
+      "note": "Current repository architecture status and documentation precedence index."
+    },
+    {
+      "id": "comprehensive-product-ux-technical-analysis",
+      "kind": "current-audit",
+      "status": "current",
+      "path": "docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md",
+      "required": true,
+      "note": "Current product, UX, workflow, automation, and technical audit/backlog."
+    },
+    {
+      "id": "features-and-dashboards",
+      "kind": "current-feature-inventory",
+      "status": "current",
+      "path": "docs/FEATURES_AND_DASHBOARDS.md",
+      "required": true,
+      "note": "Current detailed feature, route, workflow, role, and UI reference."
+    },
+    {
+      "id": "api-contract-report",
+      "kind": "generated-report",
+      "status": "generated-current",
+      "path": "docs/API_CONTRACT_MISMATCH_REPORT.md",
+      "required": true,
+      "note": "Generated static contract report. Regenerate with npm run report:api-contracts."
+    },
+    {
+      "id": "product-ux-automation-audit",
+      "kind": "current-audit",
+      "status": "current",
+      "path": "docs/PRODUCT_UX_AUTOMATION_AUDIT.md",
+      "required": true,
+      "note": "Current running product/UX automation audit and implementation history."
+    },
+    {
+      "id": "module-manifest-doc",
+      "kind": "current-governance",
+      "status": "current",
+      "path": "docs/MODULE_MANIFEST.md",
+      "required": true,
+      "note": "Current documentation for module, artifact, infrastructure, and docs lifecycle manifest validation."
+    },
+    {
+      "id": "data-ownership-doc",
+      "kind": "current-governance",
+      "status": "current",
+      "path": "docs/DATA_OWNERSHIP.md",
+      "required": true,
+      "note": "Current table ownership, schema source, and frontend direct-access validation reference."
+    },
+    {
+      "id": "adr-001-primary-identity-provider",
+      "kind": "accepted-adr",
+      "status": "current",
+      "path": "docs/adr/ADR-001-primary-identity-provider.md",
+      "required": true,
+      "note": "Accepted primary identity-provider decision. Supabase Auth is the primary login/session authority; Gateway token-contract implementation remains pending."
+    },
+    {
+      "id": "adr-002-backend-topology",
+      "kind": "accepted-adr",
+      "status": "current",
+      "path": "docs/adr/ADR-002-backend-topology.md",
+      "required": true,
+      "note": "Accepted backend topology decision. Target rebuild is modular monolith first with extractable service boundaries while current services remain migration source evidence."
+    },
+    {
+      "id": "adr-003-schema-authority",
+      "kind": "accepted-adr",
+      "status": "current",
+      "path": "docs/adr/ADR-003-schema-authority.md",
+      "required": true,
+      "note": "Accepted schema authority decision. Target rebuild uses migration-first Supabase/Postgres authority with generated TypeScript types and backend validation."
+    },
+    {
+      "id": "adr-004-messaging-boundary",
+      "kind": "accepted-adr",
+      "status": "current",
+      "path": "docs/adr/ADR-004-messaging-boundary.md",
+      "required": true,
+      "note": "Accepted messaging boundary decision. Target rebuild uses one messaging domain boundary; chat-service remains orphaned until retired or merged as adapter code."
+    },
+    {
+      "id": "adr-005-payment-mode",
+      "kind": "accepted-adr",
+      "status": "current",
+      "path": "docs/adr/ADR-005-payment-mode.md",
+      "required": true,
+      "note": "Accepted payment mode decision. Current billing is explicit demo mode until provider-backed checkout and webhook-owned payment state are implemented and verified."
+    },
+    {
+      "id": "feature-flag-system",
+      "kind": "current-subsystem-reference",
+      "status": "current",
+      "path": "docs/FEATURE_FLAG_SYSTEM.md",
+      "required": true,
+      "note": "Feature flag subsystem reference; validate against services/shared Feature.java before implementation use."
+    },
+    {
+      "id": "architecture-audit",
+      "kind": "historical-risk-assessment",
+      "status": "historical",
+      "path": "docs/ARCHITECTURE_AUDIT.md",
+      "required": true,
+      "note": "Historical risk assessment; useful for coupling risks but not current-state authority."
+    },
+    {
+      "id": "service-migration",
+      "kind": "historical-migration-tracker",
+      "status": "historical",
+      "path": "docs/SERVICE_MIGRATION.md",
+      "required": true,
+      "note": "Historical migration tracker; current POM status must be verified from source."
+    },
+    {
+      "id": "architecture-migration",
+      "kind": "historical-progress-note",
+      "status": "historical-stale",
+      "path": "docs/ARCHITECTURE_MIGRATION.md",
+      "required": true,
+      "note": "Historical progress note with stale completion claims."
+    },
+    {
+      "id": "architecture-proposal",
+      "kind": "future-state-proposal",
+      "status": "proposal",
+      "path": "docs/ARCHITECTURE_PROPOSAL.md",
+      "required": true,
+      "note": "Future-state proposal, not current implementation evidence."
+    },
+    {
+      "id": "unified-rebuild-roadmap",
+      "kind": "historical-alternative-roadmap",
+      "status": "historical",
+      "path": "docs/unified-rebuild-roadmap.md",
+      "required": true,
+      "note": "Strategic alternative roadmap; single-backend target is not current repository state."
+    },
+    {
+      "id": "system-readme",
+      "kind": "historical-generated-reference",
+      "status": "historical-stale",
+      "path": "docs/system/README.md",
+      "required": true,
+      "note": "Historical generated/reference architecture doc with unverified complete-architecture claims."
+    },
+    {
+      "id": "frontend-readme",
+      "kind": "historical-generated-reference",
+      "status": "historical-stale",
+      "path": "docs/frontend/README.md",
+      "required": true,
+      "note": "Historical extracted frontend docs; use source and current feature inventory for current behavior."
+    },
+    {
+      "id": "backend-readme",
+      "kind": "historical-generated-reference",
+      "status": "historical-stale",
+      "path": "docs/backend/README.md",
+      "required": true,
+      "note": "Historical extracted backend docs; use controllers and generated API report for current route evidence."
+    },
+    {
+      "id": "database-sharding",
+      "kind": "future-state-proposal",
+      "status": "proposal-unverified",
+      "path": "docs/DATABASE_SHARDING.md",
+      "required": true,
+      "note": "Citus sharding proposal; production Citus deployment is not verified from the codebase."
+    },
+    {
+      "id": "operational-runbook",
+      "kind": "runbook-draft",
+      "status": "draft-unverified",
+      "path": "docs/OPERATIONAL_RUNBOOK.md",
+      "required": true,
+      "note": "Operational runbook draft; SLOs, backups, and cluster commands require environment verification before production use."
+    },
+    {
+      "id": "current-incident-runbooks",
+      "kind": "current-runbook",
+      "status": "current",
+      "path": "docs/runbooks/INCIDENT_RUNBOOKS.md",
+      "required": true,
+      "note": "Current source-backed incident runbook for API contracts, auth, secrets, file uploads, schedulers, extension regressions, data ownership, deployment reference drift, frontend validation, CI security scans, and admin operational dashboard degradation."
+    },
+    {
+      "id": "superpowers-service-parent-sync",
+      "kind": "dated-working-plan",
+      "status": "historical-working-note",
+      "path": "docs/superpowers/plans/2025-05-22-service-parent-sync.md",
+      "required": true,
+      "note": "Dated implementation plan note; not current completion evidence."
+    },
+    {
+      "id": "superpowers-alignment-decoupling",
+      "kind": "dated-working-plan",
+      "status": "historical-working-note",
+      "path": "docs/superpowers/plans/2026-04-13-alignment-and-decoupling.md",
+      "required": true,
+      "note": "Dated implementation plan note; not current completion evidence."
+    }
+  ],
+  "developmentArtifacts": [
+    {
+      "id": "root-controller-repair-script",
+      "kind": "local-repair-script",
+      "path": "../fix_controller.py",
+      "required": true,
+      "note": "Workspace-root helper script; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-test-repair-script",
+      "kind": "local-repair-script",
+      "path": "../fix_test.py",
+      "required": true,
+      "note": "Workspace-root helper script; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-spel-test-helper",
+      "kind": "local-test-helper",
+      "path": "../test_spel.py",
+      "required": true,
+      "note": "Workspace-root helper script; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-controller-update-script",
+      "kind": "local-repair-script",
+      "path": "../update_controller.py",
+      "required": true,
+      "note": "Workspace-root helper script; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-pom-patch",
+      "kind": "local-patch-fragment",
+      "path": "../pom_patch.xml",
+      "required": true,
+      "note": "Workspace-root repair fragment; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-pr-description-draft",
+      "kind": "local-review-note",
+      "path": "../pr_description.md",
+      "required": true,
+      "note": "Workspace-root review draft; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "root-opencode-config",
+      "kind": "local-agent-config",
+      "path": "../opencode.json",
+      "required": true,
+      "note": "Workspace-root local agent configuration; classified as dev-only and not production source."
+    },
+    {
+      "id": "root-task-todo",
+      "kind": "local-task-note",
+      "path": "../tasks/todo.md",
+      "required": true,
+      "note": "Workspace-root task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "notebooklm-cookies",
+      "kind": "local-credential-export",
+      "path": "../notebooklm_cookies.txt",
+      "required": true,
+      "note": "Sensitive local cookie export; ignored for future writes and should be purged after owner review."
+    },
+    {
+      "id": "patch-remaining-helper",
+      "kind": "local-repair-script",
+      "path": "patch_remaining.py",
+      "required": true,
+      "note": "Repository-local helper script; classified as dev-only and not production source."
+    },
+    {
+      "id": "clean-snapshot",
+      "kind": "generated-text-snapshot",
+      "path": "clean.txt",
+      "required": true,
+      "note": "UTF-16 repository snapshot; classified as dev-only/generated evidence."
+    },
+    {
+      "id": "pom-manifest-snapshot",
+      "kind": "generated-text-snapshot",
+      "path": "pom_manifest.txt",
+      "required": true,
+      "note": "UTF-16 Maven manifest snapshot; classified as dev-only/generated evidence."
+    },
+    {
+      "id": "pom-manifest-utf8-snapshot",
+      "kind": "generated-text-snapshot",
+      "path": "pom_manifest_utf8.txt",
+      "required": true,
+      "note": "Maven manifest snapshot; classified as dev-only/generated evidence."
+    },
+    {
+      "id": "duplication-report",
+      "kind": "generated-analysis-report",
+      "path": "DUPLICATION_REPORT.json",
+      "required": true,
+      "note": "Generated analysis report; classified as dev-only evidence unless regenerated by a documented command."
+    },
+    {
+      "id": "code-analyzer-report",
+      "kind": "generated-analysis-report",
+      "path": "docs/CODE_ANALYZER_REPORT.json",
+      "required": true,
+      "note": "Generated analysis report; classified as dev-only evidence unless regenerated by a documented command."
+    },
+    {
+      "id": "task-root-note",
+      "kind": "local-task-note",
+      "path": "task.md",
+      "required": true,
+      "note": "Local task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "task-todo-note",
+      "kind": "local-task-note",
+      "path": "tasks/todo.md",
+      "required": true,
+      "note": "Local task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "task-comprehensive-todo-note",
+      "kind": "local-task-note",
+      "path": "tasks/comprehensive_todo.md",
+      "required": true,
+      "note": "Local task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "task-lessons-note",
+      "kind": "local-task-note",
+      "path": "tasks/lessons.md",
+      "required": true,
+      "note": "Local task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "task-next-gen-phase-1-note",
+      "kind": "local-task-note",
+      "path": "tasks/next_gen_phase1.md",
+      "required": true,
+      "note": "Local task note; classified as dev-only and not product documentation."
+    },
+    {
+      "id": "agent-task-status-note",
+      "kind": "local-agent-task-note",
+      "path": "agent-tasks/TASK_STATUS.md",
+      "required": true,
+      "note": "Agent task status note; classified as dev-only and not product documentation."
+    }
+  ],
+  "generatedOrExternal": [
+    {
+      "id": "api-openapi-contract",
+      "kind": "generated-contract",
+      "path": "docs/API_OPENAPI_CONTRACT.json",
+      "required": true,
+      "note": "Generated source-derived OpenAPI 3.1 payload and route contract. Regenerate with npm run report:api-openapi and validate with npm run validate:api-openapi-contract."
+    },
+    {
+      "id": "schema-generated-db-types",
+      "kind": "generated-contract",
+      "path": "infra/db/generated/database.types.ts",
+      "required": true,
+      "note": "Generated source-derived Supabase/Postgres database types from infra/db/migrations/0001_initial_baseline.sql. Regenerate with npm run report:db-types and validate with npm run validate:schema-migrations."
+    },
+    {
+      "id": "root-node-modules",
+      "kind": "dependency-install",
+      "path": "node_modules",
+      "required": false
+    },
+    {
+      "id": "frontend-dist",
+      "kind": "build-output",
+      "path": "apps/frontend/dist",
+      "required": false
+    },
+    {
+      "id": "extension-dist",
+      "kind": "build-output",
+      "path": "chrome-extension-project/dist",
+      "required": false
+    },
+    {
+      "id": "extension-node-modules",
+      "kind": "dependency-install",
+      "path": "chrome-extension-project/node_modules",
+      "required": false
+    },
+    {
+      "id": "gemini-skills",
+      "kind": "agent-generated-or-vendored",
+      "path": ".gemini/skills",
+      "required": false
+    }
+  ],
+  "removedStalePaths": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "reason": "Nested workflow targeted a missing frontend directory."
+    },
+    {
+      "path": ".github/workflows/ci-cd.yml",
+      "reason": "Nested workflow expected ../mvnw and stale Docker paths."
+    },
+    {
+      "path": ".github/workflows/auth-service.yml",
+      "reason": "Nested workflow treated Java auth-service as a Node service."
+    },
+    {
+      "path": ".github/workflows/product-service.yml",
+      "reason": "Nested workflow targeted a missing services/product-service module."
+    },
+    {
+      "path": "../project_structure.txt",
+      "reason": "Stale UTF-16 Windows tree dump; removed in favor of module-manifest and source validators."
+    }
+  ]
+}

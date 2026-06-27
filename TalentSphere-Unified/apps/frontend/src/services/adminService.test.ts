@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import {
   adminService,
   buildScheduledAutomationStatus,
@@ -9,11 +9,16 @@ import {
   mergeScheduledAutomationProviderStatus
 } from './adminService';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('adminService', () => {
   let queryBuilder: any;
@@ -63,7 +68,7 @@ describe('adminService', () => {
       }),
     };
 
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
   });
 
   it('builds real health links for known backend services', () => {
@@ -98,7 +103,7 @@ describe('adminService', () => {
       offset: 5,
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('audit_log');
+    expect(typedSupabase.from).toHaveBeenCalledWith('audit_log');
     expect(queryBuilder.select).toHaveBeenCalledWith('*', { count: 'exact' });
     expect(queryBuilder.order).toHaveBeenCalledWith('created_at', { ascending: false });
     expect(queryBuilder.order).toHaveBeenCalledWith('id', { ascending: false });
@@ -205,7 +210,7 @@ describe('adminService', () => {
 
     const result = await adminService.getProductAnalyticsInsights(10);
 
-    expect(supabase.from).toHaveBeenCalledWith('product_analytics_events');
+    expect(typedSupabase.from).toHaveBeenCalledWith('product_analytics_events');
     expect(queryBuilder.select).toHaveBeenCalledWith('id,user_id,area,event_name,source,object_type,object_id,metadata,occurred_at');
     expect(queryBuilder.order).toHaveBeenCalledWith('occurred_at', { ascending: false });
     expect(queryBuilder.limit).toHaveBeenCalledWith(10);

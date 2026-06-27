@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase } from '../lib/supabaseClient';
 
 export interface DashboardStats {
   xp: number;
@@ -30,6 +30,16 @@ export interface DashboardData {
     issues: string[];
   };
 }
+
+type ProfileSignalRow = {
+  headline?: string | null;
+  current_role?: string | null;
+  summary?: string | null;
+  location?: string | null;
+  skills?: Array<{ name?: string | null }> | null;
+};
+
+type DashboardCountTable = 'saved_job_searches' | 'enrollments' | 'challenge_submissions';
 
 const getSettledIssue = (label: string, result: PromiseSettledResult<any>) => {
   if (result.status === 'rejected') {
@@ -79,13 +89,15 @@ const getProfileSignal = async (userId: string) => {
     return { hasProfileDetails: false, skillCount: 0 };
   }
 
+  const profile = data as unknown as ProfileSignalRow;
+
   return {
-    hasProfileDetails: Boolean(data.headline || data.current_role || data.summary || data.location),
-    skillCount: Array.isArray(data.skills) ? data.skills.length : 0
+    hasProfileDetails: Boolean(profile.headline || profile.current_role || profile.summary || profile.location),
+    skillCount: Array.isArray(profile.skills) ? profile.skills.length : 0
   };
 };
 
-const getSafeCount = async (table: string, column: string, value: string) => {
+const getSafeCount = async (table: DashboardCountTable, column: 'user_id', value: string) => {
   const { count, error } = await supabase
     .from(table)
     .select('id', { count: 'exact', head: true })

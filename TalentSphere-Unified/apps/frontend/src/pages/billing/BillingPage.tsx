@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
-import { Payment, PaymentPlan, paymentService } from '../../services/paymentService';
+import { billingMode, Payment, PaymentPlan, paymentService } from '../../services/paymentService';
 import { useAppSelector } from '../../store/hooks';
 import { Skeleton } from '../../components/shared/Skeleton';
 import { AuraModal } from '../../components/shared/AuraModal';
@@ -312,6 +312,22 @@ const BillingPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader title="Billing" description="Manage your subscription and billing details." />
 
+      {!billingMode.providerBacked && (
+        <Card className="p-4 border-warning/30 bg-warning-muted/10">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="warning">{billingMode.label}</Badge>
+                <span className="text-sm font-medium">Provider checkout is not live in this build</span>
+              </div>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {billingMode.limitation} Plan changes remain requests until webhook-owned provider state is implemented.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {billingLoadError && (
         <Card className="p-4 border-warning/30 bg-warning-muted/10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -391,7 +407,9 @@ const BillingPage: React.FC = () => {
           <div>
             <p className="text-sm font-medium">{paymentMethod || 'No payment method on file'}</p>
             <p className="text-xs text-[var(--text-muted)]">
-              {paymentMethod ? 'Managed through Stripe billing' : 'Add a payment method before activating a paid plan'}
+              {billingMode.providerBacked
+                ? paymentMethod ? 'Managed through Stripe billing' : 'Add a payment method before activating a paid plan'
+                : 'Demo mode: payment method changes are not provider-backed yet'}
             </p>
           </div>
         </div>
@@ -454,7 +472,9 @@ const BillingPage: React.FC = () => {
             <div className="rounded-lg border border-warning/20 bg-warning-muted/20 p-4 flex gap-3">
               <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-[var(--text-secondary)]">
-                You will be redirected to the secure billing provider when checkout is available. No plan change is applied until you confirm it there.
+                {billingMode.providerBacked
+                  ? 'You will be redirected to the secure billing provider when checkout is available. No plan change is applied until you confirm it there.'
+                  : 'Demo billing mode is active. This request does not finalize subscription state until provider webhooks are implemented.'}
               </p>
             </div>
 
@@ -477,7 +497,9 @@ const BillingPage: React.FC = () => {
       >
         <div className="space-y-5">
           <p className="text-sm text-[var(--text-secondary)]">
-            Payment method changes open in the secure billing provider. Your current card is not changed until you confirm the update there.
+            {billingMode.providerBacked
+              ? 'Payment method changes open in the secure billing provider. Your current card is not changed until you confirm the update there.'
+              : 'Payment method updates are disabled as a live provider action in demo billing mode.'}
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClosePaymentMethodReview} disabled={isProcessing}>Cancel</Button>

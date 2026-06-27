@@ -1,27 +1,95 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import { buildResumeArtifactRecord, type ResumeArtifactRecord } from '../lib/resumeArtifactLibrary';
 import type { ResumeExportMethod, ResumeExportRecord, ResumeExportStatus } from '../lib/resumeExportHistory';
 import type { UserProfile, Resume, WorkExperience, Education } from '../types/profile';
 
-const mapResumeExportRecordResponse = (record: Record<string, any>): ResumeExportRecord => ({
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update'];
+type SkillRow = Database['public']['Tables']['skills']['Row'];
+type SkillInsert = Database['public']['Tables']['skills']['Insert'];
+type SkillUpdate = Database['public']['Tables']['skills']['Update'];
+type ExperienceRow = Database['public']['Tables']['experiences']['Row'];
+type ExperienceInsert = Database['public']['Tables']['experiences']['Insert'];
+type ExperienceUpdate = Database['public']['Tables']['experiences']['Update'];
+type EducationRow = Database['public']['Tables']['educations']['Row'];
+type EducationInsert = Database['public']['Tables']['educations']['Insert'];
+type EducationUpdate = Database['public']['Tables']['educations']['Update'];
+type CertificationRow = Database['public']['Tables']['certifications']['Row'];
+type LanguageRow = Database['public']['Tables']['languages']['Row'];
+type ProjectRow = Database['public']['Tables']['projects']['Row'];
+type ResumeExportRow = Database['public']['Tables']['resume_export_events']['Row'];
+type ResumeExportInsert = Database['public']['Tables']['resume_export_events']['Insert'];
+type ResumeArtifactRow = Database['public']['Tables']['resume_artifacts']['Row'];
+type ResumeArtifactInsert = Database['public']['Tables']['resume_artifacts']['Insert'];
+type ResumeArtifactUpdate = Database['public']['Tables']['resume_artifacts']['Update'];
+type ProficiencyLevel = Database['public']['Enums']['proficiency_level'];
+type ProfileIdentityRow = Pick<ProfileRow, 'email' | 'first_name' | 'last_name' | 'full_name' | 'avatar_url'>;
+type ProfileQueryRow = UserProfileRow & {
+  profiles?: ProfileIdentityRow | null;
+  skills?: SkillRow[];
+  experiences?: ExperienceRow[];
+  educations?: EducationRow[];
+  certifications?: CertificationRow[];
+  languages?: LanguageRow[];
+  projects?: ProjectRow[];
+};
+type ProfileServiceProfile = ProfileQueryRow & {
+  fullName: string;
+  full_name: string | null;
+};
+
+const PROFICIENCY_LEVELS: readonly ProficiencyLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'];
+
+const normalizeProficiencyLevel = (value?: string): ProficiencyLevel => (
+  PROFICIENCY_LEVELS.includes(value as ProficiencyLevel) ? (value as ProficiencyLevel) : 'INTERMEDIATE'
+);
+
+const getUserProfileId = async (userId: string): Promise<UserProfileRow['id'] | null> => {
+  const { data: profileData } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  return profileData?.id ?? null;
+};
+
+const getProfileDisplayName = (profile?: ProfileIdentityRow | null) => (
+  profile?.full_name
+  || [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')
+);
+
+const mapProfileResponse = (record: ProfileQueryRow): ProfileServiceProfile => {
+  const fullName = getProfileDisplayName(record.profiles);
+
+  return {
+    ...record,
+    fullName,
+    full_name: (record.profiles?.full_name ?? fullName) || null,
+  };
+};
+
+const mapResumeExportRecordResponse = (record: ResumeExportRow): ResumeExportRecord => ({
   id: record.id,
-  userId: record.user_id || record.userId || '',
+  userId: record.user_id,
   status: (record.status || 'ready') as ResumeExportStatus,
   method: (record.method || 'browser-print') as ResumeExportMethod,
-  fileName: record.file_name || record.fileName || 'Resume export',
+  fileName: record.file_name || 'Resume export',
   detail: record.detail || '',
-  createdAt: record.created_at || record.createdAt || new Date().toISOString(),
+  createdAt: record.created_at || new Date().toISOString(),
   persistedTo: 'server',
 });
 
-const mapResumeArtifactRecordResponse = (record: Record<string, any>): ResumeArtifactRecord => {
+const mapResumeArtifactRecordResponse = (record: ResumeArtifactRow): ResumeArtifactRecord => {
   const artifact = buildResumeArtifactRecord({
     id: record.id,
-    user_id: record.user_id || record.userId,
-    file_name: record.file_name || record.fileName,
-    file_url: record.file_url || record.url,
-    uploaded_at: record.uploaded_at || record.uploadedAt,
-    deleted_at: record.deleted_at || record.deletedAt,
+    user_id: record.user_id,
+    file_name: record.file_name,
+    file_url: record.file_url,
+    uploaded_at: record.uploaded_at,
+    deleted_at: record.deleted_at,
     status: record.status,
     persisted_to: 'server',
   });
@@ -34,12 +102,12 @@ const mapResumeArtifactRecordResponse = (record: Record<string, any>): ResumeArt
 };
 
 export const profileService = {
-  getProfile: async (userId: string) => {
+  getProfile: async (userId: string): Promise<ProfileServiceProfile> => {
     const { data, error } = await supabase
       .from('user_profiles')
       .select(`
         *,
-        profiles (email, first_name, last_name, avatar_url),
+        profiles (email, first_name, last_name, full_name, avatar_url),
         skills (*),
         experiences (*),
         educations (*),
@@ -51,24 +119,26 @@ export const profileService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return mapProfileResponse(data as ProfileQueryRow);
   },
 
   updateProfile: async (userId: string, profile: Partial<UserProfile>) => {
+    const update: UserProfileUpdate = {
+      headline: profile.headline,
+      summary: profile.summary,
+      current_role: profile.currentRole,
+      bio: profile.bio,
+      location: profile.location,
+      phone: profile.phone,
+      website: profile.website,
+      linkedin_url: profile.linkedinUrl,
+      github_url: profile.githubUrl,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('user_profiles')
-      .update({
-        headline: profile.headline,
-        summary: profile.summary,
-        current_role: profile.currentRole,
-        bio: profile.bio,
-        location: profile.location,
-        phone: profile.phone,
-        website: profile.website,
-        linkedin_url: profile.linkedinUrl,
-        github_url: profile.githubUrl,
-        updated_at: new Date().toISOString()
-      })
+      .update(update)
       .eq('user_id', userId)
       .select()
       .single();
@@ -78,12 +148,14 @@ export const profileService = {
   },
 
   updateAvatar: async (userId: string, avatarUrl: string | null) => {
+    const update: ProfileUpdate = {
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString()
-      })
+      .update(update)
       .eq('id', userId)
       .select('id, avatar_url')
       .single();
@@ -96,42 +168,34 @@ export const profileService = {
   },
 
   getSkills: async (userId: string) => {
-    // First get the profile_id
-    const { data: profileData } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const profileId = await getUserProfileId(userId);
     
-    if (!profileData) return [];
+    if (!profileId) return [];
 
     const { data, error } = await supabase
       .from('skills')
       .select('*')
-      .eq('profile_id', profileData.id);
+      .eq('profile_id', profileId);
     
     if (error) throw error;
     return data;
   },
 
   addSkill: async (userId: string, skill: { name: string; proficiency?: string; years_of_experience?: number }) => {
-    // First get the profile_id
-    const { data: profileData } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const profileId = await getUserProfileId(userId);
     
-    if (!profileData) throw new Error('Profile not found');
+    if (!profileId) throw new Error('Profile not found');
+
+    const insert: SkillInsert = {
+      profile_id: profileId,
+      name: skill.name,
+      proficiency: normalizeProficiencyLevel(skill.proficiency),
+      years_of_experience: skill.years_of_experience
+    };
 
     const { data, error } = await supabase
       .from('skills')
-      .insert({
-        profile_id: profileData.id,
-        name: skill.name,
-        proficiency: skill.proficiency || 'INTERMEDIATE',
-        years_of_experience: skill.years_of_experience
-      })
+      .insert(insert)
       .select()
       .single();
     
@@ -140,13 +204,15 @@ export const profileService = {
   },
 
   updateSkill: async (skillId: string, skill: { name: string; proficiency?: string; years_of_experience?: number }) => {
+    const update: SkillUpdate = {
+      name: skill.name,
+      proficiency: normalizeProficiencyLevel(skill.proficiency),
+      years_of_experience: skill.years_of_experience
+    };
+
     const { data, error } = await supabase
       .from('skills')
-      .update({
-        name: skill.name,
-        proficiency: skill.proficiency || 'INTERMEDIATE',
-        years_of_experience: skill.years_of_experience
-      })
+      .update(update)
       .eq('id', skillId)
       .select()
       .single();
@@ -161,26 +227,24 @@ export const profileService = {
   },
 
   addExperience: async (userId: string, experience: Omit<WorkExperience, 'id'>) => {
-    const { data: profileData } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const profileId = await getUserProfileId(userId);
     
-    if (!profileData) throw new Error('Profile not found');
+    if (!profileId) throw new Error('Profile not found');
+
+    const insert: ExperienceInsert = {
+      profile_id: profileId,
+      company: experience.company,
+      title: experience.title,
+      location: experience.location,
+      start_date: experience.startDate,
+      end_date: experience.endDate || null,
+      current: experience.current,
+      description: experience.description
+    };
 
     const { data, error } = await supabase
       .from('experiences')
-      .insert({
-        profile_id: profileData.id,
-        company: experience.company,
-        title: experience.title,
-        location: experience.location,
-        start_date: experience.startDate,
-        end_date: experience.endDate || null,
-        current: experience.current,
-        description: experience.description
-      })
+      .insert(insert)
       .select()
       .single();
     
@@ -189,17 +253,19 @@ export const profileService = {
   },
 
   updateExperience: async (experienceId: string, experience: Omit<WorkExperience, 'id'>) => {
+    const update: ExperienceUpdate = {
+      company: experience.company,
+      title: experience.title,
+      location: experience.location,
+      start_date: experience.startDate,
+      end_date: experience.endDate || null,
+      current: experience.current,
+      description: experience.description
+    };
+
     const { data, error } = await supabase
       .from('experiences')
-      .update({
-        company: experience.company,
-        title: experience.title,
-        location: experience.location,
-        start_date: experience.startDate,
-        end_date: experience.endDate || null,
-        current: experience.current,
-        description: experience.description
-      })
+      .update(update)
       .eq('id', experienceId)
       .select()
       .single();
@@ -214,25 +280,23 @@ export const profileService = {
   },
 
   addEducation: async (userId: string, education: Omit<Education, 'id'>) => {
-    const { data: profileData } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const profileId = await getUserProfileId(userId);
     
-    if (!profileData) throw new Error('Profile not found');
+    if (!profileId) throw new Error('Profile not found');
+
+    const insert: EducationInsert = {
+      profile_id: profileId,
+      institution: education.institution,
+      degree: education.degree,
+      field_of_study: education.fieldOfStudy,
+      start_date: education.startDate,
+      end_date: education.endDate || null,
+      gpa: education.gpa
+    };
 
     const { data, error } = await supabase
       .from('educations')
-      .insert({
-        profile_id: profileData.id,
-        institution: education.institution,
-        degree: education.degree,
-        field_of_study: education.fieldOfStudy,
-        start_date: education.startDate,
-        end_date: education.endDate || null,
-        gpa: education.gpa
-      })
+      .insert(insert)
       .select()
       .single();
     
@@ -241,16 +305,18 @@ export const profileService = {
   },
 
   updateEducation: async (educationId: string, education: Omit<Education, 'id'>) => {
+    const update: EducationUpdate = {
+      institution: education.institution,
+      degree: education.degree,
+      field_of_study: education.fieldOfStudy,
+      start_date: education.startDate,
+      end_date: education.endDate || null,
+      gpa: education.gpa
+    };
+
     const { data, error } = await supabase
       .from('educations')
-      .update({
-        institution: education.institution,
-        degree: education.degree,
-        field_of_study: education.fieldOfStudy,
-        start_date: education.startDate,
-        end_date: education.endDate || null,
-        gpa: education.gpa
-      })
+      .update(update)
       .eq('id', educationId)
       .select()
       .single();
@@ -265,13 +331,14 @@ export const profileService = {
   },
 
   saveResume: async (userId: string, resume: Omit<Resume, 'id' | 'userId'>) => {
-    // This would typically store resume data in a resumés table or as JSONB
+    const update: UserProfileUpdate = {
+      summary: resume.summary,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('user_profiles')
-      .update({
-        summary: resume.summary,
-        updated_at: new Date().toISOString()
-      })
+      .update(update)
       .eq('user_id', userId)
       .select()
       .single();
@@ -315,17 +382,19 @@ export const profileService = {
   },
 
   saveResumeExportRecord: async (record: ResumeExportRecord): Promise<ResumeExportRecord> => {
+    const insert: ResumeExportInsert = {
+      id: record.id,
+      user_id: record.userId,
+      status: record.status,
+      method: record.method,
+      file_name: record.fileName,
+      detail: record.detail,
+      created_at: record.createdAt,
+    };
+
     const { data, error } = await supabase
       .from('resume_export_events')
-      .upsert({
-        id: record.id,
-        user_id: record.userId,
-        status: record.status,
-        method: record.method,
-        file_name: record.fileName,
-        detail: record.detail,
-        created_at: record.createdAt,
-      }, {
+      .upsert(insert, {
         onConflict: 'id',
       })
       .select()
@@ -356,19 +425,23 @@ export const profileService = {
     return (data || []).map(mapResumeArtifactRecordResponse);
   },
 
-  saveResumeArtifactRecord: async (record: ResumeArtifactRecord): Promise<ResumeArtifactRecord> => {
+  saveResumeArtifactRecord: async (
+    record: ResumeArtifactRecord & { userId: string }
+  ): Promise<ResumeArtifactRecord> => {
+    const insert: ResumeArtifactInsert = {
+      id: record.id,
+      user_id: record.userId,
+      file_name: record.fileName,
+      file_url: record.url,
+      status: record.status,
+      uploaded_at: record.uploadedAt,
+      deleted_at: record.deletedAt || null,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('resume_artifacts')
-      .upsert({
-        id: record.id,
-        user_id: record.userId,
-        file_name: record.fileName,
-        file_url: record.url,
-        status: record.status,
-        uploaded_at: record.uploadedAt,
-        deleted_at: record.deletedAt || null,
-        updated_at: new Date().toISOString(),
-      }, {
+      .upsert(insert, {
         onConflict: 'id',
       })
       .select()
@@ -383,15 +456,17 @@ export const profileService = {
   },
 
   markResumeArtifactDeleted: async (
-    record: Pick<ResumeArtifactRecord, 'id' | 'userId'> & { deletedAt: string }
+    record: { id: string; userId: string; deletedAt: string }
   ): Promise<ResumeArtifactRecord> => {
+    const update: ResumeArtifactUpdate = {
+      status: 'deleted',
+      deleted_at: record.deletedAt,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('resume_artifacts')
-      .update({
-        status: 'deleted',
-        deleted_at: record.deletedAt,
-        updated_at: new Date().toISOString(),
-      })
+      .update(update)
       .eq('id', record.id)
       .eq('user_id', record.userId)
       .select()

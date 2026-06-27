@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import {
   buildSavedSearchDigestDeliveryKey,
   buildSavedSearchDigestDeliverAfter,
@@ -7,11 +7,16 @@ import {
   notificationDigestService,
 } from './notificationDigestService';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('notificationDigestService', () => {
   let queryBuilder: any;
@@ -21,7 +26,7 @@ describe('notificationDigestService', () => {
     queryBuilder = {
       upsert: vi.fn().mockResolvedValue({ error: null }),
     };
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
   });
 
   it('builds stable delivery keys from user, saved search, digest, and match counts', () => {
@@ -96,7 +101,7 @@ describe('notificationDigestService', () => {
       queuedAt: '2026-06-26T10:00:00.000Z',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('notification_digest_items');
+    expect(typedSupabase.from).toHaveBeenCalledWith('notification_digest_items');
     expect(queryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
       user_id: 'user-1',
       source_type: 'saved_search',

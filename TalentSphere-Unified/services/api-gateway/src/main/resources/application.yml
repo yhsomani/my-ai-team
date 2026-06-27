@@ -20,13 +20,19 @@ spring:
               burstCapacity: 100
               requestedTokens: 1
       default-filters:
-        - RequestRateLimiter=redis-rate-limiter,replenishRate=100,burstCapacity=100
         - DedupeResponseHeader=Access-Control-Allow-Credentials,Access-Control-Allow-Origin
       routes:
         - id: auth-service
           uri: lb://auth-service
           predicates:
             - Path=/api/v1/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -75,6 +81,12 @@ spring:
             - Path=/api/v1/challenges/**
           filters:
             - AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userOrIpKeyResolver}"
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
+                redis-rate-limiter.requestedTokens: 1
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -105,6 +117,12 @@ spring:
             - Path=/api/v1/messages/**
           filters:
             - AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userOrIpKeyResolver}"
+                redis-rate-limiter.replenishRate: 60
+                redis-rate-limiter.burstCapacity: 120
+                redis-rate-limiter.requestedTokens: 1
         - id: networking-service
           uri: lb://networking-service
           predicates:
@@ -117,12 +135,12 @@ spring:
             - Path=/api/v1/ai/**
           filters:
             - AuthenticationFilter
-        - id: chat-service
-          uri: lb://chat-service
-          predicates:
-            - Path=/api/v1/chat/**
-          filters:
-            - AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userOrIpKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
         - id: payment-service
           uri: lb://payment-service
           predicates:
@@ -135,6 +153,12 @@ spring:
             - Path=/api/v1/files/**
           filters:
             - AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userOrIpKeyResolver}"
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
         - id: video-service
           uri: lb://video-service
           predicates:
@@ -152,7 +176,6 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
-  jwk-set-uri: https://hfeijxjwmegsrpvnfsce.supabase.co/auth/v1/.well-known/jwks.json
 
 management:
   tracing:

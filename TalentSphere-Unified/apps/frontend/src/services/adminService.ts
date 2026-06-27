@@ -1,5 +1,10 @@
-import { supabase } from '../lib/supabaseClient';
-import { productAnalytics, type ProductAnalyticsEventRecord } from '../lib/productAnalytics';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
+import {
+  productAnalytics,
+  type ProductAnalyticsArea,
+  type ProductAnalyticsEventName,
+  type ProductAnalyticsEventRecord
+} from '../lib/productAnalytics';
 import {
   summarizeProductAnalyticsEvents,
   type ProductAnalyticsInsightSummary
@@ -137,6 +142,13 @@ export interface PaginatedAuditLogsResult {
   hasNext: boolean;
   nextCursor: string | null;
 }
+
+type UserRole = Database['public']['Enums']['user_role'];
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+type SystemSettingsInsert = Database['public']['Tables']['system_settings']['Insert'];
+type AuditLogRow = Database['public']['Tables']['audit_log']['Row'];
+type ProductAnalyticsRow = Database['public']['Tables']['product_analytics_events']['Row'];
+type ProductAnalyticsQueryRow = Omit<ProductAnalyticsRow, 'created_at'> & { created_at?: string | null };
 
 const defaultAuditLogPageSize = 10;
 
@@ -686,31 +698,37 @@ const enrichServiceHealth = (service: Omit<ServiceHealth, 'serviceId' | 'logQuer
   };
 };
 
-const mapAuditLog = (row: Record<string, any>): AuditLogEntry => ({
+const toRecordOrNull = (value: Json | null): Record<string, any> | null => (
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, any>
+    : null
+);
+
+const mapAuditLog = (row: AuditLogRow): AuditLogEntry => ({
   id: row.id,
-  userId: row.user_id,
+  userId: row.user_id || undefined,
   action: row.action,
-  entityType: row.entity_type,
-  entityId: row.entity_id,
-  oldValue: row.old_value,
-  newValue: row.new_value,
-  ipAddress: row.ip_address,
-  userAgent: row.user_agent,
-  createdAt: row.created_at,
+  entityType: row.entity_type || undefined,
+  entityId: row.entity_id || undefined,
+  oldValue: toRecordOrNull(row.old_value),
+  newValue: toRecordOrNull(row.new_value),
+  ipAddress: row.ip_address || undefined,
+  userAgent: row.user_agent || undefined,
+  createdAt: row.created_at || new Date().toISOString(),
 });
 
-const mapProductAnalyticsEvent = (row: Record<string, any>): ProductAnalyticsEventRecord => ({
+const mapProductAnalyticsEvent = (row: ProductAnalyticsQueryRow): ProductAnalyticsEventRecord => ({
   id: String(row.id || ''),
-  userId: row.user_id || row.userId || undefined,
-  area: row.area || 'admin',
-  eventName: row.event_name || row.eventName || 'task_started',
+  userId: row.user_id || undefined,
+  area: (row.area || 'admin') as ProductAnalyticsArea,
+  eventName: (row.event_name || 'task_started') as ProductAnalyticsEventName,
   source: row.source || 'unknown',
-  objectType: row.object_type || row.objectType || undefined,
-  objectId: row.object_id || row.objectId || undefined,
+  objectType: row.object_type || undefined,
+  objectId: row.object_id || undefined,
   metadata: row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
-    ? row.metadata
+    ? row.metadata as Record<string, unknown>
     : {},
-  occurredAt: row.occurred_at || row.occurredAt || new Date().toISOString(),
+  occurredAt: row.occurred_at || new Date().toISOString(),
 });
 
 const encodeAuditLogCursor = (log: AuditLogEntry): string => {
@@ -844,9 +862,14 @@ export const adminService = {
   },
 
   updateUserRole: async (userId: string, role: string) => {
+    const payload: ProfileUpdate = {
+      role: role as UserRole,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('profiles')
-      .update({ role, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', userId)
       .select()
       .single();
@@ -866,9 +889,16 @@ export const adminService = {
   },
 
   updateSystemSetting: async (key: string, value: any, description?: string) => {
+    const payload: SystemSettingsInsert = {
+      key,
+      value: value as Json,
+      description,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('system_settings')
-      .upsert({ key, value, description, updated_at: new Date().toISOString() })
+      .upsert(payload)
       .select()
       .single();
     

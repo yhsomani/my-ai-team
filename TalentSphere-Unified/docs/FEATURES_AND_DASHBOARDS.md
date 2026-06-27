@@ -1,5 +1,7 @@
 # TalentSphere Feature And Dashboard Documentation
 
+> Documentation status: Current detailed feature, route, workflow, role, and UI reference. Keep synchronized with `../../PLAN.md`.
+
 Last reviewed from code: 2026-06-26
 
 This file is the single detailed reference for TalentSphere features, dashboards, user inputs, outputs, workflows, data sources, backend endpoints, role access, and visible UI contents.
@@ -23,7 +25,7 @@ The web app centers on talent users, recruiters, and admins:
 
 ## 2. Main Web App Map
 
-The frontend route map is defined in `apps/frontend/src/App.tsx`.
+The frontend route registry is defined in `apps/frontend/src/navigation/routeRegistry.ts`. `apps/frontend/src/App.tsx` maps those protected route definitions to lazy page components, and `Sidebar.tsx` plus `Header.tsx` consume the same registry for navigation, mobile priorities, search destinations, and role visibility.
 
 | Route | Page | Access | Main purpose |
 |---|---|---|---|
@@ -32,9 +34,9 @@ The frontend route map is defined in `apps/frontend/src/App.tsx`.
 | `/register` | `RegisterPage` | Public, redirects logged-in users | User registration |
 | `/dashboard` | `DashboardPage` | Authenticated | Main dashboard; switches between talent and recruiter view |
 | `/networking` | `NetworkingPage` | Authenticated | People suggestions, connection requests, reminders, and workflow analytics |
-| `/lms` | `LMSPage` | Authenticated | Course catalog, course progress, enrollment |
-| `/challenges` | `ChallengesPage` | Authenticated | Challenge listing, category filtering, workspace, reviewed starter-code reset, local sample checks, retry history, and workflow analytics |
-| `/jobs` | `JobsPage` | Authenticated | Job discovery, applications, recruiter posting workspace, recruiter full post-page handoff |
+| `/lms` | `LMSPage` | `ROLE_USER` | Course catalog, course progress, enrollment |
+| `/challenges` | `ChallengesPage` | `ROLE_USER` | Challenge listing, category filtering, workspace, reviewed starter-code reset, local sample checks, retry history, and workflow analytics |
+| `/jobs` | `JobsPage` | `ROLE_USER`, `ROLE_RECRUITER` | Job discovery, applications, recruiter posting workspace, recruiter full post-page handoff |
 | `/jobs/post` | `PostJobPage` | `ROLE_RECRUITER` | Full job posting form |
 | `/ai` | `AIAssistant` | Authenticated | Chat-style AI career assistant with recommendation review queue |
 | `/career-path` | `AICareerPath` | Authenticated | Generated career-path guidance with retryable unavailable state |
@@ -56,7 +58,7 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
 
 - Left sidebar on desktop.
 - Slide-over sidebar on mobile.
-- Bottom mobile navigation showing the first five allowed main nav items.
+- Bottom mobile navigation showing role-prioritized destinations from the shared route registry.
 - Top sticky header with:
   - Mobile menu toggle.
   - Platform search input with role-aware destination results and keyboard shortcut focus.
@@ -82,6 +84,8 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
 | Admin Console | `/admin` | `ROLE_ADMIN` |
 | Profile | `/profile` | Any authenticated user |
 | Settings | `/settings` | Any authenticated user |
+
+The route registry is covered by `apps/frontend/src/navigation/routeRegistry.test.ts`, which verifies role-gated route access, desktop nav visibility, mobile priority order, header search visibility, and unique route IDs.
 
 Shell workflows:
 
@@ -586,8 +590,8 @@ Backend support:
 
 | Endpoint | Input | Output |
 |---|---|---|
-| `POST /api/v1/auth/register` | `User` request body | Registered `User` wrapped in `ApiResponse` |
-| `POST /api/v1/auth/login` | `User` body with email/password | JWT token string wrapped in `ApiResponse` |
+| `POST /api/v1/auth/register` | `User` request body | `410 Gone` with `ApiResponse.success=false` by default; local credential registration requires explicit `AUTH_LOCAL_CREDENTIALS_ENABLED=true` compatibility mode |
+| `POST /api/v1/auth/login` | `User` body with email/password | `410 Gone` with `ApiResponse.success=false` by default; local credential login requires explicit `AUTH_LOCAL_CREDENTIALS_ENABLED=true` compatibility mode |
 | `GET /api/v1/auth/.well-known/jwks.json` | None | JWK set |
 | `GET /api/v1/auth/health` | None | `UP` |
 
@@ -596,6 +600,7 @@ Implementation note:
 - Registration uses the same `ROLE_RECRUITER` role expected by recruiter-only routes.
 - Registration role descriptions are UI guidance only; they do not change role mapping or grant extra permissions.
 - Registration role query preselection is only a default selection; the user can still change account type before submitting.
+- ADR-001 makes Supabase Auth the primary login/session authority; backend auth-service local credential endpoints are compatibility-only and disabled by default.
 
 ### 5.3 Profile
 
@@ -2725,8 +2730,12 @@ File upload guardrails:
 2. Files over 10 MB are rejected server-side.
 3. Upload folder names must be single safe path parts.
 4. Executable/script-like extensions such as `.exe`, `.js`, `.sh`, `.html`, `.jar`, and `.svg` are rejected before storage.
-5. Download folder and filename path parts are validated before resolving local storage.
-6. Virus scanning, provider-backed object storage hardening, retention policies, and CDN configuration remain production follow-ups.
+5. Declared content type must match an allowed file extension.
+6. File bytes are checked for expected signatures for PDF, PNG, JPEG, WebP, DOCX, and plain text before storage.
+7. Active HTML/script-like content is rejected even when uploaded as a text file.
+8. A malware scanner hook runs before storage; the default local scanner rejects the EICAR test signature.
+9. Download folder and filename path parts are validated before resolving local storage.
+10. Provider-backed object storage hardening, external antivirus scanning, retention policies, and CDN configuration remain production follow-ups.
 
 ### 5.19 Video Interviews
 
@@ -2975,7 +2984,7 @@ User-control rule:
 
 | Service | Responsibility | Key data/output |
 |---|---|---|
-| `auth-service` | Register, login, JWT/JWKS | User and token |
+| `auth-service` | Compatibility-only local credentials, JWT/JWKS support, health | Local credential register/login are disabled by default because Supabase Auth is primary |
 | `user-service` | User profile/admin stats | UserEntity, admin stats |
 | `profile-service` | Career profile, skills, experience, education | ProfileResponse, Skill, Experience, Education |
 | `job-service` | Jobs, recommendations, saved searches, hidden Explore preferences, job-post templates, and job-post draft history | Job, saved-search records, hidden Explore preference records, job-post template records, job-post draft version records |

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Menu, ArrowRight, Briefcase, UserRound, MessageSquare, GraduationCap, Trophy, Settings, ShieldCheck } from 'lucide-react';
+import { Search, Bell, Menu, ArrowRight } from 'lucide-react';
 import {
   getNotificationReminderDueAt,
   getNotificationScheduleState,
@@ -9,6 +9,7 @@ import {
   NOTIFICATIONS_CHANGED_EVENT,
 } from '../../services/notificationService';
 import type { NotificationRecord } from '../../services/notificationService';
+import { getSearchDestinations, USER_ROLES } from '../../navigation/routeRegistry';
 
 const notificationPageSize = 8;
 
@@ -21,10 +22,10 @@ interface HeaderProps {
   isActive?: (path: string) => boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  isSidebarOpen, 
-  setIsSidebarOpen, 
-  user 
+export const Header: React.FC<HeaderProps> = ({
+  isSidebarOpen,
+  setIsSidebarOpen,
+  user
 }) => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -41,24 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [notificationNow, setNotificationNow] = useState(() => new Date());
   const roles = user?.roles || [];
 
-  const searchDestinations = useMemo(() => {
-    const baseDestinations = [
-      { label: 'Jobs', description: 'Find roles, saved searches, and applications', path: '/jobs', icon: Briefcase, keywords: 'jobs roles applications search saved apply' },
-      { label: 'Profile', description: 'Update profile, skills, experience, and education', path: '/profile', icon: UserRound, keywords: 'profile skills experience education resume' },
-      { label: 'Messages', description: 'Open recruiter and network conversations', path: '/messaging', icon: MessageSquare, keywords: 'messages chat conversation recruiter network' },
-      { label: 'Network', description: 'Manage connections and requests', path: '/networking', icon: UserRound, keywords: 'network connections requests people' },
-      { label: 'AI Assistant', description: 'Draft career questions and review AI guidance', path: '/ai', icon: ShieldCheck, keywords: 'ai assistant career draft guidance' },
-      { label: 'Settings', description: 'Manage notifications, security, and billing snapshot', path: '/settings', icon: Settings, keywords: 'settings notifications security billing password' },
-      { label: 'Learning', description: 'Continue courses and lessons', path: '/lms', icon: GraduationCap, keywords: 'learning courses lms lessons progress', roles: ['ROLE_USER'] },
-      { label: 'Challenges', description: 'Solve coding challenges', path: '/challenges', icon: Trophy, keywords: 'challenges arena coding submissions', roles: ['ROLE_USER'] },
-      { label: 'Candidates', description: 'Review applicants and notes', path: '/candidates', icon: UserRound, keywords: 'candidates applicants notes review offer reject', roles: ['ROLE_RECRUITER'] },
-      { label: 'Admin Console', description: 'Inspect platform health and services', path: '/admin', icon: ShieldCheck, keywords: 'admin console health services telemetry', roles: ['ROLE_ADMIN'] },
-    ];
-
-    return baseDestinations.filter(destination => (
-      !destination.roles || roles.some((role: string) => destination.roles?.includes(role))
-    ));
-  }, [roles]);
+  const searchDestinations = useMemo(() => getSearchDestinations(roles), [roles]);
 
   const searchResults = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -79,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
         title: 'Review your application activity',
         description: 'Open Jobs to inspect submitted applications and saved searches.',
         path: '/jobs',
-        roles: ['ROLE_USER', 'ROLE_RECRUITER']
+        roles: [USER_ROLES.user, USER_ROLES.recruiter]
       },
       {
         title: 'Keep your profile current',
@@ -95,12 +79,12 @@ export const Header: React.FC<HeaderProps> = ({
         title: 'Review candidate notes',
         description: 'Inspect applicants, notes, and offer/reject actions.',
         path: '/candidates',
-        roles: ['ROLE_RECRUITER']
+        roles: [USER_ROLES.recruiter]
       }
     ];
 
     return items.filter(item => (
-      !item.roles || roles.some((role: string) => item.roles?.includes(role))
+      !item.roles || roles.some((role: string) => item.roles?.includes(role as typeof item.roles[number]))
     ));
   }, [roles]);
   const unreadAccountNotifications = accountNotifications.filter(notification => isNotificationUrgentUnread(notification, notificationNow));
@@ -267,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-30 h-14 border-b border-[var(--border-default)] bg-[var(--bg-primary)]/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
       {/* Left: Mobile menu toggle */}
       <div className="flex items-center gap-3">
-        <button 
+        <button
           onClick={() => setIsSidebarOpen?.(!isSidebarOpen)}
           className="lg:hidden p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
           aria-label="Toggle navigation menu"
@@ -280,7 +264,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex-1 max-w-md mx-4">
         <form className="relative" onSubmit={handleSearchSubmit}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-          <input 
+          <input
             ref={searchInputRef}
             type="text"
             placeholder="Search..."

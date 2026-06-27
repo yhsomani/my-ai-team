@@ -9,11 +9,14 @@ vi.mock('../api/axios', () => ({
   },
 }));
 
+const mockSupabaseClient = vi.hoisted(() => ({
+  from: vi.fn(),
+  rpc: vi.fn(),
+}));
+
 vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
-    from: vi.fn(),
-    rpc: vi.fn(),
-  },
+  supabase: mockSupabaseClient,
+  typedSupabase: mockSupabaseClient,
 }));
 
 describe('networkingService', () => {

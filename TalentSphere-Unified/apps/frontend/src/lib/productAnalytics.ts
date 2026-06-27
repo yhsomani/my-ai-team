@@ -1,4 +1,7 @@
-import { supabase } from './supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from './supabaseClient';
+
+type ProductAnalyticsRow = Database['public']['Tables']['product_analytics_events']['Row'];
+type ProductAnalyticsInsert = Database['public']['Tables']['product_analytics_events']['Insert'];
 
 export type ProductAnalyticsArea =
   | 'auth'
@@ -131,6 +134,33 @@ export const productAnalyticsEventTaxonomy: Record<ProductAnalyticsEventName, {
   },
 };
 
+const productAnalyticsAreas = new Set<ProductAnalyticsArea>([
+  'auth',
+  'dashboard',
+  'jobs',
+  'applications',
+  'candidates',
+  'profile',
+  'resume',
+  'lms',
+  'challenges',
+  'ai',
+  'networking',
+  'messaging',
+  'billing',
+  'settings',
+  'admin',
+  'extension',
+]);
+
+const isProductAnalyticsArea = (value: unknown): value is ProductAnalyticsArea => (
+  typeof value === 'string' && productAnalyticsAreas.has(value as ProductAnalyticsArea)
+);
+
+const isProductAnalyticsEventName = (value: unknown): value is ProductAnalyticsEventName => (
+  typeof value === 'string' && value in productAnalyticsEventTaxonomy
+);
+
 const localAnalyticsKey = 'talentsphere.productAnalytics.events';
 
 const compact = (value?: string | null) => (value || '').trim();
@@ -143,9 +173,9 @@ const createAnalyticsEventId = () => {
   return `analytics-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
-const safeMetadata = (metadata?: Record<string, unknown>): Record<string, unknown> => (
+const safeMetadata = (metadata?: unknown): Record<string, unknown> => (
   metadata && typeof metadata === 'object' && !Array.isArray(metadata)
-    ? metadata
+    ? metadata as Record<string, unknown>
     : {}
 );
 
@@ -209,20 +239,20 @@ export const buildProductAnalyticsEvent = ({
 
 const mapAnalyticsResponse = (
   fallback: ProductAnalyticsEventRecord,
-  data?: Record<string, any> | null
+  data?: ProductAnalyticsRow | null
 ): ProductAnalyticsEventRecord => {
   if (!data) return fallback;
 
   return {
     id: data.id || fallback.id,
-    userId: data.user_id || data.userId || fallback.userId,
-    area: data.area || fallback.area,
-    eventName: data.event_name || data.eventName || fallback.eventName,
+    userId: data.user_id || fallback.userId,
+    area: isProductAnalyticsArea(data.area) ? data.area : fallback.area,
+    eventName: isProductAnalyticsEventName(data.event_name) ? data.event_name : fallback.eventName,
     source: data.source || fallback.source,
-    objectType: data.object_type || data.objectType || fallback.objectType,
-    objectId: data.object_id || data.objectId || fallback.objectId,
+    objectType: data.object_type || fallback.objectType,
+    objectId: data.object_id || fallback.objectId,
     metadata: safeMetadata(data.metadata) || fallback.metadata,
-    occurredAt: data.occurred_at || data.occurredAt || fallback.occurredAt,
+    occurredAt: data.occurred_at || fallback.occurredAt,
   };
 };
 
@@ -231,19 +261,21 @@ export const productAnalytics = {
     const event = buildProductAnalyticsEvent(input);
 
     try {
+      const payload: ProductAnalyticsInsert = {
+        id: event.id,
+        user_id: event.userId || null,
+        area: event.area,
+        event_name: event.eventName,
+        source: event.source,
+        object_type: event.objectType || null,
+        object_id: event.objectId || null,
+        metadata: event.metadata as Json,
+        occurred_at: event.occurredAt,
+      };
+
       const { data, error } = await supabase
         .from('product_analytics_events')
-        .insert({
-          id: event.id,
-          user_id: event.userId || null,
-          area: event.area,
-          event_name: event.eventName,
-          source: event.source,
-          object_type: event.objectType || null,
-          object_id: event.objectId || null,
-          metadata: event.metadata,
-          occurred_at: event.occurredAt,
-        })
+        .insert(payload)
         .select()
         .single();
 

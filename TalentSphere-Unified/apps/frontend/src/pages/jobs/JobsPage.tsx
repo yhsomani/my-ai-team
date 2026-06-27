@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle, RefreshCw } from 'lucide-react';
 import { applicationService } from '../../services/applicationService';
 import type { ApplicationDraftRecord, ApplicationDraftSource } from '../../services/applicationService';
 import { getJobPublishPolicyErrorMessage, jobService, type SavedJobSearchRecord } from '../../services/jobService';
@@ -476,6 +476,7 @@ const JobsPage: React.FC = () => {
     const applicationDraftHistorySyncTimersRef = useRef<Record<string, number>>({});
     const applicationDraftSyncWarningRef = useRef(false);
     const [savedSearches, setSavedSearches] = useState<SavedJobSearch[]>([]);
+    const [savedSearchesLoadError, setSavedSearchesLoadError] = useState<string | null>(null);
     const [jobAlertsEnabled, setJobAlertsEnabled] = useState(true);
     const [jobAlertDigestFrequency, setJobAlertDigestFrequency] = useState<NotificationDigestFrequency>('immediate');
     const [isSaveSearchModalOpen, setIsSaveSearchModalOpen] = useState(false);
@@ -861,44 +862,52 @@ const JobsPage: React.FC = () => {
         }
     }, [addToast, savedSearchStorageKey]);
 
-    useEffect(() => {
+    const loadSavedSearches = useCallback(async (shouldUpdate: () => boolean = () => true) => {
         const localSearches = readLocalSavedSearches();
+        if (!shouldUpdate()) return;
+
         setSavedSearches(localSearches);
+        setSavedSearchesLoadError(null);
 
         if (!user?.id) return;
 
-        let isActive = true;
-        const loadServerSavedSearches = async () => {
-            try {
-                const serverSearches = await jobService.getSavedSearches(user.id);
-                if (!isActive) return;
+        try {
+            const serverSearches = await jobService.getSavedSearches(user.id);
+            if (!shouldUpdate()) return;
 
-                const mergedSearches = [
-                    ...serverSearches,
-                    ...localSearches.filter(localSearch => !hasMatchingSavedSearch(serverSearches, localSearch))
-                ].slice(0, 10);
+            const mergedSearches = [
+                ...serverSearches,
+                ...localSearches.filter(localSearch => !hasMatchingSavedSearch(serverSearches, localSearch))
+            ].slice(0, 10);
 
-                setSavedSearches(mergedSearches);
-                writeLocalSavedSearches(mergedSearches);
+            setSavedSearches(mergedSearches);
+            setSavedSearchesLoadError(null);
+            writeLocalSavedSearches(mergedSearches);
 
-                localSearches
-                    .filter(localSearch => !hasMatchingSavedSearch(serverSearches, localSearch))
-                    .forEach(localSearch => {
-                        jobService.saveSavedSearch(user.id, localSearch).catch(error => {
-                            console.warn('Unable to backfill local saved search to server:', error);
-                        });
+            localSearches
+                .filter(localSearch => !hasMatchingSavedSearch(serverSearches, localSearch))
+                .forEach(localSearch => {
+                    jobService.saveSavedSearch(user.id, localSearch).catch(error => {
+                        console.warn('Unable to backfill local saved search to server:', error);
                     });
-            } catch (error) {
-                console.warn('Using local saved job searches fallback:', error);
-            }
-        };
+                });
+        } catch (error) {
+            if (!shouldUpdate()) return;
 
-        loadServerSavedSearches();
+            console.warn('Using local saved job searches fallback:', error);
+            setSavedSearchesLoadError('Account saved searches could not be synced. Local saved searches are still available.');
+        }
+    }, [readLocalSavedSearches, user?.id, writeLocalSavedSearches]);
+
+    useEffect(() => {
+        let isActive = true;
+
+        void loadSavedSearches(() => isActive);
 
         return () => {
             isActive = false;
         };
-    }, [readLocalSavedSearches, user?.id, writeLocalSavedSearches]);
+    }, [loadSavedSearches]);
 
     const persistSavedSearches = useCallback((nextSearches: SavedJobSearch[]) => {
         const limitedSearches = nextSearches.slice(0, 10);

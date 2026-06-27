@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import { Message, Conversation } from '../types/messaging';
 
 export interface PaginatedMessagesResult {
@@ -22,20 +22,48 @@ export interface PaginatedConversationsResult {
 const defaultConversationPageSize = 20;
 const defaultMessagePageSize = 50;
 
-const mapMessageResponse = (msg: any): Message => ({
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type ConversationRow = Database['public']['Tables']['conversations']['Row'];
+type ConversationInsert = Database['public']['Tables']['conversations']['Insert'];
+type ConversationUpdate = Database['public']['Tables']['conversations']['Update'];
+type ConversationParticipantRow = Database['public']['Tables']['conversation_participants']['Row'];
+type ConversationParticipantInsert = Database['public']['Tables']['conversation_participants']['Insert'];
+type ConversationParticipantUpdate = Database['public']['Tables']['conversation_participants']['Update'];
+type MessageRow = Database['public']['Tables']['messages']['Row'];
+type MessageInsert = Database['public']['Tables']['messages']['Insert'];
+type MessageUpdate = Database['public']['Tables']['messages']['Update'];
+type MessageStatus = Database['public']['Enums']['message_status'];
+type ParticipantProfileRow = Pick<ProfileRow, 'id' | 'full_name' | 'first_name' | 'last_name' | 'email' | 'avatar_url'>;
+type SenderProfileRow = Pick<ProfileRow, 'id' | 'full_name' | 'avatar_url'>;
+type MessageQueryRow = MessageRow & {
+  profiles?: SenderProfileRow | null;
+};
+type ConversationMessagePreviewRow = Pick<MessageRow, 'id' | 'content' | 'sender_id' | 'created_at'>;
+type ConversationParticipantPreviewRow = Pick<ConversationParticipantRow, 'user_id' | 'last_read_at'>;
+type EmbeddedConversationRow = ConversationRow & {
+  conversation_participants?: ConversationParticipantPreviewRow[];
+  messages?: ConversationMessagePreviewRow[];
+};
+type ConversationParticipantQueryRow = Pick<ConversationParticipantRow, 'conversation_id'> & {
+  conversations?: EmbeddedConversationRow | EmbeddedConversationRow[] | null;
+};
+
+const normalizeMessageStatus = (status?: MessageStatus | null): Message['status'] => status || 'SENT';
+
+const mapMessageResponse = (msg: MessageQueryRow): Message => ({
   id: msg.id,
   conversationId: msg.conversation_id,
   senderId: msg.sender_id,
   content: msg.content,
   messageType: (msg.message_type as 'TEXT' | 'IMAGE' | 'FILE' | 'VIDEO') || 'TEXT',
   attachmentUrl: msg.attachment_url || undefined,
-  status: (msg.status as 'SENT' | 'DELIVERED' | 'READ') || 'SENT',
-  timestamp: msg.created_at || msg.createdAt || new Date(0).toISOString(),
+  status: normalizeMessageStatus(msg.status),
+  timestamp: msg.created_at || new Date(0).toISOString(),
   readAt: msg.read_at || undefined,
   sender: msg.profiles ? {
     id: msg.profiles.id,
-    fullName: msg.profiles.full_name,
-    avatarUrl: msg.profiles.avatar_url,
+    fullName: msg.profiles.full_name || 'Connection',
+    avatarUrl: msg.profiles.avatar_url || undefined,
     status: 'offline' as const
   } : undefined
 });
@@ -85,38 +113,42 @@ const decodeConversationCursor = (cursor?: string): { updatedAt: string; id: str
   throw new Error('Invalid conversation cursor');
 };
 
-const mapConversationResponse = (conv: any): Conversation => {
+const mapConversationResponse = (conv: EmbeddedConversationRow): Conversation => {
   const latestMessage = [...(conv.messages || [])]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
 
   return {
     id: conv.id,
-    isGroup: conv.is_group,
-    createdAt: conv.created_at,
-    updatedAt: conv.updated_at,
-    participants: (conv.conversation_participants || []).map((p: any) => p.user_id),
+    isGroup: conv.is_group || false,
+    createdAt: conv.created_at || undefined,
+    updatedAt: conv.updated_at || undefined,
+    participants: (conv.conversation_participants || []).map(p => p.user_id),
     lastMessage: latestMessage ? {
       id: latestMessage.id,
       content: latestMessage.content,
       senderId: latestMessage.sender_id,
-      timestamp: latestMessage.created_at,
+      timestamp: latestMessage.created_at || new Date(0).toISOString(),
       status: 'SENT'
     } : undefined
   };
 };
 
-const getEmbeddedConversation = (row: any) => (
+const getEmbeddedConversation = (row: ConversationParticipantQueryRow) => (
   Array.isArray(row?.conversations) ? row.conversations[0] : row?.conversations
 );
 
-const getDisplayNameFromProfile = (profile: Record<string, any>) => {
+const isEmbeddedConversationRow = (
+  value: EmbeddedConversationRow | null | undefined
+): value is EmbeddedConversationRow => Boolean(value);
+
+const getDisplayNameFromProfile = (profile: ParticipantProfileRow) => {
   const name = profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
   return name || profile.email || 'Connection';
 };
 
 const getParticipantProfilesById = async (
   participantIds: string[]
-): Promise<Map<string, Record<string, any>>> => {
+): Promise<Map<string, ParticipantProfileRow>> => {
   const uniqueParticipantIds = Array.from(new Set(participantIds)).filter(Boolean);
   if (uniqueParticipantIds.length === 0) {
     return new Map();
@@ -133,8 +165,8 @@ const getParticipantProfilesById = async (
   }
 
   return new Map((data || [])
-    .filter((profile: Record<string, any>) => typeof profile.id === 'string')
-    .map((profile: Record<string, any>) => [profile.id, profile]));
+    .filter(profile => typeof profile.id === 'string')
+    .map(profile => [profile.id, profile]));
 };
 
 const enrichConversationsWithParticipants = async (
@@ -202,8 +234,7 @@ const getUnreadCountsByConversation = async (
   }
 
   const counts = new Map<string, number>();
-  (data || []).forEach((message: Record<string, any>) => {
-    if (typeof message.conversation_id !== 'string') return;
+  (data || []).forEach(message => {
     counts.set(message.conversation_id, (counts.get(message.conversation_id) || 0) + 1);
   });
 
@@ -225,6 +256,7 @@ export const messagingService = {
           id,
           name,
           is_group,
+          created_by,
           created_at,
           updated_at,
           conversation_participants (
@@ -268,11 +300,11 @@ export const messagingService = {
     
     if (error) throw error;
 
-    const rawRows = data || [];
+    const rawRows = (data || []) as unknown as ConversationParticipantQueryRow[];
     const visibleRows = decodedCursor ? rawRows.slice(0, limit) : rawRows;
     const conversations = visibleRows
       .map(getEmbeddedConversation)
-      .filter(Boolean)
+      .filter(isEmbeddedConversationRow)
       .map(mapConversationResponse);
     const unreadCounts = await getUnreadCountsByConversation(
       conversations.map(conversation => conversation.id),
@@ -351,7 +383,7 @@ export const messagingService = {
     
     if (error) throw error;
 
-    const rawRows = data || [];
+    const rawRows = (data || []) as unknown as MessageQueryRow[];
     const visibleRows = decodedCursor ? rawRows.slice(0, limit) : rawRows;
     const messages = visibleRows
       .map(mapMessageResponse)
@@ -384,16 +416,26 @@ export const messagingService = {
   },
 
   sendMessage: async (message: Partial<Message>): Promise<Message> => {
+    const conversationId = message.conversationId;
+    const senderId = message.senderId;
+    const content = message.content;
+
+    if (!conversationId || !senderId || !content) {
+      throw new Error('Message requires conversation, sender, and content before send.');
+    }
+
+    const insert: MessageInsert = {
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content,
+      message_type: message.messageType || 'TEXT',
+      attachment_url: message.attachmentUrl || null,
+      status: 'SENT'
+    };
+
     const { data, error } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: message.conversationId,
-        sender_id: message.senderId,
-        content: message.content,
-        message_type: message.messageType || 'TEXT',
-        attachment_url: message.attachmentUrl || null,
-        status: 'SENT'
-      })
+      .insert(insert)
       .select(`
         *,
         profiles:sender_id (id, full_name, avatar_url)
@@ -403,21 +445,27 @@ export const messagingService = {
     if (error) throw error;
     
     // Update conversation updated_at
+    const conversationUpdate: ConversationUpdate = {
+      updated_at: new Date().toISOString()
+    };
+
     await supabase
       .from('conversations')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', message.conversationId);
+      .update(conversationUpdate)
+      .eq('id', conversationId);
     
-    return mapMessageResponse(data);
+    return mapMessageResponse(data as MessageQueryRow);
   },
 
   markMessageAsRead: async (messageId: string): Promise<void> => {
+    const update: MessageUpdate = {
+      read_at: new Date().toISOString(),
+      status: 'READ'
+    };
+
     const { error } = await supabase
       .from('messages')
-      .update({ 
-        read_at: new Date().toISOString(),
-        status: 'READ'
-      })
+      .update(update)
       .eq('id', messageId);
     
     if (error) throw error;
@@ -428,21 +476,27 @@ export const messagingService = {
     userId: string
   ): Promise<{ readAt: string }> => {
     const readAt = new Date().toISOString();
+    const messageUpdate: MessageUpdate = {
+      read_at: readAt,
+      status: 'READ'
+    };
+
     const { error } = await supabase
       .from('messages')
-      .update({
-        read_at: readAt,
-        status: 'READ'
-      })
+      .update(messageUpdate)
       .eq('conversation_id', conversationId)
       .neq('sender_id', userId)
       .is('read_at', null);
 
     if (error) throw error;
 
+    const participantUpdate: ConversationParticipantUpdate = {
+      last_read_at: readAt
+    };
+
     const { error: participantError } = await supabase
       .from('conversation_participants')
-      .update({ last_read_at: readAt })
+      .update(participantUpdate)
       .eq('conversation_id', conversationId)
       .eq('user_id', userId);
 
@@ -453,20 +507,22 @@ export const messagingService = {
     return { readAt };
   },
 
-  createConversation: async (participantIds: string[], createdBy: string, isGroup: boolean = false): Promise<any> => {
+  createConversation: async (participantIds: string[], createdBy: string, isGroup: boolean = false): Promise<ConversationRow> => {
+    const insert: ConversationInsert = {
+      is_group: isGroup,
+      created_by: createdBy
+    };
+
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
-      .insert({
-        is_group: isGroup,
-        created_by: createdBy
-      })
+      .insert(insert)
       .select()
       .single();
     
     if (convError) throw convError;
     
     // Add participants
-    const participants = participantIds.map(id => ({
+    const participants: ConversationParticipantInsert[] = participantIds.map(id => ({
       conversation_id: conversation.id,
       user_id: id
     }));

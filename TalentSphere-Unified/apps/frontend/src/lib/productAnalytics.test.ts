@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from './supabaseClient';
+import { typedSupabase } from './supabaseClient';
 import {
   buildProductAnalyticsEvent,
   productAnalytics,
@@ -8,6 +8,9 @@ import {
 
 vi.mock('./supabaseClient', () => ({
   supabase: {
+    from: vi.fn(),
+  },
+  typedSupabase: {
     from: vi.fn(),
   },
 }));
@@ -48,7 +51,7 @@ describe('productAnalytics', () => {
       }),
     };
 
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
   });
 
   it('defines the expected automation and workflow event taxonomy', () => {
@@ -97,7 +100,7 @@ describe('productAnalytics', () => {
       occurredAt: '2026-06-01T10:00:00.000Z',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('product_analytics_events');
+    expect(typedSupabase.from).toHaveBeenCalledWith('product_analytics_events');
     expect(queryBuilder.insert).toHaveBeenCalledWith(expect.objectContaining({
       user_id: 'user-1',
       area: 'ai',

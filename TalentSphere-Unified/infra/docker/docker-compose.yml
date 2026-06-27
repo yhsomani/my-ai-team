@@ -148,20 +148,6 @@ services:
     depends_on:
       - ts-elasticsearch
 
-  analytics-service:
-    build:
-      context: ../../
-      dockerfile: infra/docker/Dockerfile.backend
-      args:
-        MODULE: services/analytics-service
-    container_name: analytics-service
-    ports:
-      - "8089:8089"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db.rgmcjqhvsguzkzopxuax.supabase.co:5432/postgres?sslmode=require
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD:-talentsphere}
-
   gamification-service:
     build:
       context: ../../
@@ -232,20 +218,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD:-talentsphere}
 
-  email-service:
-    build:
-      context: ../../
-      dockerfile: infra/docker/Dockerfile.backend
-      args:
-        MODULE: services/email-service
-    container_name: email-service
-    ports:
-      - "8095:8095"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db.rgmcjqhvsguzkzopxuax.supabase.co:5432/postgres?sslmode=require
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${SUPABASE_DB_PASSWORD:-talentsphere}
-
   messaging-service:
     build:
       context: ../../
@@ -308,13 +280,11 @@ services:
       - company-service
       - notification-service
       - search-service
-      - analytics-service
       - gamification-service
       - challenge-service
       - lms-service
       - video-service
       - file-service
-      - email-service
       - messaging-service
       - networking-service
       - payment-service

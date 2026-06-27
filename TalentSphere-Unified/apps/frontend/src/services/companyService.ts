@@ -1,4 +1,8 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
+
+type CompanyRow = Database['public']['Tables']['companies']['Row'];
+type CompanyInsert = Database['public']['Tables']['companies']['Insert'];
+type CompanyUpdate = Database['public']['Tables']['companies']['Update'];
 
 export interface Company {
   id: string;
@@ -15,19 +19,19 @@ export interface Company {
   createdAt?: string;
 }
 
-const mapCompanyData = (data: any): Company => ({
+const mapCompanyData = (data: CompanyRow): Company => ({
   id: data.id,
   name: data.name,
-  description: data.description,
-  website: data.website,
-  location: data.location,
-  logoUrl: data.logo_url,
-  industry: data.industry,
-  employeeCount: data.employee_count,
-  ownerUserId: data.owner_user_id,
-  verified: data.verified,
-  verifiedAt: data.verified_at,
-  createdAt: data.created_at
+  description: data.description || undefined,
+  website: data.website || undefined,
+  location: data.location || undefined,
+  logoUrl: data.logo_url || undefined,
+  industry: data.industry || undefined,
+  employeeCount: data.employee_count || 0,
+  ownerUserId: data.owner_user_id || undefined,
+  verified: Boolean(data.verified),
+  verifiedAt: data.verified_at || undefined,
+  createdAt: data.created_at || undefined
 });
 
 export const companyService = {
@@ -67,19 +71,26 @@ export const companyService = {
   },
 
   registerCompany: async (company: Partial<Company>): Promise<Company> => {
+    const name = company.name?.trim();
+    if (!name) {
+      throw new Error('Company name is required.');
+    }
+
+    const payload: CompanyInsert = {
+      name,
+      description: company.description,
+      website: company.website,
+      location: company.location,
+      logo_url: company.logoUrl,
+      industry: company.industry,
+      employee_count: company.employeeCount,
+      owner_user_id: company.ownerUserId,
+      verified: false
+    };
+
     const { data, error } = await supabase
       .from('companies')
-      .insert({
-        name: company.name,
-        description: company.description,
-        website: company.website,
-        location: company.location,
-        logo_url: company.logoUrl,
-        industry: company.industry,
-        employee_count: company.employeeCount,
-        owner_user_id: company.ownerUserId,
-        verified: false
-      })
+      .insert(payload)
       .select()
       .single();
     
@@ -89,8 +100,8 @@ export const companyService = {
   },
 
   updateCompany: async (id: string, company: Partial<Company>): Promise<Company> => {
-    const updateData: any = {};
-    if (company.name) updateData.name = company.name;
+    const updateData: CompanyUpdate = {};
+    if (company.name) updateData.name = company.name.trim();
     if (company.description !== undefined) updateData.description = company.description;
     if (company.website !== undefined) updateData.website = company.website;
     if (company.location !== undefined) updateData.location = company.location;
@@ -112,13 +123,15 @@ export const companyService = {
   },
 
   verifyCompany: async (id: string): Promise<Company> => {
+    const payload: CompanyUpdate = {
+      verified: true,
+      verified_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('companies')
-      .update({ 
-        verified: true, 
-        verified_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();

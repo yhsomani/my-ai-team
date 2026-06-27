@@ -507,20 +507,20 @@ ON CONFLICT (user_id) DO UPDATE SET total_xp = EXCLUDED.total_xp, rank = EXCLUDE
 
 -- Plans
 INSERT INTO subscription_plans (name, price, currency, interval, features, is_active) VALUES
-  ('Free', 0, 'USD', 'month', 'Basic access', true),
-  ('Pro', 19.99, 'USD', 'month', 'Unlimited applications, Analytics', true),
-  ('Premium', 49.99, 'USD', 'month', 'Priority support, Featured profile', true);
+  ('Free', 0, 'USD', 'month', '["Basic access"]'::jsonb, true),
+  ('Pro', 19.99, 'USD', 'month', '["Unlimited applications", "Analytics"]'::jsonb, true),
+  ('Premium', 49.99, 'USD', 'month', '["Priority support", "Featured profile"]'::jsonb, true);
 
 -- Subscriptions
 -- David has Pro
 INSERT INTO subscriptions (user_id, plan_id, status, current_period_start, current_period_end, cancel_at_period_end)
-SELECT u.id, p.id, 'active', now() - INTERVAL '25 days', now() + INTERVAL '5 days', false
-FROM auth.users u, subscription_plans p 
+SELECT u.id, p.id, 'ACTIVE', now() - INTERVAL '25 days', now() + INTERVAL '5 days', false
+FROM auth.users u, subscription_plans p
 WHERE u.email = 'david.power@talentsphere.test' AND p.name = 'Pro';
 
 -- Payments
 INSERT INTO payments (user_id, subscription_id, amount, currency, status, payment_method, transaction_id, created_at)
-SELECT s.user_id, s.id, 19.99, 'USD', 'succeeded', 'card', 'pi_123456', s.current_period_start
+SELECT s.user_id, s.id, 19.99, 'USD', 'COMPLETED', 'card', 'pi_123456', s.current_period_start
 FROM subscriptions s JOIN auth.users u ON s.user_id = u.id WHERE u.email = 'david.power@talentsphere.test';
 
 -- ----------------------------------------------------------------

@@ -1,5 +1,7 @@
 # TalentSphere Comprehensive Product, UX, Workflow, Automation, And Technical Analysis
 
+> Documentation status: Current audit and implementation backlog. Use with `../../PLAN.md` and `ARCHITECTURE_STATUS_INDEX.md`.
+
 Date: 2026-06-26
 Source reviewed: root docs, `docs/*`, task files, schema files, frontend routes/pages/services/store, Chrome extension code, backend controllers/services/entities/repositories, Docker/Kubernetes/infra manifests, and current uncommitted workspace state.
 
@@ -9,7 +11,7 @@ TalentSphere is a broad career and hiring platform spanning a React/Vite web app
 
 The strongest UX pattern in the current app is user-controlled automation. Several workflows already generate drafts or suggestions, but they do not mutate important records until the user reviews and confirms. That pattern should remain the standard for AI, resume import, application drafts, candidate scoring, recommendations, and extension sync.
 
-The main product gaps are trust, operational rollout, and cross-workflow continuity. Several helpful features remain fallback-only or disconnected from backend audit records. The main technical gaps are mixed data access paths, outdated/contradictory docs, some backend/frontend endpoint drift, limited list pagination, incomplete telemetry, and a few role/mobile navigation issues.
+The main product gaps are trust, operational rollout, and cross-workflow continuity. Several helpful features remain fallback-only or disconnected from backend audit records. The main technical gaps are mixed data access paths, outdated/contradictory docs, some backend/frontend endpoint drift, limited list pagination, and incomplete telemetry.
 
 ## 1. Current State Analysis
 
@@ -510,6 +512,7 @@ Changed:
 - Admins get Dashboard, Admin Console, Messages, Profile, Settings.
 - Talent users get Dashboard, Jobs, Learning, Challenges, Messages.
 - The full mobile drawer still exposes all allowed destinations.
+- Route paths, role gates, desktop/sidebar visibility, mobile priority, and header search destinations now come from `apps/frontend/src/navigation/routeRegistry.ts`, with unit coverage for the role matrix.
 
 Why it improves UX:
 
@@ -5742,6 +5745,45 @@ Control and safeguards:
 - `npm run lint --workspace talentsphere-web` passed.
 - `npm run build --workspace talentsphere-web` passed.
 - `npm run test:unit --workspace talentsphere-web` passed: 60 test files, 388 tests.
+- Focused validation passed: `npx tsc --noEmit --pretty false` in `chrome-extension-project` passed.
+- `npm run build` in `chrome-extension-project` passed (`tsc && vite build`).
+- `npm run report:api-contracts` passed and generated `docs/API_CONTRACT_MISMATCH_REPORT.md` with 19 frontend API client calls, 126 backend controller routes, 0 unmatched frontend API client calls, and 0 legacy security matcher paths.
+- `git diff --check` passed.
+- `http://127.0.0.1:3000/` returned `HTTP/1.1 200 OK` from the running Vite dev server.
+- Backend Maven tests could not run because `mvn` is not installed and the repo has no Maven or Gradle wrapper.
+- Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
+
+### 8.252 LMS Enrollment Load Failure Visibility
+
+Changed:
+
+- Changed `lmsService.getUserEnrollments` to throw an explicit error when both enrollment-read backends fail.
+- Added LMS page state for progress-load failures.
+- Added a visible Learning progress unavailable panel with Retry Progress.
+- Preserved already loaded enrollment state when a later refresh fails.
+- Cleared stale progress-load errors after successful enrollment or lesson-completion updates.
+- Added regression coverage for failed enrollment/progress loading.
+
+Why it improves UX:
+
+- Learners can distinguish "no enrolled courses" from "progress could not be loaded."
+- Continue Learning and progress tabs no longer imply that a learner has no progress after a backend failure.
+- Retry is available in the page context, not only as a transient toast.
+- Existing visible progress remains available during a failed refresh instead of disappearing.
+
+Control and safeguards:
+
+- Retry Progress requires an explicit click.
+- Failed progress loads do not clear already loaded enrollments.
+- Failed progress loads do not fabricate enrollments, mark lessons complete, update course completion, issue certificates, create notifications, edit profile data, or mutate other workflows.
+- Enrollment and lesson completion remain separate explicit actions.
+
+### 8.253 Validation Addendum
+
+- Focused validation passed: `npx vitest run src/services/lmsService.test.ts` in `apps/frontend` passed: 1 test file, 9 tests.
+- `npm run lint --workspace talentsphere-web` passed.
+- `npm run build --workspace talentsphere-web` passed.
+- `npm run test:unit --workspace talentsphere-web` passed: 60 test files, 389 tests.
 - Focused validation passed: `npx tsc --noEmit --pretty false` in `chrome-extension-project` passed.
 - `npm run build` in `chrome-extension-project` passed (`tsc && vite build`).
 - `npm run report:api-contracts` passed and generated `docs/API_CONTRACT_MISMATCH_REPORT.md` with 19 frontend API client calls, 126 backend controller routes, 0 unmatched frontend API client calls, and 0 legacy security matcher paths.

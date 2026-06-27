@@ -23,6 +23,8 @@ spec:
         envFrom:
         - configMapRef:
             name: talentsphere-config
+        - secretRef:
+            name: talentsphere-secrets
         resources:
           requests:
             memory: 256Mi

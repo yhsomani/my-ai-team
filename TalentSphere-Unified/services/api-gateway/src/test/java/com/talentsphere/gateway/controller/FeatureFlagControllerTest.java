@@ -2,7 +2,6 @@ package com.talentsphere.gateway.controller;
 
 import com.talentsphere.shared.config.Feature;
 import com.talentsphere.shared.config.FeatureFlagService;
-import com.talentsphere.contracts.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,19 +34,19 @@ class FeatureFlagControllerTest {
     @BeforeEach
     void setUp() {
         mockFlagStatus = new FeatureFlagService.FlagStatus(
-                "enable_enable_auth", true, true, false, "Authentication and authorization");
+                "enable_auth", true, true, false, "Authentication and authorization");
     }
 
     @Test
     void getAllFlags_ReturnsAllFlags() throws Exception {
-        Map<String, FeatureFlagService.FlagStatus> statusMap = Map.of("enable_enable_auth", mockFlagStatus);
+        Map<String, FeatureFlagService.FlagStatus> statusMap = Map.of("enable_auth", mockFlagStatus);
         when(featureFlagService.getAllFlagsWithStatus()).thenReturn(statusMap);
 
         mockMvc.perform(get("/api/v1/admin/feature-flags"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.enable_enable_auth.currentValue").value(true))
-                .andExpect(jsonPath("$.data.enable_enable_auth.description").value("Authentication and authorization"));
+                .andExpect(jsonPath("$.data.enable_auth.currentValue").value(true))
+                .andExpect(jsonPath("$.data.enable_auth.description").value("Authentication and authorization"));
 
         verify(featureFlagService, times(1)).getAllFlagsWithStatus();
     }
@@ -57,13 +56,28 @@ class FeatureFlagControllerTest {
         when(featureFlagService.isEnabled(Feature.enable_auth)).thenReturn(true);
         when(featureFlagService.isRuntimeOverride(Feature.enable_auth)).thenReturn(false);
 
-        mockMvc.perform(get("/api/v1/admin/feature-flags/enable_enable_auth"))
+        mockMvc.perform(get("/api/v1/admin/feature-flags/enable_auth"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.flagName").value("enable_enable_auth"))
+                .andExpect(jsonPath("$.data.flagName").value("enable_auth"))
                 .andExpect(jsonPath("$.data.currentValue").value(true))
                 .andExpect(jsonPath("$.data.defaultValue").value(true))
                 .andExpect(jsonPath("$.data.isOverridden").value(false));
+
+        verify(featureFlagService, times(1)).isEnabled(Feature.enable_auth);
+        verify(featureFlagService, times(1)).isRuntimeOverride(Feature.enable_auth);
+    }
+
+    @Test
+    void getFlag_ValidMixedCaseFlag_ReturnsCanonicalStatus() throws Exception {
+        when(featureFlagService.isEnabled(Feature.enable_auth)).thenReturn(true);
+        when(featureFlagService.isRuntimeOverride(Feature.enable_auth)).thenReturn(false);
+
+        mockMvc.perform(get("/api/v1/admin/feature-flags/ENABLE_AUTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.flagName").value("enable_auth"))
+                .andExpect(jsonPath("$.data.currentValue").value(true));
 
         verify(featureFlagService, times(1)).isEnabled(Feature.enable_auth);
         verify(featureFlagService, times(1)).isRuntimeOverride(Feature.enable_auth);
@@ -79,40 +93,60 @@ class FeatureFlagControllerTest {
 
     @Test
     void enableFlag_ValidFlag_EnablesAndReturnsSuccess() throws Exception {
-        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_enable_auth/enable"))
+        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_auth/enable"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("Feature 'enable_enable_auth' enabled"));
+                .andExpect(jsonPath("$.data").value("Feature 'enable_auth' enabled"));
 
-        verify(featureFlagService, times(1)).enableFeature("enable_enable_auth");
+        verify(featureFlagService, times(1)).enableFeature(Feature.enable_auth);
+    }
+
+    @Test
+    void enableFlag_InvalidFlag_ReturnsErrorWithoutEnabling() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/feature-flags/unknown_flag/enable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Unknown feature flag: unknown_flag"));
+
+        verify(featureFlagService, never()).enableFeature(any(Feature.class));
     }
 
     @Test
     void disableFlag_ValidFlag_DisablesAndReturnsSuccess() throws Exception {
-        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_enable_auth/disable"))
+        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_auth/disable"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("Feature 'enable_enable_auth' disabled"));
+                .andExpect(jsonPath("$.data").value("Feature 'enable_auth' disabled"));
 
-        verify(featureFlagService, times(1)).disableFeature("enable_enable_auth");
+        verify(featureFlagService, times(1)).disableFeature(Feature.enable_auth);
+    }
+
+    @Test
+    void disableFlag_InvalidFlag_ReturnsErrorWithoutDisabling() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/feature-flags/unknown_flag/disable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Unknown feature flag: unknown_flag"));
+
+        verify(featureFlagService, never()).disableFeature(any(Feature.class));
     }
 
     @Test
     void resetFlag_ValidFlag_ResetsAndReturnsSuccess() throws Exception {
-        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_enable_auth/reset"))
+        mockMvc.perform(post("/api/v1/admin/feature-flags/enable_auth/reset"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("Feature 'enable_enable_auth' reset to default"));
+                .andExpect(jsonPath("$.data").value("Feature 'enable_auth' reset to default"));
 
         verify(featureFlagService, times(1)).resetFeature(Feature.enable_auth);
     }
 
     @Test
-    void resetFlag_InvalidFlag_ReturnsSuccessWithoutResetting() throws Exception {
+    void resetFlag_InvalidFlag_ReturnsErrorWithoutResetting() throws Exception {
         mockMvc.perform(post("/api/v1/admin/feature-flags/unknown_flag/reset"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("Feature 'unknown_flag' reset to default"));
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Unknown feature flag: unknown_flag"));
 
         verify(featureFlagService, never()).resetFeature(any(Feature.class));
     }

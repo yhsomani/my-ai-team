@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../api/axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import {
   getNotificationReminderDueAt,
   getNotificationScheduleState,
@@ -14,11 +14,16 @@ vi.mock('../api/axios', () => ({
   },
 }));
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('notificationService', () => {
   let queryBuilder: any;
@@ -94,7 +99,7 @@ describe('notificationService', () => {
       }),
     };
 
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
     (apiClient.get as any).mockRejectedValue(new Error('API unavailable'));
   });
 
@@ -104,7 +109,7 @@ describe('notificationService', () => {
       offset: 4,
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('notifications');
+    expect(typedSupabase.from).toHaveBeenCalledWith('notifications');
     expect(queryBuilder.select).toHaveBeenCalledWith('*', { count: 'exact' });
     expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(queryBuilder.order).toHaveBeenCalledWith('created_at', { ascending: false });
@@ -298,7 +303,7 @@ describe('notificationService', () => {
       recipientName: 'Ada Lovelace',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('notifications');
+    expect(typedSupabase.from).toHaveBeenCalledWith('notifications');
     expect(queryBuilder.select).toHaveBeenCalledWith('*');
     expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(queryBuilder.eq).toHaveBeenCalledWith('is_read', false);

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { runWithSchedulerAudit } from './scheduler-audit.mjs';
 
 const networkingReminderKind = 'networking_follow_up_reminder';
 
@@ -135,7 +136,7 @@ const promoteNetworkingReminder = async (client, notification, nowIso) => {
 
 const countSkipped = (skipped, reason) => skipped.filter((entry) => entry.reason === reason).length;
 
-export const runNetworkingReminderDelivery = async (client, options = {}) => {
+const runNetworkingReminderDeliveryCore = async (client, options = {}) => {
   const nowIso = options.nowIso || new Date().toISOString();
   const maxItems = toInteger(options.maxItems, 200);
   const dryRun = options.dryRun !== false;
@@ -160,6 +161,19 @@ export const runNetworkingReminderDelivery = async (client, options = {}) => {
       entry.reason !== 'already_delivered'
     )).length,
   };
+};
+
+export const runNetworkingReminderDelivery = async (client, options = {}) => {
+  const dryRun = options.dryRun !== false;
+
+  return runWithSchedulerAudit(client, {
+    jobName: 'networking_reminder_delivery',
+    dryRun,
+    audit: options.audit,
+    auditDryRun: options.auditDryRun,
+    runId: options.runId,
+    startedAt: options.startedAt || options.nowIso,
+  }, () => runNetworkingReminderDeliveryCore(client, options));
 };
 
 const getArgValue = (args, name) => {

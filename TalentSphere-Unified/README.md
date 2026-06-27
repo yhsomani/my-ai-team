@@ -1,9 +1,11 @@
 # TalentSphere - Unified Platform
 
+> Documentation status: Current onboarding entry. Use `../PLAN.md` and `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture authority and document precedence.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm
 - Supabase account (free tier works)
 
@@ -40,11 +42,15 @@ npm run dev
 - **docs/FEATURES_AND_DASHBOARDS.md** - Current feature inventory, routes, workflows, data sources, role access, and UI behavior.
 - **docs/API_CONTRACT_MISMATCH_REPORT.md** - Generated frontend/backend/gateway/security route inventory.
 - **docs/PRODUCT_UX_AUTOMATION_AUDIT.md** - Running UX audit and implementation history.
+- **docs/MODULE_MANIFEST.md** - Current source ownership, artifact, infrastructure, and documentation lifecycle validation rules.
+- **docs/DATA_OWNERSHIP.md** - Current Supabase/Postgres table ownership, SQL-source, and direct-access validation rules.
+- **docs/adr/ADR-001-primary-identity-provider.md** - Accepted primary identity-provider decision and Gateway token-contract migration plan.
 - **SEED_DATA_GUIDE.md** - Test data seeding guide.
 
 ### Historical Documentation
 - **SSOT.md** - Historical consolidated architecture reference. It contains stale completion claims; check `docs/ARCHITECTURE_STATUS_INDEX.md` first.
 - **docs/ARCHITECTURE_AUDIT.md**, **docs/SERVICE_MIGRATION.md**, **docs/ARCHITECTURE_MIGRATION.md**, **docs/ARCHITECTURE_PROPOSAL.md**, and **docs/unified-rebuild-roadmap.md** - Historical risk assessments, migration trackers, proposals, or alternative roadmaps.
+- **AGENT_OWNERSHIP.md**, **CLAUDE.md**, **GEMINI.md**, **ISSUES.md**, `docs/system/README.md`, `docs/frontend/README.md`, and `docs/backend/README.md` - Historical agent/generated references with stale assumptions; use `../PLAN.md`, `module-manifest.json`, and current source before acting on them.
 
 ### Database
 - **supabase-schema.sql** (34KB) - Complete database schema with RLS policies

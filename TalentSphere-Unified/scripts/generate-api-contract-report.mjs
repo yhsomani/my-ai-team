@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
 const reportPath = path.join(repoRoot, 'docs', 'API_CONTRACT_MISMATCH_REPORT.md');
+const manifestPath = path.join(repoRoot, 'module-manifest.json');
 
 const skipDirs = new Set(['.git', 'node_modules', 'dist', 'build', 'target', 'coverage', '.turbo']);
 const frontendRoot = path.join(repoRoot, 'apps', 'frontend', 'src');
@@ -23,6 +24,14 @@ const httpMethodByAnnotation = {
 const escapeMarkdown = (value) => String(value).replace(/\|/g, '\\|').replace(/\n/g, ' ');
 
 const readFile = (filePath) => fs.readFileSync(filePath, 'utf8');
+
+const readJson = (filePath) => JSON.parse(readFile(filePath));
+
+const manifest = fs.existsSync(manifestPath) ? readJson(manifestPath) : {};
+const activeBackendModulePaths = new Set(manifest.backend?.mavenReactorModules || []);
+const orphanedBackendModulePaths = new Set(
+  (manifest.backend?.orphanedMavenModules || []).map((entry) => entry.path),
+);
 
 const relativePath = (filePath) => path.relative(repoRoot, filePath).replaceAll(path.sep, '/');
 
@@ -206,6 +215,18 @@ const extractMethodName = (contentAfterAnnotation) => {
   return signature ? signature[1] : 'unknown';
 };
 
+const classifyBackendModule = (relativeFilePath) => {
+  const match = relativeFilePath.match(/^(services\/[^/]+)\//);
+  const modulePath = match?.[1] || '';
+  if (activeBackendModulePaths.has(modulePath)) {
+    return { modulePath, moduleStatus: 'active' };
+  }
+  if (orphanedBackendModulePaths.has(modulePath)) {
+    return { modulePath, moduleStatus: 'orphaned' };
+  }
+  return { modulePath, moduleStatus: modulePath ? 'unclassified' : 'unknown' };
+};
+
 const extractBackendRoutes = () => {
   const controllerFiles = walk(servicesRoot, ['.java'])
     .filter((filePath) => filePath.includes('/src/main/java/') && filePath.includes('/controller/') && filePath.endsWith('.java'));
@@ -217,6 +238,8 @@ const extractBackendRoutes = () => {
     const classIndex = content.search(/\bclass\s+\w+/);
     if (classIndex < 0) continue;
 
+    const file = relativePath(filePath);
+    const moduleInfo = classifyBackendModule(file);
     const basePath = extractBaseRequestMapping(content, classIndex);
     const classContent = content.slice(classIndex);
     let match;
@@ -233,7 +256,8 @@ const extractBackendRoutes = () => {
         method,
         path: displayRoutePath(fullPath),
         normalizedPath: normalizeRoutePath(fullPath),
-        file: relativePath(filePath),
+        file,
+        ...moduleInfo,
         line: getLineNumber(content, classIndex + match.index),
         handler: extractMethodName(classContent.slice(match.index + match[0].length)),
       });
@@ -307,27 +331,50 @@ const makeMarkdownTable = (headers, rows, emptyMessage) => {
 
 const formatLocation = (item) => `${item.file}:${item.line}`;
 
+const getGeneratedAt = () => {
+  if (process.env.API_CONTRACT_REPORT_GENERATED_AT) {
+    return process.env.API_CONTRACT_REPORT_GENERATED_AT;
+  }
+
+  if (fs.existsSync(reportPath)) {
+    const existing = readFile(reportPath).match(/^Generated: (.+)$/m);
+    if (existing) return existing[1];
+  }
+
+  return new Date().toISOString();
+};
+
 const main = () => {
   const frontendCalls = extractFrontendCalls();
   const backendRoutes = extractBackendRoutes();
+  const activeBackendRoutes = backendRoutes.filter((route) => route.moduleStatus === 'active');
+  const nonActiveBackendRoutes = backendRoutes.filter((route) => route.moduleStatus !== 'active');
   const gatewayRoutes = extractGatewayRoutes();
   const securityMatchers = extractSecurityMatchers();
   const supabaseTables = extractSupabaseTables();
 
   const frontendCoverage = frontendCalls.map((call) => {
-    const backendRoute = findMatchingBackendRoute(call, backendRoutes);
+    const backendRoute = findMatchingBackendRoute(call, activeBackendRoutes);
+    const nonActiveBackendRoute = findMatchingBackendRoute(call, nonActiveBackendRoutes);
     const gatewayRoute = findMatchingGatewayRoute(call, gatewayRoutes);
     return {
       ...call,
       backendRoute,
+      nonActiveBackendRoute,
       gatewayRoute,
-      status: backendRoute ? 'Matched controller' : gatewayRoute ? 'Gateway route only' : 'No matching controller',
+      status: backendRoute
+        ? 'Matched active controller'
+        : nonActiveBackendRoute
+          ? `Matched ${nonActiveBackendRoute.moduleStatus} controller only`
+          : gatewayRoute
+            ? 'Gateway route only'
+            : 'No matching active controller',
     };
   });
 
   const unmatchedFrontendCalls = frontendCoverage.filter((call) => !call.backendRoute);
-  const backendWithoutGateway = backendRoutes.filter((route) => !findMatchingGatewayRoute(route, gatewayRoutes));
-  const unusedBackendRoutes = backendRoutes.filter((route) => (
+  const backendWithoutGateway = activeBackendRoutes.filter((route) => !findMatchingGatewayRoute(route, gatewayRoutes));
+  const unusedBackendRoutes = activeBackendRoutes.filter((route) => (
     !frontendCalls.some((call) => methodMatches(call.method, route.method) && routeMatches(call.normalizedPath, route.normalizedPath))
   ));
   const legacySecurityMatchers = securityMatchers.filter((matcher) => matcher.isLegacyPrefix);
@@ -341,19 +388,26 @@ const main = () => {
     legacySecurityMatchers.length > 0
       ? 'Align legacy `/api/*` security matcher paths with `/api/v1/*` controllers, or document why the matcher intentionally protects a different surface.'
       : 'Keep legacy `/api/*` security matcher paths at zero.',
+    nonActiveBackendRoutes.length > 0
+      ? 'Resolve orphaned or unclassified backend controller routes before treating them as deployable API surface.'
+      : 'Keep orphaned or unclassified backend controller routes at zero.',
     'Decide which direct Supabase data paths should remain client-owned and which should move behind audited service APIs.',
-    'Use this report as input to OpenAPI generation or typed API-client generation so payload shapes can be validated, not just routes.',
+    'Use `docs/API_OPENAPI_CONTRACT.json` as input to typed API-client generation and add runtime Springdoc/OpenAPI smoke tests when backend execution is available.',
   ];
 
-  const generatedAt = new Date().toISOString();
+  const generatedAt = getGeneratedAt();
   const lines = [
     '# API Contract Mismatch Report',
     '',
+    '> Documentation status: Generated current report. Regenerate with `npm run report:api-contracts`; do not hand-edit route inventory tables.',
+    '',
     `Generated: ${generatedAt}`,
     '',
-    'Source: `npm run report:api-contracts` scans frontend `apiClient` calls, Spring controller mappings, API Gateway path predicates, security matcher strings, and direct Supabase table access.',
+    'Source: `npm run report:api-contracts` scans frontend `apiClient` calls, Spring controller mappings, API Gateway path predicates, security matcher strings, direct Supabase table access, and `module-manifest.json` backend module classification.',
     '',
-    'This is a static analysis report. It is intentionally conservative: dynamic routes, service-to-service calls, Supabase direct access, and request/response payload shapes still need manual contract review or OpenAPI coverage.',
+    'This is a static analysis report. It is intentionally conservative: dynamic routes, service-to-service calls, Supabase direct access, runtime service discovery, and runtime serialization still need manual review or integration coverage. Request/response payload shapes are covered by the source-derived `docs/API_OPENAPI_CONTRACT.json` companion contract.',
+    '',
+    'The `Generated` value is preserved between runs unless `API_CONTRACT_REPORT_GENERATED_AT` is set, so CI can verify report drift deterministically.',
     '',
     '## Summary',
     '',
@@ -361,12 +415,14 @@ const main = () => {
       ['Metric', 'Count'],
       [
         ['Frontend API client calls', frontendCalls.length],
-        ['Backend controller routes', backendRoutes.length],
+        ['Active backend controller routes', activeBackendRoutes.length],
+        ['Non-active backend controller routes', nonActiveBackendRoutes.length],
+        ['Total backend controller routes scanned', backendRoutes.length],
         ['Gateway route prefixes', gatewayRoutes.length],
         ['Security matcher paths', securityMatchers.length],
         ['Direct Supabase tables used by frontend', supabaseTables.length],
-        ['Frontend calls without matching controller', unmatchedFrontendCalls.length],
-        ['Controller routes without gateway prefix', backendWithoutGateway.length],
+        ['Frontend calls without matching active controller', unmatchedFrontendCalls.length],
+        ['Active controller routes without gateway prefix', backendWithoutGateway.length],
         ['Legacy `/api/*` security matcher paths', legacySecurityMatchers.length],
       ],
       'No summary metrics found.'
@@ -375,15 +431,19 @@ const main = () => {
     '## Frontend Calls Without Matching Controller',
     '',
     makeMarkdownTable(
-      ['Method', 'Path', 'Status', 'Frontend location', 'Gateway evidence'],
+      ['Method', 'Path', 'Status', 'Frontend location', 'Contract evidence'],
       unmatchedFrontendCalls.map((call) => [
         call.method,
         call.path,
         call.status,
         formatLocation(call),
-        call.gatewayRoute ? `${call.gatewayRoute.path} (${formatLocation(call.gatewayRoute)})` : 'None',
+        call.nonActiveBackendRoute
+          ? `${call.nonActiveBackendRoute.method} ${call.nonActiveBackendRoute.path} (${call.nonActiveBackendRoute.moduleStatus}; ${formatLocation(call.nonActiveBackendRoute)})`
+          : call.gatewayRoute
+            ? `${call.gatewayRoute.path} (${formatLocation(call.gatewayRoute)})`
+            : 'None',
       ]),
-      'No unmatched frontend API client calls were found.'
+      'No unmatched frontend API client calls were found against active controller routes.'
     ),
     '',
     '## Matched Frontend Calls',
@@ -412,6 +472,20 @@ const main = () => {
         `${route.handler} (${formatLocation(route)})`,
       ]),
       'Every scanned controller route is covered by an API Gateway path prefix.'
+    ),
+    '',
+    '## Non-Active Backend Controller Routes',
+    '',
+    makeMarkdownTable(
+      ['Status', 'Module', 'Method', 'Controller path', 'Controller location'],
+      nonActiveBackendRoutes.map((route) => [
+        route.moduleStatus,
+        route.modulePath || 'unknown',
+        route.method,
+        route.path,
+        `${route.handler} (${formatLocation(route)})`,
+      ]),
+      'No orphaned or unclassified backend controller routes were found.'
     ),
     '',
     '## Controller Routes Not Used By Frontend API Client',
@@ -458,7 +532,8 @@ const main = () => {
 
   console.log(`API contract report generated: ${relativePath(reportPath)}`);
   console.log(`Frontend calls: ${frontendCalls.length}`);
-  console.log(`Backend routes: ${backendRoutes.length}`);
+  console.log(`Active backend routes: ${activeBackendRoutes.length}`);
+  console.log(`Non-active backend routes: ${nonActiveBackendRoutes.length}`);
   console.log(`Unmatched frontend calls: ${unmatchedFrontendCalls.length}`);
   console.log(`Legacy security matchers: ${legacySecurityMatchers.length}`);
 };

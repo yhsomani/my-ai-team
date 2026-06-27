@@ -9,10 +9,10 @@ spring:
       uri: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${DB_HOST:-localhost}:27017/talentsphere_notification
       auto-index-creation: true
   rabbitmq:
-    host: ${RABBIT_HOST:localhost}
-    port: ${RABBIT_PORT:5672}
-    username: ${RABBIT_USER:guest}
-    password: ${RABBIT_PASSWORD}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD}
 
 eureka:
   client:

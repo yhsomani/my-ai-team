@@ -134,5 +134,5 @@ logging:
 # Security configuration
 security:
   jwt:
-    secret: ${JWT_SECRET:dev-secret-replace-me}
+    secret: ${JWT_SECRET}
     expiration: 86400000 # 24 hours

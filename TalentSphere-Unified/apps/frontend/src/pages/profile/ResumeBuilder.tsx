@@ -82,6 +82,9 @@ const initialResumeDraft: ResumeDraft = {
   summary: '',
 };
 
+const isFulfilled = <T,>(result: PromiseSettledResult<T>): result is PromiseFulfilledResult<T> => (
+  result.status === 'fulfilled'
+);
 const getSkillName = (skill: Record<string, any> | string) => typeof skill === 'string' ? skill : skill.name;
 const getExperienceStartDate = (experience: Record<string, any>) => experience.startDate || experience.start_date;
 const getExperienceEndDate = (experience: Record<string, any>) => experience.endDate || experience.end_date;
@@ -327,8 +330,14 @@ const ResumeBuilder: React.FC = () => {
       try {
         const data = await profileService.getProfile(user.id);
         setProfile(data);
+        const profileIdentity = data?.profiles;
+        const profileFullName = [
+          profileIdentity?.first_name,
+          profileIdentity?.last_name,
+        ].filter(Boolean).join(' ').trim();
+
         setResumeDraft({
-          fullName: data?.fullName || data?.full_name || data?.profiles?.full_name || user.email?.split('@')[0] || '',
+          fullName: profileFullName || user.email?.split('@')[0] || '',
           email: data?.profiles?.email || user.email || '',
           headline: data?.headline || '',
           phone: data?.phone || '',
@@ -1031,7 +1040,7 @@ const ResumeBuilder: React.FC = () => {
       }))
     );
     const savedSkills = results
-      .filter((result): result is PromiseFulfilledResult<Record<string, any>> => result.status === 'fulfilled')
+      .filter(isFulfilled)
       .map(result => result.value);
     const savedNames = new Set(savedSkills.map(skill => getSkillName(skill).toLowerCase()));
 
@@ -1136,10 +1145,10 @@ const ResumeBuilder: React.FC = () => {
       }))
     );
     const savedExperiences = experienceResults
-      .filter((result): result is PromiseFulfilledResult<Record<string, any>> => result.status === 'fulfilled')
+      .filter(isFulfilled)
       .map(result => result.value);
     const savedEducation = educationResults
-      .filter((result): result is PromiseFulfilledResult<Record<string, any>> => result.status === 'fulfilled')
+      .filter(isFulfilled)
       .map(result => result.value);
     const savedExperienceIds = new Set(experienceResults.reduce<string[]>((acc, result, index) => {
       if (result.status === 'fulfilled') acc.push(experiencesToSave[index].id);

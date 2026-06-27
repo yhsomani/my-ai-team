@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.test.context.TestPropertySource(properties = "talentsphere.auth.local-credentials.enabled=true")
 public class AuthControllerTest {
 
     @Autowired
@@ -41,7 +42,7 @@ public class AuthControllerTest {
 
         when(authService.register(any(User.class))).thenReturn(ApiResponse.ok(user));
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
@@ -58,7 +59,7 @@ public class AuthControllerTest {
 
         when(authService.login(anyString(), anyString())).thenReturn(ApiResponse.ok("mock-jwt-token"));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())

@@ -1,68 +1,59 @@
-```
 # Dependencies
 node_modules/
+**/node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
+**/dist/
 build/
+**/build/
+target/
+**/target/
+out/
+**/out/
 
-# Environment variables
+# Test and coverage outputs
+coverage/
+**/coverage/
+.nyc_output/
+.vitest/
+junit.xml
+*.gcda
+*.gcno
+
+# Logs and runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids/
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/
+
+# Local environment and credentials
 .env
 .env.local
 *.env.*
+!.env.example
+notebooklm_cookies.txt
 
-# IDE files
+# Editor and OS files
 .vscode/
 .idea/
 *.swp
 *.swo
 *.tmp
-
-# Logs
-*.log
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# OS generated files
 .DS_Store
 Thumbs.db
 
-# Testing
-.nyc_output/
-coverage/
-junit.xml
-*.gcda
-*.gcno
+# Python cache
+__pycache__/
+*.py[cod]
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Temporary folders
-tmp/
-temp/
-
-# Local configuration
-.settings/
-config/local.*
-!config/default.*
-
-# Database
-*.db
-*.db-journal
-
-# Packaging
+# Package archives
 *.tar*
 *.jar
 *.war
@@ -74,502 +65,43 @@ config/local.*
 *.bz2
 *.xz
 *.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
 
-# Node.js
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-node_modules/
-
-# Bower
-bower_components/
-
-# Grunt
-.grunt
-
-# Gulp
-.gulp-cache/
-
-# Jspm
-jspm_packages/
-
-# SASS
-.sass-cache/
-
-# Yarn
-.yarn/
-pnp-*
-
-# Webpack
+# Tool caches
+.turbo/
+.vite/
 .webpack/
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Next.js
-.next/
-out/
-
-# Vercel
-.vercel/
-
-# ESLint
+.sass-cache/
 .eslintcache
 
-# Prettier
-.prettierrc.js
-.prettierignore
-
-# Jest
-.jest/
-jest.config.js
-jest.setup.js
-
-# Cypress
-cypress/videos/
-cypress/screenshots/
-
-# Vitest
-.vitest/
-
-# Turborepo
-.turbo/
-
-# Prisma
-prisma/migrations/
-
-# Supabase
-supabase/
-
-# Docker
-.docker/
-
-# Kubernetes
-.kube/
-
-# AWS
+# Cloud/local tool state
 .aws/
-
-# Google Cloud
-.gcloud/
-
-# Azure
 .azure/
-
-# Heroku
+.docker/
+.gcloud/
 .heroku/
-
-# Netlify
+.kube/
 .netlify/
+.vercel/
 
-# Vite
-.vite/
-
-# Astro
-.astroturf/
-
-# Remix
-.remix/
-
-# Redwood
-.redwood/
-
-# Blitz
-.blitz/
-
-# Keystone
-.keystone/
-
-# Payload
-.payload/
-
-# Strapi
-.strapi/
-
-# Directus
-.directus/
-
-# Sanity
-.sanity/
-
-# Contentful
-.contentful/
-
-# Shopify
-.shopify/
-
-# Magento
-.magento/
-
-# WooCommerce
-.woocommerce/
-
-# Drupal
-.drupal/
-
-# Joomla
-.joomla/
-
-# WordPress
-.wordpress/
-
-# Laravel
-.laravel/
-
-# Symfony
-.symfony/
-
-# Django
-django_migrations/
-*.pot
-*.po
-
-# Flask
-instance/
-.webassets-cache
-
-# Ruby
-.bundle/
-Gemfile.lock
-.ruby-version
-
-# Go
-*.mod
-*.sum
-*.exe
-
-# Java
-*.class
-*.jar
-*.war
-*.ear
-hs_err_pid*
-.recommenders
-
-# C#
-*.sln
-*.csproj
-*.user
-*.userosscache
-*.suo
-*.cache
-*.ilk
-*.meta
-*.pidb
-*.pdb
-*.mdb
-*.prof
-*.pyc
-*.pyo
-*.rsp
-*.sublime-workspace
-
-# C++
-*.i
-*.ii
-*.o
-*.os
-*.a
-*.dylib
-*.so
-*.so.*
-*.dll
-*.obj
-*.lib
-*.la
-*.lai
-*.lo
-*.gmo
-*.mo
-*.toc
-
-# Objective-C
-*.gch
-*.xcodeproj
-*.xcworkspace
-*.framework
-*.gdb_history
-
-# Swift
-*.xcodeproj
-*.xcworkspace
-*.swiftmodule
-*.swiftdoc
-.deriveddata
-
-# Qt
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
-*.moc
-*.moc.cpp
-*.qm
-
-# Visual Studio Code
-.vscode-test/
-
-# Vim
-*.un~
-Session.vim
-.netrwhist
-*~
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# Atom
-.atom/
-
-# Sublime Text
-*.tmlanguage.cache
-*.tmPreferences.cache
-*.stTheme.cache
-
-# IntelliJ IDEA
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-# Eclipse
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.recommenders
-
-# Gradle
-.gradle/
-build/
-
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-
-# Android
-/build/
-/captures/
-*.keystore
-
-# iOS
-*.xcodeproj/
-*.xcworkspace/
-*.framework
-*.app
-
-# Unity
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-Assets/AssetStoreTools*
-
-# Unreal Engine
-Binaries/
-Build/
-Saved/
-Intermediate/
-*.uasset
-*.uplugin
-
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-ExternalBuild/
-*.cmake
-.libs
-.libs/*
-*.o
-*.os
-*.a
-*.so
-*.so.*
-*.dylib*
-*.dll
-*.lib
-*.exe
-*.out
-*.app
-*.ipa
-*.apk
-*.ap_
-*.aab
-
-# Autotools
-autom4te.cache/
-config.h*
-config.log
-config.status
-config.cache
-aclocal.m4
-ltmain.sh
-depcomp
-install-sh
-missing
-mkinstalldirs
-configure
-.libs
-.libs/*
-
-# Compiler output
-*.o
-*.a
-*.so
-*.so.*
-*.dylib*
-*.dll
-*.lib
-*.exe
-*.out
-*.app
-*.ipa
-*.apk
-*.ap_
-*.aab
-*.jar
-*.class
-*.obj
-*.elf
-*.ilk
-*.map
-*.pdb
-*.stP
-*.lst
-*.su
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.vcxproj.filters
-*.VC.db
-*.VC.VC.opendb
-*.ncb
-*.aps
-*.ilk
-*.iobj
-*.ipdb
-*.tpf
-*.tlog
-*.metagen
-*.opendb
-*.opensdf
-*.sdf
-*.sln.cache
-*.VC.VXDB
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock
-*.VC.VXDB.lock
-*.VC.db.lock
-*.VC.VC.opendb.lock......
-```
+# Generated snapshots and local repair scratch files
+project_structure.txt
+pom_patch.xml
+fix_controller.py
+fix_test.py
+test_spel.py
+update_controller.py
+pr_description.md
+opencode.json
+tasks/todo.md
+TalentSphere-Unified/patch_remaining.py
+TalentSphere-Unified/clean.txt
+TalentSphere-Unified/pom_manifest.txt
+TalentSphere-Unified/pom_manifest_utf8.txt
+TalentSphere-Unified/DUPLICATION_REPORT.json
+TalentSphere-Unified/docs/CODE_ANALYZER_REPORT.json
+TalentSphere-Unified/task.md
+TalentSphere-Unified/tasks/todo.md
+TalentSphere-Unified/tasks/comprehensive_todo.md
+TalentSphere-Unified/tasks/lessons.md
+TalentSphere-Unified/tasks/next_gen_phase1.md
+TalentSphere-Unified/agent-tasks/TASK_STATUS.md

@@ -1,5 +1,7 @@
 # Service Parent & Dependency Sync Implementation Plan
 
+> Documentation status: Historical working note. Not current completion evidence; validate all dependency claims from source and `../../../../PLAN.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Update all 21 microservices to correctly inherit from 'talentsphere-bom' and include standard monitoring and testing dependencies.

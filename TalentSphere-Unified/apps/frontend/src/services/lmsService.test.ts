@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../api/axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import { lmsService } from './lmsService';
 
 vi.mock('../api/axios', () => ({
@@ -10,11 +10,16 @@ vi.mock('../api/axios', () => ({
   },
 }));
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 const makeGatewayCourse = (id: string, title = `Course ${id}`) => ({
   id,
@@ -291,7 +296,7 @@ describe('lmsService', () => {
     ];
     const courseQueries = [firstCoursesQuery, secondCoursesQuery];
 
-    (supabase.from as any).mockImplementation((table: string) => {
+    (typedSupabase.from as any).mockImplementation((table: string) => {
       if (table === 'courses') return courseQueries.shift();
       if (table === 'lessons') return lessonQueries.shift();
       throw new Error(`Unexpected table ${table}`);
@@ -328,7 +333,7 @@ describe('lmsService', () => {
       data: null,
       error: new Error('Network Error'),
     });
-    (supabase.from as any).mockReturnValue(enrollmentQuery);
+    (typedSupabase.from as any).mockReturnValue(enrollmentQuery);
 
     await expect(lmsService.enrollInCourse('course-1', 'user-1')).rejects.toThrow('Failed to enroll');
 
@@ -336,7 +341,7 @@ describe('lmsService', () => {
       params: { userId: 'user-1' },
       timeout: 5000,
     });
-    expect(supabase.from).toHaveBeenCalledWith('enrollments');
+    expect(typedSupabase.from).toHaveBeenCalledWith('enrollments');
     expect(enrollmentQuery.insert).toHaveBeenCalledWith({
       course_id: 'course-1',
       user_id: 'user-1',
@@ -350,21 +355,21 @@ describe('lmsService', () => {
       data: null,
       error: new Error('Network Error'),
     });
-    (supabase.from as any).mockReturnValue(enrollmentQuery);
+    (typedSupabase.from as any).mockReturnValue(enrollmentQuery);
 
     await expect(lmsService.getUserEnrollments('user-1')).rejects.toThrow('Learning progress could not be loaded');
 
     expect(apiClient.get).toHaveBeenCalledWith('/api/v1/lms/enrollments/user-1', {
       timeout: 5000,
     });
-    expect(supabase.from).toHaveBeenCalledWith('enrollments');
+    expect(typedSupabase.from).toHaveBeenCalledWith('enrollments');
     expect(enrollmentQuery.order).toHaveBeenCalledWith('enrolled_at', { ascending: false });
   });
 
   it('does not silently complete lessons when progress persistence fails', async () => {
     (apiClient.post as any).mockRejectedValueOnce(new Error('Network Error'));
     const progressQuery = makeMutationQueryBuilder(Promise.reject(new Error('Network Error')));
-    (supabase.from as any).mockReturnValue(progressQuery);
+    (typedSupabase.from as any).mockReturnValue(progressQuery);
 
     await expect(lmsService.markLessonComplete(
       'enrollment-1',
@@ -377,7 +382,7 @@ describe('lmsService', () => {
       params: { userId: 'user-1' },
       timeout: 5000,
     });
-    expect(supabase.from).toHaveBeenCalledWith('lesson_progress');
+    expect(typedSupabase.from).toHaveBeenCalledWith('lesson_progress');
     expect(progressQuery.select).toHaveBeenCalledWith('id');
   });
 });

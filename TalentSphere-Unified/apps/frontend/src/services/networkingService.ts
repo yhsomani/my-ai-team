@@ -1,6 +1,31 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase as compatibilitySupabase, typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import { Connection, FeedItem, PublicProfile } from '../types/networking';
 import { apiClient } from '../api/axios';
+
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+type SkillRow = Database['public']['Tables']['skills']['Row'];
+type ExperienceRow = Database['public']['Tables']['experiences']['Row'];
+type ConnectionRow = Database['public']['Tables']['connections']['Row'];
+type ConnectionInsert = Database['public']['Tables']['connections']['Insert'];
+type ConnectionUpdate = Database['public']['Tables']['connections']['Update'];
+type SuggestionPreferenceRow = Database['public']['Tables']['networking_suggestion_preferences']['Row'];
+type SuggestionPreferenceInsert = Database['public']['Tables']['networking_suggestion_preferences']['Insert'];
+type ConnectionStatus = Database['public']['Enums']['connection_status'];
+type NestedSkillRow = Pick<SkillRow, 'name'>;
+type NestedExperienceRow = Pick<ExperienceRow, 'company' | 'current'>;
+type ProfileDetailsRow = Pick<UserProfileRow, 'headline' | 'current_role' | 'location'> & {
+  skills?: NestedSkillRow[] | null;
+  experiences?: NestedExperienceRow[] | null;
+};
+type PublicProfileQueryRow = Pick<ProfileRow, 'id' | 'email' | 'full_name' | 'avatar_url'> & {
+  user_profiles?: ProfileDetailsRow | ProfileDetailsRow[] | null;
+};
+type FeedProfileRow = Pick<UserProfileRow, 'id' | 'user_id' | 'headline'> & {
+  profiles?: Pick<ProfileRow, 'full_name' | 'avatar_url'> | null;
+  experiences?: Array<Pick<ExperienceRow, 'id' | 'company' | 'title' | 'created_at'>> | null;
+  skills?: Array<Pick<SkillRow, 'id' | 'name' | 'created_at'>> | null;
+};
 
 type ProfileSignal = {
   skills: string[];
@@ -60,18 +85,18 @@ const uniqueValues = (values: Array<string | undefined | null>) => Array.from(ne
     .filter(Boolean)
 ));
 
-const firstNestedProfile = (profile: any) => Array.isArray(profile?.user_profiles)
+const firstNestedProfile = (profile: PublicProfileQueryRow) => Array.isArray(profile?.user_profiles)
   ? profile.user_profiles[0]
   : profile?.user_profiles;
 
-const getProfileSkills = (profile: any) => uniqueValues(
-  (firstNestedProfile(profile)?.skills || []).map((skill: any) => skill?.name)
+const getProfileSkills = (profile: PublicProfileQueryRow) => uniqueValues(
+  (firstNestedProfile(profile)?.skills || []).map(skill => skill?.name)
 );
 
-const getCurrentCompanies = (profile: any) => uniqueValues(
+const getCurrentCompanies = (profile: PublicProfileQueryRow) => uniqueValues(
   (firstNestedProfile(profile)?.experiences || [])
-    .filter((experience: any) => experience?.current)
-    .map((experience: any) => experience?.company)
+    .filter(experience => experience?.current)
+    .map(experience => experience?.company)
 );
 
 const getRoleTerms = (role?: string) => normalizeKey(role)
@@ -83,7 +108,7 @@ const getSharedValues = (candidateValues: string[], currentValues: string[]) => 
   return candidateValues.filter(value => currentKeys.has(normalizeKey(value)));
 };
 
-const mapProfileRow = (profile: any): PublicProfile => ({
+const mapProfileRow = (profile: PublicProfileQueryRow): PublicProfile => ({
   id: profile.id,
   userId: profile.id,
   fullName: profile.full_name || undefined,
@@ -118,23 +143,28 @@ const fetchProfilesByIds = async (userIds: string[]) => {
 
   if (error) throw error;
 
-  return new Map((data || []).map((profile) => [profile.id, mapProfileRow(profile)]));
+  const profiles = (data || []) as unknown as PublicProfileQueryRow[];
+  return new Map(profiles.map((profile) => [profile.id, mapProfileRow(profile)]));
 };
 
-const mapConnectionRow = (row: any, profilesById: Map<string, PublicProfile>): Connection => ({
+const normalizeConnectionStatus = (status?: ConnectionStatus | null): Connection['status'] => (
+  status === 'ACCEPTED' || status === 'REJECTED' ? status : 'PENDING'
+);
+
+const mapConnectionRow = (row: ConnectionRow, profilesById: Map<string, PublicProfile>): Connection => ({
   id: row.id,
   requesterId: row.requester_id,
   receiverId: row.receiver_id,
   recipientId: row.receiver_id,
-  status: row.status,
+  status: normalizeConnectionStatus(row.status),
   message: row.message || undefined,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+  createdAt: row.created_at || new Date(0).toISOString(),
+  updatedAt: row.updated_at || undefined,
   requester: profilesById.get(row.requester_id),
   recipient: profilesById.get(row.receiver_id)
 });
 
-const mapSuggestionPreferenceRow = (row: any): NetworkingSuggestionPreference => ({
+const mapSuggestionPreferenceRow = (row: SuggestionPreferenceRow): NetworkingSuggestionPreference => ({
   id: row.id,
   userId: row.user_id,
   suggestedUserId: row.suggested_user_id,
@@ -165,10 +195,10 @@ const getCurrentProfileSignal = async (userId: string): Promise<ProfileSignal> =
   }
 
   return {
-    skills: uniqueValues((data.skills || []).map((skill: any) => skill?.name)),
-    companies: uniqueValues((data.experiences || [])
-      .filter((experience: any) => experience?.current)
-      .map((experience: any) => experience?.company)),
+    skills: uniqueValues(((data as unknown as ProfileDetailsRow).skills || []).map(skill => skill?.name)),
+    companies: uniqueValues(((data as unknown as ProfileDetailsRow).experiences || [])
+      .filter(experience => experience?.current)
+      .map(experience => experience?.company)),
     location: data.location || undefined,
     role: data.current_role || data.headline || undefined,
   };
@@ -178,7 +208,7 @@ const getMutualConnectionCounts = async (userId: string, candidateIds: string[])
   const uniqueCandidateIds = Array.from(new Set(candidateIds.filter(Boolean)));
   if (uniqueCandidateIds.length === 0) return new Map<string, number>();
 
-  const { data, error } = await supabase.rpc('get_mutual_connection_counts', {
+  const { data, error } = await compatibilitySupabase.rpc('get_mutual_connection_counts', {
     p_current_user_id: userId,
     p_candidate_ids: uniqueCandidateIds,
   });
@@ -280,7 +310,7 @@ const hydrateBackendSuggestions = async (suggestions: NormalizedNetworkingSugges
 };
 
 const enrichRecommendation = (
-  profile: any,
+  profile: PublicProfileQueryRow,
   currentProfile: ProfileSignal,
   mutualConnections = 0
 ): PublicProfile => {
@@ -363,7 +393,7 @@ const getClientRankedSuggestions = async (userId: string): Promise<PublicProfile
 
   if (error) throw error;
 
-  const profiles = data || [];
+  const profiles = (data || []) as unknown as PublicProfileQueryRow[];
   const mutualConnectionCounts = await getMutualConnectionCounts(
     userId,
     profiles.map(profile => profile.id)
@@ -411,8 +441,11 @@ export const networkingService = {
         .select(`
           id,
           user_id,
-          full_name,
           headline,
+          profiles (
+            full_name,
+            avatar_url
+          ),
           experiences (
             id,
             company,
@@ -433,17 +466,19 @@ export const networkingService = {
       // Transform into feed items
       const feedItems: FeedItem[] = [];
       
-      feedData?.forEach(profile => {
+      const feedProfiles = (feedData || []) as unknown as FeedProfileRow[];
+
+      feedProfiles.forEach(profile => {
         if (profile.experiences && profile.experiences.length > 0) {
           profile.experiences.forEach(exp => {
             feedItems.push({
               type: 'JOB_CHANGE' as const,
               userId: profile.user_id,
-              userName: profile.full_name,
-              userAvatar: (profile as any).profiles?.avatar_url || undefined,
+              userName: profile.profiles?.full_name || undefined,
+              userAvatar: profile.profiles?.avatar_url || undefined,
               headline: profile.headline || undefined,
               content: `Started new position as ${exp.title} at ${exp.company}`,
-              timestamp: exp.created_at
+              timestamp: exp.created_at || undefined
             });
           });
         }
@@ -453,11 +488,11 @@ export const networkingService = {
             feedItems.push({
               type: 'SKILL_ADDED' as const,
               userId: profile.user_id,
-              userName: profile.full_name,
-              userAvatar: (profile as any).profiles?.avatar_url || undefined,
+              userName: profile.profiles?.full_name || undefined,
+              userAvatar: profile.profiles?.avatar_url || undefined,
               headline: profile.headline || undefined,
               content: `Added new skill: ${skill.name}`,
-              timestamp: skill.created_at
+              timestamp: skill.created_at || undefined
             });
           });
         }
@@ -479,14 +514,16 @@ export const networkingService = {
 
 
   sendConnectionRequest: async (recipientId: string, senderId: string, message?: string): Promise<Connection> => {
+    const insert: ConnectionInsert = {
+      requester_id: senderId,
+      receiver_id: recipientId,
+      status: 'PENDING',
+      message
+    };
+
     const { data, error } = await supabase
       .from('connections')
-      .insert({
-        requester_id: senderId,
-        receiver_id: recipientId,
-        status: 'PENDING',
-        message
-      })
+      .insert(insert)
       .select('*')
       .single();
     
@@ -536,14 +573,16 @@ export const networkingService = {
     suggestedUserId: string,
     reason = 'dismissed_from_discover'
   ): Promise<NetworkingSuggestionPreference> => {
+    const insert: SuggestionPreferenceInsert = {
+      user_id: userId,
+      suggested_user_id: suggestedUserId,
+      status: 'dismissed',
+      reason,
+    };
+
     const { data, error } = await supabase
       .from('networking_suggestion_preferences')
-      .upsert({
-        user_id: userId,
-        suggested_user_id: suggestedUserId,
-        status: 'dismissed',
-        reason,
-      }, {
+      .upsert(insert, {
         onConflict: 'user_id,suggested_user_id',
       })
       .select()
@@ -584,18 +623,22 @@ export const networkingService = {
 
 
   acceptConnectionRequest: async (connectionId: string): Promise<void> => {
+    const update: ConnectionUpdate = { status: 'ACCEPTED' };
+
     const { error } = await supabase
       .from('connections')
-      .update({ status: 'ACCEPTED' })
+      .update(update)
       .eq('id', connectionId);
     
     if (error) throw error;
   },
 
   rejectConnectionRequest: async (connectionId: string): Promise<void> => {
+    const update: ConnectionUpdate = { status: 'REJECTED' };
+
     const { error } = await supabase
       .from('connections')
-      .update({ status: 'REJECTED' })
+      .update(update)
       .eq('id', connectionId);
     
     if (error) throw error;

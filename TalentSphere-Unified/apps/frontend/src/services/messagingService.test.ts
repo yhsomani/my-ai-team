@@ -2,12 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { messagingService } from './messagingService';
 import { supabase } from '../lib/supabaseClient';
 
+const mockSupabaseClient = vi.hoisted(() => ({
+  from: vi.fn(),
+}));
+
 // Mock the supabase client
 vi.mock('../lib/supabaseClient', () => {
   return {
-    supabase: {
-      from: vi.fn(),
-    },
+    supabase: mockSupabaseClient,
+    typedSupabase: mockSupabaseClient,
   };
 });
 
@@ -575,7 +578,11 @@ describe('messagingService', () => {
     it('throws error if insert fails', async () => {
       mockSingle.mockResolvedValueOnce({ data: null, error: new Error('Insert failed') });
 
-      await expect(messagingService.sendMessage({ content: 'test' })).rejects.toThrow('Insert failed');
+      await expect(messagingService.sendMessage({
+        conversationId: 'conv-1',
+        senderId: 'user-1',
+        content: 'test'
+      })).rejects.toThrow('Insert failed');
 
       expect(mockUpdate).not.toHaveBeenCalled();
     });

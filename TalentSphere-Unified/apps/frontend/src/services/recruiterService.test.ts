@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { recruiterService } from './recruiterService';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
+
+const mockSupabaseClient = vi.hoisted(() => ({
+  from: vi.fn(),
+}));
 
 vi.mock('../lib/supabaseClient', () => {
   return {
-    supabase: {
-      from: vi.fn(),
-    },
+    supabase: mockSupabaseClient,
+    typedSupabase: mockSupabaseClient,
   };
 });
 
@@ -109,7 +112,7 @@ describe('recruiterService', () => {
       }),
     };
 
-    (supabase.from as any).mockImplementation((table: string) => {
+    (typedSupabase.from as any).mockImplementation((table: string) => {
       if (table === 'jobs') return jobsQueryBuilder;
       if (table === 'job_applications') return applicationsQueryBuilder;
       if (table === 'profiles') return profilesQueryBuilder;
@@ -124,9 +127,9 @@ describe('recruiterService', () => {
       offset: 10,
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('jobs');
+    expect(typedSupabase.from).toHaveBeenCalledWith('jobs');
     expect(jobsQueryBuilder.eq).toHaveBeenCalledWith('posted_by', 'recruiter-1');
-    expect(supabase.from).toHaveBeenCalledWith('job_applications');
+    expect(typedSupabase.from).toHaveBeenCalledWith('job_applications');
     expect(applicationsQueryBuilder.select).toHaveBeenCalledWith(expect.any(String), { count: 'exact' });
     expect(applicationsQueryBuilder.in).toHaveBeenCalledWith('job_id', ['job-1', 'job-2']);
     expect(applicationsQueryBuilder.order).toHaveBeenCalledWith('created_at', { ascending: false });
@@ -330,7 +333,7 @@ describe('recruiterService', () => {
       offset: 0,
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('profiles');
+    expect(typedSupabase.from).toHaveBeenCalledWith('profiles');
     expect(profilesQueryBuilder.or).toHaveBeenCalledWith('full_name.ilike.%Ava%,email.ilike.%Ava%');
     expect(profilesQueryBuilder.limit).toHaveBeenCalledWith(100);
     expect(applicationsQueryBuilder.in).toHaveBeenCalledWith('job_id', ['job-1', 'job-2']);
@@ -343,7 +346,7 @@ describe('recruiterService', () => {
   it('loads candidate scorecards with normalized rubric ratings', async () => {
     const result = await recruiterService.getCandidateScorecards('recruiter-1', ['app-1']);
 
-    expect(supabase.from).toHaveBeenCalledWith('candidate_scorecards');
+    expect(typedSupabase.from).toHaveBeenCalledWith('candidate_scorecards');
     expect(scorecardsQueryBuilder.select).toHaveBeenCalledWith('*');
     expect(scorecardsQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
     expect(scorecardsQueryBuilder.in).toHaveBeenCalledWith('application_id', ['app-1']);
@@ -372,7 +375,7 @@ describe('recruiterService', () => {
       evidence: ' Evidence ',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('candidate_scorecards');
+    expect(typedSupabase.from).toHaveBeenCalledWith('candidate_scorecards');
     expect(scorecardsQueryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
       recruiter_id: 'recruiter-1',
       application_id: 'app-1',

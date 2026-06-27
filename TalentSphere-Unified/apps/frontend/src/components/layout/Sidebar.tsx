@@ -1,53 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, Briefcase, GraduationCap, 
-  Trophy, Share2, Cpu, MessageSquare,
-  LogOut, Moon, Sun, Settings, User,
+import {
+  LogOut, Moon, Sun,
   ChevronLeft, ChevronRight, Layers
 } from 'lucide-react';
-
-interface NavItem {
-  name: string;
-  path: string;
-  icon: React.ReactNode;
-  roles?: string[];
-}
-
-const mainNav: NavItem[] = [
-  { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-  { name: 'Jobs', path: '/jobs', icon: <Briefcase size={18} />, roles: ['ROLE_USER', 'ROLE_RECRUITER'] },
-  { name: 'Candidates', path: '/candidates', icon: <User size={18} />, roles: ['ROLE_RECRUITER'] },
-  { name: 'Learning', path: '/lms', icon: <GraduationCap size={18} />, roles: ['ROLE_USER'] },
-  { name: 'Challenges', path: '/challenges', icon: <Trophy size={18} />, roles: ['ROLE_USER'] },
-  { name: 'Network', path: '/networking', icon: <Share2 size={18} /> },
-  { name: 'AI Assistant', path: '/ai', icon: <Cpu size={18} /> },
-  { name: 'Messages', path: '/messaging', icon: <MessageSquare size={18} /> },
-  { name: 'Admin Console', path: '/admin', icon: <Layers size={18} />, roles: ['ROLE_ADMIN'] },
-];
-
-const bottomNav: NavItem[] = [
-  { name: 'Profile', path: '/profile', icon: <User size={18} /> },
-  { name: 'Settings', path: '/settings', icon: <Settings size={18} /> },
-];
-
-const getMobileNavItems = (items: NavItem[], roles: string[] = []) => {
-  const hasRole = (role: string) => roles.includes(role);
-  const allItems = [...items, ...bottomNav];
-  const priorityPaths = hasRole('ROLE_RECRUITER')
-    ? ['/dashboard', '/jobs', '/candidates', '/messaging', '/networking']
-    : hasRole('ROLE_ADMIN')
-      ? ['/dashboard', '/admin', '/messaging', '/profile', '/settings']
-      : ['/dashboard', '/jobs', '/lms', '/challenges', '/messaging'];
-
-  const prioritizedItems = priorityPaths
-    .map(path => allItems.find(item => item.path === path))
-    .filter((item): item is NavItem => Boolean(item));
-
-  return [...prioritizedItems, ...allItems]
-    .filter((item, index, list) => list.findIndex(candidate => candidate.path === item.path) === index)
-    .slice(0, 5);
-};
+import { useAppSelector } from '../../store/hooks';
+import { getAccessibleNavRoutes, getMobileNavRoutes, type AppRouteDefinition } from '../../navigation/routeRegistry';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -57,23 +15,25 @@ interface SidebarProps {
   handleLogout: () => void;
 }
 
-import { useAppSelector } from '../../store/hooks';
+const renderRouteIcon = (item: AppRouteDefinition) => {
+  const Icon = item.icon;
+  return Icon ? <Icon size={18} /> : null;
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, toggleTheme, handleLogout }) => {
   const { pathname } = useLocation();
   const { user } = useAppSelector((state) => state.auth);
+  const roles = user?.roles || [];
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
-  const filteredNav = mainNav.filter(item => {
-    if (!item.roles) return true;
-    return user?.roles?.some(role => item.roles?.includes(role));
-  });
-  const mobileNavItems = getMobileNavItems(filteredNav, user?.roles || []);
+  const mainNav = getAccessibleNavRoutes('main', roles);
+  const accountNav = getAccessibleNavRoutes('account', roles);
+  const mobileNavItems = getMobileNavRoutes(roles);
 
   return (
     <>
       {/* Mobile Overlay */}
-      <div 
+      <div
         className={`
           lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300
           ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
@@ -82,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
       />
 
       {/* Mobile Sidebar (Slide-over) */}
-      <aside 
+      <aside
         aria-hidden={!isOpen}
         className={`
           lg:hidden fixed left-0 top-0 h-full z-50 w-72
@@ -103,10 +63,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               <ChevronLeft size={20} />
             </button>
           </div>
-          
+
           <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
             <p className="px-3 mb-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Main</p>
-            {filteredNav.map((item) => (
+            {mainNav.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -114,20 +74,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 aria-current={isActive(item.path) ? 'page' : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
-                  ${isActive(item.path) 
-                    ? 'bg-accent/10 text-accent font-semibold' 
+                  ${isActive(item.path)
+                    ? 'bg-accent/10 text-accent font-semibold'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'}
                 `}
               >
-                {item.icon}
-                <span className="text-sm">{item.name}</span>
+                {renderRouteIcon(item)}
+                <span className="text-sm">{item.label}</span>
               </Link>
             ))}
 
             <div className="my-4 border-t border-[var(--border-default)] mx-3" />
-            
+
             <p className="px-3 mb-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Account</p>
-            {bottomNav.map((item) => (
+            {accountNav.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -135,13 +95,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 aria-current={isActive(item.path) ? 'page' : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
-                  ${isActive(item.path) 
-                    ? 'bg-accent/10 text-accent font-semibold' 
+                  ${isActive(item.path)
+                    ? 'bg-accent/10 text-accent font-semibold'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'}
                 `}
               >
-                {item.icon}
-                <span className="text-sm">{item.name}</span>
+                {renderRouteIcon(item)}
+                <span className="text-sm">{item.label}</span>
               </Link>
             ))}
           </nav>
@@ -185,58 +145,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           {isOpen && (
             <p className="px-2 mb-2 text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">Main</p>
           )}
-          {filteredNav.map((item) => (
+          {mainNav.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              title={!isOpen ? item.name : undefined}
+              title={!isOpen ? item.label : undefined}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
                 ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
-                ${isActive(item.path) 
-                  ? 'bg-accent/10 text-accent font-medium' 
+                ${isActive(item.path)
+                  ? 'bg-accent/10 text-accent font-medium'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]'}
               `}
             >
-              <span className="shrink-0">{item.icon}</span>
-              {isOpen && <span className="text-sm truncate">{item.name}</span>}
+              <span className="shrink-0">{renderRouteIcon(item)}</span>
+              {isOpen && <span className="text-sm truncate">{item.label}</span>}
             </Link>
           ))}
 
           {/* Separator */}
           <div className={`my-3 border-t border-[var(--border-default)] ${isOpen ? 'mx-2' : 'mx-1'}`} />
-          
+
           {isOpen && (
             <p className="px-2 mb-2 text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">Account</p>
           )}
-          {bottomNav.map((item) => (
+          {accountNav.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              title={!isOpen ? item.name : undefined}
+              title={!isOpen ? item.label : undefined}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
                 ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
-                ${isActive(item.path) 
-                  ? 'bg-accent/10 text-accent font-medium' 
+                ${isActive(item.path)
+                  ? 'bg-accent/10 text-accent font-medium'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]'}
               `}
             >
-              <span className="shrink-0">{item.icon}</span>
-              {isOpen && <span className="text-sm truncate">{item.name}</span>}
+              <span className="shrink-0">{renderRouteIcon(item)}</span>
+              {isOpen && <span className="text-sm truncate">{item.label}</span>}
             </Link>
           ))}
         </nav>
 
         {/* Footer */}
         <div className={`py-3 px-2 border-t border-[var(--border-default)] space-y-0.5`}>
-          <button 
+          <button
             onClick={toggleTheme}
             title={!isOpen ? (theme === 'light' ? 'Dark mode' : 'Light mode') : undefined}
             className={`
-              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)] 
+              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)]
               hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-150
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
@@ -244,11 +204,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             {isOpen && <span className="text-sm">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>}
           </button>
-          <button 
+          <button
             onClick={handleLogout}
             title={!isOpen ? 'Sign out' : undefined}
             className={`
-              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)] 
+              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)]
               hover:bg-destructive-muted hover:text-destructive transition-colors duration-150
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
@@ -258,13 +218,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           </button>
 
           {/* Collapse toggle */}
-          <button 
+          <button
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
             aria-expanded={isOpen}
             title={!isOpen ? "Expand sidebar" : undefined}
             className={`
-              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-muted)] 
+              w-full flex items-center gap-2.5 rounded-lg text-[var(--text-muted)]
               hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
@@ -287,8 +247,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               ${isActive(item.path) ? 'text-accent' : 'text-[var(--text-muted)]'}
             `}
           >
-            {item.icon}
-            <span className="text-[10px] font-medium">{item.name}</span>
+            {renderRouteIcon(item)}
+            <span className="text-[10px] font-medium">{item.label}</span>
           </Link>
         ))}
       </nav>

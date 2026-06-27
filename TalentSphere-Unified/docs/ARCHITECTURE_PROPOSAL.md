@@ -1,6 +1,6 @@
 # TalentSphere Architectural Evolution Proposal (Phase 1)
 
-> Current status note, 2026-06-26: this file is a future-state proposal. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence before using this proposal for implementation planning.
+> Documentation status: Future-state proposal. Use `../../PLAN.md` and `ARCHITECTURE_STATUS_INDEX.md` for current architecture status before using this proposal for implementation planning.
 
 ## Strategic Vision: Production-Grade Resilience
 The current architecture follows a "Distributed Monolith" pattern with basic event-driven capabilities. To reach production-grade standards, we must shift toward a **Resilient Event-Mesh** architecture that guarantees data consistency and handles failure gracefully.

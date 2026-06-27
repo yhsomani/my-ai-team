@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from './supabaseClient';
+import { typedSupabase } from './supabaseClient';
 import {
   automationSuggestionAudit,
   buildAutomationSuggestionAuditEvent,
@@ -7,6 +7,9 @@ import {
 
 vi.mock('./supabaseClient', () => ({
   supabase: {
+    from: vi.fn(),
+  },
+  typedSupabase: {
     from: vi.fn(),
   },
 }));
@@ -47,7 +50,7 @@ describe('automationSuggestionAudit', () => {
       }),
     };
 
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
   });
 
   it('builds normalized audit event records', () => {
@@ -87,7 +90,7 @@ describe('automationSuggestionAudit', () => {
       occurredAt: '2026-06-01T10:00:00.000Z',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('automation_suggestion_audit_events');
+    expect(typedSupabase.from).toHaveBeenCalledWith('automation_suggestion_audit_events');
     expect(queryBuilder.insert).toHaveBeenCalledWith(expect.objectContaining({
       user_id: 'user-1',
       suggestion_id: 'suggestion-1',
@@ -130,6 +133,23 @@ describe('automationSuggestionAudit', () => {
       eventType: 'review_status_changed',
       previousReviewStatus: 'draft',
       nextReviewStatus: 'dismissed',
+      metadata: { reviewedCount: 1 },
+    });
+  });
+
+  it('stores audit events locally when user id is unavailable', async () => {
+    const result = await automationSuggestionAudit.recordEvent({
+      suggestionId: 'suggestion-1',
+      eventType: 'workflow_prefill_used',
+      source: 'ai_review_queue',
+      metadata: { reviewedCount: 1 },
+    });
+
+    expect(typedSupabase.from).not.toHaveBeenCalled();
+    expect(result.persistedTo).toBe('local');
+    expect(automationSuggestionAudit.getLocalFallbackEvents()[0]).toMatchObject({
+      suggestionId: 'suggestion-1',
+      eventType: 'workflow_prefill_used',
       metadata: { reviewedCount: 1 },
     });
   });

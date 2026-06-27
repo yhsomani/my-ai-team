@@ -1,4 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../../../../infra/db/generated/database.types';
+export type { Database, Json } from '../../../../infra/db/generated/database.types';
 
 // =============================================================================
 // Supabase Client — Resilient Configuration
@@ -50,7 +52,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const effectiveUrl = isValidUrl(supabaseUrl) ? supabaseUrl! : 'https://placeholder.supabase.co';
 const effectiveKey = supabaseAnonKey || 'placeholder-key';
 
-export const supabase: SupabaseClient = createClient(effectiveUrl, effectiveKey, {
+export type TalentSphereSupabaseClient = SupabaseClient<Database>;
+
+export const typedSupabase: TalentSphereSupabaseClient = createClient<Database>(effectiveUrl, effectiveKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -62,6 +66,10 @@ export const supabase: SupabaseClient = createClient(effectiveUrl, effectiveKey,
     },
   },
 });
+
+// Existing services still contain direct dynamic table access and legacy row mappers.
+// Keep the compatibility export untyped until those repositories adopt Database.
+export const supabase: SupabaseClient = typedSupabase as SupabaseClient;
 
 // Export connectivity state for other modules
 export const isSupabaseConfigured = isValidUrl(supabaseUrl) && !!supabaseAnonKey;

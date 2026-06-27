@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { companyService } from './companyService';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('companyService', () => {
   let single: ReturnType<typeof vi.fn>;
@@ -36,7 +41,7 @@ describe('companyService', () => {
     eq = vi.fn().mockReturnValue({ select });
     update = vi.fn().mockReturnValue({ eq });
 
-    (supabase.from as any).mockReturnValue({ insert, update });
+    (typedSupabase.from as any).mockReturnValue({ insert, update });
   });
 
   it('registers a recruiter-owned company profile', async () => {
@@ -48,7 +53,7 @@ describe('companyService', () => {
       ownerUserId: 'user-1',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('companies');
+    expect(typedSupabase.from).toHaveBeenCalledWith('companies');
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Acme Labs',
       industry: 'Software',

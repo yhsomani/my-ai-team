@@ -1,4 +1,7 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
+
+type PaymentRow = Database['public']['Tables']['payments']['Row'];
+type SubscriptionPlanRow = Database['public']['Tables']['subscription_plans']['Row'];
 
 export interface Payment {
   id: string;
@@ -23,11 +26,56 @@ export interface PaymentPlan {
   is_active?: boolean;
 }
 
+const PAYMENT_STATUSES: Payment['status'][] = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'];
+
+const normalizePaymentStatus = (status: string | null | undefined): Payment['status'] => {
+  return PAYMENT_STATUSES.includes(status as Payment['status'])
+    ? status as Payment['status']
+    : 'PENDING';
+};
+
+const normalizeCurrency = (currency: string | null | undefined) => currency || 'USD';
+
+const jsonArrayToStrings = (value: Json | undefined): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+};
+
+const mapPayment = (row: Partial<PaymentRow>): Payment => ({
+  id: row.id || '',
+  user_id: row.user_id || '',
+  amount: row.amount || 0,
+  currency: normalizeCurrency(row.currency),
+  description: row.description || '',
+  status: normalizePaymentStatus(row.status),
+  payment_method: row.payment_method || undefined,
+  stripe_session_id: row.stripe_session_id || undefined,
+  created_at: row.created_at || '',
+  updated_at: row.updated_at || '',
+});
+
+const mapPaymentPlan = (row: SubscriptionPlanRow): PaymentPlan => ({
+  id: row.id,
+  name: row.name,
+  price: row.price,
+  currency: normalizeCurrency(row.currency),
+  interval: row.interval === 'year' ? 'year' : 'month',
+  features: jsonArrayToStrings(row.features),
+  is_active: row.is_active,
+});
+
+export const billingMode = {
+  mode: 'demo',
+  label: 'Demo billing mode',
+  providerBacked: false,
+  limitation: 'Provider-backed checkout and webhooks are not verified in this build.',
+} as const;
+
 export const paymentService = {
   createSession: async (
-    userId: string, 
-    amount: number, 
-    currency: string, 
+    userId: string,
+    amount: number,
+    currency: string,
     description: string
   ): Promise<{ sessionId: string; url: string }> => {
     // Create payment record in database
@@ -84,7 +132,7 @@ export const paymentService = {
       throw new Error(`Failed to fetch payment status: ${error.message}`);
     }
 
-    return data || null;
+    return data ? mapPayment(data) : null;
   },
 
   getHistory: async (userId: string): Promise<Payment[]> => {
@@ -99,7 +147,7 @@ export const paymentService = {
       throw new Error(`Failed to fetch payment history: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(mapPayment);
   },
 
   getPlans: async (): Promise<PaymentPlan[]> => {
@@ -114,7 +162,7 @@ export const paymentService = {
       throw new Error(`Failed to fetch plans: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(mapPaymentPlan);
   },
 
   subscribeToPlan: async (userId: string, planId: string): Promise<any> => {

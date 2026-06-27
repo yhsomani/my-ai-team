@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { supabase } from '../lib/supabaseClient';
-import { store as reduxStore } from '../store';
+import type { store as reduxStore } from '../store';
 import { logout } from '../store/slices/authSlice';
 
 export const apiClient = axios.create({
@@ -21,6 +21,8 @@ let failedQueue: Array<{
     reject: (reason?: unknown) => void;
     config: InternalAxiosRequestConfig;
 }> = [];
+let requestInterceptorId: number | null = null;
+let responseInterceptorId: number | null = null;
 
 const processQueue = (error: AxiosError | null): void => {
     failedQueue.forEach((prom) => {
@@ -34,8 +36,16 @@ const processQueue = (error: AxiosError | null): void => {
 };
 
 export const setupInterceptors = (store: typeof reduxStore) => {
+    if (requestInterceptorId !== null) {
+        apiClient.interceptors.request.eject(requestInterceptorId);
+    }
+
+    if (responseInterceptorId !== null) {
+        apiClient.interceptors.response.eject(responseInterceptorId);
+    }
+
     // Request Interceptor: Attach Supabase JWT automatically
-    apiClient.interceptors.request.use(async (config) => {
+    requestInterceptorId = apiClient.interceptors.request.use(async (config) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
             config.headers.Authorization = `Bearer ${session.access_token}`;
@@ -46,7 +56,7 @@ export const setupInterceptors = (store: typeof reduxStore) => {
     });
 
     // Response Interceptor: Global Error Handling & Auto-Logout (Race-Condition Safe)
-    apiClient.interceptors.response.use(
+    responseInterceptorId = apiClient.interceptors.response.use(
         (response) => response,
         async (error: AxiosError) => {
             const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };

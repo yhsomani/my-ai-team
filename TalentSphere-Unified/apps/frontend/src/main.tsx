@@ -6,6 +6,9 @@ import App from './App.tsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { AuraThemeProvider } from './components/shared/AuraThemeProvider'
+import { setupInterceptors } from './api/axios'
+
+setupInterceptors(store)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -18,4 +21,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </Provider>
   </React.StrictMode>,
 )
-

@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/error/ErrorBoundary';
 import { Skeleton } from './components/shared/Skeleton';
 import { Session } from '@supabase/supabase-js';
 import { ToastProvider } from './components/shared/Toast';
+import { protectedAppRoutes } from './navigation/routeRegistry';
 
 declare global {
   interface Window {
@@ -37,6 +38,25 @@ const CandidatesPage = lazy(() => import('./pages/candidates/CandidatesPage'));
 const PostJobPage = lazy(() => import('./pages/jobs/PostJobPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFound'));
 
+const protectedRouteComponents = {
+  dashboard: DashboardPage,
+  networking: NetworkingPage,
+  learning: LMSPage,
+  challenges: ChallengesPage,
+  jobs: JobsPage,
+  ai: AIAssistant,
+  messaging: MessagingPage,
+  billing: BillingPage,
+  settings: SettingsPage,
+  profile: ProfilePage,
+  'profile-detail': ProfilePage,
+  resume: ResumeBuilder,
+  'career-path': AICareerPath,
+  admin: AdminDashboard,
+  candidates: CandidatesPage,
+  'job-post': PostJobPage,
+};
+
 const PageLoader = () => (
   <div className="p-6 space-y-4 animate-fade-in">
     <Skeleton className="h-8 w-48" />
@@ -61,7 +81,7 @@ function App() {
     // Timeout: if auth doesn't resolve in 3 seconds, fall back
     const authTimeout = setTimeout(() => {
       console.warn('[Auth] Supabase auth timed out. Using fallback mode.');
-      
+
       // In dev mode, auto-login with a mock user for testing
       const isDev = import.meta.env.DEV;
       if (isDev) {
@@ -83,13 +103,13 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(authTimeout);
       if (session) {
-        dispatch(setUser({ 
+        dispatch(setUser({
           user: {
             id: session.user.id,
             email: session.user.email!,
             roles: session.user.app_metadata?.roles || ['ROLE_USER']
-          }, 
-          session 
+          },
+          session
         }));
       } else {
         // No session found.
@@ -113,7 +133,7 @@ function App() {
     }).catch((err) => {
       clearTimeout(authTimeout);
       console.warn('[Auth] Supabase session fetch failed:', err?.message || err);
-      
+
       // Dev mode fallback on error
       const isDev = import.meta.env.DEV;
       if (isDev) {
@@ -135,13 +155,13 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       clearTimeout(authTimeout);
       if (session) {
-        dispatch(setUser({ 
+        dispatch(setUser({
           user: {
             id: session.user.id,
             email: session.user.email!,
             roles: session.user.app_metadata?.roles || ['ROLE_USER']
-          }, 
-          session 
+          },
+          session
         }));
       } else {
         // If we are in dev mode, we might want to keep the mock user
@@ -171,33 +191,31 @@ function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route 
-                  path="/login" 
-                  element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
+                <Route
+                  path="/login"
+                  element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />}
                 />
-                <Route 
-                  path="/register" 
-                  element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} 
+                <Route
+                  path="/register"
+                  element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />}
                 />
 
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                <Route path="/networking" element={<ProtectedRoute><NetworkingPage /></ProtectedRoute>} />
-                <Route path="/lms" element={<ProtectedRoute><LMSPage /></ProtectedRoute>} />
-                <Route path="/challenges" element={<ProtectedRoute><ChallengesPage /></ProtectedRoute>} />
-                <Route path="/jobs" element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
-                <Route path="/ai" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
-                <Route path="/messaging" element={<ProtectedRoute><MessagingPage /></ProtectedRoute>} />
-                <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/profile/:userId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/resume" element={<ProtectedRoute><ResumeBuilder /></ProtectedRoute>} />
-                <Route path="/career-path" element={<ProtectedRoute><AICareerPath /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']}><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/candidates" element={<ProtectedRoute allowedRoles={['ROLE_RECRUITER']}><CandidatesPage /></ProtectedRoute>} />
-                <Route path="/jobs/post" element={<ProtectedRoute allowedRoles={['ROLE_RECRUITER']}><PostJobPage /></ProtectedRoute>} />
-                
+                {protectedAppRoutes.map((route) => {
+                  const PageComponent = protectedRouteComponents[route.id as keyof typeof protectedRouteComponents];
+
+                  return (
+                    <Route
+                      key={route.id}
+                      path={route.path}
+                      element={(
+                        <ProtectedRoute allowedRoles={route.allowedRoles ? [...route.allowedRoles] : undefined}>
+                          <PageComponent />
+                        </ProtectedRoute>
+                      )}
+                    />
+                  );
+                })}
+
                 {/* 404 Not Found */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

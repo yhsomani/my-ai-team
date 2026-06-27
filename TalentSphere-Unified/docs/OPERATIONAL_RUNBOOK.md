@@ -1,5 +1,7 @@
 # TalentSphere Operational Runbooks
 
+> Documentation status: Draft/unverified runbook. SLOs, backup schedules, and cluster commands require environment validation before production use.
+
 ## Disaster Recovery
 
 ### Recovery Targets

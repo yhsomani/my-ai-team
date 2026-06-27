@@ -1,5 +1,7 @@
 # TalentSphere Product, UX, Workflow, And Automation Audit
 
+> Documentation status: Current running product/UX automation audit and implementation history. Keep synchronized with `../../PLAN.md`.
+
 Source reviewed: `docs/FEATURES_AND_DASHBOARDS.md` and current frontend/backend code.
 Date: 2026-06-26
 Implementation status updated after the one-hundred-eighty-ninth implementation batch on 2026-06-27.

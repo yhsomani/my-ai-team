@@ -1,6 +1,6 @@
 # TalentSphere — Single Source of Truth (SSOT)
 
-> Current status note, 2026-06-26: this document is historical and contains stale completion claims. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence, `docs/FEATURES_AND_DASHBOARDS.md` for current product behavior, and `docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md` for the active roadmap.
+> Documentation status: Historical/stale. This document contains stale completion claims. Use `../PLAN.md` and `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture authority and document precedence.
 
 **Version:** 6.1.0 (Production Ready & Decoupled)  
 **Last Updated:** 2026-05-07  

@@ -5,23 +5,22 @@ import org.springframework.core.io.Resource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
 class FileServiceTest {
 
-    @InjectMocks
     private FileService fileService;
 
     @TempDir
@@ -34,6 +33,7 @@ class FileServiceTest {
         request.setScheme("http");
         request.setServerPort(8080);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        fileService = new FileService();
     }
 
     @AfterEach
@@ -47,7 +47,7 @@ class FileServiceTest {
                 "file",
                 "resume.pdf",
                 "application/pdf",
-                "PDF content".getBytes()
+                pdfBytes()
         );
 
         ApiResponse<String> response = fileService.uploadFile(file, "resumes");
@@ -123,7 +123,7 @@ class FileServiceTest {
                 "file",
                 "avatar.png",
                 "image/png",
-                "PNG data".getBytes()
+                pngBytes()
         );
 
         ApiResponse<String> response = fileService.uploadFile(avatar, "avatars");
@@ -139,7 +139,7 @@ class FileServiceTest {
                 "file",
                 "document.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "DOCX content".getBytes()
+                docxBytes()
         );
 
         ApiResponse<String> response = fileService.uploadFile(doc, "documents");
@@ -154,7 +154,7 @@ class FileServiceTest {
                 "file",
                 "resume.pdf",
                 "application/pdf",
-                "PDF content".getBytes()
+                pdfBytes()
         );
         ApiResponse<String> uploadResponse = fileService.uploadFile(file, "resumes");
         assertTrue(uploadResponse.isSuccess());
@@ -195,7 +195,7 @@ class FileServiceTest {
                 "file",
                 "my-custom-resume-2024.pdf",
                 "application/pdf",
-                "Content".getBytes()
+                pdfBytes()
         );
 
         ApiResponse<String> response = fileService.uploadFile(file, "resumes");
@@ -207,11 +207,11 @@ class FileServiceTest {
     @Test
     void uploadFile_DifferentContentTypes() {
         MockMultipartFile png = new MockMultipartFile(
-                "file", "image.png", "image/png", "PNG".getBytes());
+                "file", "image.png", "image/png", pngBytes());
         assertTrue(fileService.uploadFile(png, "images").isSuccess());
 
         MockMultipartFile jpg = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", "JPG".getBytes());
+                "file", "photo.jpg", "image/jpeg", jpgBytes());
         assertTrue(fileService.uploadFile(jpg, "images").isSuccess());
 
         MockMultipartFile doc = new MockMultipartFile(
@@ -225,7 +225,7 @@ class FileServiceTest {
                 "file",
                 "message.txt",
                 "text/plain",
-                "message attachment".getBytes()
+                textBytes("message attachment")
         );
         ApiResponse<String> response = fileService.uploadFile(file, "messages");
         assertTrue(response.isSuccess());
@@ -241,5 +241,134 @@ class FileServiceTest {
     void loadFile_RejectsUnsafePathParts() {
         assertThrows(IllegalArgumentException.class, () -> fileService.loadFile("..", "message.txt"));
         assertThrows(IllegalArgumentException.class, () -> fileService.loadFile("messages", "../message.txt"));
+    }
+
+    @Test
+    void uploadFile_RejectsMissingContentType() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "resume.pdf",
+                null,
+                pdfBytes()
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "resumes");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File content type is not allowed", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsMismatchedContentType() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "resume.pdf",
+                "text/plain",
+                pdfBytes()
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "resumes");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File content type is not allowed", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsSpoofedContentSignature() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "resume.pdf",
+                "application/pdf",
+                textBytes("not actually a pdf")
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "resumes");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File content does not match declared type", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsActiveContentDisguisedAsText() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "notes.txt",
+                "text/plain",
+                textBytes("<script>alert('x')</script>")
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File content is not allowed", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_RejectsEicarSignature() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "eicar.txt",
+                "text/plain",
+                textBytes("X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*")
+        );
+
+        ApiResponse<String> response = fileService.uploadFile(file, "messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File failed malware scan", response.getMessage());
+    }
+
+    @Test
+    void uploadFile_UsesConfiguredMalwareScannerHook() {
+        FileService rejectingService = new FileService(
+                (fileName, contentType, bytes) -> FileService.MalwareScanResult.rejected("scanner unavailable")
+        );
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "message.txt",
+                "text/plain",
+                textBytes("message attachment")
+        );
+
+        ApiResponse<String> response = rejectingService.uploadFile(file, "messages");
+
+        assertFalse(response.isSuccess());
+        assertEquals("File failed malware scan", response.getMessage());
+    }
+
+    private static byte[] pdfBytes() {
+        return "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF".getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private static byte[] pngBytes() {
+        return new byte[] {
+                (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D
+        };
+    }
+
+    private static byte[] jpgBytes() {
+        return new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10};
+    }
+
+    private static byte[] textBytes(String value) {
+        return value.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] docxBytes() {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+                zipOutputStream.putNextEntry(new ZipEntry("[Content_Types].xml"));
+                zipOutputStream.write(textBytes("<Types></Types>"));
+                zipOutputStream.closeEntry();
+                zipOutputStream.putNextEntry(new ZipEntry("word/document.xml"));
+                zipOutputStream.write(textBytes("<document></document>"));
+                zipOutputStream.closeEntry();
+            }
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to build DOCX fixture", e);
+        }
     }
 }

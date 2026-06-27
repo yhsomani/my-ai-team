@@ -1,0 +1,275 @@
+name: TalentSphere CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: "21"
+  NODE_VERSION: "20"
+  PROJECT_DIR: TalentSphere-Unified
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
+
+      - name: Validate module manifest
+        run: npm run validate:module-manifest
+
+      - name: Validate infrastructure manifest
+        run: npm run validate:infrastructure-manifest
+
+      - name: Validate documentation lifecycle
+        run: npm run validate:docs-lifecycle
+
+      - name: Validate incident runbooks
+        run: npm run validate:runbooks
+
+      - name: Validate observability contract
+        run: npm run validate:observability-contract
+
+      - name: Validate backend topology ADR
+        run: npm run validate:backend-topology-adr
+
+      - name: Validate schema authority ADR
+        run: npm run validate:schema-authority-adr
+
+      - name: Validate schema migrations and generated DB types
+        run: npm run validate:schema-migrations
+
+      - name: Validate legacy schema disposition
+        run: npm run validate:legacy-schema-disposition
+
+      - name: Validate messaging boundary ADR
+        run: npm run validate:messaging-boundary-adr
+
+      - name: Validate payment mode ADR
+        run: npm run validate:payment-mode-adr
+
+      - name: Validate data ownership
+        run: npm run validate:data-ownership
+
+      - name: Validate auth contract
+        run: npm run validate:auth-contract
+
+      - name: Validate security contract
+        run: npm run validate:security-contract
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Generate database types
+        run: npm run report:db-types
+
+      - name: Verify generated database types are committed
+        run: git diff --exit-code infra/db/generated/database.types.ts
+
+      - name: Generate API contract report
+        run: npm run report:api-contracts
+
+      - name: Verify generated API contract report is committed
+        run: git diff --exit-code docs/API_CONTRACT_MISMATCH_REPORT.md
+
+      - name: Generate OpenAPI payload contract
+        run: npm run report:api-openapi
+
+      - name: Validate OpenAPI payload contract
+        run: npm run validate:api-openapi-contract
+
+      - name: Verify generated OpenAPI payload contract is committed
+        run: git diff --exit-code docs/API_OPENAPI_CONTRACT.json
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Unit test frontend
+        run: npm run test:unit
+
+      - name: Build frontend
+        run: npm run build
+
+  scheduler-scripts:
+    name: Scheduler Scripts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Test scheduler audit helper
+        run: npm run test:scheduler-audit
+
+      - name: Test saved-search digest discovery
+        run: npm run test:saved-search-digest-discovery
+
+      - name: Test notification digest delivery
+        run: npm run test:notification-digests
+
+      - name: Test networking reminders
+        run: npm run test:networking-reminders
+
+  security-scans:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Audit frontend/workspace npm dependencies
+        run: npm audit --audit-level=high
+
+      - name: Install extension dependencies
+        working-directory: TalentSphere-Unified/chrome-extension-project
+        run: npm ci
+
+      - name: Audit extension npm dependencies
+        working-directory: TalentSphere-Unified/chrome-extension-project
+        run: npm audit --audit-level=high
+
+      - name: Scan repository dependencies, configuration, and secrets
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          scan-type: fs
+          scan-ref: TalentSphere-Unified
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Validate Maven reactor
+        run: mvn -B -ntp validate
+
+      - name: Test backend modules
+        run: mvn -B -ntp test -Dspring.profiles.active=test
+
+      - name: Package backend modules
+        run: mvn -B -ntp package -DskipTests
+
+  extension:
+    name: Chrome Extension
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified/chrome-extension-project
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PROJECT_DIR }}/chrome-extension-project/package-lock.json
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Test extension messaging
+        run: npm run test:messaging
+
+      - name: Test extension portal fixtures
+        run: npm run test:portal-fixtures
+
+      - name: Test extension storage migrations
+        run: npm run test:storage-migrations
+
+      - name: Test extension contract
+        run: npm run test:contract
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Smoke test extension runtime
+        run: npm run test:runtime-smoke
+
+  docker-build:
+    name: Docker Build Smoke
+    runs-on: ubuntu-latest
+    needs:
+      - frontend
+      - backend
+      - extension
+      - security-scans
+    defaults:
+      run:
+        working-directory: TalentSphere-Unified
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build frontend image
+        run: docker build -f docker/Dockerfile.frontend -t talentsphere-frontend:${{ github.sha }} .
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: talentsphere-frontend:${{ github.sha }}
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Build API gateway image
+        run: docker build --build-arg SERVICE_NAME=api-gateway -f docker/Dockerfile.service -t talentsphere-api-gateway:${{ github.sha }} .
+
+      - name: Scan API gateway image
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: talentsphere-api-gateway:${{ github.sha }}
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

@@ -1,7 +1,6 @@
 package com.talentsphere.gateway.controller;
 
 import com.talentsphere.shared.config.Feature;
-import com.talentsphere.shared.config.FeatureFlagConfig;
 import com.talentsphere.shared.config.FeatureFlagService;
 import com.talentsphere.contracts.ApiResponse;
 
@@ -26,18 +25,17 @@ public class FeatureFlagController {
 
     @GetMapping("/{flagName}")
     public ApiResponse<FeatureFlagService.FlagStatus> getFlag(@PathVariable("flagName") String flagName) {
-        Feature feature = Feature.fromFlagName(flagName)
-                .orElse(null);
-        
+        Feature feature = resolveFeature(flagName);
+
         if (feature == null) {
             return ApiResponse.error("Unknown feature flag: " + flagName);
         }
-        
+
         boolean isEnabled = featureFlagService.isEnabled(feature);
         boolean isOverridden = featureFlagService.isRuntimeOverride(feature);
-        
+
         return ApiResponse.ok(new FeatureFlagService.FlagStatus(
-            flagName,
+            feature.getFlagName(),
             isEnabled,
             feature.isDefaultEnabled(),
             isOverridden,
@@ -47,23 +45,35 @@ public class FeatureFlagController {
 
     @PostMapping("/{flagName}/enable")
     public ApiResponse<String> enableFlag(@PathVariable("flagName") String flagName) {
-        featureFlagService.enableFeature(flagName);
-        return ApiResponse.ok("Feature '" + flagName + "' enabled");
+        Feature feature = resolveFeature(flagName);
+        if (feature == null) {
+            return ApiResponse.error("Unknown feature flag: " + flagName);
+        }
+
+        featureFlagService.enableFeature(feature);
+        return ApiResponse.ok("Feature '" + feature.getFlagName() + "' enabled");
     }
 
     @PostMapping("/{flagName}/disable")
     public ApiResponse<String> disableFlag(@PathVariable("flagName") String flagName) {
-        featureFlagService.disableFeature(flagName);
-        return ApiResponse.ok("Feature '" + flagName + "' disabled");
+        Feature feature = resolveFeature(flagName);
+        if (feature == null) {
+            return ApiResponse.error("Unknown feature flag: " + flagName);
+        }
+
+        featureFlagService.disableFeature(feature);
+        return ApiResponse.ok("Feature '" + feature.getFlagName() + "' disabled");
     }
 
     @PostMapping("/{flagName}/reset")
     public ApiResponse<String> resetFlag(@PathVariable("flagName") String flagName) {
-        Feature feature = Feature.fromFlagName(flagName).orElse(null);
-        if (feature != null) {
-            featureFlagService.resetFeature(feature);
+        Feature feature = resolveFeature(flagName);
+        if (feature == null) {
+            return ApiResponse.error("Unknown feature flag: " + flagName);
         }
-        return ApiResponse.ok("Feature '" + flagName + "' reset to default");
+
+        featureFlagService.resetFeature(feature);
+        return ApiResponse.ok("Feature '" + feature.getFlagName() + "' reset to default");
     }
 
     @PostMapping("/reset-all")
@@ -89,5 +99,9 @@ public class FeatureFlagController {
             "enabledByDefault", Feature.getEnabledByDefault(),
             "disabledByDefault", Feature.getDisabledByDefault()
         ));
+    }
+
+    private Feature resolveFeature(String flagName) {
+        return Feature.fromFlagName(flagName).orElse(null);
     }
 }

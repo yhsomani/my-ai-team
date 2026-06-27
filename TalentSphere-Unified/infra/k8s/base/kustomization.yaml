@@ -18,7 +18,7 @@ resources:
   - services/messaging-service.yaml
   - services/networking-service.yaml
   - services/ai-service.yaml
-  - services/chat-service.yaml
+  - services/video-service.yaml
   - services/payment-service.yaml
   - services/file-service.yaml
   - notification-digest-cronjobs.yaml

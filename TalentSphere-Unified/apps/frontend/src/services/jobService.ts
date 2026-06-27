@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
 import { Job, JobApplication, CreateApplicationRequest } from '../types/job';
 import { apiClient } from '../api/axios';
 import type {
@@ -49,6 +49,51 @@ export interface SavedJobSearchRecord {
 }
 
 type UpdateJobPayload = Omit<Partial<Job>, 'companyId'> & { companyId?: string | null };
+type JobType = Database['public']['Enums']['job_type'];
+type JobStatus = Database['public']['Enums']['job_status'];
+type ApplicationStatus = Database['public']['Enums']['application_status'];
+type CompanyRow = Database['public']['Tables']['companies']['Row'];
+type JobRow = Database['public']['Tables']['jobs']['Row'];
+type JobInsert = Database['public']['Tables']['jobs']['Insert'];
+type JobUpdate = Database['public']['Tables']['jobs']['Update'];
+type JobApplicationRow = Database['public']['Tables']['job_applications']['Row'];
+type JobApplicationInsert = Database['public']['Tables']['job_applications']['Insert'];
+type JobApplicationUpdate = Database['public']['Tables']['job_applications']['Update'];
+type SavedJobSearchRow = Database['public']['Tables']['saved_job_searches']['Row'];
+type SavedJobSearchInsert = Database['public']['Tables']['saved_job_searches']['Insert'];
+type HiddenExploreJobRow = Database['public']['Tables']['hidden_explore_jobs']['Row'];
+type HiddenExploreJobInsert = Database['public']['Tables']['hidden_explore_jobs']['Insert'];
+type JobPostDraftVersionRow = Database['public']['Tables']['job_post_draft_versions']['Row'];
+type JobPostDraftVersionInsert = Database['public']['Tables']['job_post_draft_versions']['Insert'];
+type JobPostTemplateRow = Database['public']['Tables']['job_post_templates']['Row'];
+type JobPostTemplateInsert = Database['public']['Tables']['job_post_templates']['Insert'];
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+type SkillRow = Database['public']['Tables']['skills']['Row'];
+
+type CompanyPreviewRow = Pick<CompanyRow, 'id' | 'name' | 'logo_url' | 'location' | 'industry' | 'description' | 'website'>;
+type JobQueryRow = JobRow & {
+  companies?: CompanyPreviewRow | null;
+};
+type RecommendedProfileRow = Pick<UserProfileRow, 'id'> & {
+  skills?: Pick<SkillRow, 'name'>[] | null;
+};
+type JobApplicationWithJob = JobApplicationRow & {
+  jobs?: (Pick<JobRow, 'id' | 'title'> & {
+    companies?: Pick<CompanyRow, 'name' | 'logo_url'> | null;
+  }) | null;
+};
+
+const asJobType = (value?: string): JobType => (value || 'FULL_TIME') as JobType;
+const asJobStatus = (value?: string | null): JobStatus => (value || 'DRAFT') as JobStatus;
+const asApplicationStatus = (value?: string | null): ApplicationStatus => (value || 'PENDING') as ApplicationStatus;
+
+const requireString = (value: unknown, fieldName: string): string => {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`${fieldName} is required`);
+  }
+
+  return value.trim();
+};
 
 const getErrorText = (error: unknown) => {
   if (error instanceof Error) return error.message;
@@ -94,6 +139,16 @@ const mapJobResponse = (data: Record<string, any>): Job => ({
   status: data.status
 });
 
+const mapJobApplicationResponse = (data: JobApplicationRow): JobApplication => ({
+  id: data.id,
+  jobId: data.job_id,
+  userId: data.user_id,
+  status: asApplicationStatus(data.status),
+  appliedAt: data.applied_at || new Date().toISOString(),
+  resumeUrl: data.resume_url || undefined,
+  coverLetter: data.cover_letter || undefined,
+});
+
 const normalizeSavedSearchFilters = (filters: any): SavedJobSearchFilters => ({
   jobType: typeof filters?.jobType === 'string' ? filters.jobType : '',
   location: typeof filters?.location === 'string' ? filters.location : '',
@@ -101,7 +156,7 @@ const normalizeSavedSearchFilters = (filters: any): SavedJobSearchFilters => ({
   maxSalary: typeof filters?.maxSalary === 'string' ? filters.maxSalary : '',
 });
 
-const mapSavedSearchResponse = (data: Record<string, any>): SavedJobSearchRecord => ({
+const mapSavedSearchResponse = (data: SavedJobSearchRow): SavedJobSearchRecord => ({
   id: data.id,
   name: data.name,
   searchTerm: data.search_term || '',
@@ -115,54 +170,54 @@ const mapSavedSearchResponse = (data: Record<string, any>): SavedJobSearchRecord
 
 const getHiddenExploreJobRecordId = (userId: string, jobId: string) => `${userId}:${jobId}`;
 
-const mapHiddenExploreJobResponse = (data: Record<string, any>): HiddenExploreJob => ({
-  jobId: data.job_id || data.jobId || '',
+const mapHiddenExploreJobResponse = (data: HiddenExploreJobRow): HiddenExploreJob => ({
+  jobId: data.job_id,
   title: data.title || 'Untitled job',
-  companyName: data.company_name || data.companyName || undefined,
-  jobType: data.job_type || data.jobType || undefined,
+  companyName: data.company_name || undefined,
+  jobType: data.job_type || undefined,
   location: data.location || undefined,
-  hiddenAt: data.hidden_at || data.hiddenAt || data.created_at || data.createdAt || new Date().toISOString(),
+  hiddenAt: data.hidden_at || data.created_at || new Date().toISOString(),
 });
 
-const mapJobPostDraftHistoryResponse = (data: Record<string, any>): JobPostDraftHistoryEntry => ({
+const mapJobPostDraftHistoryResponse = (data: JobPostDraftVersionRow): JobPostDraftHistoryEntry => ({
   id: data.id,
-  recruiterId: data.recruiter_id || data.recruiterId || '',
-  draftKey: data.draft_key || data.draftKey || 'new',
-  jobId: data.job_id || data.jobId || null,
+  recruiterId: data.recruiter_id,
+  draftKey: data.draft_key || 'new',
+  jobId: data.job_id || null,
   title: data.title || '',
   description: data.description || '',
   location: data.location || '',
-  salaryMin: data.salary_min || data.salaryMin || '',
-  salaryMax: data.salary_max || data.salaryMax || '',
+  salaryMin: data.salary_min || '',
+  salaryMax: data.salary_max || '',
   requirements: data.requirements || '',
-  jobType: data.job_type || data.jobType || 'FULL_TIME',
-  salaryRange: data.salary_range || data.salaryRange || '',
+  jobType: data.job_type || 'FULL_TIME',
+  salaryRange: data.salary_range || '',
   category: data.category || '',
-  companyId: data.company_id || data.companyId || null,
-  companyName: data.company_name || data.companyName || '',
-  companyAttached: Boolean(data.company_attached ?? data.companyAttached),
+  companyId: data.company_id || null,
+  companyName: data.company_name || '',
+  companyAttached: Boolean(data.company_attached),
   reason: (data.reason || 'autosave') as JobPostDraftHistoryReason,
   persistedTo: 'server',
-  createdAt: data.created_at || data.createdAt || new Date().toISOString(),
-  updatedAt: data.updated_at || data.updatedAt || data.created_at || data.createdAt || new Date().toISOString(),
+  createdAt: data.created_at || new Date().toISOString(),
+  updatedAt: data.updated_at || data.created_at || new Date().toISOString(),
 });
 
-const mapJobPostTemplateResponse = (data: Record<string, any>): JobPostTemplate => ({
+const mapJobPostTemplateResponse = (data: JobPostTemplateRow): JobPostTemplate => ({
   id: data.id,
-  recruiterId: data.recruiter_id || data.recruiterId || '',
+  recruiterId: data.recruiter_id,
   name: data.name || data.title || 'Untitled role',
   title: data.title || '',
   description: data.description || '',
   location: data.location || '',
-  salaryMin: data.salary_min || data.salaryMin || '',
-  salaryMax: data.salary_max || data.salaryMax || '',
+  salaryMin: data.salary_min || '',
+  salaryMax: data.salary_max || '',
   requirements: data.requirements || '',
-  jobType: data.job_type || data.jobType || 'FULL_TIME',
-  salaryRange: data.salary_range || data.salaryRange || '',
+  jobType: data.job_type || 'FULL_TIME',
+  salaryRange: data.salary_range || '',
   category: data.category || '',
   persistedTo: 'server',
-  createdAt: data.created_at || data.createdAt || new Date().toISOString(),
-  updatedAt: data.updated_at || data.updatedAt || data.created_at || data.createdAt || new Date().toISOString(),
+  createdAt: data.created_at || new Date().toISOString(),
+  updatedAt: data.updated_at || data.created_at || new Date().toISOString(),
 });
 
 const encodeJobCursor = (job: Job): string => {
@@ -244,10 +299,10 @@ export const jobService = {
         : supabase.from('jobs').select(jobsSelect, { count: 'exact' });
 
       query = query
-        .eq('status', params?.status || 'PUBLISHED');
+        .eq('status', (params?.status || 'PUBLISHED') as JobStatus);
 
       if (params?.job_type) {
-        query = query.eq('job_type', params.job_type);
+        query = query.eq('job_type', params.job_type as JobType);
       }
 
       if (params?.location) {
@@ -285,7 +340,7 @@ export const jobService = {
       const { data, error, count } = await query;
       if (error) throw error;
 
-      const mappedJobs = (data || []).map(mapJobResponse);
+      const mappedJobs = ((data || []) as unknown as JobQueryRow[]).map(mapJobResponse);
       const jobs = decodedCursor ? mappedJobs.slice(0, cursorLimit) : mappedJobs;
       const total = decodedCursor ? null : typeof count === 'number' ? count : null;
       const hasNext = decodedCursor
@@ -375,20 +430,22 @@ export const jobService = {
   },
 
   saveSavedSearch: async (userId: string, savedSearch: SavedJobSearchRecord): Promise<SavedJobSearchRecord> => {
+    const insert: SavedJobSearchInsert = {
+      id: savedSearch.id,
+      user_id: userId,
+      name: savedSearch.name,
+      search_term: savedSearch.searchTerm,
+      filters: savedSearch.filters as unknown as Json,
+      alert_enabled: Boolean(savedSearch.alertEnabled),
+      last_match_count: savedSearch.lastMatchCount ?? null,
+      last_checked_at: savedSearch.lastCheckedAt ?? null,
+      last_used_at: savedSearch.lastUsedAt ?? null,
+      created_at: savedSearch.createdAt,
+    };
+
     const { data, error } = await supabase
       .from('saved_job_searches')
-      .upsert({
-        id: savedSearch.id,
-        user_id: userId,
-        name: savedSearch.name,
-        search_term: savedSearch.searchTerm,
-        filters: savedSearch.filters,
-        alert_enabled: Boolean(savedSearch.alertEnabled),
-        last_match_count: savedSearch.lastMatchCount ?? null,
-        last_checked_at: savedSearch.lastCheckedAt ?? null,
-        last_used_at: savedSearch.lastUsedAt ?? null,
-        created_at: savedSearch.createdAt,
-      }, {
+      .upsert(insert, {
         onConflict: 'id'
       })
       .select()
@@ -436,19 +493,21 @@ export const jobService = {
     hiddenJob: HiddenExploreJob
   ): Promise<HiddenExploreJob> => {
     const hiddenAt = hiddenJob.hiddenAt || new Date().toISOString();
+    const insert: HiddenExploreJobInsert = {
+      id: getHiddenExploreJobRecordId(userId, hiddenJob.jobId),
+      user_id: userId,
+      job_id: hiddenJob.jobId,
+      title: hiddenJob.title,
+      company_name: hiddenJob.companyName || null,
+      job_type: hiddenJob.jobType || null,
+      location: hiddenJob.location || null,
+      hidden_at: hiddenAt,
+      created_at: hiddenAt,
+    };
+
     const { data, error } = await supabase
       .from('hidden_explore_jobs')
-      .upsert({
-        id: getHiddenExploreJobRecordId(userId, hiddenJob.jobId),
-        user_id: userId,
-        job_id: hiddenJob.jobId,
-        title: hiddenJob.title,
-        company_name: hiddenJob.companyName || null,
-        job_type: hiddenJob.jobType || null,
-        location: hiddenJob.location || null,
-        hidden_at: hiddenAt,
-        created_at: hiddenAt,
-      }, {
+      .upsert(insert, {
         onConflict: 'user_id,job_id',
       })
       .select()
@@ -511,29 +570,31 @@ export const jobService = {
   saveJobPostDraftHistoryEntry: async (
     entry: JobPostDraftHistoryEntry
   ): Promise<JobPostDraftHistoryEntry> => {
+    const insert: JobPostDraftVersionInsert = {
+      id: entry.id,
+      recruiter_id: entry.recruiterId,
+      draft_key: entry.draftKey,
+      job_id: entry.jobId || null,
+      title: entry.title,
+      description: entry.description,
+      location: entry.location,
+      salary_min: entry.salaryMin || null,
+      salary_max: entry.salaryMax || null,
+      requirements: entry.requirements,
+      job_type: entry.jobType,
+      salary_range: entry.salaryRange || null,
+      category: entry.category || null,
+      company_id: entry.companyAttached ? entry.companyId || null : null,
+      company_name: entry.companyAttached ? entry.companyName || null : null,
+      company_attached: entry.companyAttached,
+      reason: entry.reason,
+      created_at: entry.createdAt,
+      updated_at: entry.updatedAt,
+    };
+
     const { data, error } = await supabase
       .from('job_post_draft_versions')
-      .upsert({
-        id: entry.id,
-        recruiter_id: entry.recruiterId,
-        draft_key: entry.draftKey,
-        job_id: entry.jobId || null,
-        title: entry.title,
-        description: entry.description,
-        location: entry.location,
-        salary_min: entry.salaryMin || null,
-        salary_max: entry.salaryMax || null,
-        requirements: entry.requirements,
-        job_type: entry.jobType,
-        salary_range: entry.salaryRange || null,
-        category: entry.category || null,
-        company_id: entry.companyAttached ? entry.companyId || null : null,
-        company_name: entry.companyAttached ? entry.companyName || null : null,
-        company_attached: entry.companyAttached,
-        reason: entry.reason,
-        created_at: entry.createdAt,
-        updated_at: entry.updatedAt,
-      }, {
+      .upsert(insert, {
         onConflict: 'id',
       })
       .select()
@@ -570,24 +631,26 @@ export const jobService = {
     recruiterId: string,
     template: JobPostTemplate
   ): Promise<JobPostTemplate> => {
+    const insert: JobPostTemplateInsert = {
+      id: template.id,
+      recruiter_id: recruiterId,
+      name: template.name,
+      title: template.title,
+      description: template.description,
+      location: template.location,
+      salary_min: template.salaryMin || null,
+      salary_max: template.salaryMax || null,
+      requirements: template.requirements,
+      job_type: template.jobType,
+      salary_range: template.salaryRange || null,
+      category: template.category || null,
+      created_at: template.createdAt,
+      updated_at: template.updatedAt,
+    };
+
     const { data, error } = await supabase
       .from('job_post_templates')
-      .upsert({
-        id: template.id,
-        recruiter_id: recruiterId,
-        name: template.name,
-        title: template.title,
-        description: template.description,
-        location: template.location,
-        salary_min: template.salaryMin || null,
-        salary_max: template.salaryMax || null,
-        requirements: template.requirements,
-        job_type: template.jobType,
-        salary_range: template.salaryRange || null,
-        category: template.category || null,
-        created_at: template.createdAt,
-        updated_at: template.updatedAt,
-      }, {
+      .upsert(insert, {
         onConflict: 'id',
       })
       .select()
@@ -657,12 +720,12 @@ export const jobService = {
       .eq('user_id', userId)
       .single();
 
-    if (!profileData || !profileData.skills) {
-      // Fallback to trending jobs
+    const profile = profileData as unknown as RecommendedProfileRow;
+    if (!profile.skills) {
       return jobService.getJobs({ limit: 10 });
     }
 
-    const skillNames = profileData.skills.map(s => s.name);
+    const skillNames = profile.skills.map(s => s.name);
 
     // Find jobs that might match based on requirements containing user skills
     const { data, error } = await supabase
@@ -678,7 +741,7 @@ export const jobService = {
     if (error) throw error;
 
     // Simple client-side matching (can be improved with full-text search)
-    const matchedJobs = (data || []).filter((job: Record<string, any>) =>
+    const matchedJobs = ((data || []) as unknown as JobQueryRow[]).filter((job) =>
       job.requirements?.some((req: string) =>
         skillNames.some(skill =>
           req.toLowerCase().includes(skill.toLowerCase())
@@ -690,20 +753,22 @@ export const jobService = {
   },
 
   postJob: async (jobData: Partial<Job>, postedBy: string): Promise<Job> => {
+    const insert: JobInsert = {
+      title: requireString(jobData.title, 'Job title'),
+      description: requireString(jobData.description, 'Job description'),
+      company_id: requireString(jobData.companyId, 'Company'),
+      location: requireString(jobData.location, 'Job location'),
+      job_type: asJobType(jobData.jobType),
+      salary_min: jobData.salaryMin ?? null,
+      salary_max: jobData.salaryMax ?? null,
+      requirements: jobData.requirements ?? null,
+      status: asJobStatus(jobData.status),
+      posted_by: postedBy
+    };
+
     const { data, error } = await supabase
       .from('jobs')
-      .insert({
-        title: jobData.title,
-        description: jobData.description,
-        company_id: jobData.companyId,
-        location: jobData.location,
-        job_type: jobData.jobType || 'FULL_TIME',
-        salary_min: jobData.salaryMin,
-        salary_max: jobData.salaryMax,
-        requirements: jobData.requirements,
-        status: jobData.status || 'DRAFT',
-        posted_by: postedBy
-      })
+      .insert(insert)
       .select()
       .single();
 
@@ -713,16 +778,20 @@ export const jobService = {
   },
 
   updateJob: async (id: string, jobData: UpdateJobPayload): Promise<Job> => {
-    const updateData: Record<string, any> = {};
+    if (jobData.companyId === null) {
+      throw new Error('Company cannot be cleared from a job posting');
+    }
+
+    const updateData: JobUpdate = {};
     if (jobData.title) updateData.title = jobData.title;
     if (jobData.description) updateData.description = jobData.description;
-    if ('companyId' in jobData) updateData.company_id = jobData.companyId;
+    if (jobData.companyId) updateData.company_id = jobData.companyId;
     if (jobData.location) updateData.location = jobData.location;
-    if (jobData.jobType) updateData.job_type = jobData.jobType;
+    if (jobData.jobType) updateData.job_type = asJobType(jobData.jobType);
     if (jobData.salaryMin !== undefined) updateData.salary_min = jobData.salaryMin;
     if (jobData.salaryMax !== undefined) updateData.salary_max = jobData.salaryMax;
     if (jobData.requirements) updateData.requirements = jobData.requirements;
-    if (jobData.status) updateData.status = jobData.status;
+    if (jobData.status) updateData.status = asJobStatus(jobData.status);
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -758,19 +827,23 @@ export const jobService = {
     }
 
     try {
+      const insert: JobApplicationInsert = {
+        job_id: application.jobId,
+        user_id: applicantId,
+        status: 'PENDING',
+        resume_url: application.resumeUrl || null,
+        cover_letter: application.coverLetter || null,
+        applied_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('job_applications')
-        .insert({
-          job_id: application.jobId,
-          user_id: applicantId,
-          status: 'PENDING',
-          applied_at: new Date().toISOString()
-        })
+        .insert(insert)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return mapJobApplicationResponse(data as JobApplicationRow);
     } catch (err) {
       console.warn('[Jobs] applyToJob failed; no application was created.', err);
       throw new Error('Application could not be submitted. Your draft was not sent. Please try again.');
@@ -791,7 +864,7 @@ export const jobService = {
         .eq('user_id', userId);
 
       if (error) throw error;
-      return data;
+      return (data || []).map(app => mapJobApplicationResponse(app as JobApplicationRow));
     } catch (err) {
       console.warn('[Jobs] getApplications failed, returning empty mock list...', err);
       return [];
@@ -814,15 +887,21 @@ export const jobService = {
 
     if (error) throw error;
 
-    return data.map(app => ({
-      id: app.id,
-      jobId: app.job_id,
-      userId: app.user_id,
-      status: app.status,
-      appliedAt: app.applied_at,
-      resumeUrl: app.resume_url,
-      coverLetter: app.cover_letter,
-      job: app.jobs
+    return (data as unknown as JobApplicationWithJob[]).map(app => ({
+      ...mapJobApplicationResponse(app),
+      job: app.jobs ? {
+        id: app.jobs.id,
+        title: app.jobs.title,
+        description: '',
+        companyId: '',
+        companyName: app.jobs.companies?.name || undefined,
+        companyLogoUrl: app.jobs.companies?.logo_url || undefined,
+        location: '',
+        jobType: '',
+        requirements: [],
+        postedAt: new Date(0).toISOString(),
+        status: 'PUBLISHED',
+      } : undefined
     }));
   },
 
@@ -838,21 +917,17 @@ export const jobService = {
 
     if (error) throw error;
 
-    return {
-      id: data.id,
-      jobId: data.job_id,
-      userId: data.user_id,
-      status: data.status,
-      appliedAt: data.applied_at,
-      resumeUrl: data.resume_url,
-      coverLetter: data.cover_letter
-    };
+    return mapJobApplicationResponse(data as JobApplicationRow);
   },
 
   withdrawApplication: async (applicationId: string): Promise<void> => {
+    const update: JobApplicationUpdate = {
+      status: 'REJECTED'
+    };
+
     const { error } = await supabase
       .from('job_applications')
-      .update({ status: 'REJECTED' })
+      .update(update)
       .eq('id', applicationId);
 
     if (error) throw error;

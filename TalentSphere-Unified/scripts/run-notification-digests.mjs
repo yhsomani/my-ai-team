@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { runWithSchedulerAudit } from './scheduler-audit.mjs';
 
 const supportedDigestFrequencies = new Set(['daily', 'weekly']);
 
@@ -181,7 +182,7 @@ const markDigestItems = async (client, ids, patch) => {
   if (error) throw new Error(`Failed to update digest items: ${error.message}`);
 };
 
-export const runNotificationDigestDelivery = async (client, options = {}) => {
+const runNotificationDigestDeliveryCore = async (client, options = {}) => {
   const nowIso = options.nowIso || new Date().toISOString();
   const maxItems = toInteger(options.maxItems, 200);
   const dryRun = options.dryRun !== false;
@@ -229,6 +230,19 @@ export const runNotificationDigestDelivery = async (client, options = {}) => {
     deliveredItems: grouped.deliveredItemIdsByNotification.flat().length,
     skippedItems: grouped.skipped.length,
   };
+};
+
+export const runNotificationDigestDelivery = async (client, options = {}) => {
+  const dryRun = options.dryRun !== false;
+
+  return runWithSchedulerAudit(client, {
+    jobName: 'notification_digest_delivery',
+    dryRun,
+    audit: options.audit,
+    auditDryRun: options.auditDryRun,
+    runId: options.runId,
+    startedAt: options.startedAt || options.nowIso,
+  }, () => runNotificationDigestDeliveryCore(client, options));
 };
 
 const getArgValue = (args, name) => {

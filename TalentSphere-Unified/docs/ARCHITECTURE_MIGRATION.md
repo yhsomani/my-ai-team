@@ -1,6 +1,6 @@
 # Architecture Migration Progress
 
-> Current status note, 2026-06-26: this file is a historical progress note. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence before treating completion statements here as current evidence.
+> Documentation status: Historical/stale progress note. Use `../../PLAN.md` and `ARCHITECTURE_STATUS_INDEX.md` before treating completion statements here as current evidence.
 
 ## Completed ✓
 

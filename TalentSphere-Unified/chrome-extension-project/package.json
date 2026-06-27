@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test:messaging": "node scripts/messaging.test.mjs",
+    "test:portal-fixtures": "node scripts/portal-fixtures.test.mjs",
+    "test:contract": "node scripts/extension-contract.test.mjs",
+    "test:storage-migrations": "node scripts/storage-migrations.test.mjs",
+    "test:runtime-smoke": "node scripts/runtime-smoke.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

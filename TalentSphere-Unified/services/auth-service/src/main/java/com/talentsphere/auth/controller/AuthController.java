@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,21 +20,36 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Register new user", description = "Register a new user account in the system")    
+    @Value("${talentsphere.auth.local-credentials.enabled:false}")
+    private boolean localCredentialsEnabled;
+
+    @Operation(summary = "Register new user", description = "Register a new user account in the system")
     @PostMapping("/register")
-    public ApiResponse<User> register(@Valid @RequestBody User user) {
-        return authService.register(user);
+    public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody User user) {
+        if (!localCredentialsEnabled) {
+            return localCredentialsDisabled("Local credential registration is disabled. Use Supabase Auth.");
+        }
+
+        return ResponseEntity.ok(authService.register(user));
     }
 
     @Operation(summary = "Login user", description = "Authenticate user and return JWT token")
     @PostMapping("/login")
-    public ApiResponse<String> login(@Valid @RequestBody User loginRequest) {
-        return authService.login(loginRequest.getEmail(), loginRequest.getPassword());
+    public ResponseEntity<ApiResponse<String>> login(@Valid @RequestBody User loginRequest) {
+        if (!localCredentialsEnabled) {
+            return localCredentialsDisabled("Local credential login is disabled. Use Supabase Auth.");
+        }
+
+        return ResponseEntity.ok(authService.login(loginRequest.getEmail(), loginRequest.getPassword()));
     }
 
-    @Operation(summary = "Health check", description = "Check if auth service is running")    
+    @Operation(summary = "Health check", description = "Check if auth service is running")
     @GetMapping("/health")
     public ApiResponse<String> health() {
         return ApiResponse.ok("UP");
+    }
+
+    private <T> ResponseEntity<ApiResponse<T>> localCredentialsDisabled(String message) {
+        return ResponseEntity.status(HttpStatus.GONE).body(ApiResponse.error(message));
     }
 }

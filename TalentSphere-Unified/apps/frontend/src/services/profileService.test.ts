@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { supabase } from '../lib/supabaseClient';
 import { profileService } from './profileService';
 
+const mockSupabaseClient = vi.hoisted(() => ({
+  from: vi.fn(),
+}));
+
 vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
-    from: vi.fn(),
-  },
+  supabase: mockSupabaseClient,
+  typedSupabase: mockSupabaseClient,
 }));
 
 describe('profileService resume export history', () => {

@@ -38,11 +38,11 @@ public class FeatureFlagService {
     }
 
     public void enableFeature(String featureName) {
-        runtimeFlags.put(featureName.toLowerCase(), true);
+        Feature.fromFlagName(featureName).ifPresent(this::enableFeature);
     }
 
     public void disableFeature(String featureName) {
-        runtimeFlags.put(featureName.toLowerCase(), false);
+        Feature.fromFlagName(featureName).ifPresent(this::disableFeature);
     }
 
     public void resetFeature(Feature feature) {
@@ -59,13 +59,13 @@ public class FeatureFlagService {
 
     public Map<String, FlagStatus> getAllFlagsWithStatus() {
         Map<String, FlagStatus> statusMap = new ConcurrentHashMap<>();
-        
+
         for (Feature feature : Feature.values()) {
             String flagName = feature.getFlagName();
             boolean currentValue = isEnabled(feature);
             boolean defaultValue = feature.isDefaultEnabled();
             boolean isOverridden = runtimeFlags.containsKey(flagName);
-            
+
             statusMap.put(flagName, new FlagStatus(
                 flagName,
                 currentValue,
@@ -74,7 +74,7 @@ public class FeatureFlagService {
                 feature.getDescription()
             ));
         }
-        
+
         return statusMap;
     }
 

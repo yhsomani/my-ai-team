@@ -1,10 +1,10 @@
 # --------------------------------------------------
-# TalentSphere — Docker Compose (Development)
+# TalentSphere - Docker Compose (Development)
 # --------------------------------------------------
 version: '3.9'
 
 services:
-  # ── Frontend (Vite Dev Server) ──
+  # -- Frontend (Vite Dev Server) --
   frontend:
     networks:
       - talentsphere-net
@@ -23,14 +23,14 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./src:/app/src
-      - ./public:/app/public
+      - ./apps/frontend/src:/app/apps/frontend/src
+      - ./apps/frontend/public:/app/apps/frontend/public
     environment:
       - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - gateway
 
-  # ── API Gateway (Nginx) ──
+  # -- API Gateway (Nginx) --
   gateway:
     networks:
       - talentsphere-net
@@ -50,7 +50,7 @@ services:
     depends_on:
       - user-service
 
-  # ── User Service ──
+  # -- User Service --
   user-service:
     networks:
       - talentsphere-net
@@ -86,7 +86,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ── Auth Service ──
+  # -- Auth Service --
   auth-service:
     networks:
       - talentsphere-net
@@ -119,7 +119,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ── Profile Service ──
+  # -- Profile Service --
   profile-service:
     networks:
       - talentsphere-net
@@ -148,7 +148,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Job Service (Careers & Hiring) ──
+  # -- Job Service (Careers & Hiring) --
   job-service:
     networks:
       - talentsphere-net
@@ -179,7 +179,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Application Service ──
+  # -- Application Service --
   application-service:
     networks:
       - talentsphere-net
@@ -208,7 +208,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Company Service ──
+  # -- Company Service --
   company-service:
     networks:
       - talentsphere-net
@@ -235,7 +235,7 @@ services:
       ts-mongodb:
         condition: service_healthy
 
-  # ── Notification Service ──
+  # -- Notification Service --
   notification-service:
     networks:
       - talentsphere-net
@@ -267,7 +267,7 @@ services:
       ts-mongodb:
         condition: service_healthy
 
-  # ── LMS Service ──
+  # -- LMS Service --
   lms-service:
     networks:
       - talentsphere-net
@@ -296,7 +296,7 @@ services:
       ts-mongodb:
         condition: service_healthy
 
-  # ── Search Service ──
+  # -- Search Service --
   search-service:
     networks:
       - talentsphere-net
@@ -324,7 +324,7 @@ services:
       elasticsearch:
         condition: service_healthy
 
-  # ── Gamification Service ──
+  # -- Gamification Service --
   gamification-service:
     networks:
       - talentsphere-net
@@ -353,7 +353,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Challenge Service ──
+  # -- Challenge Service --
   challenge-service:
     networks:
       - talentsphere-net
@@ -384,7 +384,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Messaging Service ──
+  # -- Messaging Service --
   messaging-service:
     networks:
       - talentsphere-net
@@ -413,7 +413,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Networking Service ──
+  # -- Networking Service --
   networking-service:
     networks:
       - talentsphere-net
@@ -442,7 +442,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── AI Service ──
+  # -- AI Service --
   ai-service:
     networks:
       - talentsphere-net
@@ -471,36 +471,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Chat Service ──
-  chat-service:
-    networks:
-      - talentsphere-net
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.1'
-          memory: 256M
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE_NAME: chat-service
-    ports:
-      - "8097:8097"
-    environment:
-      PORT: 8097
-      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/chat_db
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      NODE_ENV: ${NODE_ENV}
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  # ── Payment Service ──
+  # -- Payment Service --
   payment-service:
     networks:
       - talentsphere-net
@@ -529,7 +500,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── File Service ──
+  # -- File Service --
   file-service:
     networks:
       - talentsphere-net
@@ -556,7 +527,7 @@ services:
       AWS_REGION: ${AWS_REGION}
       S3_BUCKET: ${S3_BUCKET}
 
-  # ── PostgreSQL ──
+  # -- PostgreSQL --
   postgres:
     networks:
       - talentsphere-net
@@ -585,7 +556,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── PgBouncer ──
+  # -- PgBouncer --
   pgbouncer:
     networks:
       - talentsphere-net
@@ -610,7 +581,7 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── MongoDB ──
+  # -- MongoDB --
   ts-mongodb:
     networks:
       - talentsphere-net
@@ -638,7 +609,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── MongoDB Express (Web UI) ──
+  # -- MongoDB Express (Web UI) --
   mongo-express:
     networks:
       - talentsphere-net
@@ -659,7 +630,7 @@ services:
     depends_on:
       - ts-mongodb
 
-  # ── Redis (Dragonfly-compatible) ──
+  # -- Redis (Dragonfly-compatible) --
   redis:
     networks:
       - talentsphere-net
@@ -683,7 +654,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # ── RabbitMQ ──
+  # -- RabbitMQ --
   rabbitmq:
     networks:
       - talentsphere-net
@@ -711,7 +682,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Elasticsearch ──
+  # -- Elasticsearch --
   elasticsearch:
     networks:
       - talentsphere-net
@@ -738,7 +709,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # ── Prometheus ──
+  # -- Prometheus --
   prometheus:
     networks:
       - talentsphere-net
@@ -759,7 +730,7 @@ services:
     profiles:
       - monitoring
 
-  # ── Grafana ──
+  # -- Grafana --
   grafana:
     networks:
       - talentsphere-net
@@ -784,8 +755,8 @@ services:
     profiles:
       - monitoring
 
-  # ── Apicurio Registry (Schema Registry) ──
-  # NOTE: Port changed from 8081 → 8180 to avoid collision with auth-service
+  # -- Apicurio Registry (Schema Registry) --
+  # NOTE: Port changed from 8081 -> 8180 to avoid collision with auth-service
   apicurio-registry:
     networks:
       - talentsphere-net
@@ -811,47 +782,7 @@ services:
     profiles:
       - infra
 
-  # ── Pathway Service (Career Pathway Analyzer) ──
-  pathway-service:
-    networks:
-      - talentsphere-net
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.1'
-          memory: 256M
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE_NAME: pathway-service
-    ports:
-      - "8101:8101"
-    environment:
-      PORT: 8101
-      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/pathway_db
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://auth-service:8081/api/auth/.well-known/jwks.json
-      AI_SERVICE_URL: http://ai-service:8096
-      LMS_SERVICE_URL: http://lms-service:8085
-      GAMIFICATION_SERVICE_URL: http://gamification-service:8092
-      APICURIO_REGISTRY_URL: http://apicurio-registry:8080
-      NODE_ENV: ${NODE_ENV}
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    profiles:
-      - ai-features
-
-  # ── Grafana Tempo (Distributed Tracing) ──
+  # -- Grafana Tempo (Distributed Tracing) --
   tempo:
     networks:
       - talentsphere-net
@@ -876,7 +807,7 @@ services:
     profiles:
       - monitoring
 
-  # ── OpenTelemetry Collector ──
+  # -- OpenTelemetry Collector --
   otel-collector:
     networks:
       - talentsphere-net
@@ -894,15 +825,15 @@ services:
     volumes:
       - ./docker/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     ports:
-      - "4319:4317"   # OTLP gRPC (external → internal 4317)
-      - "4320:4318"   # OTLP HTTP (external → internal 4318)
+      - "4319:4317"   # OTLP gRPC (external -> internal 4317)
+      - "4320:4318"   # OTLP HTTP (external -> internal 4318)
       - "8888:8888"   # Prometheus metrics for the collector itself
     depends_on:
       - tempo
     profiles:
       - monitoring
 
-  # ── Loki ──
+  # -- Loki --
   loki:
     networks:
       - talentsphere-net
@@ -923,7 +854,7 @@ services:
     profiles:
       - monitoring
 
-  # ── Promtail ──
+  # -- Promtail --
   promtail:
     networks:
       - talentsphere-net

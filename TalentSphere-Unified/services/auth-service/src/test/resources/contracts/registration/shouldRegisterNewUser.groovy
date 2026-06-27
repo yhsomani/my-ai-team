@@ -1,10 +1,10 @@
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {
-    description("Should return 200 OK and a new user upon registration")
+    description("Should reject local credential registration by default because Supabase Auth is primary")
     request {
         method 'POST'
-        url '/api/auth/register'
+        url '/api/v1/auth/register'
         body([
             email: "test-contract@example.com",
             password: "SecurePassword123!",
@@ -15,15 +15,10 @@ Contract.make {
         }
     }
     response {
-        status OK()
+        status GONE()
         body([
-            status: "SUCCESS",
-            message: "Operation completed successfully",
-            data: [
-                id: anyUuid(),
-                email: "test-contract@example.com",
-                roles: ["ROLE_USER"]
-            ]
+            success: false,
+            message: "Local credential registration is disabled. Use Supabase Auth."
         ])
         headers {
             contentType(applicationJson())

@@ -110,7 +110,7 @@ public enum Feature {
     }
 
     public String getFlagName() {
-        return "enable_" + this.name().toLowerCase();
+        return this.name().toLowerCase();
     }
 
     public static Optional<Feature> fromFlagName(String flagName) {

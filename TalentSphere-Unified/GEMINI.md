@@ -1,5 +1,7 @@
 # TalentSphere — Gemini Assistant Context
 
+> Documentation status: Historical/stale agent context. Use `../PLAN.md`, `README.md`, and `docs/ARCHITECTURE_STATUS_INDEX.md` for current repository instructions and architecture status.
+
 > **Project Type**: Distributed Microservices Platform (Talent Intelligence)
 > **Core Stack**: React 19 + Spring Boot 3.4 + PostgreSQL/MongoDB + RabbitMQ + Redis
 > **Architecture**: Microservices + Transitioning to Micro-frontends (Vite Module Federation)

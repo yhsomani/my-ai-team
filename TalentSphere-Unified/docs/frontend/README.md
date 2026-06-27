@@ -1,5 +1,7 @@
 # TalentSphere Frontend Documentation
 
+> Documentation status: Historical/stale extracted reference. Use frontend source, `../FEATURES_AND_DASHBOARDS.md`, and `../../../PLAN.md` for current behavior.
+
 ## Overview
 
 This documentation is auto-generated using **TypeDoc** for the React/TypeScript frontend.

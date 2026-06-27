@@ -29,12 +29,12 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> 
+            .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/forgot-password",
-                    "/api/v1/auth/health", "/api/v1/auth/jwks.json",
+                    "/api/v1/auth/health", "/api/v1/auth/.well-known/jwks.json",
                     "/actuator/**", "/api-docs/**", "/swagger-ui/**"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -47,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         List<String> origins = parseOrigins();
         if (origins.isEmpty()) {
             log.error("CORS: No allowed origins configured - blocking all cross-origin requests");
@@ -55,7 +55,7 @@ public class SecurityConfig {
         } else {
             configuration.setAllowedOrigins(origins);
         }
-        
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "X-Requested-With",
@@ -66,10 +66,10 @@ public class SecurityConfig {
         ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        
+
         log.info("CORS configured with origins: {}", origins);
         return source;
     }

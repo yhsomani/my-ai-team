@@ -1,5 +1,7 @@
 import { normalizeNotificationDigestFrequency, type NotificationDigestFrequency } from '../lib/notificationPreferences';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
+
+type NotificationDigestItemInsert = Database['public']['Tables']['notification_digest_items']['Insert'];
 
 export interface SavedSearchDigestQueueInput {
   savedSearchId: string;
@@ -124,22 +126,23 @@ export const notificationDigestService = {
     input: SavedSearchDigestQueueInput
   ): Promise<NotificationDigestItem> => {
     const digestItem = buildSavedSearchDigestItem(userId, input);
+    const payload: NotificationDigestItemInsert = {
+      user_id: digestItem.userId,
+      source_type: digestItem.sourceType,
+      source_id: digestItem.sourceId,
+      delivery_key: digestItem.deliveryKey,
+      digest_frequency: digestItem.digestFrequency,
+      title: digestItem.title,
+      message: digestItem.message,
+      action_url: digestItem.actionUrl,
+      metadata: digestItem.metadata as Json,
+      deliver_after: digestItem.deliverAfter,
+      status: 'pending',
+    };
 
     const { error } = await supabase
       .from('notification_digest_items')
-      .upsert({
-        user_id: digestItem.userId,
-        source_type: digestItem.sourceType,
-        source_id: digestItem.sourceId,
-        delivery_key: digestItem.deliveryKey,
-        digest_frequency: digestItem.digestFrequency,
-        title: digestItem.title,
-        message: digestItem.message,
-        action_url: digestItem.actionUrl,
-        metadata: digestItem.metadata,
-        deliver_after: digestItem.deliverAfter,
-        status: 'pending',
-      }, {
+      .upsert(payload, {
         onConflict: 'delivery_key',
       });
 

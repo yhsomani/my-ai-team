@@ -1,4 +1,10 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase, typedSupabase, type Database, type Json } from '../lib/supabaseClient';
+
+type AISessionRow = Database['public']['Tables']['ai_sessions']['Row'];
+type AISessionInsert = Database['public']['Tables']['ai_sessions']['Insert'];
+type AutomationSuggestionRow = Database['public']['Tables']['automation_suggestions']['Row'];
+type AutomationSuggestionInsert = Database['public']['Tables']['automation_suggestions']['Insert'];
+type AutomationSuggestionUpdate = Database['public']['Tables']['automation_suggestions']['Update'];
 
 export interface AIAnalysisResult {
     analysisId: string;
@@ -60,31 +66,31 @@ const normalizeMessages = (messages: unknown): AIChatMessageRecord[] => (
         : []
 );
 
-const mapSessionResponse = (session: Record<string, any>): AISessionRecord => ({
+const mapSessionResponse = (session: AISessionRow): AISessionRecord => ({
     id: session.id,
-    userId: session.user_id || session.userId || '',
+    userId: session.user_id || '',
     title: session.title || 'AI Assistant',
     messages: normalizeMessages(session.messages),
-    lastSavedAt: session.last_saved_at || session.lastSavedAt || session.updated_at || new Date().toISOString(),
-    createdAt: session.created_at || session.createdAt || new Date().toISOString(),
-    updatedAt: session.updated_at || session.updatedAt || new Date().toISOString(),
+    lastSavedAt: session.last_saved_at || session.updated_at || new Date().toISOString(),
+    createdAt: session.created_at || new Date().toISOString(),
+    updatedAt: session.updated_at || new Date().toISOString(),
 });
 
-const mapSuggestionResponse = (suggestion: Record<string, any>): AutomationSuggestionRecord => ({
+const mapSuggestionResponse = (suggestion: AutomationSuggestionRow): AutomationSuggestionRecord => ({
     id: suggestion.id,
-    userId: suggestion.user_id || suggestion.userId || '',
-    sessionId: suggestion.session_id || suggestion.sessionId || undefined,
-    suggestionType: suggestion.suggestion_type || suggestion.suggestionType || 'chat_response',
-    sourceLabel: suggestion.source_label || suggestion.sourceLabel || undefined,
-    sourceDetail: suggestion.source_detail || suggestion.sourceDetail || undefined,
+    userId: suggestion.user_id || '',
+    sessionId: suggestion.session_id || undefined,
+    suggestionType: suggestion.suggestion_type || 'chat_response',
+    sourceLabel: suggestion.source_label || undefined,
+    sourceDetail: suggestion.source_detail || undefined,
     prompt: suggestion.prompt || undefined,
     content: suggestion.content || '',
     reviewStatus: suggestion.review_status === 'saved' || suggestion.review_status === 'dismissed'
         ? suggestion.review_status
         : 'draft',
-    reviewedAt: suggestion.reviewed_at || suggestion.reviewedAt || undefined,
-    createdAt: suggestion.created_at || suggestion.createdAt || new Date().toISOString(),
-    updatedAt: suggestion.updated_at || suggestion.updatedAt || new Date().toISOString(),
+    reviewedAt: suggestion.reviewed_at || undefined,
+    createdAt: suggestion.created_at || new Date().toISOString(),
+    updatedAt: suggestion.updated_at || new Date().toISOString(),
 });
 
 export const extractSkillsFromText = (text: string): string[] => {
@@ -103,7 +109,7 @@ export const estimateExperienceYears = (text: string): number => {
 
 export const aiService = {
     getLatestSession: async (userId: string): Promise<AISessionRecord | null> => {
-        const { data, error } = await supabase
+        const { data, error } = await typedSupabase
             .from('ai_sessions')
             .select('*')
             .eq('user_id', userId)
@@ -124,15 +130,17 @@ export const aiService = {
         session: { id: string; title?: string; messages: AIChatMessageRecord[]; lastSavedAt?: string }
     ): Promise<AISessionRecord> => {
         const lastSavedAt = session.lastSavedAt || new Date().toISOString();
-        const { data, error } = await supabase
+        const payload: AISessionInsert = {
+            id: session.id,
+            user_id: userId,
+            title: session.title || 'AI Assistant',
+            messages: session.messages as unknown as Json,
+            last_saved_at: lastSavedAt,
+        };
+
+        const { data, error } = await typedSupabase
             .from('ai_sessions')
-            .upsert({
-                id: session.id,
-                user_id: userId,
-                title: session.title || 'AI Assistant',
-                messages: session.messages,
-                last_saved_at: lastSavedAt,
-            }, {
+            .upsert(payload, {
                 onConflict: 'id'
             })
             .select()
@@ -147,7 +155,7 @@ export const aiService = {
     },
 
     deleteSession: async (userId: string, sessionId: string): Promise<void> => {
-        const { error } = await supabase
+        const { error } = await typedSupabase
             .from('ai_sessions')
             .delete()
             .eq('user_id', userId)
@@ -172,20 +180,22 @@ export const aiService = {
             reviewedAt?: string;
         }
     ): Promise<AutomationSuggestionRecord> => {
-        const { data, error } = await supabase
+        const payload: AutomationSuggestionInsert = {
+            id: suggestion.id,
+            user_id: userId,
+            session_id: suggestion.sessionId,
+            suggestion_type: 'chat_response',
+            source_label: suggestion.sourceLabel || null,
+            source_detail: suggestion.sourceDetail || null,
+            prompt: suggestion.prompt || null,
+            content: suggestion.content,
+            review_status: suggestion.reviewStatus || 'draft',
+            reviewed_at: suggestion.reviewedAt || null,
+        };
+
+        const { data, error } = await typedSupabase
             .from('automation_suggestions')
-            .upsert({
-                id: suggestion.id,
-                user_id: userId,
-                session_id: suggestion.sessionId,
-                suggestion_type: 'chat_response',
-                source_label: suggestion.sourceLabel || null,
-                source_detail: suggestion.sourceDetail || null,
-                prompt: suggestion.prompt || null,
-                content: suggestion.content,
-                review_status: suggestion.reviewStatus || 'draft',
-                reviewed_at: suggestion.reviewedAt || null,
-            }, {
+            .upsert(payload, {
                 onConflict: 'id'
             })
             .select()
@@ -205,12 +215,14 @@ export const aiService = {
         reviewStatus: Exclude<AIReviewStatus, 'draft'>,
         reviewedAt: string
     ): Promise<AutomationSuggestionRecord> => {
-        const { data, error } = await supabase
+        const payload: AutomationSuggestionUpdate = {
+            review_status: reviewStatus,
+            reviewed_at: reviewedAt,
+        };
+
+        const { data, error } = await typedSupabase
             .from('automation_suggestions')
-            .update({
-                review_status: reviewStatus,
-                reviewed_at: reviewedAt,
-            })
+            .update(payload)
             .eq('user_id', userId)
             .eq('id', suggestionId)
             .select()
@@ -273,16 +285,16 @@ export const aiService = {
 
     getInsights: async () => {
         // Get platform insights from database instead of guessing
-        const { count: userCount } = await supabase
+        const { count: userCount } = await typedSupabase
             .from('profiles')
             .select('*', { count: 'exact', head: true });
         
-        const { count: jobCount } = await supabase
+        const { count: jobCount } = await typedSupabase
             .from('jobs')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'PUBLISHED');
         
-        const { count: courseCount } = await supabase
+        const { count: courseCount } = await typedSupabase
             .from('courses')
             .select('*', { count: 'exact', head: true })
             .eq('is_published', true);

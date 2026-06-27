@@ -15,19 +15,8 @@ data:
   SPRING_REDIS_HOST: "ts-redis"
   SPRING_ELASTICSEARCH_HOSTS: "http://ts-elasticsearch:9200"
   SPRING_PROFILES_ACTIVE: "production"
-  SUPABASE_URL: "https://replace-me.supabase.co"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: talentsphere-secrets
-  namespace: talentsphere
-type: Opaque
-stringData:
-  POSTGRES_PASSWORD: "replace-me"
-  RABBITMQ_PASSWORD: "replace-me"
-  JWT_SECRET: "replace-me"
-  SUPABASE_SERVICE_ROLE_KEY: "replace-me"
+# Runtime secret values are intentionally supplied outside source as
+# talentsphere-secrets; do not commit placeholder Secret data here.
 ---
 apiVersion: v1
 kind: Service

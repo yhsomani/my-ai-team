@@ -1,6 +1,6 @@
 # Unified Production Rebuild Roadmap
 
-> Current status note, 2026-06-26: this file is a strategic alternative roadmap, not the current implementation state. `apps/backend` is not a complete backend application. Use `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence.
+> Documentation status: Historical alternative roadmap. `apps/backend` is not a complete backend application. Use `../../PLAN.md` and `ARCHITECTURE_STATUS_INDEX.md` for current architecture status and document precedence.
 
 ## 1. Final Unified Architecture
 

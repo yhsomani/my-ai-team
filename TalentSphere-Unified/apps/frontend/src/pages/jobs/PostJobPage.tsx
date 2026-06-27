@@ -77,6 +77,15 @@ const buildJobPostDraftFromJob = (job: Record<string, any>): JobPostFormDraft =>
   requirements: toJobPostDraftRequirementText(job.requirements),
 });
 
+const mapRecruiterJobToDuplicateCandidate = (job: Record<string, any>): JobPostDuplicateCandidate => ({
+  id: compact(job.id),
+  title: compact(job.title),
+  location: compact(job.location),
+  jobType: compact(job.jobType || job.job_type),
+  job_type: compact(job.job_type || job.jobType),
+  status: compact(job.status),
+});
+
 const defaultCompanyDraft = {
   name: '',
   industry: '',
@@ -511,7 +520,7 @@ const PostJobPage: React.FC = () => {
     recruiterService.getRecruiterJobs(user.id)
       .then((jobs) => {
         if (!isCurrent) return;
-        setRecruiterJobs(jobs);
+        setRecruiterJobs(jobs.map(mapRecruiterJobToDuplicateCandidate));
         setDuplicateCheckStatus('');
 
         if (!editingDraftId) {

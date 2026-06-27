@@ -4,7 +4,6 @@
  */
 
 import {
-  DEFAULT_JOB_STATUS,
   JOB_SCAN_DRAFT_STORAGE_KEY,
   type JobScanDraft,
   type PageScanMetadata
@@ -15,41 +14,10 @@ import {
   sourceCategoryFromHost,
   textLengthBand
 } from '../lib/operationalAnalytics';
+import { buildJobScanDraft } from '../lib/pageScanDraft';
+import { migrateExtensionStorage } from '../lib/storage';
 
 console.log('[Background Service Worker] Active and listening...');
-
-const normalizeText = (value?: string | null) => (value || '').replace(/\s+/g, ' ').trim();
-
-const hostFromUrl = (url?: string) => {
-  if (!url) {
-    return '';
-  }
-
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return '';
-  }
-};
-
-const parseTitle = (title?: string) => {
-  const cleaned = normalizeText(title);
-  const atParts = cleaned.split(/\s+at\s+/i);
-
-  if (atParts.length >= 2) {
-    return {
-      role: normalizeText(atParts[0]),
-      company: normalizeText(atParts.slice(1).join(' at ').split(/\s(?:-|\|)\s/)[0])
-    };
-  }
-
-  const splitParts = cleaned.split(/\s(?:-|\|)\s/).map(normalizeText).filter(Boolean);
-
-  return {
-    role: splitParts[0] || cleaned,
-    company: splitParts.length > 1 ? splitParts[1] : ''
-  };
-};
 
 const getActiveTab = () =>
   new Promise<chrome.tabs.Tab | undefined>((resolve) => {
@@ -122,32 +90,6 @@ const persistDraft = (draft: JobScanDraft) =>
     });
   });
 
-const buildDraft = (metadata: PageScanMetadata | undefined, tab: chrome.tabs.Tab | undefined): JobScanDraft => {
-  const url = normalizeText(metadata?.url || tab?.url || '');
-  const source = normalizeText(metadata?.source || hostFromUrl(url) || 'active-tab');
-  const parsedTitle = parseTitle(metadata?.rawTitle || tab?.title);
-  const description = normalizeText(metadata?.description);
-  const role = normalizeText(metadata?.role) || parsedTitle.role || 'Current page';
-  const company = normalizeText(metadata?.company) || parsedTitle.company;
-  const notes = description ? `Scanned page excerpt: ${description.slice(0, 320)}` : '';
-  const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `scan-${Date.now()}`;
-
-  return {
-    id,
-    company,
-    role,
-    status: DEFAULT_JOB_STATUS,
-    url,
-    source,
-    notes,
-    scannedAt: new Date().toISOString(),
-    confidence: metadata?.confidence || (company && role ? 'medium' : 'low'),
-    rawTitle: metadata?.rawTitle || tab?.title
-  };
-};
-
 const analyzeActivePage = async () => {
   void recordExtensionOperationalEvent({
     area: 'page_scan',
@@ -172,7 +114,14 @@ const analyzeActivePage = async () => {
   }
 
   const metadata = await scrapeActiveTab(tab.id);
-  const draft = buildDraft(metadata, tab);
+  const draft = buildJobScanDraft({
+    metadata,
+    tab,
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `scan-${Date.now()}`,
+    scannedAt: new Date().toISOString(),
+  });
   await persistDraft(draft);
   void recordExtensionOperationalEvent({
     area: 'page_scan',
@@ -198,10 +147,39 @@ const analyzeActivePage = async () => {
   };
 };
 
+const runStorageMigration = async (reason: chrome.runtime.OnInstalledReason) => {
+  try {
+    const summary = await migrateExtensionStorage();
+    void recordExtensionOperationalEvent({
+      area: 'background',
+      event: 'storage_migration_checked',
+      metadata: {
+        source_type: reason,
+        status: summary.changed ? 'completed' : 'no_change',
+        object_count: summary.preservedKeyCount,
+        field_count: summary.setKeyCount + summary.removeKeyCount,
+        missing_field_count: summary.warningCount
+      }
+    });
+  } catch (err) {
+    console.error('[Background Service Worker] Storage migration failed:', err);
+    void recordExtensionOperationalEvent({
+      area: 'background',
+      event: 'storage_migration_failed',
+      metadata: {
+        source_type: reason,
+        error_category: categorizeExtensionError(err)
+      }
+    });
+  }
+};
+
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   // Listen for installation callback
   chrome.runtime.onInstalled.addListener((details) => {
     try {
+      void runStorageMigration(details.reason);
+
       if (details.reason === 'install') {
         console.log('[Background Service Worker] TalentSphere Companion freshly installed.');
         // Initialize default storage states here if needed
@@ -266,7 +244,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
       });
       sendResponse({ status: 'error', error: String(err) });
     }
-    
+
     return true; // Keeps messaging port open for async handling
   });
 }

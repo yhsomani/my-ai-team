@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { runWithSchedulerAudit } from './scheduler-audit.mjs';
 
 const supportedDigestFrequencies = new Set(['daily', 'weekly']);
 const dayMs = 24 * 60 * 60 * 1000;
@@ -290,7 +291,7 @@ const updateSavedSearchBaselines = async (client, updates) => {
   }
 };
 
-export const runSavedSearchDigestDiscovery = async (client, options = {}) => {
+const runSavedSearchDigestDiscoveryCore = async (client, options = {}) => {
   const dryRun = options.dryRun !== false;
   const nowIso = options.nowIso || new Date().toISOString();
   const maxSearches = toInteger(options.maxSearches, 200);
@@ -325,6 +326,19 @@ export const runSavedSearchDigestDiscovery = async (client, options = {}) => {
       return acc;
     }, {}),
   };
+};
+
+export const runSavedSearchDigestDiscovery = async (client, options = {}) => {
+  const dryRun = options.dryRun !== false;
+
+  return runWithSchedulerAudit(client, {
+    jobName: 'saved_search_digest_discovery',
+    dryRun,
+    audit: options.audit,
+    auditDryRun: options.auditDryRun,
+    runId: options.runId,
+    startedAt: options.startedAt || options.nowIso,
+  }, () => runSavedSearchDigestDiscoveryCore(client, options));
 };
 
 const getArgValue = (args, name) => {

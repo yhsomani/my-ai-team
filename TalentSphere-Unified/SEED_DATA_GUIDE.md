@@ -1,5 +1,7 @@
 # TalentSphere Comprehensive Seed Data Guide
 
+> Documentation status: Current seed-data guide. Validate coverage claims against `seed-data.sql`, `supabase-schema.sql`, and `../PLAN.md` before production use.
+
 ## Overview
 
 This guide explains how to use the `seed-data.sql` script to populate your Supabase database with realistic test data covering all user types, workflows, edge cases, and failure scenarios.

@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getJobPublishPolicyErrorMessage, jobService } from './jobService';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import { apiClient } from '../api/axios';
 
 vi.mock('../lib/supabaseClient', () => {
+  const client = {
+    from: vi.fn(),
+  };
+
   return {
-    supabase: {
-      from: vi.fn(),
-    },
+    supabase: client,
+    typedSupabase: client,
   };
 });
 
@@ -45,7 +48,7 @@ describe('jobService', () => {
     };
 
     // @ts-expect-error mock
-    supabase.from.mockReturnValue(mockQueryBuilder);
+    typedSupabase.from.mockReturnValue(mockQueryBuilder);
   });
 
   describe('getJobPublishPolicyErrorMessage', () => {
@@ -69,7 +72,7 @@ describe('jobService', () => {
   describe('getJobs', () => {
     it('should build a basic query with PUBLISHED status when no params are provided', async () => {
       await jobService.getJobs();
-      expect(supabase.from).toHaveBeenCalledWith('jobs');
+      expect(typedSupabase.from).toHaveBeenCalledWith('jobs');
       expect(mockQueryBuilder.select).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('status', 'PUBLISHED');
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('posted_at', { ascending: false });
@@ -239,7 +242,7 @@ describe('jobService', () => {
       const mockJobsQuery = { ...mockQueryBuilder, limit: vi.fn().mockResolvedValue({ data: [{ id: 'job-1', requirements: ['React'] }], error: null }) };
 
       // @ts-expect-error mock
-      supabase.from.mockImplementation((table) => {
+      typedSupabase.from.mockImplementation((table) => {
         if (table === 'user_profiles') return mockProfileQuery;
         if (table === 'jobs') return mockJobsQuery;
       });
@@ -253,19 +256,39 @@ describe('jobService', () => {
   describe('mutations', () => {
     it('should post a job successfully', async () => {
       mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({ data: { id: 'job-new', title: 'Backend' }, error: null }).then(res, rej));
-      const result = await jobService.postJob({ title: 'Backend' }, 'user-1');
-      expect(mockQueryBuilder.insert).toHaveBeenCalled();
+      const result = await jobService.postJob({
+        title: 'Backend',
+        description: 'Build APIs',
+        companyId: 'company-1',
+        location: 'Remote',
+      }, 'user-1');
+      expect(mockQueryBuilder.insert).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Backend',
+        description: 'Build APIs',
+        company_id: 'company-1',
+        location: 'Remote',
+      }));
       expect(result.id).toBe('job-new');
+    });
+
+    it('rejects posting a job without schema-required fields', async () => {
+      await expect(jobService.postJob({ title: 'Backend' }, 'user-1')).rejects.toThrow('Job description is required');
+      expect(mockQueryBuilder.insert).not.toHaveBeenCalled();
     });
 
     it('should update a job successfully', async () => {
       mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({ data: { id: 'job-1', title: 'Updated' }, error: null }).then(res, rej));
-      const result = await jobService.updateJob('job-1', { title: 'Updated', companyId: null });
+      const result = await jobService.updateJob('job-1', { title: 'Updated', companyId: 'company-1' });
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
         title: 'Updated',
-        company_id: null,
+        company_id: 'company-1',
       }));
       expect(result.id).toBe('job-1');
+    });
+
+    it('rejects clearing a schema-required company from a job', async () => {
+      await expect(jobService.updateJob('job-1', { companyId: null })).rejects.toThrow('Company cannot be cleared');
+      expect(mockQueryBuilder.update).not.toHaveBeenCalled();
     });
 
     it('should delete a job successfully', async () => {
@@ -304,7 +327,7 @@ describe('jobService', () => {
 
       const result = await jobService.getJobPostDraftHistory('recruiter-1', 'draft-1', 3);
 
-      expect(supabase.from).toHaveBeenCalledWith('job_post_draft_versions');
+      expect(typedSupabase.from).toHaveBeenCalledWith('job_post_draft_versions');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('draft_key', 'draft-1');
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('updated_at', { ascending: false });
@@ -397,7 +420,7 @@ describe('jobService', () => {
 
       const result = await jobService.getHiddenExploreJobs('user-1', 25);
 
-      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(typedSupabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('hidden_at', { ascending: false });
       expect(mockQueryBuilder.limit).toHaveBeenCalledWith(25);
@@ -435,7 +458,7 @@ describe('jobService', () => {
         hiddenAt: '2026-06-26T10:00:00.000Z',
       });
 
-      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(typedSupabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
       expect(mockQueryBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({
         id: 'user-1:job-1',
         user_id: 'user-1',
@@ -459,7 +482,7 @@ describe('jobService', () => {
 
       await jobService.deleteHiddenExploreJob('user-1', 'job-1');
 
-      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(typedSupabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
       expect(mockQueryBuilder.delete).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('job_id', 'job-1');
@@ -472,7 +495,7 @@ describe('jobService', () => {
 
       await jobService.clearHiddenExploreJobs('user-1');
 
-      expect(supabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
+      expect(typedSupabase.from).toHaveBeenCalledWith('hidden_explore_jobs');
       expect(mockQueryBuilder.delete).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     });
@@ -502,7 +525,7 @@ describe('jobService', () => {
 
       const result = await jobService.getJobPostTemplates('recruiter-1', 4);
 
-      expect(supabase.from).toHaveBeenCalledWith('job_post_templates');
+      expect(typedSupabase.from).toHaveBeenCalledWith('job_post_templates');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
       expect(mockQueryBuilder.order).toHaveBeenCalledWith('updated_at', { ascending: false });
       expect(mockQueryBuilder.limit).toHaveBeenCalledWith(4);
@@ -570,7 +593,7 @@ describe('jobService', () => {
 
       await jobService.deleteJobPostTemplate('recruiter-1', 'template-1');
 
-      expect(supabase.from).toHaveBeenCalledWith('job_post_templates');
+      expect(typedSupabase.from).toHaveBeenCalledWith('job_post_templates');
       expect(mockQueryBuilder.delete).toHaveBeenCalled();
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('recruiter_id', 'recruiter-1');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('id', 'template-1');
@@ -597,6 +620,8 @@ describe('jobService', () => {
         job_id: 'job-1',
         user_id: 'user-1',
         status: 'PENDING',
+        resume_url: null,
+        cover_letter: null,
         applied_at: expect.any(String),
       });
     });

@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import { dashboardService } from './dashboardService';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 const createBuilder = (response: Record<string, unknown>) => {
   const builder: any = {
@@ -56,7 +61,7 @@ describe('dashboardService', () => {
       challenge_submissions: createBuilder({ count: 0, error: null }),
     };
 
-    (supabase.from as any).mockImplementation((table: string) => builders[table]);
+    (typedSupabase.from as any).mockImplementation((table: string) => builders[table]);
 
     const result = await dashboardService.fetchDashboardData('user-1');
 

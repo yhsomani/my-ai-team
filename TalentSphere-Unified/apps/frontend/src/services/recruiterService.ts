@@ -1,8 +1,41 @@
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database, type Json } from '../lib/supabaseClient';
 import {
   normalizeCandidateScorecardRatings,
   type CandidateScorecardRatings,
 } from '../lib/candidateInterviewPlanner';
+
+type JobRow = Database['public']['Tables']['jobs']['Row'];
+type JobApplicationRow = Database['public']['Tables']['job_applications']['Row'];
+type JobApplicationUpdate = Database['public']['Tables']['job_applications']['Update'];
+type ApplicationStatusEventInsert = Database['public']['Tables']['application_status_events']['Insert'];
+type CandidateNoteRow = Database['public']['Tables']['candidate_notes']['Row'];
+type CandidateNoteInsert = Database['public']['Tables']['candidate_notes']['Insert'];
+type CandidateScorecardRow = Database['public']['Tables']['candidate_scorecards']['Row'];
+type CandidateScorecardInsert = Database['public']['Tables']['candidate_scorecards']['Insert'];
+type ApplicationStatus = Database['public']['Enums']['application_status'];
+type JobStatus = Database['public']['Enums']['job_status'];
+type RecruiterJobSummary = Pick<JobRow, 'id' | 'status' | 'title'>;
+type ApplicationProfileRow = {
+  full_name?: string | null;
+  email?: string | null;
+};
+type ApplicationJobRow = {
+  title?: string | null;
+};
+type ApplicationQueryRow = JobApplicationRow & {
+  profiles?: ApplicationProfileRow | null;
+  jobs?: ApplicationJobRow | null;
+};
+type RecruiterJobQueryRow = JobRow & {
+  companies?: {
+    name?: string | null;
+    logo_url?: string | null;
+  } | null;
+};
+type RecruiterJobListItem = Omit<RecruiterJobQueryRow, 'status'> & {
+  status?: JobStatus;
+  company?: RecruiterJobQueryRow['companies'];
+};
 
 export interface RecruiterStats {
   activeJobs: number;
@@ -66,16 +99,29 @@ export interface CandidateScorecard {
 
 const activeRecruiterJobStatuses = ['DRAFT', 'PUBLISHED'];
 const offerStatuses = ['OFFER'];
+const applicationStatuses: readonly ApplicationStatus[] = ['PENDING', 'REVIEWED', 'INTERVIEW', 'OFFER', 'REJECTED'];
 
 const normalizeCandidateSearch = (search?: string) => search?.trim().replace(/\s+/g, ' ') ?? '';
 const sanitizeCandidateSearch = (search: string) => search.replace(/[%,()]/g, ' ').replace(/\s+/g, ' ').trim();
 
-const mapApplicationResponse = (app: any): Application => ({
+const asApplicationStatus = (status: string | null | undefined, fallback: ApplicationStatus = 'PENDING'): ApplicationStatus => (
+  applicationStatuses.includes(status as ApplicationStatus) ? (status as ApplicationStatus) : fallback
+);
+
+const asApplicationStatuses = (statuses: string[]): ApplicationStatus[] => statuses.map(status => asApplicationStatus(status));
+
+const toScorecardRatingsInput = (value: Json): Partial<Record<keyof CandidateScorecardRatings, unknown>> => (
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Partial<Record<keyof CandidateScorecardRatings, unknown>>
+    : {}
+);
+
+const mapApplicationResponse = (app: ApplicationQueryRow): Application => ({
   id: app.id,
   userId: app.user_id,
   jobId: app.job_id,
-  status: app.status,
-  appliedAt: app.created_at || app.appliedAt || app.updated_at || new Date(0).toISOString(),
+  status: asApplicationStatus(app.status),
+  appliedAt: app.created_at || app.applied_at || app.updated_at || new Date(0).toISOString(),
   user: {
     fullName: app.profiles?.full_name || 'Unknown',
     email: app.profiles?.email || ''
@@ -83,26 +129,26 @@ const mapApplicationResponse = (app: any): Application => ({
   job: {
     title: app.jobs?.title || 'Unknown'
   },
-  resumeUrl: app.resume_url,
-  coverLetter: app.cover_letter,
-  updatedAt: app.updated_at
+  resumeUrl: app.resume_url || undefined,
+  coverLetter: app.cover_letter || undefined,
+  updatedAt: app.updated_at || undefined
 });
 
-const mapCandidateNoteResponse = (note: any): CandidateNote => ({
+const mapCandidateNoteResponse = (note: CandidateNoteRow): CandidateNote => ({
   applicationId: note.application_id,
-  recruiterId: note.recruiter_id,
+  recruiterId: note.recruiter_id || undefined,
   note: note.note || '',
-  createdAt: note.created_at,
+  createdAt: note.created_at || undefined,
   updatedAt: note.updated_at || note.created_at || new Date().toISOString(),
   source: 'server'
 });
 
-const mapCandidateScorecardResponse = (scorecard: any): CandidateScorecard => ({
+const mapCandidateScorecardResponse = (scorecard: CandidateScorecardRow): CandidateScorecard => ({
   applicationId: scorecard.application_id,
-  recruiterId: scorecard.recruiter_id,
-  ratings: normalizeCandidateScorecardRatings(scorecard.ratings || {}),
+  recruiterId: scorecard.recruiter_id || undefined,
+  ratings: normalizeCandidateScorecardRatings(toScorecardRatingsInput(scorecard.ratings)),
   evidence: scorecard.evidence || '',
-  createdAt: scorecard.created_at,
+  createdAt: scorecard.created_at || undefined,
   updatedAt: scorecard.updated_at || scorecard.created_at || new Date().toISOString(),
   source: 'server'
 });
@@ -151,15 +197,17 @@ const recordApplicationStatusEvent = async (event: {
   reason?: string;
 }) => {
   try {
+    const insert: ApplicationStatusEventInsert = {
+      application_id: event.applicationId,
+      previous_status: event.previousStatus ? asApplicationStatus(event.previousStatus) : null,
+      status: asApplicationStatus(event.status),
+      changed_by: event.changedBy || null,
+      reason: event.reason,
+    };
+
     const { error } = await supabase
       .from('application_status_events')
-      .insert({
-        application_id: event.applicationId,
-        previous_status: event.previousStatus || null,
-        status: event.status,
-        changed_by: event.changedBy || null,
-        reason: event.reason,
-      });
+      .insert(insert);
 
     if (error) throw error;
   } catch (error) {
@@ -167,7 +215,7 @@ const recordApplicationStatusEvent = async (event: {
   }
 };
 
-const getRecruiterJobs = async (recruiterId: string): Promise<Array<{ id: string; status?: string; title?: string }>> => {
+const getRecruiterJobs = async (recruiterId: string): Promise<RecruiterJobSummary[]> => {
   const { data, error } = await supabase
     .from('jobs')
     .select('id, status, title')
@@ -217,7 +265,7 @@ const countApplications = async (
   }
 
   if (options?.statuses?.length) {
-    query = query.in('status', options.statuses);
+    query = query.in('status', asApplicationStatuses(options.statuses));
   }
 
   const { count, error } = await query;
@@ -312,7 +360,7 @@ export const recruiterService = {
       throw new Error(`Failed to fetch applications: ${error.message}`);
     }
 
-    return (data || []).map(mapApplicationResponse);
+    return ((data || []) as unknown as ApplicationQueryRow[]).map(mapApplicationResponse);
   },
 
   getApplicationsPage: async (
@@ -414,7 +462,7 @@ export const recruiterService = {
       throw new Error(`Failed to fetch applications: ${error.message}`);
     }
 
-    const mappedApplications = (data || []).map(mapApplicationResponse);
+    const mappedApplications = ((data || []) as unknown as ApplicationQueryRow[]).map(mapApplicationResponse);
     const applications = decodedCursor ? mappedApplications.slice(0, cursorLimit) : mappedApplications;
     const total = decodedCursor ? null : typeof count === 'number' ? count : null;
     const hasNext = decodedCursor
@@ -439,7 +487,7 @@ export const recruiterService = {
     return page.applications;
   },
 
-  getRecruiterJobs: async (recruiterId: string): Promise<any[]> => {
+  getRecruiterJobs: async (recruiterId: string): Promise<RecruiterJobListItem[]> => {
     const { data, error } = await supabase
       .from('jobs')
       .select(`
@@ -457,8 +505,9 @@ export const recruiterService = {
       throw new Error(`Failed to fetch jobs: ${error.message}`);
     }
 
-    return (data || []).map((job: any) => ({
+    return ((data || []) as unknown as RecruiterJobQueryRow[]).map((job) => ({
       ...job,
+      status: job.status || undefined,
       company: job.companies
     }));
   },
@@ -505,14 +554,16 @@ export const recruiterService = {
     }
 
     const now = new Date().toISOString();
+    const insert: CandidateNoteInsert = {
+      recruiter_id: recruiterId,
+      application_id: applicationId,
+      note: trimmedNote,
+      updated_at: now
+    };
+
     const { data, error } = await supabase
       .from('candidate_notes')
-      .upsert({
-        recruiter_id: recruiterId,
-        application_id: applicationId,
-        note: trimmedNote,
-        updated_at: now
-      }, {
+      .upsert(insert, {
         onConflict: 'application_id,recruiter_id'
       })
       .select()
@@ -555,15 +606,17 @@ export const recruiterService = {
     scorecard: { ratings: CandidateScorecardRatings; evidence: string }
   ): Promise<CandidateScorecard> => {
     const now = new Date().toISOString();
+    const insert: CandidateScorecardInsert = {
+      recruiter_id: recruiterId,
+      application_id: applicationId,
+      ratings: normalizeCandidateScorecardRatings(scorecard.ratings) as unknown as Json,
+      evidence: scorecard.evidence.trim(),
+      updated_at: now
+    };
+
     const { data, error } = await supabase
       .from('candidate_scorecards')
-      .upsert({
-        recruiter_id: recruiterId,
-        application_id: applicationId,
-        ratings: normalizeCandidateScorecardRatings(scorecard.ratings),
-        evidence: scorecard.evidence.trim(),
-        updated_at: now
-      }, {
+      .upsert(insert, {
         onConflict: 'application_id,recruiter_id'
       })
       .select()
@@ -582,9 +635,14 @@ export const recruiterService = {
     status: string,
     options?: { changedBy?: string; previousStatus?: string; reason?: string }
   ): Promise<Application> => {
+    const update: JobApplicationUpdate = {
+      status: asApplicationStatus(status),
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('job_applications')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update(update)
       .eq('id', applicationId)
       .select(`
         *,
@@ -603,7 +661,7 @@ export const recruiterService = {
       throw new Error(`Failed to update application: ${error.message}`);
     }
 
-    const application = mapApplicationResponse(data);
+    const application = mapApplicationResponse(data as unknown as ApplicationQueryRow);
     await recordApplicationStatusEvent({
       applicationId,
       previousStatus: options?.previousStatus || null,

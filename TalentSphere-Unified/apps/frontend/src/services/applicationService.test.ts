@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase } from '../lib/supabaseClient';
 import { applicationService } from './applicationService';
 
-vi.mock('../lib/supabaseClient', () => ({
-  supabase: {
+vi.mock('../lib/supabaseClient', () => {
+  const client = {
     from: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
+  };
+});
 
 describe('applicationService draft history', () => {
   let queryBuilder: any;
@@ -52,13 +57,13 @@ describe('applicationService draft history', () => {
         error: null,
       }),
     };
-    (supabase.from as any).mockReturnValue(queryBuilder);
+    (typedSupabase.from as any).mockReturnValue(queryBuilder);
   });
 
   it('loads application draft history for a user and job', async () => {
     const history = await applicationService.getApplicationDraftHistory('user-1', 'job-1', 3);
 
-    expect(supabase.from).toHaveBeenCalledWith('application_draft_versions');
+    expect(typedSupabase.from).toHaveBeenCalledWith('application_draft_versions');
     expect(queryBuilder.select).toHaveBeenCalledWith('*');
     expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(queryBuilder.eq).toHaveBeenCalledWith('job_id', 'job-1');
@@ -90,7 +95,7 @@ describe('applicationService draft history', () => {
       updatedAt: '2026-06-26T10:00:30.000Z',
     });
 
-    expect(supabase.from).toHaveBeenCalledWith('application_draft_versions');
+    expect(typedSupabase.from).toHaveBeenCalledWith('application_draft_versions');
     expect(queryBuilder.upsert).toHaveBeenCalledWith({
       id: '22222222-2222-4222-8222-222222222222',
       user_id: 'user-1',
@@ -121,7 +126,7 @@ describe('applicationService draft history', () => {
       coverLetter: 'Hello',
     })).rejects.toThrow('Application could not be submitted');
 
-    expect(supabase.from).toHaveBeenCalledWith('job_applications');
+    expect(typedSupabase.from).toHaveBeenCalledWith('job_applications');
     expect(queryBuilder.insert).toHaveBeenCalledWith({
       user_id: 'user-1',
       job_id: 'job-1',
@@ -129,7 +134,7 @@ describe('applicationService draft history', () => {
       cover_letter: 'Hello',
       status: 'PENDING',
     });
-    expect(supabase.from).not.toHaveBeenCalledWith('application_status_events');
+    expect(typedSupabase.from).not.toHaveBeenCalledWith('application_status_events');
   });
 
   it('does not return an empty application list when loading applications fails', async () => {
@@ -140,7 +145,7 @@ describe('applicationService draft history', () => {
 
     await expect(applicationService.getUserApplications('user-1')).rejects.toThrow('Applications could not be loaded');
 
-    expect(supabase.from).toHaveBeenCalledWith('job_applications');
+    expect(typedSupabase.from).toHaveBeenCalledWith('job_applications');
     expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(queryBuilder.order).toHaveBeenCalledWith('created_at', { ascending: false });
   });
@@ -160,7 +165,7 @@ describe('applicationService draft history', () => {
       status: 'INTERVIEW',
       updated_at: expect.any(String),
     });
-    expect(supabase.from).not.toHaveBeenCalledWith('application_status_events');
+    expect(typedSupabase.from).not.toHaveBeenCalledWith('application_status_events');
   });
 
   it('does not silently withdraw an application when delete fails', async () => {

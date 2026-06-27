@@ -1,4 +1,7 @@
 # TalentSphere Feature Flag System
+
+> Documentation status: Current subsystem reference. Validate implementation details against `services/shared/src/main/java/com/talentsphere/shared/config/Feature.java`.
+
 ## Single Source of Truth - Centralized Configuration
 
 ---

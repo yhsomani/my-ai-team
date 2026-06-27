@@ -1,5 +1,7 @@
 # TalentSphere Issue Tracker
 
+> Documentation status: Historical/stale issue tracker. Use `../PLAN.md` for current implementation progress, technical debt, and validation status.
+
 ## 1. Architectural & Code Level Issues
 
 | ID | Issue | Severity | Status | Notes |

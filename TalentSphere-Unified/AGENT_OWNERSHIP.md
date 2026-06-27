@@ -1,4 +1,7 @@
 # File Ownership Map
+
+> Documentation status: Historical/stale agent ownership map. Use `../PLAN.md` and `module-manifest.json` for current source ownership.
+
 # Agent → Files/Directories they own
 
 Backend-Auth:    services/auth-service/, services/user-service/

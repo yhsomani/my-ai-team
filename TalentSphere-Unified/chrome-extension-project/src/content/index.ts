@@ -32,12 +32,20 @@ const DESCRIPTION_SELECTORS = [
   '[class*="description"]'
 ];
 
-const normalizeText = (value?: string | null) => (value || '').replace(/\s+/g, ' ').trim();
+export interface PageScanSource {
+  hostname: string;
+  href: string;
+  title: string;
+  queryText: (selectors: string[]) => string;
+  metaContent: (name: string) => string;
+}
+
+export const normalizeScanText = (value?: string | null) => (value || '').replace(/\s+/g, ' ').trim();
 
 const pickText = (selectors: string[]) => {
   for (const selector of selectors) {
     const element = document.querySelector<HTMLElement>(selector);
-    const text = normalizeText(element?.innerText || element?.textContent);
+    const text = normalizeScanText(element?.innerText || element?.textContent);
     if (text) {
       return text;
     }
@@ -48,26 +56,26 @@ const pickText = (selectors: string[]) => {
 
 const getMetaContent = (name: string) => {
   const element = document.querySelector<HTMLMetaElement>(`meta[name="${name}"], meta[property="${name}"]`);
-  return normalizeText(element?.content);
+  return normalizeScanText(element?.content);
 };
 
-const stripPortalSuffix = (value: string) =>
-  normalizeText(value)
+export const stripPortalSuffix = (value: string) =>
+  normalizeScanText(value)
     .replace(/\s*\|\s*(LinkedIn|Indeed|Glassdoor).*$/i, '')
     .replace(/\s+-\s*(LinkedIn|Indeed|Glassdoor).*$/i, '');
 
-const parseTitle = (title: string) => {
+export const parseScanTitle = (title: string) => {
   const cleaned = stripPortalSuffix(title);
   const atParts = cleaned.split(/\s+at\s+/i);
 
   if (atParts.length >= 2) {
     return {
-      role: normalizeText(atParts[0]),
-      company: normalizeText(atParts.slice(1).join(' at ').split(/\s(?:-|\|)\s/)[0])
+      role: normalizeScanText(atParts[0]),
+      company: normalizeScanText(atParts.slice(1).join(' at ').split(/\s(?:-|\|)\s/)[0])
     };
   }
 
-  const splitParts = cleaned.split(/\s(?:-|\|)\s/).map(normalizeText).filter(Boolean);
+  const splitParts = cleaned.split(/\s(?:-|\|)\s/).map(normalizeScanText).filter(Boolean);
 
   return {
     role: splitParts[0] || cleaned,
@@ -75,28 +83,36 @@ const parseTitle = (title: string) => {
   };
 };
 
-const buildScanMetadata = (): PageScanMetadata => {
-  const source = window.location.hostname.replace(/^www\./, '');
-  const title = getMetaContent('og:title') || document.title;
-  const parsedTitle = parseTitle(title);
-  const role = stripPortalSuffix(pickText(ROLE_SELECTORS) || parsedTitle.role);
-  const companyText = stripPortalSuffix(pickText(COMPANY_SELECTORS));
-  const siteName = getMetaContent('og:site_name');
+export const buildScanMetadataFromPage = (page: PageScanSource): PageScanMetadata => {
+  const source = page.hostname.replace(/^www\./, '');
+  const title = page.metaContent('og:title') || page.title;
+  const parsedTitle = parseScanTitle(title);
+  const role = stripPortalSuffix(page.queryText(ROLE_SELECTORS) || parsedTitle.role);
+  const companyText = stripPortalSuffix(page.queryText(COMPANY_SELECTORS));
+  const siteName = page.metaContent('og:site_name');
   const company = companyText || parsedTitle.company || (/linkedin|indeed|glassdoor/i.test(source) ? '' : siteName);
-  const description = pickText(DESCRIPTION_SELECTORS) || getMetaContent('description') || getMetaContent('og:description');
+  const description = page.queryText(DESCRIPTION_SELECTORS) || page.metaContent('description') || page.metaContent('og:description');
   const confidence: DraftConfidence = role && company ? 'high' : role || company ? 'medium' : 'low';
 
   return {
     status: 'success',
     role,
     company,
-    url: window.location.href,
+    url: page.href,
     source,
-    description: normalizeText(description).slice(0, 600),
-    rawTitle: document.title,
+    description: normalizeScanText(description).slice(0, 600),
+    rawTitle: page.title,
     confidence
   };
 };
+
+const buildScanMetadata = (): PageScanMetadata => buildScanMetadataFromPage({
+  hostname: window.location.hostname,
+  href: window.location.href,
+  title: document.title,
+  queryText: pickText,
+  metaContent: getMetaContent,
+});
 
 // Register listeners for DOM inquiries
 if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -111,7 +127,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
       sendResponse({ status: 'error', error: String(err) });
       return false;
     }
-    
+
     // Return false for unhandled actions to notify Chrome that this listener does not respond,
     // avoiding the "message port closed before a response was received" console warning.
     return false;

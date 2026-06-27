@@ -1,27 +1,33 @@
 # API Contract Mismatch Report
 
-Generated: 2026-06-26T19:04:09.369Z
+> Documentation status: Generated current report. Regenerate with `npm run report:api-contracts`; do not hand-edit route inventory tables.
 
-Source: `npm run report:api-contracts` scans frontend `apiClient` calls, Spring controller mappings, API Gateway path predicates, security matcher strings, and direct Supabase table access.
+Generated: 2026-06-26T20:43:36.343Z
 
-This is a static analysis report. It is intentionally conservative: dynamic routes, service-to-service calls, Supabase direct access, and request/response payload shapes still need manual contract review or OpenAPI coverage.
+Source: `npm run report:api-contracts` scans frontend `apiClient` calls, Spring controller mappings, API Gateway path predicates, security matcher strings, direct Supabase table access, and `module-manifest.json` backend module classification.
+
+This is a static analysis report. It is intentionally conservative: dynamic routes, service-to-service calls, Supabase direct access, runtime service discovery, and runtime serialization still need manual review or integration coverage. Request/response payload shapes are covered by the source-derived `docs/API_OPENAPI_CONTRACT.json` companion contract.
+
+The `Generated` value is preserved between runs unless `API_CONTRACT_REPORT_GENERATED_AT` is set, so CI can verify report drift deterministically.
 
 ## Summary
 
 | Metric | Count |
 | --- | --- |
 | Frontend API client calls | 19 |
-| Backend controller routes | 126 |
-| Gateway route prefixes | 20 |
-| Security matcher paths | 18 |
+| Active backend controller routes | 123 |
+| Non-active backend controller routes | 3 |
+| Total backend controller routes scanned | 126 |
+| Gateway route prefixes | 19 |
+| Security matcher paths | 19 |
 | Direct Supabase tables used by frontend | 45 |
-| Frontend calls without matching controller | 0 |
-| Controller routes without gateway prefix | 0 |
+| Frontend calls without matching active controller | 0 |
+| Active controller routes without gateway prefix | 0 |
 | Legacy `/api/*` security matcher paths | 0 |
 
 ## Frontend Calls Without Matching Controller
 
-No unmatched frontend API client calls were found.
+No unmatched frontend API client calls were found against active controller routes.
 
 ## Matched Frontend Calls
 
@@ -51,6 +57,14 @@ No unmatched frontend API client calls were found.
 
 Every scanned controller route is covered by an API Gateway path prefix.
 
+## Non-Active Backend Controller Routes
+
+| Status | Module | Method | Controller path | Controller location |
+| --- | --- | --- | --- | --- |
+| orphaned | services/chat-service | GET | /api/v1/chat/channel/{channelId} | getChannelMessages (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:31) |
+| orphaned | services/chat-service | GET | /api/v1/chat/user/{userId} | getUserConversations (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:36) |
+| orphaned | services/chat-service | GET | /api/v1/chat/health | health (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:41) |
+
 ## Controller Routes Not Used By Frontend API Client
 
 | Method | Controller path | Controller location |
@@ -63,15 +77,15 @@ Every scanned controller route is covered by an API Gateway path prefix.
 | GET | /api/v1/ai/career-path/{userId} | getCareerPath (services/ai-service/src/main/java/com/talentsphere/ai/controller/AiController.java:48) |
 | GET | /api/v1/ai/insights | getInsights (services/ai-service/src/main/java/com/talentsphere/ai/controller/AiController.java:53) |
 | GET | /api/v1/ai/health | health (services/ai-service/src/main/java/com/talentsphere/ai/controller/AiController.java:58) |
-| GET | /api/v1/admin/feature-flags | getAllFlags (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:22) |
-| GET | /api/v1/admin/feature-flags/{flagName} | getFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:27) |
-| POST | /api/v1/admin/feature-flags/{flagName}/enable | enableFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:48) |
-| POST | /api/v1/admin/feature-flags/{flagName}/disable | disableFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:54) |
-| POST | /api/v1/admin/feature-flags/{flagName}/reset | resetFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:60) |
-| POST | /api/v1/admin/feature-flags/reset-all | resetAllFlags (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:69) |
-| GET | /api/v1/admin/feature-flags/enabled | getEnabledFeatures (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:75) |
-| GET | /api/v1/admin/feature-flags/core | getCoreFeatures (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:80) |
-| GET | /api/v1/admin/feature-flags/categories | getFeaturesByCategory (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:85) |
+| GET | /api/v1/admin/feature-flags | getAllFlags (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:21) |
+| GET | /api/v1/admin/feature-flags/{flagName} | getFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:26) |
+| POST | /api/v1/admin/feature-flags/{flagName}/enable | enableFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:46) |
+| POST | /api/v1/admin/feature-flags/{flagName}/disable | disableFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:57) |
+| POST | /api/v1/admin/feature-flags/{flagName}/reset | resetFlag (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:68) |
+| POST | /api/v1/admin/feature-flags/reset-all | resetAllFlags (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:79) |
+| GET | /api/v1/admin/feature-flags/enabled | getEnabledFeatures (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:85) |
+| GET | /api/v1/admin/feature-flags/core | getCoreFeatures (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:90) |
+| GET | /api/v1/admin/feature-flags/categories | getFeaturesByCategory (services/api-gateway/src/main/java/com/talentsphere/gateway/controller/FeatureFlagController.java:95) |
 | POST | /api/v1/applications | apply (services/application-service/src/main/java/com/talentsphere/application/controller/ApplicationController.java:18) |
 | GET | /api/v1/applications/count/{userId} | getApplicationCount (services/application-service/src/main/java/com/talentsphere/application/controller/ApplicationController.java:23) |
 | GET | /api/v1/applications/user/{userId} | getApplicationsByUserId (services/application-service/src/main/java/com/talentsphere/application/controller/ApplicationController.java:29) |
@@ -81,17 +95,14 @@ Every scanned controller route is covered by an API Gateway path prefix.
 | GET | /api/v1/applications/health | health (services/application-service/src/main/java/com/talentsphere/application/controller/ApplicationController.java:57) |
 | GET | /api/v1/recruiter/stats | getStats (services/application-service/src/main/java/com/talentsphere/application/controller/RecruiterController.java:20) |
 | GET | /api/v1/recruiter/applications/recent | getRecentApplications (services/application-service/src/main/java/com/talentsphere/application/controller/RecruiterController.java:35) |
-| POST | /api/v1/auth/register | register (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:21) |
-| POST | /api/v1/auth/login | login (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:27) |
-| GET | /api/v1/auth/health | health (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:33) |
+| POST | /api/v1/auth/register | register (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:27) |
+| POST | /api/v1/auth/login | login (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:37) |
+| GET | /api/v1/auth/health | health (services/auth-service/src/main/java/com/talentsphere/auth/controller/AuthController.java:47) |
 | GET | /api/v1/auth/.well-known/jwks.json | getJwks (services/auth-service/src/main/java/com/talentsphere/auth/controller/JwksController.java:18) |
 | GET | /api/v1/challenges | getAllChallenges (services/challenge-service/src/main/java/com/talentsphere/challenge/controller/ChallengeController.java:18) |
 | GET | /api/v1/challenges/trending | getTrendingChallenges (services/challenge-service/src/main/java/com/talentsphere/challenge/controller/ChallengeController.java:23) |
 | POST | /api/v1/challenges/submit | submitCode (services/challenge-service/src/main/java/com/talentsphere/challenge/controller/ChallengeController.java:28) |
 | GET | /api/v1/challenges/health | health (services/challenge-service/src/main/java/com/talentsphere/challenge/controller/ChallengeController.java:37) |
-| GET | /api/v1/chat/channel/{channelId} | getChannelMessages (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:31) |
-| GET | /api/v1/chat/user/{userId} | getUserConversations (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:36) |
-| GET | /api/v1/chat/health | health (services/chat-service/src/main/java/com/talentsphere/chat/controller/ChatController.java:41) |
 | POST | /api/v1/companies | register (services/company-service/src/main/java/com/talentsphere/company/controller/CompanyController.java:16) |
 | GET | /api/v1/companies | list (services/company-service/src/main/java/com/talentsphere/company/controller/CompanyController.java:22) |
 | GET | /api/v1/companies/search | search (services/company-service/src/main/java/com/talentsphere/company/controller/CompanyController.java:27) |
@@ -224,6 +235,7 @@ No legacy `/api/*` security matcher paths were found.
 1. Keep unmatched frontend API client calls at zero as new gateway fallbacks are added.
 2. Keep controller route gateway coverage at 100% as services add new `/api/v1/*` controllers.
 3. Keep legacy `/api/*` security matcher paths at zero.
-4. Decide which direct Supabase data paths should remain client-owned and which should move behind audited service APIs.
-5. Use this report as input to OpenAPI generation or typed API-client generation so payload shapes can be validated, not just routes.
+4. Resolve orphaned or unclassified backend controller routes before treating them as deployable API surface.
+5. Decide which direct Supabase data paths should remain client-owned and which should move behind audited service APIs.
+6. Use `docs/API_OPENAPI_CONTRACT.json` as input to typed API-client generation and add runtime Springdoc/OpenAPI smoke tests when backend execution is available.
 

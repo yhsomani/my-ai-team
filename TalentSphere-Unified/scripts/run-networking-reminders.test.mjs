@@ -109,6 +109,7 @@ assert.equal(plan.skipped[1].reason, 'invalid_remind_at');
 
 const createFakeClient = (rows) => {
   const calls = {
+    auditInserts: [],
     filters: [],
     updates: [],
   };
@@ -116,6 +117,15 @@ const createFakeClient = (rows) => {
   return {
     calls,
     from(table) {
+      if (table === 'audit_log') {
+        return {
+          insert(row) {
+            calls.auditInserts.push(row);
+            return Promise.resolve({ error: null });
+          },
+        };
+      }
+
       assert.equal(table, 'notifications');
 
       return {
@@ -175,10 +185,15 @@ const commitResult = await runNetworkingReminderDelivery(commitClient, {
   nowIso,
   maxItems: 25,
   dryRun: false,
+  runId: '22222222-2222-4222-8222-222222222222',
 });
 
 assert.equal(commitResult.dryRun, false);
 assert.equal(commitResult.remindersPromoted, 1);
+assert.equal(commitClient.calls.auditInserts.length, 2);
+assert.equal(commitClient.calls.auditInserts[0].action, 'scheduler.networking_reminder_delivery.started');
+assert.equal(commitClient.calls.auditInserts[1].action, 'scheduler.networking_reminder_delivery.completed');
+assert.equal(commitClient.calls.auditInserts[1].new_value.result.remindersPromoted, 1);
 assert.equal(commitClient.calls.updates.length, 1);
 assert.equal(commitClient.calls.updates[0].patch.metadata.reminderDeliveredAt, nowIso);
 assert.deepEqual(commitClient.calls.updates[0].filters, [

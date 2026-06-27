@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { paymentService } from './paymentService';
+import { billingMode, paymentService } from './paymentService';
 import { supabase } from '../lib/supabaseClient';
 
 // Mock the supabase client
 vi.mock('../lib/supabaseClient', () => {
-  return {
-    supabase: {
-      from: vi.fn(),
-      functions: {
-        invoke: vi.fn(),
-      },
+  const client = {
+    from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
     },
+  };
+
+  return {
+    supabase: client,
+    typedSupabase: client,
   };
 });
 
@@ -28,6 +31,15 @@ describe('paymentService', () => {
     mockInsert = vi.fn(() => ({ select: mockSelect }));
     (supabase.from as any).mockReturnValue({ insert: mockInsert });
     mockInvoke = supabase.functions.invoke;
+  });
+
+  it('exposes explicit demo billing mode until provider webhooks are verified', () => {
+    expect(billingMode).toMatchObject({
+      mode: 'demo',
+      providerBacked: false,
+      label: 'Demo billing mode',
+    });
+    expect(billingMode.limitation).toContain('webhooks are not verified');
   });
 
   describe('createSession', () => {
@@ -127,15 +139,37 @@ describe('paymentService', () => {
     });
 
     it('should fetch payment status successfully', async () => {
-      const mockPayment = { id: 'pay_123', status: 'COMPLETED' };
+      const sessionId = 'cs_123';
+      const mockPayment = {
+        id: 'pay_123',
+        user_id: 'user_123',
+        amount: 5000,
+        currency: 'usd',
+        description: 'Test Payment',
+        status: 'COMPLETED',
+        payment_method: null,
+        stripe_session_id: sessionId,
+        created_at: '2026-06-27T00:00:00Z',
+        updated_at: '2026-06-27T00:00:00Z',
+      };
       mockSingleStatus.mockResolvedValueOnce({ data: mockPayment, error: null });
 
-      const sessionId = 'cs_123';
       const result = await paymentService.getStatus(sessionId);
 
       expect(supabase.from).toHaveBeenCalledWith('payments');
       expect(mockEq).toHaveBeenCalledWith('stripe_session_id', sessionId);
-      expect(result).toEqual(mockPayment);
+      expect(result).toEqual({
+        id: 'pay_123',
+        user_id: 'user_123',
+        amount: 5000,
+        currency: 'usd',
+        description: 'Test Payment',
+        status: 'COMPLETED',
+        payment_method: undefined,
+        stripe_session_id: sessionId,
+        created_at: '2026-06-27T00:00:00Z',
+        updated_at: '2026-06-27T00:00:00Z',
+      });
     });
 
     it('should return null if no payment is found (PGRST116)', async () => {
@@ -165,16 +199,62 @@ describe('paymentService', () => {
     });
 
     it('should fetch payment history successfully', async () => {
-      const mockPayments = [{ id: 'pay_1' }, { id: 'pay_2' }];
+      const userId = 'user_123';
+      const mockPayments = [
+        {
+          id: 'pay_1',
+          user_id: userId,
+          amount: 100,
+          currency: null,
+          description: null,
+          status: null,
+          created_at: null,
+          updated_at: null,
+        },
+        {
+          id: 'pay_2',
+          user_id: userId,
+          amount: 200,
+          currency: 'eur',
+          description: 'Second payment',
+          status: 'REFUNDED',
+          created_at: '2026-06-27T00:00:00Z',
+          updated_at: '2026-06-27T00:00:00Z',
+        },
+      ];
       mockOrder.mockResolvedValueOnce({ data: mockPayments, error: null });
 
-      const userId = 'user_123';
       const result = await paymentService.getHistory(userId);
 
       expect(supabase.from).toHaveBeenCalledWith('payments');
       expect(mockEq).toHaveBeenCalledWith('user_id', userId);
       expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
-      expect(result).toEqual(mockPayments);
+      expect(result).toEqual([
+        {
+          id: 'pay_1',
+          user_id: userId,
+          amount: 100,
+          currency: 'USD',
+          description: '',
+          status: 'PENDING',
+          payment_method: undefined,
+          stripe_session_id: undefined,
+          created_at: '',
+          updated_at: '',
+        },
+        {
+          id: 'pay_2',
+          user_id: userId,
+          amount: 200,
+          currency: 'eur',
+          description: 'Second payment',
+          status: 'REFUNDED',
+          payment_method: undefined,
+          stripe_session_id: undefined,
+          created_at: '2026-06-27T00:00:00Z',
+          updated_at: '2026-06-27T00:00:00Z',
+        },
+      ]);
     });
 
     it('should return an empty array if data is null', async () => {
@@ -203,7 +283,34 @@ describe('paymentService', () => {
     });
 
     it('should fetch active subscription plans successfully', async () => {
-      const mockPlans = [{ id: 'plan_1', price: 10 }, { id: 'plan_2', price: 20 }];
+      const mockPlans = [
+        {
+          id: 'plan_1',
+          name: 'Starter',
+          price: 10,
+          currency: null,
+          interval: 'month',
+          features: ['One project', 42],
+          is_active: true,
+          provider_price_id: null,
+          metadata: {},
+          created_at: null,
+          updated_at: null,
+        },
+        {
+          id: 'plan_2',
+          name: 'Annual',
+          price: 20,
+          currency: 'eur',
+          interval: 'year',
+          features: ['Unlimited projects'],
+          is_active: true,
+          provider_price_id: null,
+          metadata: {},
+          created_at: null,
+          updated_at: null,
+        },
+      ];
       mockOrder.mockResolvedValueOnce({ data: mockPlans, error: null });
 
       const result = await paymentService.getPlans();
@@ -211,7 +318,26 @@ describe('paymentService', () => {
       expect(supabase.from).toHaveBeenCalledWith('subscription_plans');
       expect(mockEq).toHaveBeenCalledWith('is_active', true);
       expect(mockOrder).toHaveBeenCalledWith('price', { ascending: true });
-      expect(result).toEqual(mockPlans);
+      expect(result).toEqual([
+        {
+          id: 'plan_1',
+          name: 'Starter',
+          price: 10,
+          currency: 'USD',
+          interval: 'month',
+          features: ['One project'],
+          is_active: true,
+        },
+        {
+          id: 'plan_2',
+          name: 'Annual',
+          price: 20,
+          currency: 'eur',
+          interval: 'year',
+          features: ['Unlimited projects'],
+          is_active: true,
+        },
+      ]);
     });
 
     it('should return an empty array if data is null', async () => {

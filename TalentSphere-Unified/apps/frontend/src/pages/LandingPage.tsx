@@ -6,7 +6,7 @@ import {
   Layers, Target, Cpu, ArrowRight
 } from 'lucide-react';
 import { Button } from '../components/shared/AuraButton';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase } from '../lib/supabaseClient';
 
 const fallbackStats = { totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%', systemStatus: 'Optimal' };
 
@@ -33,16 +33,15 @@ const LandingPage: React.FC = () => {
     const fetchPublicStats = async () => {
         setStatsLoading(true);
         try {
-            // Get total users count
             const { count: totalUsers, error: usersError } = await supabase
                 .from('profiles')
-                .select('*', { count: 'exact', head: true }); // Removed .eq('is_active', true) as it doesn't match schema
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
 
-            // Get active jobs count
             const { count: activeJobs, error: jobsError } = await supabase
                 .from('jobs')
                 .select('*', { count: 'exact', head: true })
-                .eq('status', 'PUBLISHED'); // Adjust to known enum
+                .eq('status', 'PUBLISHED');
 
             if (usersError || jobsError) {
                 console.error("Failed to fetch stats", usersError || jobsError);

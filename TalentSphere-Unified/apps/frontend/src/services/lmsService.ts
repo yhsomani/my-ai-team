@@ -13,8 +13,31 @@
 // =============================================================================
 
 import { apiClient } from '../api/axios';
-import { supabase } from '../lib/supabaseClient';
+import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
 import { Course, Enrollment } from '../types/lms';
+
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type CourseRow = Database['public']['Tables']['courses']['Row'];
+type CourseInsert = Database['public']['Tables']['courses']['Insert'];
+type LessonRow = Database['public']['Tables']['lessons']['Row'];
+type EnrollmentRow = Database['public']['Tables']['enrollments']['Row'];
+type EnrollmentInsert = Database['public']['Tables']['enrollments']['Insert'];
+type EnrollmentUpdate = Database['public']['Tables']['enrollments']['Update'];
+type LessonProgressRow = Database['public']['Tables']['lesson_progress']['Row'];
+type LessonProgressInsert = Database['public']['Tables']['lesson_progress']['Insert'];
+type LessonProgressUpdate = Database['public']['Tables']['lesson_progress']['Update'];
+
+type CourseInstructorRow = Pick<ProfileRow, 'id' | 'full_name' | 'avatar_url'>;
+type CourseLessonRow = Pick<LessonRow, 'id' | 'course_id' | 'title' | 'order_index' | 'duration_minutes' | 'is_free_preview'>;
+type CourseWithInstructor = CourseRow & {
+  profiles?: CourseInstructorRow | null;
+};
+type CourseWithLessons = CourseWithInstructor & {
+  lessons?: CourseLessonRow[] | null;
+};
+type LessonProgressWithLesson = LessonProgressRow & {
+  lessons?: Pick<LessonRow, 'id' | 'title' | 'order_index'> | null;
+};
 
 export type CourseProgressFilter = 'in-progress' | 'completed';
 
@@ -202,17 +225,17 @@ const mapGatewayEnrollment = (enrollment: Record<string, any>): Enrollment => ({
   completedLessonIds: enrollment.completedLessonIds || [],
 });
 
-const mapSupabaseEnrollment = (enrollment: Record<string, any>): Enrollment => ({
+const mapSupabaseEnrollment = (enrollment: EnrollmentRow): Enrollment => ({
   id: enrollment.id,
   userId: enrollment.user_id,
   courseId: enrollment.course_id,
-  status: enrollment.status,
+  status: enrollment.status || 'ENROLLED',
   progress: enrollment.progress_percentage || 0,
-  enrolledAt: enrollment.enrolled_at,
-  startedAt: enrollment.started_at,
-  completedAt: enrollment.completed_at,
+  enrolledAt: enrollment.enrolled_at || new Date().toISOString(),
+  startedAt: enrollment.started_at || undefined,
+  completedAt: enrollment.completed_at || undefined,
   completedLessonIds: [],
-  certificateUrl: enrollment.certificate_url,
+  certificateUrl: enrollment.certificate_url || undefined,
 });
 
 const courseStatusFromEnrollment = (enrollment?: Enrollment): Course['status'] => {
@@ -239,6 +262,48 @@ const applyEnrollmentToCourse = (course: Course, enrollment?: Enrollment): Cours
   status: courseStatusFromEnrollment(enrollment),
 });
 
+const mapSupabaseCourseDifficulty = (level: string | null | undefined): Course['difficulty'] => {
+  switch ((level || '').trim().toLowerCase()) {
+    case 'beginner':
+      return 'Beginner';
+    case 'advanced':
+      return 'Advanced';
+    case 'expert':
+      return 'Expert';
+    default:
+      return 'Normal';
+  }
+};
+
+const mapSupabaseLesson = (lesson: CourseLessonRow, courseId: string): NonNullable<Course['lessons']>[number] => ({
+  id: lesson.id,
+  courseId,
+  title: lesson.title,
+  content: '',
+  orderIndex: lesson.order_index,
+  durationMinutes: lesson.duration_minutes || 15,
+  isFree: lesson.is_free_preview || false,
+});
+
+const mapSupabaseCourse = (
+  course: CourseWithInstructor,
+  lessons: CourseLessonRow[] = [],
+  enrollment?: Enrollment
+): Course => ({
+  id: course.id,
+  title: course.title,
+  slug: course.slug || undefined,
+  provider: course.profiles?.full_name || 'Unknown',
+  status: courseStatusFromEnrollment(enrollment),
+  progress: enrollment?.progress ?? 0,
+  description: course.description || undefined,
+  xp: course.xp_reward || 0,
+  category: course.category || undefined,
+  duration: course.duration_hours ? `${course.duration_hours} hours` : 'Self-paced',
+  difficulty: mapSupabaseCourseDifficulty(course.level),
+  lessons: lessons.map(lesson => mapSupabaseLesson(lesson, course.id)),
+});
+
 const mapEnrollmentsByCourseId = (enrollments: Enrollment[]): Map<string, Enrollment> => {
   return new Map(enrollments.map(enrollment => [enrollment.courseId, enrollment]));
 };
@@ -252,7 +317,7 @@ const getGatewayEnrollmentMap = async (userId: string): Promise<Map<string, Enro
 const getSupabaseEnrollmentMap = async (userId: string): Promise<Map<string, Enrollment>> => {
   const { data, error } = await supabase
     .from('enrollments')
-    .select('id, user_id, course_id, status, progress_percentage, enrolled_at, started_at, completed_at, certificate_url')
+    .select('id, user_id, course_id, student_id, status, progress_percentage, enrolled_at, started_at, completed_at, certificate_url')
     .eq('user_id', userId)
     .order('enrolled_at', { ascending: false });
 
@@ -516,7 +581,9 @@ const fetchCoursesPageFromSupabase = async (params?: CourseQueryParams): Promise
     };
   }
 
-  const courseRows = decodedCursor ? data.slice(0, cursorLimit) : data;
+  const courseRows = decodedCursor
+    ? (data as CourseWithInstructor[]).slice(0, cursorLimit)
+    : (data as CourseWithInstructor[]);
 
   // Fetch lesson counts per course for display
   const courseIds = courseRows.map(c => c.id);
@@ -538,34 +605,15 @@ const fetchCoursesPageFromSupabase = async (params?: CourseQueryParams): Promise
     .in('course_id', courseIds)
     .order('order_index', { ascending: true });
 
-  const lessonsByCourse: Record<string, any[]> = {};
-  (lessonData || []).forEach(l => {
+  const lessonsByCourse: Record<string, CourseLessonRow[]> = {};
+  ((lessonData || []) as CourseLessonRow[]).forEach(l => {
     if (!lessonsByCourse[l.course_id]) lessonsByCourse[l.course_id] = [];
     lessonsByCourse[l.course_id].push(l);
   });
 
-  const courses = courseRows.map(course => ({
-    id: course.id,
-    title: course.title,
-    slug: course.slug,
-    provider: course.profiles?.full_name || 'Unknown',
-    status: courseStatusFromEnrollment(enrollmentMap.get(course.id)),
-    progress: enrollmentMap.get(course.id)?.progress ?? 0,
-    description: course.description,
-    xp: course.xp_reward || 0,
-    category: course.category,
-    duration: course.duration_hours ? `${course.duration_hours} hours` : 'Self-paced',
-    difficulty: (course.level?.charAt(0).toUpperCase() + course.level?.slice(1)) as Course['difficulty'],
-    lessons: (lessonsByCourse[course.id] || []).map((l: Record<string, any>) => ({
-      id: l.id,
-      courseId: course.id,
-      title: l.title,
-      content: '',
-      orderIndex: l.order_index,
-      durationMinutes: l.duration_minutes || 15,
-      isFree: l.is_free_preview || false,
-    })),
-  }));
+  const courses = courseRows.map(course => (
+    mapSupabaseCourse(course, lessonsByCourse[course.id] || [], enrollmentMap.get(course.id))
+  ));
 
   const total = decodedCursor ? null : typeof count === 'number' ? count : null;
   const hasNext = decodedCursor
@@ -613,38 +661,20 @@ const fetchCourseByIdFromSupabase = async (courseId: string): Promise<Course> =>
 
   if (error) throw error;
 
-  return {
-    id: data.id,
-    title: data.title,
-    slug: data.slug,
-    provider: data.profiles?.full_name || 'Unknown',
-    status: 'NOT_STARTED',
-    progress: 0,
-    description: data.description,
-    xp: data.xp_reward || 0,
-    category: data.category,
-    duration: data.duration_hours ? `${data.duration_hours} hours` : 'Self-paced',
-    difficulty: (data.level?.charAt(0).toUpperCase() + data.level?.slice(1)) as Course['difficulty'],
-    lessons: (data.lessons || []).map((l: Record<string, any>) => ({
-      id: l.id,
-      courseId: data.id,
-      title: l.title,
-      content: '',
-      orderIndex: l.order_index,
-      durationMinutes: l.duration_minutes || 15,
-      isFree: l.is_free_preview || false,
-    })),
-  };
+  const course = data as CourseWithLessons;
+  return mapSupabaseCourse(course, course.lessons || []);
 };
 
 const enrollViaSupabase = async (courseId: string, userId: string): Promise<Enrollment> => {
+  const insert: EnrollmentInsert = {
+    course_id: courseId,
+    user_id: userId,
+    status: 'ENROLLED',
+  };
+
   const { data, error } = await supabase
     .from('enrollments')
-    .insert({
-      course_id: courseId,
-      user_id: userId,
-      status: 'ENROLLED',
-    })
+    .insert(insert)
     .select(`
       *,
       courses (
@@ -657,18 +687,7 @@ const enrollViaSupabase = async (courseId: string, userId: string): Promise<Enro
 
   if (error) throw error;
 
-  return {
-    id: data.id,
-    userId: data.user_id,
-    courseId: data.course_id,
-    status: data.status,
-    progress: data.progress_percentage || 0,
-    enrolledAt: data.enrolled_at,
-    startedAt: data.started_at,
-    completedAt: data.completed_at,
-    completedLessonIds: [],
-    certificateUrl: data.certificate_url,
-  };
+  return mapSupabaseEnrollment(data as EnrollmentRow);
 };
 
 const fetchEnrollmentsFromSupabase = async (userId: string): Promise<Enrollment[]> => {
@@ -689,18 +708,7 @@ const fetchEnrollmentsFromSupabase = async (userId: string): Promise<Enrollment[
   if (error) throw error;
   if (!data) return [];
 
-  return data.map(enrollment => ({
-    id: enrollment.id,
-    userId: enrollment.user_id,
-    courseId: enrollment.course_id,
-    status: enrollment.status,
-    progress: enrollment.progress_percentage || 0,
-    enrolledAt: enrollment.enrolled_at,
-    startedAt: enrollment.started_at,
-    completedAt: enrollment.completed_at,
-    completedLessonIds: [],
-    certificateUrl: enrollment.certificate_url,
-  }));
+  return (data as EnrollmentRow[]).map(mapSupabaseEnrollment);
 };
 
 // Tertiary fallback removed
@@ -910,7 +918,7 @@ export const lmsService = {
 
         if (error) throw error;
         _supabaseReachable = true;
-        return data || [];
+        return (data || []) as LessonProgressWithLesson[];
       } catch (err) {
         if (isNetworkError(err)) {
           _supabaseReachable = false;
@@ -943,23 +951,27 @@ export const lmsService = {
           .single();
 
         if (existing) {
+          const update: LessonProgressUpdate = {
+            completed: true,
+            completed_at: new Date().toISOString(),
+          };
+
           await supabase
             .from('lesson_progress')
-            .update({
-              completed: true,
-              completed_at: new Date().toISOString(),
-            })
+            .update(update)
             .eq('enrollment_id', enrollmentId)
             .eq('lesson_id', lessonId);
         } else {
+          const insert: LessonProgressInsert = {
+            enrollment_id: enrollmentId,
+            lesson_id: lessonId,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          };
+
           await supabase
             .from('lesson_progress')
-            .insert({
-              enrollment_id: enrollmentId,
-              lesson_id: lessonId,
-              completed: true,
-              completed_at: new Date().toISOString(),
-            });
+            .insert(insert);
         }
 
         // Update enrollment progress percentage
@@ -982,14 +994,15 @@ export const lmsService = {
             .eq('completed', true);
 
           const progress = totalLessons ? Math.round((completedLessons || 0) / totalLessons * 100) : 0;
+          const enrollmentUpdate: EnrollmentUpdate = {
+            progress_percentage: progress,
+            status: progress === 100 ? 'COMPLETED' : 'IN_PROGRESS',
+            completed_at: progress === 100 ? new Date().toISOString() : null,
+          };
 
           await supabase
             .from('enrollments')
-            .update({
-              progress_percentage: progress,
-              status: progress === 100 ? 'COMPLETED' : 'IN_PROGRESS',
-              completed_at: progress === 100 ? new Date().toISOString() : null,
-            })
+            .update(enrollmentUpdate)
             .eq('id', enrollmentId);
         }
 
@@ -1009,11 +1022,16 @@ export const lmsService = {
   },
 
   createCourse: async (course: Partial<Course>, instructorId: string): Promise<Course> => {
+    const title = course.title?.trim();
+    if (!title) {
+      throw new Error('Course title is required');
+    }
+
     // Try gateway first
     if (_gatewayReachable !== false) {
       try {
         const response = await apiClient.post('/api/v1/lms/courses', {
-          title: course.title,
+          title,
           description: course.description,
           instructorId,
           category: course.category,
@@ -1040,37 +1058,28 @@ export const lmsService = {
     // Supabase fallback
     if (_supabaseReachable !== false) {
       try {
+        const durationHours = Number.parseInt(course.duration || '0', 10);
+        const insert: CourseInsert = {
+          title,
+          description: course.description,
+          instructor_id: instructorId,
+          category: course.category,
+          price: 0,
+          thumbnail_url: null,
+          duration_hours: Number.isFinite(durationHours) ? durationHours : 0,
+          level: course.difficulty,
+          is_published: false,
+        };
+
         const { data, error } = await supabase
           .from('courses')
-          .insert({
-            title: course.title,
-            description: course.description,
-            instructor_id: instructorId,
-            category: course.category,
-            price: 0,
-            thumbnail_url: null,
-            duration_hours: parseInt(course.duration || '0'),
-            level: course.difficulty,
-            is_published: false,
-          })
+          .insert(insert)
           .select()
           .single();
 
         if (error) throw error;
         _supabaseReachable = true;
-
-        return {
-          id: data.id,
-          title: data.title,
-          provider: 'Unknown',
-          status: 'NOT_STARTED',
-          progress: 0,
-          description: data.description,
-          xp: data.xp_reward,
-          category: data.category,
-          duration: `${data.duration_hours} hours`,
-          difficulty: data.level as Course['difficulty'],
-        };
+        return mapSupabaseCourse(data as CourseRow);
       } catch (err) {
         _supabaseReachable = false;
         console.warn('[LMS] createCourse: Supabase failed, using mock...', err);
