@@ -3,26 +3,48 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ext-bg: #f7f8fb;
+    --ext-surface: #ffffff;
+    --ext-surface-muted: #eef3f8;
+    --ext-surface-inset: #f3f6fa;
+    --ext-border: #d8e0ea;
+    --ext-border-strong: #aab7c7;
+    --ext-text: #162033;
+    --ext-text-secondary: #435168;
+    --ext-text-muted: #6d7a8f;
+    --ext-accent: #0f766e;
+    --ext-accent-strong: #0b5f59;
+    --ext-accent-muted: #dff3ef;
+    --ext-on-accent: #ffffff;
+    --ext-success: #157347;
+    --ext-success-muted: #e4f6ec;
+    --ext-warning: #a16207;
+    --ext-warning-muted: #fff4d6;
+    --ext-danger: #b42318;
+    --ext-danger-muted: #fde8e5;
+    --ext-focus: rgba(15, 118, 110, 0.24);
+  }
+
   body {
-    background-color: #0f172a;
-    color: #f8fafc;
+    background: var(--ext-bg);
+    color: var(--ext-text);
     font-family: 'Inter', sans-serif;
   }
 }
 
-/* Glassmorphism custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
+  background: var(--ext-surface-muted);
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+  background: var(--ext-border-strong);
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--ext-text-muted);
 }

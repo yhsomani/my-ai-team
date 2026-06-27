@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../api/axios';
 import { typedSupabase } from '../lib/supabaseClient';
-import { aiService } from './aiService';
+import { aiService, estimateExperienceYears, extractSkillsFromText } from './aiService';
 
 vi.mock('../api/axios', () => ({
   apiClient: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }));
@@ -33,6 +34,26 @@ vi.mock('../lib/supabaseClient', () => {
 describe('aiService typed persistence', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('extracts known skills from resume text case-insensitively', () => {
+    const skills = extractSkillsFromText(
+      'I am a full stack developer with 5 years of experience in JavaScript, React, Node.js, SQL, and Docker.',
+    );
+
+    expect(skills).toContain('javascript');
+    expect(skills).toContain('react');
+    expect(skills).toContain('node');
+    expect(skills).toContain('sql');
+    expect(skills).toContain('docker');
+    expect(skills).not.toContain('python');
+    expect(extractSkillsFromText('PYTHON and JAVA developer')).toEqual(expect.arrayContaining(['python', 'java']));
+  });
+
+  it('estimates experience years from common resume phrasing', () => {
+    expect(estimateExperienceYears('I have 5 years of experience')).toBe(5);
+    expect(estimateExperienceYears('10+ years in the industry')).toBe(10);
+    expect(estimateExperienceYears('No experience mentioned')).toBe(0);
   });
 
   it('routes resume analysis through the backend AI API', async () => {
@@ -72,25 +93,34 @@ describe('aiService typed persistence', () => {
     });
   });
 
-  it('invokes AI Edge Functions through the typed Supabase client', async () => {
-    const invoke = typedSupabase.functions.invoke as any;
-    invoke
-      .mockResolvedValueOnce({ data: { score: 91 }, error: null })
-      .mockResolvedValueOnce({ data: { path: ['Learn React'] }, error: null })
-      .mockResolvedValueOnce({ data: { reply: 'Draft a concise follow-up.' }, error: null });
-
-    await expect(aiService.getMatchScore('resume text', 'job description')).resolves.toEqual({ score: 91 });
-    await expect(aiService.generateCareerPath('user-1')).resolves.toEqual({ path: ['Learn React'] });
-    await expect(aiService.getChatResponse('Help me follow up')).resolves.toEqual({ reply: 'Draft a concise follow-up.' });
-
-    expect(invoke).toHaveBeenNthCalledWith(1, 'get-match-score', {
-      body: { resumeText: 'resume text', jobDescription: 'job description' },
+  it('routes AI generation calls through the backend AI API', async () => {
+    (apiClient.post as any)
+      .mockResolvedValueOnce({
+        data: { data: '{"matchScore":0.91,"reasoning":"Strong skill overlap."}' },
+      })
+      .mockResolvedValueOnce({
+        data: { data: { message: 'Draft a concise follow-up.' } },
+      });
+    (apiClient.get as any).mockResolvedValueOnce({
+      data: { data: { recommendedPath: 'Developer -> Architect' } },
     });
-    expect(invoke).toHaveBeenNthCalledWith(2, 'generate-career-path', {
-      body: { userId: 'user-1' },
+
+    await expect(aiService.getMatchScore('resume text', 'job description')).resolves.toEqual({
+      matchScore: 0.91,
+      reasoning: 'Strong skill overlap.',
     });
-    expect(invoke).toHaveBeenNthCalledWith(3, 'chat-assistant', {
-      body: { message: 'Help me follow up' },
+    await expect(aiService.generateCareerPath('user-1')).resolves.toEqual({ recommendedPath: 'Developer -> Architect' });
+    await expect(aiService.getChatResponse('Help me follow up')).resolves.toEqual({ message: 'Draft a concise follow-up.' });
+
+    expect(apiClient.post).toHaveBeenNthCalledWith(1, '/api/v1/ai/match-job', null, {
+      params: { resumeText: 'resume text', jobDescription: 'job description' },
+      timeout: 10000,
+    });
+    expect(apiClient.get).toHaveBeenCalledWith('/api/v1/ai/career-path/user-1', {
+      timeout: 10000,
+    });
+    expect(apiClient.post).toHaveBeenNthCalledWith(2, '/api/v1/ai/chat', { prompt: 'Help me follow up' }, {
+      timeout: 10000,
     });
   });
 

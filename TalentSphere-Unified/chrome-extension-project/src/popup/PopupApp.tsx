@@ -530,21 +530,29 @@ export function PopupApp() {
     addLog(`Cleared ${safeEvents.length} local analytics events.`, 'success');
   }, [addLog, operationalEvents, setOperationalEvents]);
 
+  const getTabClassName = (selected: boolean) => (
+    `flex-1 flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
+      selected
+        ? 'border-[var(--ext-accent)] bg-[var(--ext-accent-muted)] text-[var(--ext-accent-strong)]'
+        : 'border-transparent text-[var(--ext-text-muted)] hover:bg-[var(--ext-surface-muted)] hover:text-[var(--ext-text)]'
+    }`
+  );
+
   return (
-    <div className="flex flex-col h-[520px] bg-slate-950 text-slate-100 antialiased font-sans select-none border border-slate-800 rounded-lg overflow-hidden">
-      <header className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-b border-slate-800">
-        <div className="flex items-center space-x-2">
-          <div className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+    <div className="flex h-[520px] flex-col overflow-hidden rounded-lg border border-[var(--ext-border)] bg-[var(--ext-bg)] font-sans text-[var(--ext-text)] antialiased">
+      <header className="flex items-center justify-between gap-3 border-b border-[var(--ext-border)] bg-[var(--ext-surface)] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="relative flex h-3 w-3 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--ext-accent)] opacity-30"></span>
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--ext-accent)]"></span>
           </div>
-          <span className="font-semibold text-lg font-outfit tracking-wide bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+          <span className="truncate text-base font-semibold">
             TalentSphere Companion
           </span>
         </div>
         <button 
           onClick={openOptionsPage} 
-          className="flex items-center space-x-1 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/80 border border-cyan-900/60 rounded-md px-2 py-1 transition duration-200"
+          className="flex shrink-0 items-center gap-1 rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-2 py-1 text-xs font-medium text-[var(--ext-accent-strong)] transition duration-200 hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
           id="open-options-btn"
         >
           <span className="font-medium">Dashboard</span>
@@ -552,46 +560,37 @@ export function PopupApp() {
         </button>
       </header>
 
-      <nav className="flex px-3 py-2 bg-slate-950/80 border-b border-slate-800/60 space-x-1">
+      <nav className="flex gap-1 border-b border-[var(--ext-border)] bg-[var(--ext-surface)] px-3 py-2">
         <button
           onClick={() => handlePopupTabChange('dashboard')}
-          className={`flex-1 flex items-center justify-center space-x-1.5 py-1.5 rounded-md text-xs font-medium transition duration-200 ${
-            activeTab === 'dashboard'
-              ? 'bg-slate-800/80 text-white shadow-inner border border-slate-700/50'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-          }`}
+          className={getTabClassName(activeTab === 'dashboard')}
           id="nav-dashboard-tab"
+          aria-pressed={activeTab === 'dashboard'}
         >
-          <BarChart3 className="h-3.5 w-3.5 text-purple-400" />
+          <BarChart3 className="h-3.5 w-3.5" />
           <span>Dashboard</span>
         </button>
         <button
           onClick={() => handlePopupTabChange('jobs')}
-          className={`flex-1 flex items-center justify-center space-x-1.5 py-1.5 rounded-md text-xs font-medium transition duration-200 ${
-            activeTab === 'jobs'
-              ? 'bg-slate-800/80 text-white shadow-inner border border-slate-700/50'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-          }`}
+          className={getTabClassName(activeTab === 'jobs')}
           id="nav-jobs-tab"
+          aria-pressed={activeTab === 'jobs'}
         >
-          <Briefcase className="h-3.5 w-3.5 text-cyan-400" />
+          <Briefcase className="h-3.5 w-3.5" />
           <span>Tracker</span>
         </button>
         <button
           onClick={() => handlePopupTabChange('logs')}
-          className={`flex-1 flex items-center justify-center space-x-1.5 py-1.5 rounded-md text-xs font-medium transition duration-200 ${
-            activeTab === 'logs'
-              ? 'bg-slate-800/80 text-white shadow-inner border border-slate-700/50'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-          }`}
+          className={getTabClassName(activeTab === 'logs')}
           id="nav-logs-tab"
+          aria-pressed={activeTab === 'logs'}
         >
-          <Terminal className="h-3.5 w-3.5 text-emerald-400" />
+          <Terminal className="h-3.5 w-3.5" />
           <span>Diagnostics</span>
         </button>
       </nav>
 
-      <main className="flex-1 overflow-y-auto p-4 bg-slate-950/40">
+      <main className="flex-1 overflow-y-auto bg-[var(--ext-bg)] p-4">
         {activeTab === 'dashboard' && (
           <DashboardView 
             jobs={jobs} 
@@ -635,9 +634,9 @@ export function PopupApp() {
         )}
       </main>
       
-      <footer className="px-4 py-1.5 bg-slate-950 border-t border-slate-900 flex justify-between items-center text-[9px] text-slate-500">
-        <span>Vite + React 18 Extension</span>
-        <span>Storage: localStorage fallback active</span>
+      <footer className="flex items-center justify-between gap-3 border-t border-[var(--ext-border)] bg-[var(--ext-surface)] px-4 py-1.5 text-[9px] text-[var(--ext-text-muted)]">
+        <span>React extension</span>
+        <span>Local storage active</span>
       </footer>
     </div>
   );

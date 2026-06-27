@@ -1,14 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BrainCircuit, Network, Zap,
-  Globe, ChevronRight,
-  Layers, Target, Cpu, ArrowRight
+  ArrowRight,
+  BrainCircuit,
+  Briefcase,
+  Cpu,
+  Globe,
+  GraduationCap,
+  Layers,
+  MessageSquare,
+  Network,
+  ShieldCheck,
+  Target
 } from 'lucide-react';
 import { Button } from '../components/shared/AuraButton';
 import { typedSupabase as supabase } from '../lib/supabaseClient';
 
 const fallbackStats = { totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%', systemStatus: 'Optimal' };
+
+const platformPillars = [
+  {
+    icon: Network,
+    title: 'Relationship workspace',
+    description: 'Manage connections, reminders, and hiring conversations from one clear network flow.',
+  },
+  {
+    icon: Target,
+    title: 'Focused job matching',
+    description: 'Review opportunities, saved searches, applications, and recruiter posts in the Jobs workspace.',
+  },
+  {
+    icon: BrainCircuit,
+    title: 'Reviewed AI support',
+    description: 'Use generated guidance as drafts and handoffs, with final decisions kept in the owning workflow.',
+  },
+];
+
+const previewRows = [
+  { label: 'Applications', value: '8 active', icon: Briefcase },
+  { label: 'Learning', value: '3 courses', icon: GraduationCap },
+  { label: 'Messages', value: '4 unread', icon: MessageSquare },
+];
 
 const formatPublicCount = (count: number | null) => {
   const safeCount = count || 0;
@@ -76,167 +108,197 @@ const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] overflow-x-hidden selection:bg-accent/30 selection:text-white">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(99,102,241,0.05)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(139,92,246,0.05)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 cyber-grid opacity-[0.03]" />
-      </div>
+    <div className="min-h-screen overflow-x-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+      <nav className="sticky top-0 z-50 border-b border-[var(--border-default)] bg-[var(--bg-panel)]/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+              <Layers size={18} />
+            </span>
+            <span className="text-base font-semibold">TalentSphere</span>
+          </Link>
 
-      {/* Navigation */}
-      <nav className="relative z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-3 group cursor-pointer">
-              <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 group-hover:border-indigo-400/50 transition-colors">
-                <Globe className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-white">
-                TalentSphere
-              </span>
-            </div>
+          <div className="hidden items-center gap-6 text-sm font-medium text-[var(--text-secondary)] md:flex">
+            <a href="#features" className="hover:text-[var(--text-primary)]">Platform</a>
+            <a href="#network" className="hover:text-[var(--text-primary)]">Network</a>
+            <a href="#learning" className="hover:text-[var(--text-primary)]">Learning</a>
+          </div>
 
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-              <a href="#features" className="text-slate-400 hover:text-white transition-colors">Platform</a>
-              <a href="#network" className="text-slate-400 hover:text-white transition-colors">Network</a>
-              <a href="#learning" className="text-slate-400 hover:text-white transition-colors">Learning</a>
-              <div className="h-4 w-[1px] bg-white/10" />
-              <Link to="/login" className="text-slate-300 hover:text-white transition-colors">
+          <div className="flex items-center gap-2">
+            <Link to="/login" className="hidden rounded-md px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] sm:inline-flex">
                 Sign In
               </Link>
-              <Link to="/register">
-                <Button className="!px-6">Get Started</Button>
-              </Link>
-            </div>
+            <Link to="/register">
+              <Button size="sm">Get Started</Button>
+            </Link>
           </div>
         </div>
       </nav>
 
-      <main className="relative z-10 pt-24 pb-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* Hero Section */}
-          <div className="text-center max-w-4xl mx-auto mb-32 relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none" />
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-indigo-300 mb-8 backdrop-blur-md">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-              TalentSphere v6.0 is live
-            </div>
-
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight mb-8 leading-[1.1]">
-              <span className="text-white">Next-Gen</span>
-              <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 animate-gradient">
-                Career Matrix
-              </span>
-            </h1>
-
-            <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Unify your professional identity. Connect with visionaries, master new skills,
-              and accelerate your trajectory in the ultimate tech ecosystem.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/register?role=talent">
-                <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-lg group">
-                  Join as Talent
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/register?role=recruiter">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 px-8 text-lg border-white/10 hover:bg-white/5 text-white">
-                  Hire Talent
-                </Button>
-              </Link>
-            </div>
-            <p className="mt-4 text-sm text-slate-500">
-              Choose a role now; you can review the account type before creating your account.
-            </p>
-          </div>
-
-          {/* Core Pillars */}
-          <div id="features" className="grid md:grid-cols-3 gap-6 mb-32">
-            {[
-              {
-                icon: <Network className="w-8 h-8 text-indigo-400" />,
-                title: "Global Syntax",
-                desc: "Forge meaningful connections in a noise-free environment. Smart matching connects you with mentors and peers.",
-                bg: "bg-indigo-500/10",
-                border: "border-indigo-500/20"
-              },
-              {
-                icon: <Target className="w-8 h-8 text-purple-400" />,
-                title: "Precision Matching",
-                desc: "Our AI engine pairs your verified skills with roles where you'll thrive, eliminating the black hole of job boards.",
-                bg: "bg-purple-500/10",
-                border: "border-purple-500/20"
-              },
-              {
-                icon: <BrainCircuit className="w-8 h-8 text-blue-400" />,
-                title: "Continuous Evolution",
-                desc: "Upskill through integrated courses and coding challenges. Prove your expertise with verifiable badges.",
-                bg: "bg-blue-500/10",
-                border: "border-blue-500/20"
-              }
-            ].map((feature, i) => (
-              <div key={i} className="group relative rounded-3xl bg-black/40 border border-white/5 p-8 backdrop-blur-xl hover:border-white/10 transition-colors">
-                <div className={`w-16 h-16 rounded-2xl ${feature.bg} ${feature.border} border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  {feature.icon}
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  {feature.desc}
-                </p>
+      <main>
+        <section className="relative overflow-hidden border-b border-[var(--border-default)] bg-[var(--bg-primary)]">
+          <div className="absolute inset-y-0 right-0 hidden w-1/2 border-l border-[var(--border-subtle)] bg-[var(--bg-secondary)] lg:block" aria-hidden="true" />
+          <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1fr)] lg:px-8 lg:py-20">
+            <div className="relative z-10 max-w-2xl">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]">
+                <ShieldCheck size={14} className="text-accent" />
+                Reviewed workflows for talent and hiring teams
               </div>
-            ))}
+
+              <h1 className="text-4xl font-semibold leading-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl">
+                TalentSphere
+              </h1>
+
+              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
+                A focused career workspace for jobs, learning, challenges, networking, messages, and reviewed AI guidance.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link to="/register?role=talent" className="sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Join as Talent
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/register?role=recruiter" className="sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    Hire Talent
+                  </Button>
+                </Link>
+              </div>
+
+              <p className="mt-4 text-sm text-[var(--text-muted)]">
+                Choose a role now; you can review the account type before creating your account.
+              </p>
+            </div>
+
+            <div className="relative z-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-4 shadow-lg sm:p-5">
+              <div className="flex items-center justify-between border-b border-[var(--border-default)] pb-4">
+                <div>
+                  <p className="text-xs font-medium uppercase text-[var(--text-muted)]">Today</p>
+                  <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">Career command center</h2>
+                </div>
+                <span className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                  Live preview
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {previewRows.map((row) => {
+                  const Icon = row.icon;
+                  return (
+                    <div key={row.label} className="flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+                          <Icon size={17} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-[var(--text-primary)]">{row.label}</span>
+                          <span className="block text-xs text-[var(--text-muted)]">Owned by its domain route</span>
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-sm font-semibold text-[var(--text-secondary)]">{row.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {[
+                  { label: 'AI drafts', value: 'Review only' },
+                  { label: 'Source state', value: 'Visible' },
+                  { label: 'Actions', value: 'Explicit' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg border border-[var(--border-default)] p-3">
+                    <span className="block text-xs text-[var(--text-muted)]">{item.label}</span>
+                    <span className="mt-1 block text-sm font-semibold text-[var(--text-primary)]">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+        </section>
 
-          {/* Stats Bar */}
-          <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-indigo-900/40 border border-white/10 p-12 overflow-hidden backdrop-blur-xl">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
+        <section id="features" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid gap-4 md:grid-cols-3">
+            {platformPillars.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <article key={feature.title} className="surface-card p-6">
+                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-md bg-accent/10 text-accent">
+                    <Icon size={20} />
+                  </div>
+                  <h2 className="text-base font-semibold text-[var(--text-primary)]">{feature.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{feature.description}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
-            <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <section id="network" className="border-y border-[var(--border-default)] bg-[var(--bg-primary)]">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:px-8">
+            <div>
+              <p className="text-sm font-medium text-accent">Information architecture</p>
+              <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">One workflow owner for every feature.</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                'Dashboard summarizes what needs attention.',
+                'Jobs owns search, applications, saved searches, and posts.',
+                'Network owns relationships and reminders.',
+                'Messages owns conversation reading, sending, and retry.',
+              ].map((item) => (
+                <div key={item} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-4 text-sm text-[var(--text-secondary)]">
+                  <Cpu className="mb-3 h-4 w-4 text-accent" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="learning" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="surface-card p-6 sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-medium text-accent">Public platform snapshot</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">Current activity summary</h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <BadgeDot source={statsMeta.source} />
+                <span>{statsMeta.message} - Updated {formatStatsTimestamp(statsMeta.updatedAt)}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: 'Active Users', value: stats.totalUsers },
                 { label: 'Opportunities', value: stats.activeJobs },
                 { label: 'Match Rate', value: stats.successRate },
                 { label: 'System Status', value: stats.systemStatus }
-              ].map((stat, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <span className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+                  <span className="block text-sm text-[var(--text-muted)]">{stat.label}</span>
+                  <span className="mt-2 block min-h-9 text-3xl font-semibold text-[var(--text-primary)]">
                     {statsLoading ? (
-                      <span className="mx-auto block h-12 w-24 animate-pulse rounded-lg bg-white/10" aria-label={`Loading ${stat.label}`} />
-                    ) : (
-                      stat.value
-                    )}
-                  </span>
-                  <span className="text-sm font-medium text-slate-400 uppercase tracking-widest">
-                    {stat.label}
+                      <span className="block h-8 w-24 animate-pulse rounded-md bg-[var(--border-default)]" aria-label={`Loading ${stat.label}`} />
+                    ) : stat.value}
                   </span>
                 </div>
               ))}
             </div>
-            <div className="relative mt-8 flex flex-col items-center justify-center gap-2 text-center text-xs text-slate-400 sm:flex-row">
-              <BadgeDot source={statsMeta.source} />
-              <span>
-                {statsMeta.message} · Updated {formatStatsTimestamp(statsMeta.updatedAt)}
-              </span>
-            </div>
           </div>
-
-        </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-12 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-indigo-500" />
-            <span className="text-white font-semibold">TalentSphere</span>
+      <footer className="border-t border-[var(--border-default)] bg-[var(--bg-panel)] py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-center sm:px-6 md:flex-row md:text-left lg:px-8">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Globe className="h-4 w-4 text-accent" />
+            <span>TalentSphere</span>
           </div>
-          <div className="text-sm text-slate-500">
+          <div className="text-sm text-[var(--text-muted)]">
             &copy; {new Date().getFullYear()} TalentSphere Inc. All rights reserved.
           </div>
         </div>
@@ -248,7 +310,7 @@ const LandingPage: React.FC = () => {
 const BadgeDot: React.FC<{ source: 'live' | 'fallback' }> = ({ source }) => (
   <span className="inline-flex items-center gap-2">
     <span className={`h-2 w-2 rounded-full ${source === 'live' ? 'bg-success' : 'bg-warning'}`} aria-hidden="true" />
-    <span className="font-medium uppercase tracking-wider">{source === 'live' ? 'Live' : 'Fallback'}</span>
+    <span className="font-medium uppercase">{source === 'live' ? 'Live' : 'Fallback'}</span>
   </span>
 );
 

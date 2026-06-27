@@ -366,53 +366,52 @@ export function OptionsApp() {
     });
   }, [analytics]);
 
+  const getOptionsTabClassName = (selected: boolean) => (
+    `flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
+      selected
+        ? 'border-[var(--ext-accent)] bg-[var(--ext-accent-muted)] text-[var(--ext-accent-strong)]'
+        : 'border-transparent text-[var(--ext-text-secondary)] hover:bg-[var(--ext-surface-muted)] hover:text-[var(--ext-text)]'
+    }`
+  );
+
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <aside className="w-64 bg-slate-900/60 border-r border-slate-800 p-6 flex flex-col justify-between backdrop-blur-glass">
+    <div className="flex min-h-screen flex-col bg-[var(--ext-bg)] font-sans text-[var(--ext-text)] lg:flex-row">
+      <aside className="flex w-full flex-col justify-between gap-6 border-b border-[var(--ext-border)] bg-[var(--ext-surface)] p-5 lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
         <div className="space-y-8">
-          <div className="flex items-center space-x-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg">
-              <Cpu className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--ext-border)] bg-[var(--ext-accent-muted)]">
+              <Cpu className="h-5 w-5 text-[var(--ext-accent)]" />
             </div>
             <div>
-              <h1 className="font-bold text-base font-outfit tracking-wide text-white">TalentSphere</h1>
-              <span className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider">Companion Console</span>
+              <h1 className="text-base font-bold text-[var(--ext-text)]">TalentSphere</h1>
+              <span className="text-[10px] font-semibold text-[var(--ext-text-muted)]">Companion Console</span>
             </div>
           </div>
 
           <nav className="space-y-1">
             <button
               onClick={() => handleOptionsTabChange('ai')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
-                activeTab === 'ai'
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-cyan-500/0 text-cyan-400 border-l-4 border-cyan-400 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-              }`}
+              className={getOptionsTabClassName(activeTab === 'ai')}
               id="options-ai-tab"
+              aria-pressed={activeTab === 'ai'}
             >
               <Sparkles className="h-4 w-4" />
               <span>Resume Match Preview</span>
             </button>
             <button
               onClick={() => handleOptionsTabChange('prep')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
-                activeTab === 'prep'
-                  ? 'bg-gradient-to-r from-purple-500/10 to-purple-500/0 text-purple-400 border-l-4 border-purple-400 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-              }`}
+              className={getOptionsTabClassName(activeTab === 'prep')}
               id="options-prep-tab"
+              aria-pressed={activeTab === 'prep'}
             >
               <Calendar className="h-4 w-4" />
               <span>Interview Planner</span>
             </button>
             <button
               onClick={() => handleOptionsTabChange('settings')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 ${
-                activeTab === 'settings'
-                  ? 'bg-gradient-to-r from-emerald-500/10 to-emerald-500/0 text-emerald-400 border-l-4 border-emerald-400 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-              }`}
+              className={getOptionsTabClassName(activeTab === 'settings')}
               id="options-settings-tab"
+              aria-pressed={activeTab === 'settings'}
             >
               <Settings2 className="h-4 w-4" />
               <span>Local Settings</span>
@@ -420,16 +419,16 @@ export function OptionsApp() {
           </nav>
         </div>
 
-        <div className="bg-slate-950/40 border border-slate-850 rounded-xl p-3.5 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] text-slate-400">Local Storage: Active</span>
+        <div className="flex items-center justify-between rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] p-3.5">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[var(--ext-success)]"></span>
+            <span className="text-[10px] text-[var(--ext-text-secondary)]">Local storage active</span>
           </div>
-          <HardDrive className="h-3 w-3 text-slate-500" />
+          <HardDrive className="h-3 w-3 text-[var(--ext-text-muted)]" />
         </div>
       </aside>
 
-      <main className="flex-1 p-10 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10">
         {activeTab === 'ai' && (
           <AIView 
             jobDescription={jobDescription}

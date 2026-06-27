@@ -117,7 +117,7 @@ export const AuraModal: React.FC<ModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-Aurora-dark/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"
           />
 
           {/* Modal Content */}
@@ -131,26 +131,26 @@ export const AuraModal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={cn(
-              'relative w-full bg-Aurora-surface border border-Aurora-border rounded-[2rem] shadow-2xl overflow-hidden flex flex-col',
+              'surface-modal relative flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden text-[var(--text-primary)]',
               sizes[size]
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-Aurora-border bg-white/2">
-              <h3 id={titleId} className="text-xl font-bold font-display text-white">{title}</h3>
-              <AuraButton variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="rounded-full">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--border-default)] bg-[var(--bg-secondary)] p-5">
+              <h3 id={titleId} className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
+              <AuraButton variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="shrink-0">
                 <X size={20} />
               </AuraButton>
             </div>
 
             {/* Body */}
-            <div className="p-8 overflow-y-auto max-h-[70vh] no-scrollbar">
+            <div className="max-h-[min(70vh,calc(100vh-12rem))] overflow-y-auto p-5 sm:p-6">
               {children}
             </div>
 
             {/* Footer */}
             {footer && (
-              <div className="p-6 border-t border-Aurora-border bg-white/2 flex items-center justify-end gap-4">
+              <div className="flex flex-col-reverse gap-2 border-t border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row sm:items-center sm:justify-end">
                 {footer}
               </div>
             )}

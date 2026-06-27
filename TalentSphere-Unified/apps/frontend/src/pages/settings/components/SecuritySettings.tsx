@@ -95,16 +95,16 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
   return (
     <>
       <Card className="p-6">
-        <h3 className="text-xl font-bold text-white mb-6">Security Settings</h3>
+        <h3 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">Security Settings</h3>
 
         <div className="space-y-6">
-          <div className="p-5 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row gap-4 items-start justify-between">
+          <div className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row">
             <div>
-              <h4 className="text-lg font-medium text-white flex items-center gap-2">
-                <Key className="w-5 h-5 text-accent" />
+              <h4 className="flex items-center gap-2 text-lg font-medium text-[var(--text-primary)]">
+                <Key className="h-5 w-5 text-accent" />
                 Password
               </h4>
-              <p className="text-slate-400 text-sm mt-1">Send a password reset link to your account email</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Send a password reset link to your account email</p>
             </div>
             <Button
               variant="outline"
@@ -118,27 +118,27 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
             </Button>
           </div>
 
-          <div className="p-5 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row gap-4 items-start justify-between">
+          <div className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row">
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-lg font-medium text-white flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-emerald-400" />
+                <h4 className="flex items-center gap-2 text-lg font-medium text-[var(--text-primary)]">
+                  <Shield className="h-5 w-5 text-success" />
                   Two-Factor Authentication
                 </h4>
                 <Badge variant="outline">Coming soon</Badge>
               </div>
-              <p className="text-slate-400 text-sm mt-1">2FA setup requires an authentication provider integration</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">2FA setup requires an authentication provider integration</p>
             </div>
             <Button variant="outline" disabled>Unavailable</Button>
           </div>
 
-          <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20 flex flex-col sm:flex-row gap-4 items-start justify-between mt-12">
+          <div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-md border border-destructive/30 bg-destructive-muted p-5 sm:flex-row">
             <div>
-              <h4 className="text-lg font-medium text-red-400 flex items-center gap-2">
-                <Trash2 className="w-5 h-5" />
+              <h4 className="flex items-center gap-2 text-lg font-medium text-destructive">
+                <Trash2 className="h-5 w-5" />
                 Danger Zone
               </h4>
-              <p className="text-red-400/70 text-sm mt-1">Deactivate your account profile after confirmation</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Deactivate your account profile after confirmation</p>
             </div>
             <Button
               variant="destructive"

@@ -96,4 +96,16 @@ describe('companyService', () => {
       ownerUserId: 'user-1',
     });
   });
+
+  it('rejects malformed recruiter company lookup responses', async () => {
+    const lookupSingle = vi.fn().mockResolvedValue({ data: [], error: null });
+    const lookupEq = vi.fn().mockReturnValue({ single: lookupSingle });
+    const lookupSelect = vi.fn().mockReturnValue({ eq: lookupEq });
+    (typedSupabase.from as any).mockReturnValueOnce({ select: lookupSelect });
+
+    await expect(companyService.getCompanyByUser('user-1')).rejects.toThrow('Company profile was not found.');
+
+    expect(typedSupabase.from).toHaveBeenCalledWith('companies');
+    expect(lookupEq).toHaveBeenCalledWith('owner_user_id', 'user-1');
+  });
 });

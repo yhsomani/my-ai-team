@@ -1,7 +1,7 @@
 import React from 'react';
-import { Phone, Video, MoreVertical, ShieldCheck } from 'lucide-react';
+import { MoreVertical, Phone, Video } from 'lucide-react';
 import { Conversation, Message } from '../../../types/messaging';
-import { AuraButton } from '../../../components/shared/AuraButton';
+import { Button } from '../../../components/shared/AuraButton';
 import MessageBubble from './MessageBubble';
 
 interface ChatWindowProps {
@@ -17,39 +17,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   currentUserId,
   scrollRef 
 }) => {
+  const participantName = activeConv.participant?.fullName || 'Selected conversation';
+  const initials = participantName
+    .trim()
+    .split(/\s+/)
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'U';
+
   return (
-    <main className="flex-1 bg-white dark:bg-slate-900 border-y border-r border-slate-100 dark:border-slate-800 rounded-r-[3.5rem] flex flex-col overflow-hidden shadow-2xl shadow-slate-200/40 dark:shadow-none">
-      {/* Identity Header */}
-      <header className="px-12 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900/80 backdrop-blur-3xl z-20">
-        <div className="flex items-center gap-8">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 p-0.5 shadow-inner">
-            <img 
-              src={activeConv.participant?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${activeConv.participant?.fullName}`} 
-              className="w-full h-full object-cover rounded-[14px]"
+    <main className="surface-card flex min-h-0 flex-1 flex-col overflow-hidden">
+      <header className="flex items-center justify-between gap-3 border-b border-[var(--border-default)] p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          {activeConv.participant?.avatarUrl ? (
+            <img
+              src={activeConv.participant.avatarUrl}
+              className="h-10 w-10 shrink-0 rounded-full object-cover"
               alt=""
             />
-          </div>
-          <div className="space-y-1.5">
-            <h2 className="text-2xl font-display font-bold text-slate-900 dark:text-white leading-none">{activeConv.participant?.fullName}</h2>
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <ShieldCheck size={12} className="text-emerald-600" /> RESONANCE SECURE | NODE 08-SF
-              </p>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+              {initials}
             </div>
+          )}
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-[var(--text-primary)]">{participantName}</h2>
+            <p className="text-xs text-[var(--text-secondary)]">
+              {activeConv.participant?.status === 'online' ? 'Online' : 'Offline'} - {messages.length} loaded
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <AuraButton variant="ghost" size="icon" className="w-12 h-12 bg-slate-50 dark:bg-slate-950 text-slate-400 hover:text-emerald-600 border-none rounded-2xl shadow-inner"><Phone size={20} /></AuraButton>
-          <AuraButton variant="ghost" size="icon" className="w-12 h-12 bg-slate-50 dark:bg-slate-950 text-slate-400 hover:text-emerald-600 border-none rounded-2xl shadow-inner"><Video size={20} /></AuraButton>
-          <AuraButton variant="ghost" size="icon" className="w-12 h-12 bg-slate-50 dark:bg-slate-950 text-slate-400 hover:text-emerald-600 border-none rounded-2xl shadow-inner"><MoreVertical size={20} /></AuraButton>
+        <div className="hidden shrink-0 items-center gap-1 sm:flex">
+          <Button variant="ghost" size="icon" aria-label="Voice calls unavailable" title="Voice calls unavailable" disabled>
+            <Phone size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Video calls unavailable" title="Video calls unavailable" disabled>
+            <Video size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="More messaging actions unavailable" title="More actions unavailable" disabled>
+            <MoreVertical size={16} />
+          </Button>
         </div>
       </header>
 
-      {/* Signal Matrix - Scrollable Feed */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto no-scrollbar px-12 py-16 space-y-12 relative z-10 bg-slate-50/10 dark:bg-slate-950/20"
+        className="custom-scrollbar flex-1 space-y-3 overflow-y-auto bg-[var(--bg-secondary)] p-4"
+        role="log"
+        aria-live="polite"
+        aria-label={`Messages with ${participantName}`}
       >
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} isMe={msg.senderId === currentUserId} />

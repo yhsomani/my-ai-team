@@ -27,6 +27,8 @@ The web app centers on talent users, recruiters, and admins:
 
 The frontend route registry is defined in `apps/frontend/src/navigation/routeRegistry.ts`. `apps/frontend/src/App.tsx` maps those protected route definitions to lazy page components, and `Sidebar.tsx` plus `Header.tsx` consume the same registry for navigation, mobile priorities, search destinations, and role visibility.
 
+The feature ownership and placement contract is defined in `apps/frontend/src/navigation/featureOwnership.ts`. It identifies the one primary owner for each major route or surface and classifies secondary appearances as summaries, links, search destinations, preference snapshots, or reviewed handoffs. `npm run test:ia` validates that every protected route has exactly one primary feature owner, public routes are classified, route paths and role restrictions align with the route registry, and candidate merge decisions remain explicit.
+
 | Route | Page | Access | Main purpose |
 |---|---|---|---|
 | `/` | `LandingPage` | Public | Marketing/public entry page and platform stats |
@@ -85,7 +87,7 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
 | Profile | `/profile` | Any authenticated user |
 | Settings | `/settings` | Any authenticated user |
 
-The route registry is covered by `apps/frontend/src/navigation/routeRegistry.test.ts`, which verifies role-gated route access, desktop nav visibility, mobile priority order, header search visibility, and unique route IDs.
+The route registry is covered by `apps/frontend/src/navigation/routeRegistry.test.ts`, which verifies role-gated route access, desktop nav visibility, mobile priority order, header search visibility, and unique route IDs. Browser-level route/access coverage lives in `apps/frontend/tests/route-access.spec.ts`; it uses an explicit dev-only E2E auth override to verify unauthenticated redirects plus talent, recruiter, and admin desktop navigation visibility, mobile bottom-nav priority, and direct-route redirects. The local full Playwright suite passed across Chromium, Firefox, and WebKit on 2026-06-27.
 
 Shell workflows:
 
@@ -323,6 +325,8 @@ Dashboard contents:
 | Service Health table | Service Name, Status, Uptime, Version, Source, Detail, Actions | Operational table of backend dependencies with source, checked time, direct health/status links, and log queries |
 | Audit Log panel | Recent audit event time, action, entity, actor, request context, loaded/total count, Load more | Cursor-backed operational activity without loading the full audit table |
 | Admin operational analytics | Read-only event recording | Visibility into refresh, degraded state, investigation, scheduled automation status review, audit retry, and audit pagination decisions |
+
+Browser-level admin operational coverage lives in `apps/frontend/tests/admin-operations.spec.ts`. It verifies the Admin Console, Product Analytics Insights, Scheduled Automations, Service Health, Audit Log, source labels, and expected scheduler jobs across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
 Output data shape:
 
@@ -990,6 +994,7 @@ Jobs page contents:
   - Explicit Publish Job action when required details are present.
   - Edit Draft action when required details are missing.
   - Copy clarifying that publishing makes the job visible in Explore and does not contact candidates automatically.
+- Browser-level recruiter publish coverage lives in `apps/frontend/tests/recruiter-publish.spec.ts`; it verifies My Posts draft rendering, publish review checklist, publish update payload, success receipt, published badge, and View Checklist state across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - Application review modal:
   - Job summary.
   - Application draft source/status block.
@@ -1009,6 +1014,7 @@ Jobs page contents:
   - Timeline for Submitted, Reviewed, Interview, and Offer stages.
   - Rejected state when applicable.
   - Submitted resume link and cover letter when available.
+- Browser-level application workflow coverage lives in `apps/frontend/tests/job-application.spec.ts`; it verifies Explore job rendering, Review Application draft editing, application submit payload, success receipt, Application Details content, and the Applied tab entry across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - Full post job page:
   - Company setup onboarding panel when opened with `companySetup=1`, including Dashboard and Continue to Role Draft controls.
 - Job template selector.
@@ -1429,6 +1435,7 @@ Implementation note:
 - Candidate Details opens in-page and can also open `/profile/{candidate.userId}` in read-only mode for non-owners.
 - Interview planning is draft-only: it does not create video sessions, messages, notifications, or status changes until the recruiter explicitly saves notes or confirms a status update.
 - Candidate scorecards are private recruiter aids; they sync through `candidate_scorecards` when available and stay browser-local when server sync is unavailable.
+- Browser-level coverage in `apps/frontend/tests/candidate-review.spec.ts` verifies deterministic candidate rendering, Candidate Details review, scorecard upsert payload, private note upsert payload, status confirmation, application status update payload, status-event audit payload, first-candidate queue handoff, Previous/Next queue navigation, Select visible, bulk Offer eligibility/skipped review, single eligible bulk update payload, bulk status-event audit payload, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
 - Advisory signals are private recruiter aids; they only affect displayed priority order and never change candidate status or contact candidates automatically.
 - Candidate review focus filters are display-only current-page controls; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
 - Candidate analytics focus actions only change display focus; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
@@ -1863,7 +1870,7 @@ How it works:
 6. Clear opens an inline chat-clear review when conversation history exists.
 7. Keep Chat closes the review without changing local or account chat history.
 8. Clear Chat starts a fresh local conversation, clears the draft prompt/input, and best-effort deletes the previous account AI session when signed in.
-9. Sending a message calls Supabase Edge Function `chat-assistant`.
+9. Sending a message calls backend AI API `POST /api/v1/ai/chat` with `{ prompt }`.
 10. Response is appended as an assistant draft response.
 11. Assistant draft responses include source detail and a control note that no profile, resume, application, or settings data has changed.
 12. The AI Review Queue collects non-welcome assistant responses, removes duplicates, places draft recommendations first, and classifies each recommendation into a likely workflow handoff.
@@ -1878,11 +1885,11 @@ How it works:
 21. Destination apply/save/dismiss/cancel decisions for AI Profile, Resume, Application, and Learning handoffs emit `workflow_prefill_used` or `workflow_prefill_rejected` product analytics and automation audit events with local fallback.
 22. Chat-clear review/cancel/confirm decisions, recommendation generation, save/dismiss decisions, service failure states, workflow handoff opens, and destination prefill decisions emit product analytics events with local fallback.
 23. AI responses do not automatically modify profile, resume, jobs, applications, learning records, candidates, settings, messages, or notifications.
-24. `/career-path` calls Supabase Edge Function `generate-career-path`.
+24. `/career-path` calls backend AI API `GET /api/v1/ai/career-path/{userId}`.
 25. Career Path normalizes the returned path, timeline, required skills, and optional milestones before rendering.
 26. If generation fails or returns no path title, Career Path shows an explicit unavailable/incomplete state with Retry instead of a hard-coded default recommendation.
 27. Career Path does not show a fabricated match percentage; generated guidance is labeled as review-first before users open LMS.
-28. `analyzeResume` tries Supabase RPC `analyze_resume`; if it fails, it extracts common skills client-side and estimates years from text.
+28. `analyzeResume` calls backend AI API `POST /api/v1/ai/analyze-resume`; if it fails, it extracts common skills client-side and estimates years from text.
 
 Outputs:
 
@@ -1897,7 +1904,7 @@ Outputs:
 | Learning search handoff | Pending LMS catalog-search suggestions plus explicit Apply Search/Dismiss controls; no enrollment or progress mutation |
 | Destination prefill decision audit | Append-only `workflow_prefill_used` or `workflow_prefill_rejected` analytics and automation audit event; no product mutation |
 | Resume analysis | Skills, experience years, and fallback marker |
-| Match score | Edge function response |
+| Match score | Backend API match result |
 | Career path | Recommended path, timeline, required skills, optional milestones, or retryable unavailable state |
 | Insights | `{ insight: string }` |
 
@@ -1915,7 +1922,7 @@ Backend support:
 
 Implementation note:
 
-- Frontend `getChatResponse` sends `{ message }` to Supabase Edge Function, while Spring controller expects `{ prompt }` for `/api/v1/ai/chat`.
+- Frontend AI chat, match-score, and career-path generation now call the backend AI API contract instead of repo-external Supabase Edge Functions.
 - AI recommendation review uses `automation_suggestions` when available and keeps a local chat-state fallback; review and handoff controls never apply product changes automatically.
 - AI recommendation review audit uses `automation_suggestion_audit_events` when available and keeps a bounded local fallback; audit failures never block Save, Dismiss, Save all, or Dismiss all.
 - AI chat-clear review restores only a fresh local chat session after explicit confirmation; it does not change profile, resume, applications, learning progress, settings, saved review decisions, messages, notifications, or destination workflow data automatically.
@@ -2162,6 +2169,7 @@ Page contents:
   - Suggested reply drafts when the latest visible message is incoming and the composer is empty.
   - Explicit attachment panel with URL validation, file upload, upload status, server-side size/folder/blocked-extension guardrails, removable draft state, hidden-draft clearing, labeled text composer, and accessible send button.
 - Empty state when no conversation is selected.
+- Browser-level messaging workflow coverage lives in `apps/frontend/tests/messaging-workflow.spec.ts`; it verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, keyboard attachment-link focus order, attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
 How it works:
 

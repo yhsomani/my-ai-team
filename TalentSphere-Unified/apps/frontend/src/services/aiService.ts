@@ -56,6 +56,9 @@ export interface AutomationSuggestionRecord {
     updatedAt: string;
 }
 
+type AIObjectResponse = Record<string, unknown>;
+type AIChatResponse = { message?: string } & AIObjectResponse;
+
 const normalizeMessages = (messages: unknown): AIChatMessageRecord[] => (
     Array.isArray(messages)
         ? messages.filter((message): message is AIChatMessageRecord => (
@@ -108,7 +111,13 @@ export const estimateExperienceYears = (text: string): number => {
     return 0;
 };
 
-const parseResumeAnalysisPayload = (payload: unknown): Record<string, unknown> => {
+const unwrapApiResponseData = (payload: unknown): unknown => (
+    payload && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload
+        ? (payload as { data?: unknown }).data
+        : payload
+);
+
+const parseJsonObjectPayload = (payload: unknown): Record<string, unknown> => {
     if (typeof payload === 'string') {
         try {
             const parsed = JSON.parse(payload);
@@ -268,12 +277,10 @@ export const aiService = {
                     timeout: 10000,
                 }
             );
-            const payload = response.data && typeof response.data === 'object' && 'data' in response.data
-                ? response.data.data
-                : response.data;
+            const payload = unwrapApiResponseData(response.data);
 
             return {
-                ...parseResumeAnalysisPayload(payload),
+                ...parseJsonObjectPayload(payload),
                 isFallback: false,
             };
         } catch (error) {
@@ -286,31 +293,46 @@ export const aiService = {
         }
     },
 
-    getMatchScore: async (resumeText: string, jobDescription: string) => {
-        const { data, error } = await typedSupabase.functions.invoke('get-match-score', {
-            body: { resumeText, jobDescription }
-        });
-        
-        if (error) throw error;
-        return data;
+    getMatchScore: async (resumeText: string, jobDescription: string): Promise<AIObjectResponse> => {
+        const response = await apiClient.post<{ data?: unknown }>(
+            '/api/v1/ai/match-job',
+            null,
+            {
+                params: { resumeText, jobDescription },
+                timeout: 10000,
+            }
+        );
+
+        return parseJsonObjectPayload(unwrapApiResponseData(response.data));
     },
 
-    generateCareerPath: async (userId: string) => {
-        const { data, error } = await typedSupabase.functions.invoke('generate-career-path', {
-            body: { userId }
-        });
-        
-        if (error) throw error;
-        return data;
+    generateCareerPath: async (userId: string): Promise<AIObjectResponse> => {
+        const response = await apiClient.get<{ data?: unknown }>(
+            `/api/v1/ai/career-path/${encodeURIComponent(userId)}`,
+            { timeout: 10000 }
+        );
+        const payload = unwrapApiResponseData(response.data);
+
+        return payload && typeof payload === 'object' && !Array.isArray(payload)
+            ? payload as AIObjectResponse
+            : {};
     },
 
-    getChatResponse: async (message: string) => {
-        const { data, error } = await typedSupabase.functions.invoke('chat-assistant', {
-            body: { message }
-        });
-        
-        if (error) throw error;
-        return data;
+    getChatResponse: async (message: string): Promise<AIChatResponse> => {
+        const response = await apiClient.post<{ data?: unknown }>(
+            '/api/v1/ai/chat',
+            { prompt: message },
+            { timeout: 10000 }
+        );
+        const payload = unwrapApiResponseData(response.data);
+
+        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+            return payload as AIChatResponse;
+        }
+
+        return {
+            message: typeof payload === 'string' ? payload : '',
+        };
     },
 
     getInsights: async () => {

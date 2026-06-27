@@ -1,7 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity } from 'lucide-react';
-import GlassCard from '../../../components/shared/GlassCard';
 import { Message } from '../../../types/messaging';
 
 interface MessageBubbleProps {
@@ -10,25 +8,28 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMe }) => {
+  const timestamp = new Date(message.timestamp);
+  const timeLabel = Number.isNaN(timestamp.getTime())
+    ? 'Time unavailable'
+    : timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95, x: isMe ? 20 : -20 }}
       animate={{ opacity: 1, scale: 1, x: 0 }}
-      className={`flex \${isMe ? 'justify-end' : 'justify-start'} w-full`}
+      className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
     >
-      <div className={`flex flex-col \${isMe ? 'items-end' : 'items-start'} max-w-[70%] space-y-4`}>
-        <GlassCard className={`px-10 py-8 rounded-[2.5rem] text-[15px] font-medium leading-[1.8] transition-all duration-500 hover:border-emerald-500/30 \${
+      <div className={`flex max-w-[82%] flex-col gap-1 sm:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+        <div className={`rounded-md px-4 py-2.5 text-sm leading-6 ${
           isMe 
-          ? 'bg-emerald-950/80 border-emerald-500/20 text-emerald-50 shadow-2xl shadow-emerald-950/40 rounded-tr-[0.5rem]' 
-          : 'bg-white/80 dark:bg-slate-900/80 border-slate-100 dark:border-white/5 text-slate-800 dark:text-slate-200 shadow-xl rounded-tl-[0.5rem]'
+            ? 'bg-accent text-accent-foreground'
+            : 'border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)]'
         }`}>
-          {message.content}
-        </GlassCard>
-        <div className="flex items-center gap-4 px-4">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400/60">
-            Node Sync {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-          </span>
-          {isMe && <Activity size={12} className="text-emerald-500 animate-pulse" />}
+          <p className="break-words">{message.content}</p>
+        </div>
+        <div className="px-1 text-[10px] text-[var(--text-muted)]">
+          <span>{timeLabel}</span>
+          {isMe && message.status && <span> - {message.status.toLowerCase()}</span>}
         </div>
       </div>
     </motion.div>

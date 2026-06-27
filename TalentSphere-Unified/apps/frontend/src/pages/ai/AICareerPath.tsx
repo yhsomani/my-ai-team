@@ -54,6 +54,9 @@ const normalizeCareerPath = (data: unknown): CareerPathData | null => {
   };
 };
 
+const careerPathDescriptionClassName = 'text-sm text-[var(--text-secondary)]';
+const careerPathMutedClassName = 'text-xs text-[var(--text-muted)]';
+
 const AICareerPath: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
@@ -94,8 +97,11 @@ const AICareerPath: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <PageHeader
+          title="Career Paths"
+          description="Review generated career-path guidance before choosing any learning or profile action."
+        />
+        <div role="status" aria-label="Loading career path" className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full" />)}
         </div>
       </div>
@@ -119,34 +125,40 @@ const AICareerPath: React.FC = () => {
       />
 
       {loadError && (
-        <Card className="p-4 border-warning/30 bg-warning-muted/10">
+        <Card className="border-warning/30 bg-warning-muted p-4" role="alert">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <AlertTriangle size={18} className="mt-0.5 text-warning" />
+              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warning" />
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">Career path is not ready</p>
-                <p className="text-xs text-[var(--text-muted)]">{loadError}</p>
+                <p className={careerPathMutedClassName}>{loadError}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchPath} isLoading={loading}>
-              <RefreshCw size={14} className="mr-1" />
-              Retry
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={fetchPath} isLoading={loading}>
+                <RefreshCw size={14} />
+                Retry
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/ai')}>
+                Ask AI Assistant
+                <ArrowRight size={14} />
+              </Button>
+            </div>
           </div>
         </Card>
       )}
 
       {careerPath && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="p-5 flex flex-col border-accent ring-1 ring-accent/20">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+          <Card className="flex min-w-0 flex-col border-accent p-5 ring-1 ring-accent/20">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
                   <Target size={18} />
                 </div>
-                <div>
-                  <h3 className="text-sm font-semibold">{careerPath.recommendedPath}</h3>
-                  <p className="text-xs text-[var(--text-muted)]">{careerPath.estimatedTimeline || 'Timeline not provided'}</p>
+                <div className="min-w-0">
+                  <h3 className="break-words text-sm font-semibold">{careerPath.recommendedPath}</h3>
+                  <p className={careerPathMutedClassName}>{careerPath.estimatedTimeline || 'Timeline not provided'}</p>
                 </div>
               </div>
               <Badge variant="outline">Review first</Badge>
@@ -155,7 +167,7 @@ const AICareerPath: React.FC = () => {
             <div className="flex flex-wrap gap-1.5 mb-4">
               {careerPath.requiredSkills.length > 0 ? (
                 careerPath.requiredSkills.map((skill) => (
-                  <Badge key={skill} variant="outline" className="text-[10px]">{skill}</Badge>
+                  <Badge key={skill} variant="outline" className="max-w-full break-words text-[10px]">{skill}</Badge>
                 ))
               ) : (
                 <span className="text-xs text-[var(--text-muted)]">No skill gaps were returned with this path.</span>
@@ -165,15 +177,39 @@ const AICareerPath: React.FC = () => {
             <div className="flex-1 space-y-2 mb-4">
               <p className="text-xs font-medium text-[var(--text-muted)]">Milestones</p>
               {milestones.map((step, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 size={14} className={step.done ? 'text-success' : 'text-[var(--text-muted)]'} />
-                  <span className={step.done ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'}>{step.label}</span>
+                <div key={i} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 size={14} className={`${step.done ? 'text-success' : 'text-[var(--text-muted)]'} mt-0.5 shrink-0`} />
+                  <span className={`${step.done ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'} break-words`}>{step.label}</span>
                 </div>
               ))}
             </div>
 
             <Button size="sm" className="w-full" onClick={() => navigate('/lms')}>
               Explore Path <ArrowRight size={14} className="ml-1" />
+            </Button>
+          </Card>
+          <Card className="p-5">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Review Boundaries</h3>
+            <p className={`${careerPathDescriptionClassName} mt-2`}>
+              Generated guidance does not change your profile, skills, applications, or learning progress until you choose an action in the owning workflow.
+            </p>
+            <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+                <span>Use Learning to choose courses.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+                <span>Use Profile or Resume to edit durable records.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+                <span>Ask AI Assistant for a more detailed plan before applying changes.</span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="mt-5 w-full" onClick={() => navigate('/ai')}>
+              Ask AI Assistant
+              <ArrowRight size={14} />
             </Button>
           </Card>
         </div>

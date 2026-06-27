@@ -148,6 +148,11 @@ const formatExportTime = (date: string) => {
   return parsed.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 };
 
+const resumeInsetClassName = 'rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]';
+const resumeSubtlePanelClassName = 'rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]';
+const resumeReviewLabelClassName = 'block text-xs font-medium text-[var(--text-muted)]';
+const resumePreviewHeadingClassName = 'text-sm font-semibold text-accent';
+
 const getResumeFileStem = (name?: string) => {
   const normalized = (name || 'Resume')
     .trim()
@@ -1538,11 +1543,13 @@ const ResumeBuilder: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48 mb-6" />
+        <PageHeader title="Resume Builder" description="Create and customize your professional resume." />
         <Card className="p-8">
-          <Skeleton className="h-4 w-full mb-4" />
-          <Skeleton className="h-4 w-2/3 mb-4" />
-          <Skeleton className="h-4 w-1/2" />
+          <div role="status" aria-label="Loading resume builder" className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
         </Card>
       </div>
     );
@@ -1599,7 +1606,7 @@ const ResumeBuilder: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label htmlFor="resume-import-text" className="block text-sm font-medium mb-1.5 text-[var(--text-primary)]">Resume text</label>
-            <div className="mb-3 rounded-lg border border-dashed border-[var(--border-default)] p-3">
+            <div className={`${resumeSubtlePanelClassName} mb-3 border-dashed p-3`}>
               <label htmlFor="resume-import-file" className="block text-sm font-medium text-[var(--text-primary)]">Upload text file</label>
               <input
                 id="resume-import-file"
@@ -1614,7 +1621,7 @@ const ResumeBuilder: React.FC = () => {
               {importFileName && <p className="mt-1 text-xs text-[var(--text-muted)]">Loaded: {importFileName}</p>}
             </div>
             {pendingAiResumeDraft && (
-              <div className="mb-3 rounded-lg border border-accent/20 bg-accent/5 p-3">
+              <div className="mb-3 rounded-lg border border-accent/20 bg-accent-muted p-3">
                 <p className="text-sm font-semibold text-[var(--text-primary)]">AI resume draft</p>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
                   Source: {pendingAiResumeDraft.sourceLabel || 'TalentSphere AI assistant'}. Applying selected fields only updates the editor draft; Save Changes is still required.
@@ -1649,11 +1656,11 @@ const ResumeBuilder: React.FC = () => {
                     <span className="block text-xs font-medium text-[var(--text-muted)]">{entry.label}</span>
                     <span className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <span>
-                        <span className="block text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Current</span>
+                        <span className={resumeReviewLabelClassName}>Current</span>
                         <span className="mt-1 block text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{resumeDraft[entry.key] || 'Empty'}</span>
                       </span>
                       <span>
-                        <span className="block text-[10px] uppercase tracking-wide text-accent">{pendingAiResumeDraft ? 'AI draft' : 'Detected'}</span>
+                        <span className="block text-xs font-medium text-accent">{pendingAiResumeDraft ? 'AI draft' : 'Detected'}</span>
                         <span className="mt-1 block text-sm text-[var(--text-primary)] whitespace-pre-wrap">{entry.value}</span>
                       </span>
                     </span>
@@ -1723,7 +1730,7 @@ const ResumeBuilder: React.FC = () => {
 
                   {importExperienceSuggestions.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Work Experience</p>
+                      <p className="text-xs font-semibold text-[var(--text-muted)]">Work Experience</p>
                       {importExperienceSuggestions.map(experience => (
                         <label key={experience.id} className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
                           <input
@@ -1751,7 +1758,7 @@ const ResumeBuilder: React.FC = () => {
 
                   {importEducationSuggestions.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Education</p>
+                      <p className="text-xs font-semibold text-[var(--text-muted)]">Education</p>
                       {importEducationSuggestions.map(educationRow => (
                         <label key={educationRow.id} className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
                           <input
@@ -1982,19 +1989,19 @@ const ResumeBuilder: React.FC = () => {
           </Card>
 
           <Card className="p-5 space-y-4 lg:col-span-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-sm font-semibold">Work Experience</h3>
               <p className="text-xs text-[var(--text-muted)]">Manage entries from Profile completion.</p>
             </div>
             {experiences.map((exp: Record<string, any>, i: number) => (
-              <div key={exp.id || i} className="flex items-start gap-3 p-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]">
-                <GripVertical size={16} className="text-[var(--text-muted)] mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{exp.title}</p>
+              <div key={exp.id || i} className={`${resumeInsetClassName} flex min-w-0 items-start gap-3 p-4`}>
+                <GripVertical size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-medium">{exp.title}</p>
                   <p className="text-xs text-[var(--text-muted)]">
                     {exp.company} - {formatResumeDate(getExperienceStartDate(exp))} to {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
                   </p>
-                  {exp.description && <p className="text-sm text-[var(--text-secondary)] mt-2">{exp.description}</p>}
+                  {exp.description && <p className="mt-2 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
                 </div>
               </div>
             ))}
@@ -2002,13 +2009,13 @@ const ResumeBuilder: React.FC = () => {
           </Card>
 
           <Card className="p-5 space-y-4 lg:col-span-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-sm font-semibold">Skills</h3>
               <p className="text-xs text-[var(--text-muted)]">Manage skills from Profile completion.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {skills.map((s: Record<string, any> | string, i: number) => (
-                <span key={`${getSkillName(s)}-${i}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-default)] text-sm bg-[var(--bg-primary)]">
+                <span key={`${getSkillName(s)}-${i}`} className="inline-flex max-w-full items-center gap-1.5 break-words rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-1.5 text-sm">
                   {getSkillName(s)}
                 </span>
               ))}
@@ -2017,43 +2024,43 @@ const ResumeBuilder: React.FC = () => {
           </Card>
         </div>
       ) : (
-        <Card className="p-8 max-w-2xl mx-auto">
+        <Card className="mx-auto w-full max-w-2xl p-5 sm:p-8">
           <div className="space-y-6">
             <div className="text-center border-b border-[var(--border-default)] pb-6">
-              <h2 className="text-2xl font-semibold">{resumeDraft.fullName || 'Resume'}</h2>
-              <p className="text-sm text-[var(--text-secondary)]">{resumeDraft.headline || 'Professional'}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">
+              <h2 className="break-words text-2xl font-semibold">{resumeDraft.fullName || 'Resume'}</h2>
+              <p className="break-words text-sm text-[var(--text-secondary)]">{resumeDraft.headline || 'Professional'}</p>
+              <p className="mt-1 break-words text-xs text-[var(--text-muted)]">
                 {[resumeDraft.location, resumeDraft.email, resumeDraft.phone, resumeDraft.website].filter(Boolean).join(' - ')}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-semibold mb-2 text-accent uppercase tracking-wide">Summary</h3>
+              <h3 className={`${resumePreviewHeadingClassName} mb-2`}>Summary</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
                 {resumeDraft.summary || 'No summary provided.'}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wide">Experience</h3>
+              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Experience</h3>
               <div className="space-y-4">
                 {experiences.map((exp: Record<string, any>, i: number) => (
                   <div key={exp.id || i}>
-                    <p className="text-sm font-medium">{exp.title} - {exp.company}</p>
+                    <p className="break-words text-sm font-medium">{exp.title} - {exp.company}</p>
                     <p className="text-xs text-[var(--text-muted)]">
                       {formatResumeDate(getExperienceStartDate(exp))} - {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
                     </p>
-                    {exp.description && <p className="text-sm text-[var(--text-secondary)] mt-1">{exp.description}</p>}
+                    {exp.description && <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
                   </div>
                 ))}
                 {experiences.length === 0 && <p className="text-sm text-[var(--text-muted)]">No work experience added yet.</p>}
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wide">Education</h3>
+              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Education</h3>
               <div className="space-y-4">
                 {education.map((edu: Record<string, any>, i: number) => (
                   <div key={edu.id || i}>
-                    <p className="text-sm font-medium">{edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education'}</p>
-                    <p className="text-xs text-[var(--text-muted)]">
+                    <p className="break-words text-sm font-medium">{edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education'}</p>
+                    <p className="break-words text-xs text-[var(--text-muted)]">
                       {edu.institution} - {formatResumeDate(getEducationEndDate(edu) || getEducationStartDate(edu))}
                     </p>
                   </div>
@@ -2062,10 +2069,10 @@ const ResumeBuilder: React.FC = () => {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wide">Skills</h3>
+              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {skills.map((skill: Record<string, any> | string, i: number) => (
-                  <span key={`${getSkillName(skill)}-${i}`} className="text-xs rounded-md border border-[var(--border-default)] px-2 py-1">
+                  <span key={`${getSkillName(skill)}-${i}`} className="max-w-full break-words rounded-md border border-[var(--border-default)] px-2 py-1 text-xs">
                     {getSkillName(skill)}
                   </span>
                 ))}

@@ -214,13 +214,13 @@ const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title="Settings"
-        description="Manage your account preferences and configurations"
+        description="Manage account preferences, security actions, and billing handoff."
       />
 
-      <div className="grid md:grid-cols-12 gap-6">
+      <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-3">
           <Card className="p-2 sticky top-24">
             <nav className="space-y-1">
@@ -228,10 +228,10 @@ const SettingsPage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => handleTabSelect(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      ? 'bg-accent-muted text-accent'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {tab.icon}

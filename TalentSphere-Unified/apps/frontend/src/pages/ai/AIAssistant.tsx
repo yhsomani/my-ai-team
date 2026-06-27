@@ -565,7 +565,7 @@ const AIAssistant: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="flex h-[calc(100vh-8rem)] flex-col space-y-6">
       <PageHeader
         title="AI Assistant"
         description="Get personalized career guidance powered by AI."
@@ -594,7 +594,7 @@ const AIAssistant: React.FC = () => {
       {isClearChatReviewOpen && (
         <section
           role="alert"
-          className="rounded-lg border border-warning/30 bg-warning/10 p-4"
+          className="rounded-lg border border-warning/30 bg-warning-muted p-4"
           aria-labelledby="ai-clear-chat-review-title"
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -727,18 +727,18 @@ const AIAssistant: React.FC = () => {
       <Card className="min-h-0 flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div key={msg.id} className={`flex min-w-0 gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                 msg.role === 'assistant' ? 'bg-accent/10 text-accent' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
               }`}>
                 {msg.role === 'assistant' ? <Bot size={16} /> : <User size={16} />}
               </div>
-              <div className={`max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed ${
+              <div className={`max-w-[85%] break-words rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[70%] ${
                 msg.role === 'user'
-                  ? 'bg-accent text-white rounded-tr-sm'
+                  ? 'bg-accent text-[var(--accent-foreground)] rounded-tr-sm'
                   : 'bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-tl-sm'
               }`}>
-                {msg.content}
+                <p className="whitespace-pre-wrap">{msg.content}</p>
                 {msg.role === 'assistant' && msg.id !== 'welcome' && (
                   <div className="mt-3 space-y-2 border-t border-[var(--border-default)] pt-2">
                     <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-muted)]">
@@ -791,7 +791,7 @@ const AIAssistant: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-accent/10 text-accent flex items-center justify-center">
                 <Bot size={16} />
               </div>
-              <div className="px-4 py-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-tl-sm">
+              <div className="rounded-lg rounded-tl-sm border border-[var(--border-default)] bg-[var(--bg-primary)] px-4 py-3">
                 <Loader2 size={16} className="animate-spin text-[var(--text-muted)]" />
               </div>
             </div>
@@ -806,14 +806,14 @@ const AIAssistant: React.FC = () => {
                 <button
                   key={s.label}
                   onClick={() => handleSuggestionClick(s)}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors"
+                  className="rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
                 >
                   {s.label}
                 </button>
               ))}
             </div>
             {pendingSuggestion && (
-              <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
+              <div className="rounded-lg border border-accent/20 bg-accent-muted p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-accent mb-1">Draft Prompt</p>

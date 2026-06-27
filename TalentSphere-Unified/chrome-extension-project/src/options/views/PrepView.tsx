@@ -22,6 +22,11 @@ interface PrepViewProps {
   confirmPrepClear: () => void;
 }
 
+const inputClassName = 'w-full rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-inset)] p-2.5 text-xs text-[var(--ext-text)] transition focus:border-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const labelClassName = 'text-[10px] font-semibold text-[var(--ext-text-secondary)]';
+const secondaryButtonClassName = 'rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-3 py-1.5 text-[10px] font-medium text-[var(--ext-text)] transition hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const dangerButtonClassName = 'rounded-lg border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] px-3 py-1.5 text-[10px] font-semibold text-[var(--ext-danger)] transition hover:bg-[var(--ext-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+
 export const PrepView: React.FC<PrepViewProps> = ({
   prepItems,
   newTopic,
@@ -40,40 +45,40 @@ export const PrepView: React.FC<PrepViewProps> = ({
   return (
     <div className="max-w-4xl space-y-8" id="opt-view-prep">
       <div className="space-y-2">
-        <div className="flex items-center space-x-2 text-purple-400 text-xs font-semibold uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--ext-accent)]">
           <Calendar className="h-4 w-4" />
           <span>Career Coaching Sandbox</span>
         </div>
-        <h2 className="text-3xl font-extrabold font-outfit text-white tracking-tight">Interview Planner</h2>
-        <p className="text-slate-400 text-sm max-w-2xl">
+        <h2 className="text-3xl font-extrabold text-[var(--ext-text)]">Interview Planner</h2>
+        <p className="max-w-2xl text-sm text-[var(--ext-text-secondary)]">
           Keep track of your review tasks, custom study cards, and behavioral drilling strategies.
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-1 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 h-fit space-y-4">
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">New Preparation Card</h3>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="h-fit space-y-4 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-5 lg:col-span-1">
+          <h3 className="text-xs font-bold text-[var(--ext-text)]">New Preparation Card</h3>
           
           <form onSubmit={handleAddPrep} className="space-y-3.5">
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase">Topic</label>
+              <label className={labelClassName}>Topic</label>
               <input
                 type="text"
                 placeholder="e.g. STAR Method drills"
                 value={newTopic}
                 onChange={(e) => setNewTopic(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                className={inputClassName}
                 required
                 id="prep-topic-input"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase">Review Category</label>
+              <label className={labelClassName}>Review Category</label>
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as PrepItem['type'])}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500"
+                className={inputClassName}
                 id="prep-category-select"
               >
                 <option value="Technical">Technical</option>
@@ -84,7 +89,7 @@ export const PrepView: React.FC<PrepViewProps> = ({
 
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-500 shadow-purpleGlow text-white text-xs font-semibold py-2.5 rounded-lg transition duration-200"
+              className="w-full rounded-lg border border-[var(--ext-accent)] bg-[var(--ext-accent)] py-2.5 text-xs font-semibold text-[var(--ext-on-accent)] transition duration-200 hover:bg-[var(--ext-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
               id="submit-prep-btn"
             >
               Add Plan Card
@@ -92,13 +97,13 @@ export const PrepView: React.FC<PrepViewProps> = ({
           </form>
         </div>
 
-        <div className="col-span-2 space-y-3">
-          <div className="flex justify-between items-center bg-slate-900/10 p-3 rounded-lg border border-slate-800/40">
-            <span className="text-xs text-slate-400 font-semibold">Active Preparation Cards: ({prepItems.length})</span>
+        <div className="space-y-3 lg:col-span-2">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-3">
+            <span className="text-xs font-semibold text-[var(--ext-text-secondary)]">Active Preparation Cards: ({prepItems.length})</span>
             <button 
               onClick={openPrepClearReview}
               disabled={!hasPrepCards}
-              className="text-[10px] text-slate-500 hover:text-slate-300 transition duration-150 cursor-pointer disabled:cursor-not-allowed disabled:text-slate-700"
+              className="cursor-pointer text-[10px] text-[var(--ext-text-muted)] transition duration-150 hover:text-[var(--ext-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] disabled:cursor-not-allowed disabled:opacity-50"
               id="clear-prep-btn"
               aria-controls="prep-clear-review"
               aria-expanded={isPrepClearReviewOpen}
@@ -111,12 +116,12 @@ export const PrepView: React.FC<PrepViewProps> = ({
           {isPrepClearReviewOpen && hasPrepCards && (
             <div
               role="alert"
-              className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2"
+              className="space-y-2 rounded-lg border border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] p-3"
               id="prep-clear-review"
             >
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-amber-200">Clear all preparation cards?</p>
-                <p className="text-[10px] leading-relaxed text-amber-100/80">
+                <p className="text-xs font-semibold text-[var(--ext-warning)]">Clear all preparation cards?</p>
+                <p className="text-[10px] leading-relaxed text-[var(--ext-text-secondary)]">
                   This removes {prepItems.length} local interview planner {prepItems.length === 1 ? 'card' : 'cards'} from this browser. Tracker jobs, scanned drafts, diagnostics analytics, and settings stay unchanged.
                 </p>
               </div>
@@ -124,14 +129,14 @@ export const PrepView: React.FC<PrepViewProps> = ({
                 <button
                   type="button"
                   onClick={cancelPrepClearReview}
-                  className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-1.5 text-[10px] text-slate-300 hover:bg-slate-800"
+                  className={secondaryButtonClassName}
                 >
                   Keep Cards
                 </button>
                 <button
                   type="button"
                   onClick={confirmPrepClear}
-                  className="rounded-lg border border-rose-700/60 bg-rose-950/70 px-3 py-1.5 text-[10px] font-semibold text-rose-200 hover:bg-rose-900/80"
+                  className={dangerButtonClassName}
                 >
                   Clear Cards
                 </button>
@@ -152,48 +157,44 @@ export const PrepView: React.FC<PrepViewProps> = ({
                 }}
                 role="button"
                 tabIndex={0}
-                className={`group border rounded-2xl p-4 flex justify-between items-center transition cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-purple-500/80 ${
+                className={`group flex cursor-pointer select-none items-center justify-between gap-3 rounded-lg border p-4 transition focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
                   item.completed
-                    ? 'bg-slate-900/10 border-slate-850 text-slate-500'
-                    : 'bg-slate-900/30 hover:bg-slate-900/60 border-slate-800/60 text-slate-100 hover:border-slate-850'
+                    ? 'border-[var(--ext-border)] bg-[var(--ext-surface-muted)] text-[var(--ext-text-muted)]'
+                    : 'border-[var(--ext-border)] bg-[var(--ext-surface)] text-[var(--ext-text)] hover:border-[var(--ext-border-strong)]'
                 }`}
               >
 
-                <div className="flex items-center space-x-3">
-                  <div className={`h-5 w-5 rounded-md flex items-center justify-center border transition ${
-                    item.completed 
-                      ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-400' 
-                      : 'border-slate-700 text-transparent group-hover:border-purple-500'
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                    item.completed
+                      ? 'border-[var(--ext-success)] bg-[var(--ext-success-muted)] text-[var(--ext-success)]'
+                      : 'border-[var(--ext-border-strong)] text-transparent group-hover:border-[var(--ext-accent)]'
                   }`}>
                     ✓
                   </div>
-                  <div>
-                    <span className={`text-xs font-medium ${item.completed ? 'line-through' : ''}`}>
+                  <div className="min-w-0">
+                    <span className={`break-words text-xs font-medium ${item.completed ? 'line-through' : ''}`}>
                       {item.topic}
                     </span>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className={`text-[9px] font-semibold uppercase tracking-wider ${
-                        item.type === 'Technical' ? 'text-cyan-400' :
-                        item.type === 'System Design' ? 'text-purple-400' :
-                        'text-amber-400'
-                      }`}>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-[9px] font-semibold text-[var(--ext-accent)]">
                         {item.type}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-slate-400 transition" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ext-text-muted)] transition group-hover:text-[var(--ext-text)]" />
               </div>
             ))}
 
             {!hasPrepCards && (
-              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/20 p-6 text-center">
-                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/70">
-                  <Calendar className="h-5 w-5 text-slate-500" />
+              <div className="rounded-lg border border-dashed border-[var(--ext-border)] bg-[var(--ext-surface)] p-6 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)]">
+                  <Calendar className="h-5 w-5 text-[var(--ext-text-muted)]" />
                 </div>
-                <p className="text-sm font-semibold text-slate-200">No preparation cards yet</p>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                <p className="text-sm font-semibold text-[var(--ext-text)]">No preparation cards yet</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--ext-text-muted)]">
                   Add a topic from the form to create a browser-local interview preparation card.
                 </p>
               </div>

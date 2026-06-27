@@ -8,36 +8,42 @@ interface NetworkConsoleProps {
   setSearchQuery: (query: string) => void;
 }
 
-export const NetworkConsole: React.FC<NetworkConsoleProps> = ({ 
-  activeCategory, 
-  setActiveCategory, 
-  searchQuery, 
-  setSearchQuery 
+const categories = ['Recommended', 'Connections', 'Requests', 'Discover'];
+
+export const NetworkConsole: React.FC<NetworkConsoleProps> = ({
+  activeCategory,
+  setActiveCategory,
+  searchQuery,
+  setSearchQuery
 }) => {
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-10 mb-20">
-      <div className="flex p-1.5 gap-1.5 bg-white dark:bg-slate-900 border border-slate-50 dark:border-slate-800 rounded-2xl shadow-xl shadow-slate-200/30 dark:shadow-none overflow-x-auto no-scrollbar">
-        {['Recommended', 'Connections', 'Requests', 'Discover'].map((cat) => (
-          <button 
-            key={cat}
-            onClick={() => setActiveCategory(cat as any)}
-            className={`px-8 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${
-              activeCategory === cat 
-              ? 'bg-emerald-900 text-white shadow-lg' 
-              : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
+    <div className="surface-panel flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Networking categories">
+        {categories.map((category) => (
+          <button
+            key={category}
+            type="button"
+            role="tab"
+            aria-selected={activeCategory === category}
+            onClick={() => setActiveCategory(category)}
+            className={`inline-flex h-9 items-center rounded-md px-3 text-xs font-medium transition-colors ${
+              activeCategory === category
+                ? 'bg-[var(--bg-primary)] text-accent'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]'
             }`}
           >
-            {cat}
+            {category}
           </button>
         ))}
       </div>
 
-      <div className="relative group w-full lg:max-w-xl">
-        <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors" size={20} />
-        <input 
+      <div className="relative w-full lg:max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+        <input
           type="text"
-          placeholder="Identify specific neural fingerprints..."
-          className="w-full bg-white dark:bg-slate-950 border border-slate-50 dark:border-slate-800 rounded-[2rem] py-6 pl-18 pr-8 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700 shadow-xl shadow-slate-200/30 dark:shadow-none"
+          aria-label="Search network"
+          placeholder="Search people..."
+          className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

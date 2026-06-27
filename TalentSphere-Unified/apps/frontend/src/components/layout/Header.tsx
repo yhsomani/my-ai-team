@@ -29,8 +29,11 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationsPanelRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [accountNotifications, setAccountNotifications] = useState<NotificationRecord[]>([]);
   const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
@@ -56,6 +59,12 @@ export const Header: React.FC<HeaderProps> = ({
       ))
       .slice(0, 6);
   }, [searchDestinations, searchTerm]);
+
+  const activeSearchResult = searchResults[activeSearchResultIndex] || searchResults[0];
+  const getSearchResultId = (path: string) => {
+    const normalizedPath = path.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home';
+    return `app-shell-search-result-${normalizedPath}`;
+  };
 
   const reminders = useMemo(() => {
     const items = [
@@ -196,14 +205,28 @@ export const Header: React.FC<HeaderProps> = ({
       }
 
       if (event.key === 'Escape') {
+        const activeElement = document.activeElement;
+        const shouldRestoreNotificationFocus = activeElement instanceof HTMLElement && (
+          notificationButtonRef.current === activeElement ||
+          Boolean(notificationsPanelRef.current?.contains(activeElement))
+        );
+
         setIsSearchOpen(false);
         setIsNotificationsOpen(false);
+
+        if (shouldRestoreNotificationFocus) {
+          window.requestAnimationFrame(() => notificationButtonRef.current?.focus());
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeydown);
     return () => window.removeEventListener('keydown', handleKeydown);
   }, []);
+
+  useEffect(() => {
+    setActiveSearchResultIndex(currentIndex => Math.min(currentIndex, Math.max(searchResults.length - 1, 0)));
+  }, [searchResults.length]);
 
   const navigateTo = (path: string) => {
     navigate(path);
@@ -214,9 +237,32 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    const firstResult = searchResults[0];
-    if (firstResult) {
-      navigateTo(firstResult.path);
+    if (activeSearchResult) {
+      navigateTo(activeSearchResult.path);
+    }
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
+    if (searchResults.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setActiveSearchResultIndex(index => (index + 1) % searchResults.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setActiveSearchResultIndex(index => (index - 1 + searchResults.length) % searchResults.length);
+      return;
+    }
+
+    if (event.key === 'Enter' && isSearchOpen && activeSearchResult) {
+      event.preventDefault();
+      navigateTo(activeSearchResult.path);
     }
   };
 
@@ -248,12 +294,12 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-14 border-b border-[var(--border-default)] bg-[var(--bg-primary)]/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-[var(--header-height)] min-w-0 items-center justify-between gap-2 border-b border-[var(--border-default)] bg-[var(--bg-panel)]/90 px-4 backdrop-blur-sm lg:px-6">
       {/* Left: Mobile menu toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <button
           onClick={() => setIsSidebarOpen?.(!isSidebarOpen)}
-          className="lg:hidden p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+          className="lg:hidden p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
           aria-label="Toggle navigation menu"
         >
           <Menu size={20} />
@@ -261,22 +307,30 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Center: Search */}
-      <div className="flex-1 max-w-md mx-4">
+      <div className="mx-2 min-w-0 flex-1 sm:mx-4 sm:max-w-md">
         <form className="relative" onSubmit={handleSearchSubmit}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
           <input
             ref={searchInputRef}
             type="text"
             placeholder="Search..."
+            role="combobox"
             aria-label="Search platform"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
             aria-expanded={isSearchOpen}
             aria-controls="app-shell-search-results"
-            className="w-full h-8 pl-9 pr-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+            aria-activedescendant={
+              isSearchOpen && activeSearchResult ? getSearchResultId(activeSearchResult.path) : undefined
+            }
+            className="w-full h-9 pl-9 pr-12 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
             value={searchTerm}
             onFocus={() => setIsSearchOpen(true)}
+            onKeyDown={handleSearchKeyDown}
             onChange={(event) => {
               setSearchTerm(event.target.value);
               setIsSearchOpen(true);
+              setActiveSearchResultIndex(0);
             }}
           />
           <kbd className="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 h-5 items-center gap-1 rounded border border-[var(--border-default)] bg-[var(--bg-primary)] px-1.5 text-[10px] font-medium text-[var(--text-muted)]">
@@ -286,19 +340,29 @@ export const Header: React.FC<HeaderProps> = ({
           {isSearchOpen && (
             <div
               id="app-shell-search-results"
-              className="absolute left-0 right-0 top-10 z-50 overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] shadow-2xl"
+              role="listbox"
+              aria-label="Search destinations"
+              className="surface-card absolute left-0 right-0 top-11 z-50 overflow-hidden"
             >
               {searchResults.length > 0 ? (
                 <div className="max-h-80 overflow-y-auto p-1.5">
-                  {searchResults.map(result => {
+                  {searchResults.map((result, index) => {
                     const Icon = result.icon;
+                    const isActiveSearchResult = activeSearchResultIndex === index;
                     return (
                       <button
                         key={result.path}
+                        id={getSearchResultId(result.path)}
                         type="button"
+                        role="option"
+                        aria-selected={isActiveSearchResult}
                         onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setActiveSearchResultIndex(index)}
+                        onFocus={() => setActiveSearchResultIndex(index)}
                         onClick={() => navigateTo(result.path)}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+                          isActiveSearchResult ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'
+                        }`}
                       >
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
                           <Icon size={15} />
@@ -313,7 +377,7 @@ export const Header: React.FC<HeaderProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="px-3 py-4 text-sm text-[var(--text-muted)]">No matching destinations</div>
+                <div role="status" className="px-3 py-4 text-sm text-[var(--text-muted)]">No matching destinations</div>
               )}
             </div>
           )}
@@ -321,25 +385,29 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <div className="relative">
           <button
+            ref={notificationButtonRef}
             onClick={() => setIsNotificationsOpen(open => !open)}
-            className="relative p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
-            aria-label="View notifications"
+            className="relative p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+            aria-label={unreadAccountNotifications.length > 0 ? `View notifications, ${unreadAccountNotifications.length} unread` : 'View notifications'}
             aria-expanded={isNotificationsOpen}
             aria-controls="app-shell-notifications"
           >
             <Bell size={18} />
             {unreadAccountNotifications.length > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-h-2 min-w-2 rounded-full bg-accent" />
+              <span className="absolute top-0.5 right-0.5 min-h-2 min-w-2 rounded-full bg-accent" aria-hidden="true" />
             )}
           </button>
 
           {isNotificationsOpen && (
             <div
+              ref={notificationsPanelRef}
               id="app-shell-notifications"
-              className="absolute right-0 top-10 z-50 w-80 overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] shadow-2xl"
+              role="region"
+              aria-label="Notifications"
+              className="surface-card absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden"
             >
               <div className="border-b border-[var(--border-default)] px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -386,7 +454,7 @@ export const Header: React.FC<HeaderProps> = ({
                               key={item.id}
                               type="button"
                               onClick={() => handleNotificationClick(item)}
-                              className="w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+                              className="w-full rounded-md px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
                             >
                               <span className="flex items-center gap-2">
                                 {isUrgentUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
@@ -398,7 +466,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 )}
                               </span>
                               <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.message}</span>
-                              <span className="mt-1 block text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                              <span className="mt-1 block text-[10px] font-medium uppercase text-[var(--text-muted)]">
                                 {dueAt ? `${isScheduled ? 'Due' : 'Due now'} ${formatNotificationTime(dueAt.toISOString())}` : formatNotificationTime(item.createdAt)}
                               </span>
                             </button>
@@ -409,7 +477,7 @@ export const Header: React.FC<HeaderProps> = ({
                             type="button"
                             onClick={handleLoadMoreNotifications}
                             disabled={isLoadingMoreNotifications}
-                            className="mt-1 w-full rounded-lg border border-[var(--border-default)] px-3 py-2 text-center text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="mt-1 w-full rounded-md border border-[var(--border-default)] px-3 py-2 text-center text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {isLoadingMoreNotifications ? 'Loading more...' : 'Load more notifications'}
                           </button>
@@ -424,7 +492,7 @@ export const Header: React.FC<HeaderProps> = ({
                             key={`${item.title}-${item.path}`}
                             type="button"
                             onClick={() => navigateTo(item.path)}
-                            className="w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+                            className="w-full rounded-md px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
                           >
                             <span className="block text-sm font-medium text-[var(--text-primary)]">{item.title}</span>
                             <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.description}</span>

@@ -2,6 +2,19 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+@theme {
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-destructive: var(--destructive);
+  --color-destructive-muted: var(--destructive-muted);
+}
+
 /* =============================================
    SLATE DESIGN SYSTEM — Professional Developer UI
    ============================================= */
@@ -9,8 +22,10 @@
 :root {
   /* Surface Colors — Light */
   --bg-primary: #ffffff;
+  --bg-canvas: #f8fafc;
   --bg-secondary: #f4f4f5;
   --bg-elevated: #ffffff;
+  --bg-panel: #ffffff;
   --bg-inset: #f4f4f5;
   --bg-overlay: rgba(0, 0, 0, 0.5);
 
@@ -43,6 +58,7 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.22);
 
   /* Radius */
   --radius-sm: 4px;
@@ -55,12 +71,17 @@
   /* Sidebar */
   --sidebar-width: 256px;
   --sidebar-collapsed: 64px;
+  --header-height: 56px;
+  --content-max-width: 1440px;
+  --page-gutter: 24px;
 }
 
 .dark {
   --bg-primary: #09090b;
+  --bg-canvas: #0f0f12;
   --bg-secondary: #18181b;
   --bg-elevated: #27272a;
+  --bg-panel: #18181b;
   --bg-inset: #09090b;
   --bg-overlay: rgba(0, 0, 0, 0.7);
 
@@ -76,6 +97,7 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(129, 140, 248, 0.28);
 }
 
 /* =============================================
@@ -87,7 +109,7 @@
 }
 
 body {
-  background-color: var(--bg-primary);
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
@@ -108,7 +130,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
   line-height: 1.2;
   color: var(--text-primary);
 }
@@ -121,6 +143,17 @@ h1, h2, h3, h4, h5, h6 {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* =============================================
@@ -157,13 +190,6 @@ h1, h2, h3, h4, h5, h6 {
    UTILITY CLASSES
    ============================================= */
 
-.text-gradient {
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* Transition presets */
 .transition-base {
   transition-property: color, background-color, border-color, box-shadow, opacity;
@@ -175,4 +201,54 @@ h1, h2, h3, h4, h5, h6 {
   transition-property: transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+.app-page {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--page-gutter);
+}
+
+.surface-card {
+  border: 1px solid var(--border-default);
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.surface-modal {
+  border: 1px solid var(--border-default);
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.surface-panel {
+  border: 1px solid var(--border-default);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.interactive-row {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.interactive-row:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-primary);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --page-gutter: 16px;
+  }
 }

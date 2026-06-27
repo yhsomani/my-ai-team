@@ -12,7 +12,7 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action, className }) => {
   return (
-    <div className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className || ''}`}>
+    <div className={`surface-panel flex flex-col items-center justify-center px-4 py-14 text-center ${className || ''}`}>
       <div className="mb-4 text-[var(--text-muted)]">
         {icon || <InboxIcon className="h-12 w-12" />}
       </div>

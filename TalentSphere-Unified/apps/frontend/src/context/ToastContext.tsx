@@ -15,12 +15,12 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 const getToastStyles = (type: ToastType) => {
-  const base = 'fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up z-50';
+  const base = 'px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up border bg-[var(--bg-panel)] text-[var(--text-primary)]';
   const variants = {
-    success: 'bg-emerald-500/90 text-white',
-    error: 'bg-red-500/90 text-white',
-    info: 'bg-blue-500/90 text-white',
-    warning: 'bg-amber-500/90 text-white',
+    success: 'border-success/20',
+    error: 'border-destructive/20',
+    info: 'border-accent/20',
+    warning: 'border-warning/20',
   };
   return `${base} ${variants[type]}`;
 };
@@ -48,6 +48,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
             className={getToastStyles(toast.type)}
             onClick={() => removeToast(toast.id)}
           >

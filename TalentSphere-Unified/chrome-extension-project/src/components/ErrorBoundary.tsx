@@ -30,26 +30,26 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
       return (
-        <div className="flex flex-col items-center justify-center h-full w-full bg-slate-950 p-6 text-center space-y-4">
-          <div className="bg-rose-950/40 p-4 rounded-full border border-rose-900/60">
-            <AlertTriangle className="h-10 w-10 text-rose-500" />
+        <div className="flex h-full w-full flex-col items-center justify-center space-y-4 bg-[var(--ext-bg)] p-6 text-center text-[var(--ext-text)]">
+          <div className="rounded-full border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] p-4">
+            <AlertTriangle className="h-10 w-10 text-[var(--ext-danger)]" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white tracking-tight">Something went wrong</h2>
-            <p className="text-xs text-slate-400 max-w-sm">
+            <h2 className="text-xl font-bold text-[var(--ext-text)]">Something went wrong</h2>
+            <p className="max-w-sm text-xs text-[var(--ext-text-secondary)]">
               An unexpected error occurred in the extension interface. Please try reloading the extension or checking the system logs.
             </p>
           </div>
           {this.state.error && (
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg mt-4 w-full text-left overflow-auto max-h-32">
-              <pre className="text-[9px] text-rose-400 font-mono">
+            <div className="mt-4 max-h-32 w-full overflow-auto rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-3 text-left">
+              <pre className="font-mono text-[9px] text-[var(--ext-danger)]">
                 {this.state.error.toString()}
               </pre>
             </div>
           )}
           <button 
             onClick={() => window.location.reload()}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-medium px-4 py-2 rounded-lg mt-4 transition"
+            className="mt-4 rounded-lg border border-[var(--ext-accent)] bg-[var(--ext-accent)] px-4 py-2 text-xs font-medium text-[var(--ext-on-accent)] transition hover:bg-[var(--ext-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
           >
             Reload Extension
           </button>

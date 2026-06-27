@@ -368,11 +368,14 @@ const AdminDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-64 mb-6" />
+        <PageHeader
+          title="Admin Console"
+          description="Global system overview and administrative controls."
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full" role="status" aria-label="Loading admin metric" />)}
         </div>
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full" role="status" aria-label="Loading admin operational data" />
       </div>
     );
   }
@@ -428,7 +431,7 @@ const AdminDashboard: React.FC = () => {
       />
 
       {metadata.degraded && (
-        <div className="rounded-lg border border-warning/20 bg-warning-muted/20 p-4 flex gap-3">
+        <div className="rounded-lg border border-warning/20 bg-warning-muted/20 p-4 flex gap-3" role="alert">
           <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium">Fallback data is displayed</p>
@@ -449,7 +452,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-semibold">{stat.value}</p>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge variant={stat.status === 'Safe' || stat.status === 'Healthy' || stat.trend === 'Stable' || stat.trend === 'Active' ? 'success' : 'outline'}>
                 {stat.trend || stat.status}
               </Badge>
@@ -469,7 +472,7 @@ const AdminDashboard: React.FC = () => {
               {analyticsInsights?.metadata.message || 'Summarizes recent workflow events without raw payloads.'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {analyticsInsights && (
               <Badge variant={getAnalyticsBadgeVariant(analyticsInsights.metadata.source)}>
                 {analyticsInsights.metadata.source === 'server'
@@ -544,18 +547,18 @@ const AdminDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
               <div>
-                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Top Areas</h4>
+                <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Top Areas</h4>
                 {analyticsInsights.summary.topAreas.length > 0 ? (
                   <div className="space-y-2">
                     {analyticsInsights.summary.topAreas.map(area => (
                       <div key={area.area} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border-default)] px-3 py-2">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{area.area}</p>
+                          <p className="break-words text-sm font-medium">{area.area}</p>
                           <p className="text-[10px] text-[var(--text-muted)]">
                             {area.failureCount + area.degradedCount} friction · {area.automationCount} automation
                           </p>
                         </div>
-                        <Badge variant="outline">{area.eventCount}</Badge>
+                        <Badge variant="outline" className="shrink-0">{area.eventCount}</Badge>
                       </div>
                     ))}
                   </div>
@@ -565,37 +568,37 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <div>
-                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Friction Signals</h4>
+                <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Friction Signals</h4>
                 <div className="space-y-2">
                   {analyticsInsights.summary.frictionSignals.map(signal => (
                     <div key={signal.label} className="rounded-lg border border-[var(--border-default)] px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium">{signal.label}</p>
-                        <Badge variant={getFrictionBadgeVariant(signal.severity)}>{signal.value}</Badge>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="min-w-0 break-words text-sm font-medium">{signal.label}</p>
+                        <Badge variant={getFrictionBadgeVariant(signal.severity)} className="shrink-0">{signal.value}</Badge>
                       </div>
-                      <p className="mt-1 text-[10px] text-[var(--text-muted)]">{signal.description}</p>
+                      <p className="mt-1 break-words text-[10px] text-[var(--text-muted)]">{signal.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Improvement Opportunities</h4>
+                <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Improvement Opportunities</h4>
                 <div className="space-y-2">
                   {analyticsInsights.summary.improvementOpportunities.map(opportunity => (
                     <div key={opportunity.id} className="rounded-lg border border-[var(--border-default)] px-3 py-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium">{opportunity.title}</p>
+                          <p className="break-words text-sm font-medium">{opportunity.title}</p>
                           {opportunity.area && (
-                            <p className="text-[10px] text-[var(--text-muted)]">{opportunity.area}</p>
+                            <p className="break-words text-[10px] text-[var(--text-muted)]">{opportunity.area}</p>
                           )}
                         </div>
-                        <Badge variant={getOpportunityBadgeVariant(opportunity.priority)}>{opportunity.priority}</Badge>
+                        <Badge variant={getOpportunityBadgeVariant(opportunity.priority)} className="shrink-0">{opportunity.priority}</Badge>
                       </div>
-                      <p className="mt-2 text-[10px] text-[var(--text-muted)]">{opportunity.trigger}</p>
-                      <p className="mt-1 text-[10px] text-[var(--text-secondary)]">{opportunity.suggestedAction}</p>
-                      <p className="mt-1 text-[10px] text-[var(--text-muted)]">{opportunity.userControl}</p>
+                      <p className="mt-2 break-words text-[10px] text-[var(--text-muted)]">{opportunity.trigger}</p>
+                      <p className="mt-1 break-words text-[10px] text-[var(--text-secondary)]">{opportunity.suggestedAction}</p>
+                      <p className="mt-1 break-words text-[10px] text-[var(--text-muted)]">{opportunity.userControl}</p>
                     </div>
                   ))}
                 </div>
@@ -676,8 +679,8 @@ const AdminDashboard: React.FC = () => {
                 <div key={job.id} className="rounded-lg border border-[var(--border-default)] px-3 py-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">{job.name}</p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">{job.purpose}</p>
+                      <p className="break-words text-sm font-medium">{job.name}</p>
+                      <p className="mt-1 break-words text-xs text-[var(--text-muted)]">{job.purpose}</p>
                       <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
                         <Clock size={11} />
                         {job.schedule}
@@ -704,8 +707,8 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <p className="mt-2 text-[10px] text-[var(--text-muted)]">{job.detail}</p>
-                  <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  <p className="mt-2 break-words text-[10px] text-[var(--text-muted)]">{job.detail}</p>
+                  <p className="mt-1 break-words text-[10px] text-[var(--text-muted)]">
                     Manifest: {job.manifestPath} · Config keys: {job.requiredConfig.length}
                     {job.lastVerifiedAt ? ` · Verified ${formatTimestamp(job.lastVerifiedAt)}` : ''}
                     {job.lastRunAt ? ` · Last run ${formatTimestamp(job.lastRunAt)}` : ''}
@@ -717,7 +720,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             {(schedulerStatus.metadata.image || schedulerStatus.metadata.runbookUrl || schedulerStatus.metadata.providerCheckedAt) && (
               <div className="flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
-                {schedulerStatus.metadata.image && <span>Image: {schedulerStatus.metadata.image}</span>}
+                {schedulerStatus.metadata.image && <span className="break-all">Image: {schedulerStatus.metadata.image}</span>}
                 {schedulerStatus.metadata.providerCheckedAt && (
                   <span>Run history checked {formatTimestamp(schedulerStatus.metadata.providerCheckedAt)}</span>
                 )}
@@ -742,7 +745,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <Database size={18} className="text-[var(--text-muted)]" />
         </div>
-        <div className="p-0">
+        <div className="overflow-x-auto p-0">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-[var(--text-muted)] uppercase bg-[var(--bg-secondary)]">
               <tr>

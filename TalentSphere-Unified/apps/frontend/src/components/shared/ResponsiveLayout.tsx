@@ -41,7 +41,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
   if (!user) return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex">
+    <div className="app-shell flex">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -51,7 +51,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
       />
 
       <main className={`
-        flex-1 flex flex-col min-h-screen transition-all duration-200 ease-out
+        min-w-0 flex-1 flex flex-col min-h-screen transition-all duration-200 ease-out
         ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} 
         pb-16 lg:pb-0
       `}>
@@ -60,7 +60,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
           setIsSidebarOpen={setIsSidebarOpen}
           user={user}
         />
-        <div className="flex-1 p-4 lg:p-6">
+        <div className="app-page flex-1">
           {children}
         </div>
       </main>

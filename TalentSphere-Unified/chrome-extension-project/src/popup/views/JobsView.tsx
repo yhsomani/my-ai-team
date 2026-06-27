@@ -18,6 +18,14 @@ interface JobsViewProps {
   handleDiscardDraft: (draft?: JobScanDraft | null) => Promise<void>;
 }
 
+const inputClassName = 'w-full rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-inset)] px-2 py-1 text-xs text-[var(--ext-text)] transition focus:border-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const labelClassName = 'text-[10px] font-semibold text-[var(--ext-text-secondary)]';
+const secondaryButtonClassName = 'rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-2 py-1 text-[10px] font-medium text-[var(--ext-text)] transition hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const primaryButtonClassName = 'inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--ext-accent)] bg-[var(--ext-accent)] px-3 py-1.5 text-[11px] font-semibold text-[var(--ext-on-accent)] transition hover:bg-[var(--ext-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] disabled:cursor-not-allowed disabled:border-[var(--ext-border)] disabled:bg-[var(--ext-surface-muted)] disabled:text-[var(--ext-text-muted)]';
+const dangerButtonClassName = 'rounded-md border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] px-2 py-1 text-[10px] font-semibold text-[var(--ext-danger)] transition hover:bg-[var(--ext-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const reviewPanelClassName = 'rounded-lg border border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] p-3 space-y-2';
+const cardClassName = 'rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-3';
+
 export const JobsView: React.FC<JobsViewProps> = ({
   jobs,
   jobDraft,
@@ -197,19 +205,19 @@ export const JobsView: React.FC<JobsViewProps> = ({
     <div className="space-y-3" id="view-jobs">
       <div className="flex items-center justify-between">
         <div className="relative flex-1 mr-2">
-          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[var(--ext-text-muted)]" />
           <input
             type="text"
             placeholder="Filter by company or role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/60 border border-slate-800/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 transition"
+            className="w-full rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] py-1.5 pl-8 pr-3 text-xs text-[var(--ext-text)] placeholder-[var(--ext-text-muted)] transition focus:border-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
             id="job-search-input"
           />
         </div>
         <button
           onClick={toggleAddForm}
-          className="bg-cyan-600 hover:bg-cyan-500 shadow-neonGlow text-white p-2 rounded-lg transition"
+          className="rounded-lg border border-[var(--ext-accent)] bg-[var(--ext-accent)] p-2 text-[var(--ext-on-accent)] transition hover:bg-[var(--ext-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
           id="toggle-add-job-form"
           aria-controls="add-job-form"
           aria-expanded={showAddForm}
@@ -220,21 +228,21 @@ export const JobsView: React.FC<JobsViewProps> = ({
       </div>
 
       {draftForm && (
-        <form onSubmit={onSaveDraft} className="bg-slate-900/90 border border-cyan-900/60 rounded-lg p-3 space-y-3 shadow-2xl" id="scanned-job-draft">
+        <form onSubmit={onSaveDraft} className={`${cardClassName} space-y-3`} id="scanned-job-draft">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center space-x-2 min-w-0">
-              <div className="bg-cyan-950/60 border border-cyan-900/60 p-1.5 rounded-md">
-                <FileSearch className="h-3.5 w-3.5 text-cyan-300" />
+              <div className="rounded-md border border-[var(--ext-border)] bg-[var(--ext-accent-muted)] p-1.5">
+                <FileSearch className="h-3.5 w-3.5 text-[var(--ext-accent)]" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-xs font-semibold text-white">Scanned job draft</h4>
-                <p className="text-[9px] text-slate-500 truncate">{draftForm.source} - {draftForm.confidence} confidence</p>
+                <h4 className="text-xs font-semibold text-[var(--ext-text)]">Scanned job draft</h4>
+                <p className="break-words text-[9px] text-[var(--ext-text-muted)]">{draftForm.source} - {draftForm.confidence} confidence</p>
               </div>
             </div>
             <button
               type="button"
               onClick={openDraftDiscardReview}
-              className="text-slate-500 hover:text-rose-300 p-1 rounded-md transition"
+              className="rounded-md p-1 text-[var(--ext-text-muted)] transition hover:bg-[var(--ext-danger-muted)] hover:text-[var(--ext-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
               aria-controls="scanned-draft-discard-review"
               aria-expanded={isDraftDiscardReviewOpen}
               aria-label="Review scanned job draft discard"
@@ -246,12 +254,12 @@ export const JobsView: React.FC<JobsViewProps> = ({
           {isDraftDiscardReviewOpen && (
             <div
               role="alert"
-              className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 space-y-2"
+              className={reviewPanelClassName}
               id="scanned-draft-discard-review"
             >
               <div className="space-y-1">
-                <p className="text-[10px] font-semibold text-amber-200">Discard this scanned draft?</p>
-                <p className="text-[9px] leading-relaxed text-amber-100/80">
+                <p className="text-[10px] font-semibold text-[var(--ext-warning)]">Discard this scanned draft?</p>
+                <p className="text-[9px] leading-relaxed text-[var(--ext-text-secondary)]">
                   This removes only the editable scanned draft for {draftForm.role || 'this role'} at {draftForm.company || 'this company'}. Tracked jobs, diagnostics analytics, prep cards, settings, and web-app applications stay unchanged.
                 </p>
               </div>
@@ -259,14 +267,14 @@ export const JobsView: React.FC<JobsViewProps> = ({
                 <button
                   type="button"
                   onClick={cancelDraftDiscardReview}
-                  className="rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800"
+                  className={secondaryButtonClassName}
                 >
                   Keep Draft
                 </button>
                 <button
                   type="button"
                   onClick={confirmDraftDiscard}
-                  className="rounded-md border border-rose-700/60 bg-rose-950/70 px-2 py-1 text-[10px] font-semibold text-rose-200 hover:bg-rose-900/80"
+                  className={dangerButtonClassName}
                 >
                   Discard Draft
                 </button>
@@ -276,40 +284,40 @@ export const JobsView: React.FC<JobsViewProps> = ({
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Company</label>
+              <label className={labelClassName}>Company</label>
               <input
                 type="text"
                 value={draftForm.company}
                 onChange={(e) => updateDraftField('company', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={inputClassName}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Role</label>
+              <label className={labelClassName}>Role</label>
               <input
                 type="text"
                 value={draftForm.role}
                 onChange={(e) => updateDraftField('role', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={inputClassName}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
             <div className="space-y-1 min-w-0">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Posting URL</label>
+              <label className={labelClassName}>Posting URL</label>
               <input
                 type="url"
                 value={draftForm.url}
                 onChange={(e) => updateDraftField('url', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={inputClassName}
               />
             </div>
             <button
               type="button"
               onClick={() => openDraftUrl(draftForm.url, draftForm.source, 'draft')}
               disabled={!draftForm.url}
-              className="bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-200 border border-slate-700 rounded-md p-1.5 transition"
+              className="rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] p-1.5 text-[var(--ext-text)] transition hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] disabled:cursor-not-allowed disabled:text-[var(--ext-text-muted)]"
               aria-label="Open scanned posting URL"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -318,11 +326,11 @@ export const JobsView: React.FC<JobsViewProps> = ({
 
           <div className="grid grid-cols-[auto_1fr] gap-2 items-start">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
+              <label className={labelClassName}>Status</label>
               <select
                 value={draftForm.status}
                 onChange={(e) => updateDraftField('status', e.target.value as Job['status'])}
-                className="bg-slate-950 border border-slate-800 rounded-md px-1.5 py-1 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+                className="rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-inset)] px-1.5 py-1 text-xs text-[var(--ext-text)] focus:border-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
               >
                 <option value="Applied">Applied</option>
                 <option value="Interviewing">Interviewing</option>
@@ -331,12 +339,12 @@ export const JobsView: React.FC<JobsViewProps> = ({
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Notes</label>
+              <label className={labelClassName}>Notes</label>
               <textarea
                 value={draftForm.notes}
                 onChange={(e) => updateDraftField('notes', e.target.value)}
                 rows={2}
-                className="w-full resize-none bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={`${inputClassName} resize-none`}
               />
             </div>
           </div>
@@ -345,7 +353,7 @@ export const JobsView: React.FC<JobsViewProps> = ({
             <button
               type="submit"
               disabled={draftSaveDisabled}
-              className="inline-flex items-center space-x-1.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-md transition"
+              className={primaryButtonClassName}
             >
               <Save className="h-3.5 w-3.5" />
               <span>Save to Tracker</span>
@@ -355,37 +363,37 @@ export const JobsView: React.FC<JobsViewProps> = ({
       )}
 
       {showAddForm && (
-        <form onSubmit={onSubmit} className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3.5 space-y-3 shadow-2xl" id="add-job-form">
+        <form onSubmit={onSubmit} className={`${cardClassName} space-y-3`} id="add-job-form">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Company</label>
+              <label className={labelClassName}>Company</label>
               <input
                 type="text"
                 placeholder="e.g. Google"
                 value={newCompany}
                 onChange={(e) => setNewCompany(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={inputClassName}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Role</label>
+              <label className={labelClassName}>Role</label>
               <input
                 type="text"
                 placeholder="e.g. Engineer"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                className={inputClassName}
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
+            <div className="flex items-center gap-2">
+              <label className={labelClassName}>Status</label>
               <select
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value as Job['status'])}
-                className="bg-slate-950 border border-slate-850 rounded px-1.5 py-0.5 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+                className="rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-inset)] px-1.5 py-0.5 text-xs text-[var(--ext-text)] focus:border-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
               >
                 <option value="Applied">Applied</option>
                 <option value="Interviewing">Interviewing</option>
@@ -395,7 +403,7 @@ export const JobsView: React.FC<JobsViewProps> = ({
             </div>
             <button
               type="submit"
-              className="bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-semibold px-3 py-1 rounded-md transition"
+              className={primaryButtonClassName}
             >
               Add Job
             </button>
@@ -407,28 +415,28 @@ export const JobsView: React.FC<JobsViewProps> = ({
         {filteredJobs.map((job) => (
           <div key={job.id} className="space-y-2">
             <div
-              className="group bg-slate-900/30 hover:bg-slate-900/70 border border-slate-800/40 hover:border-slate-800/80 rounded-xl p-3 flex justify-between items-center transition duration-200"
+              className="group flex items-center justify-between gap-3 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-3 transition duration-200 hover:border-[var(--ext-border-strong)]"
             >
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-white tracking-wide">{job.role}</h4>
-                <div className="flex items-center space-x-2">
-                  <span className="text-[10px] text-slate-400">{job.company}</span>
-                  <span className="text-[9px] text-slate-600">•</span>
-                  <span className="text-[9px] text-slate-500">{job.date}</span>
+              <div className="min-w-0 space-y-1">
+                <h4 className="break-words text-xs font-semibold text-[var(--ext-text)]">{job.role}</h4>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="break-words text-[10px] text-[var(--ext-text-secondary)]">{job.company}</span>
+                  <span className="text-[9px] text-[var(--ext-text-muted)]">•</span>
+                  <span className="text-[9px] text-[var(--ext-text-muted)]">{job.date}</span>
                   {job.source && (
                     <>
-                      <span className="text-[9px] text-slate-600">•</span>
-                      <span className="text-[9px] text-slate-500">{job.source}</span>
+                      <span className="text-[9px] text-[var(--ext-text-muted)]">•</span>
+                      <span className="break-all text-[9px] text-[var(--ext-text-muted)]">{job.source}</span>
                     </>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex shrink-0 items-center gap-2">
                 {job.url && (
                   <button
                     onClick={() => openDraftUrl(job.url, job.source, 'tracked_job')}
-                    className="text-slate-600 hover:text-cyan-300 p-1 rounded-md transition duration-150"
+                    className="rounded-md p-1 text-[var(--ext-text-muted)] transition duration-150 hover:bg-[var(--ext-accent-muted)] hover:text-[var(--ext-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
                     aria-label={`Open posting for ${job.role}`}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -438,11 +446,11 @@ export const JobsView: React.FC<JobsViewProps> = ({
                 <select
                   value={job.status}
                   onChange={(e) => handleUpdateStatus(job.id, e.target.value as Job['status'])}
-                  className={`text-[10px] font-semibold border-0 rounded px-1.5 py-0.5 focus:outline-none ${
-                    job.status === 'Offered' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-900/40' :
-                    job.status === 'Interviewing' ? 'bg-cyan-950/60 text-cyan-400 border border-cyan-900/40' :
-                    job.status === 'Applied' ? 'bg-slate-800/80 text-slate-300 border border-slate-700/50' :
-                    'bg-rose-950/60 text-rose-400 border border-rose-900/40'
+                  className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
+                    job.status === 'Offered' ? 'border-[var(--ext-success)] bg-[var(--ext-success-muted)] text-[var(--ext-success)]' :
+                    job.status === 'Interviewing' ? 'border-[var(--ext-accent)] bg-[var(--ext-accent-muted)] text-[var(--ext-accent)]' :
+                    job.status === 'Applied' ? 'border-[var(--ext-border)] bg-[var(--ext-surface-muted)] text-[var(--ext-text-secondary)]' :
+                    'border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] text-[var(--ext-danger)]'
                   }`}
                 >
                   <option value="Applied">Applied</option>
@@ -453,7 +461,7 @@ export const JobsView: React.FC<JobsViewProps> = ({
 
                 <button
                   onClick={() => openJobDeleteReview(job)}
-                  className="text-slate-600 hover:text-rose-400 p-1 rounded-md transition duration-150"
+                  className="rounded-md p-1 text-[var(--ext-text-muted)] transition duration-150 hover:bg-[var(--ext-danger-muted)] hover:text-[var(--ext-danger)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
                   aria-label={`Review removal for ${job.role}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -464,12 +472,12 @@ export const JobsView: React.FC<JobsViewProps> = ({
             {jobDeleteReview?.id === job.id && (
               <div
                 role="alert"
-                className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2"
+                className={reviewPanelClassName}
                 id={`job-delete-review-${job.id}`}
               >
                 <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-amber-200">Remove this tracked job?</p>
-                  <p className="text-[9px] leading-relaxed text-amber-100/80">
+                  <p className="text-[10px] font-semibold text-[var(--ext-warning)]">Remove this tracked job?</p>
+                  <p className="text-[9px] leading-relaxed text-[var(--ext-text-secondary)]">
                     This removes the local tracker row for {job.role} at {job.company}. Scanned drafts, diagnostics analytics, prep cards, settings, and web-app applications stay unchanged.
                   </p>
                 </div>
@@ -477,14 +485,14 @@ export const JobsView: React.FC<JobsViewProps> = ({
                   <button
                     type="button"
                     onClick={cancelJobDeleteReview}
-                    className="rounded-md border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800"
+                    className={secondaryButtonClassName}
                   >
                     Keep Job
                   </button>
                   <button
                     type="button"
                     onClick={confirmJobDelete}
-                    className="rounded-md border border-rose-700/60 bg-rose-950/70 px-2 py-1 text-[10px] font-semibold text-rose-200 hover:bg-rose-900/80"
+                    className={dangerButtonClassName}
                   >
                     Remove Job
                   </button>
@@ -495,17 +503,17 @@ export const JobsView: React.FC<JobsViewProps> = ({
         ))}
 
         {filteredJobs.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/20 p-4 text-center">
-            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-950/70">
-              <Briefcase className="h-4 w-4 text-slate-500" />
+          <div className="rounded-lg border border-dashed border-[var(--ext-border)] bg-[var(--ext-surface)] p-4 text-center">
+            <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)]">
+              <Briefcase className="h-4 w-4 text-[var(--ext-text-muted)]" />
             </div>
-            <p className="text-xs font-semibold text-slate-200">{emptyStateTitle}</p>
-            <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{emptyStateCopy}</p>
+            <p className="text-xs font-semibold text-[var(--ext-text)]">{emptyStateTitle}</p>
+            <p className="mt-1 text-[10px] leading-relaxed text-[var(--ext-text-muted)]">{emptyStateCopy}</p>
             {!hasTrackedJobs && !showAddForm && (
               <button
                 type="button"
                 onClick={toggleAddForm}
-                className="mt-3 inline-flex items-center justify-center rounded-md border border-cyan-800/60 bg-cyan-950/40 px-3 py-1.5 text-[10px] font-semibold text-cyan-200 hover:bg-cyan-900/50"
+                className={`${secondaryButtonClassName} mt-3 inline-flex items-center justify-center px-3 py-1.5`}
               >
                 Add Job
               </button>
@@ -514,7 +522,7 @@ export const JobsView: React.FC<JobsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="mt-3 inline-flex items-center justify-center rounded-md border border-slate-700 bg-slate-950/70 px-3 py-1.5 text-[10px] font-semibold text-slate-300 hover:bg-slate-800"
+                className={`${secondaryButtonClassName} mt-3 inline-flex items-center justify-center px-3 py-1.5`}
               >
                 Clear Filter
               </button>

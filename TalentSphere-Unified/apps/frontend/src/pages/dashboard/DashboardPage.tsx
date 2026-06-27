@@ -59,12 +59,98 @@ type OnboardingTask = {
   action: string;
 };
 
+type DashboardMetric = {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+  color: string;
+  route: string;
+  action: string;
+};
+
+type DashboardQuickAction = {
+  label: string;
+  route: string;
+  entryPoint: string;
+};
+
 const formatDashboardUpdatedAt = (date: string | null) => {
   if (!date) return 'Not refreshed yet';
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return date;
   return parsed.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 };
+
+const getDashboardMetricKey = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+interface DashboardSectionHeaderProps {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}
+
+const DashboardSectionHeader: React.FC<DashboardSectionHeaderProps> = ({ title, description, action }) => (
+  <div className="flex flex-col gap-3 border-b border-[var(--border-default)] p-5 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-w-0">
+      <h3 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h3>
+      {description && <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>}
+    </div>
+    {action && <div className="shrink-0">{action}</div>}
+  </div>
+);
+
+interface DashboardMetricCardProps {
+  metric: DashboardMetric;
+  entryPoint: string;
+  onOpen: (metric: DashboardMetric, entryPoint: string) => void;
+}
+
+const DashboardMetricCard: React.FC<DashboardMetricCardProps> = ({ metric, entryPoint, onOpen }) => (
+  <button
+    type="button"
+    className="interactive-row flex h-full min-h-32 w-full flex-col justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-5 text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+    onClick={() => onOpen(metric, entryPoint)}
+    aria-label={`${metric.label}: ${metric.value}. ${metric.action}`}
+  >
+    <span className="flex items-start justify-between gap-3">
+      <span className="text-sm font-medium text-[var(--text-secondary)]">{metric.label}</span>
+      <span className={`shrink-0 ${metric.color}`} aria-hidden="true">{metric.icon}</span>
+    </span>
+    <span>
+      <span className="block text-2xl font-semibold text-[var(--text-primary)]">{metric.value}</span>
+      <span className="mt-2 block text-xs leading-5 text-[var(--text-muted)]">{metric.action}</span>
+    </span>
+  </button>
+);
+
+interface QuickActionPanelProps {
+  title: string;
+  description: string;
+  actions: DashboardQuickAction[];
+  onOpen: (action: DashboardQuickAction) => void;
+}
+
+const QuickActionPanel: React.FC<QuickActionPanelProps> = ({ title, description, actions, onOpen }) => (
+  <Card className="p-5">
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
+    </div>
+    <div className="space-y-2">
+      {actions.map((action) => (
+        <Button
+          key={action.entryPoint}
+          variant="outline"
+          size="sm"
+          className="w-full justify-start text-left"
+          onClick={() => onOpen(action)}
+        >
+          {action.label}
+        </Button>
+      ))}
+    </div>
+  </Card>
+);
 
 interface OnboardingChecklistProps {
   title: string;
@@ -79,14 +165,14 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
   const progress = tasks.length === 0 ? 100 : Math.round((completedCount / tasks.length) * 100);
 
   return (
-    <Card className="p-5">
+    <Card className="p-4 sm:p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h3>
             <Badge variant={progress === 100 ? 'success' : 'outline'}>{completedCount}/{tasks.length}</Badge>
           </div>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">{description}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
         </div>
         {nextTask && (
           <Button size="sm" onClick={() => onNavigate(nextTask, 'checklist_primary')}>
@@ -95,8 +181,15 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
           </Button>
         )}
       </div>
-      <div className="mb-4 h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]">
-        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+      <div
+        className="mb-4 h-2 overflow-hidden rounded-md bg-[var(--bg-secondary)]"
+        role="progressbar"
+        aria-label={`${title} progress`}
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="h-full rounded-md bg-accent transition-all" style={{ width: `${progress}%` }} />
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {tasks.map(task => (
@@ -104,7 +197,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
             key={task.id}
             type="button"
             onClick={() => onNavigate(task, 'checklist_item')}
-            className="flex min-h-20 items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-left transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="interactive-row flex min-h-20 items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-left focus:outline-none focus:ring-2 focus:ring-accent/20"
             aria-label={`${task.label}. ${task.complete ? 'Completed' : 'Not completed'}. ${task.action}`}
           >
             {task.complete ? (
@@ -160,7 +253,7 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
     <div
       role={status.source === 'error' ? 'alert' : 'status'}
       aria-live="polite"
-      className="flex flex-col gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4 sm:flex-row sm:items-start sm:justify-between"
+      className="surface-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between"
     >
       <div className="flex min-w-0 gap-3">
         <span className={`mt-0.5 ${isHealthy ? 'text-success' : status.source === 'partial' ? 'text-warning' : 'text-destructive'}`}>
@@ -175,7 +268,7 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
             <ul className="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
               {visibleIssues.map((issue) => (
                 <li key={issue} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <span>- {issue}</span>
+                  <span>{issue}</span>
                   {onRetry && (
                     <button
                       type="button"
@@ -237,7 +330,6 @@ const DashboardPage: React.FC = () => {
 
   const isRecruiter = user?.roles?.includes('ROLE_RECRUITER');
   const dashboardRole: DashboardOperationalRole = isRecruiter ? 'recruiter' : 'talent';
-  const statCardClass = 'w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 text-left shadow-sm transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
 
   const recordDashboardAction = useCallback((
     action: DashboardOperationalAnalyticsAction,
@@ -259,6 +351,19 @@ const DashboardPage: React.FC = () => {
     recordDashboardAction(action, { route, ...extra });
     navigate(route);
   }, [navigate, recordDashboardAction]);
+
+  const handleDashboardMetricOpen = useCallback((metric: DashboardMetric, entryPoint: string) => {
+    handleDashboardRouteOpen('dashboard_stat_card_opened', metric.route, {
+      statKey: getDashboardMetricKey(metric.label),
+      entryPoint,
+    });
+  }, [handleDashboardRouteOpen]);
+
+  const handleDashboardQuickActionOpen = useCallback((action: DashboardQuickAction) => {
+    handleDashboardRouteOpen('dashboard_quick_action_opened', action.route, {
+      entryPoint: action.entryPoint,
+    });
+  }, [handleDashboardRouteOpen]);
 
   const handleOnboardingNavigate = useCallback((
     task: OnboardingTask,
@@ -533,11 +638,16 @@ const DashboardPage: React.FC = () => {
   ];
 
   if (isRecruiter) {
-    const statCards = [
+    const statCards: DashboardMetric[] = [
       { label: 'Active Jobs', value: recruiterStats.activeJobs, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs', action: 'Open recruiter jobs' },
       { label: 'Total Applicants', value: recruiterStats.totalApplications, icon: <Users size={16} />, color: 'text-blue-500', route: '/candidates', action: 'Review all applicants' },
       { label: 'New Today', value: recruiterStats.newApplications, icon: <Clock size={16} />, color: 'text-amber-500', route: '/candidates', action: 'Review new applications' },
       { label: 'Offers', value: recruiterStats.hiredCount, icon: <CheckCircle size={16} />, color: 'text-success', route: '/candidates', action: 'Review offer-stage candidates' },
+    ];
+    const quickActions: DashboardQuickAction[] = [
+      { label: 'Create new job listing', route: '/jobs/post', entryPoint: 'quick_action_create_job' },
+      { label: 'Review pending applications', route: '/candidates', entryPoint: 'quick_action_review_applications' },
+      { label: 'Message candidates', route: '/messaging', entryPoint: 'quick_action_message_candidates' },
     ];
 
     return (
@@ -567,58 +677,47 @@ const DashboardPage: React.FC = () => {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((stat, i) => (
-            <button
-              key={i}
-              type="button"
-              className={statCardClass}
-              onClick={() => handleDashboardRouteOpen('dashboard_stat_card_opened', stat.route, {
-                statKey: stat.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''),
-                entryPoint: 'recruiter_stat_card',
-              })}
-              aria-label={`${stat.label}: ${stat.value}. ${stat.action}`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[var(--text-secondary)]">{stat.label}</span>
-                <span className={stat.color}>{stat.icon}</span>
-              </div>
-              <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-              <p className="mt-2 text-xs text-[var(--text-muted)]">{stat.action}</p>
-            </button>
+          {statCards.map((stat) => (
+            <DashboardMetricCard
+              key={stat.label}
+              metric={stat}
+              entryPoint="recruiter_stat_card"
+              onOpen={handleDashboardMetricOpen}
+            />
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
-            <div className="p-5 border-b border-[var(--border-default)] flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold">Recent Applications</h3>
-                <p className="text-xs text-[var(--text-muted)]">Latest candidates in your pipeline</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDashboardRouteOpen('dashboard_panel_handoff_opened', '/candidates', {
-                  entryPoint: 'recent_applications_header',
-                  visibleItemCount: recentApplications.length,
-                })}
-              >
-                View all
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="Recent Applications"
+              description="Latest candidates in your pipeline."
+              action={(
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDashboardRouteOpen('dashboard_panel_handoff_opened', '/candidates', {
+                    entryPoint: 'recent_applications_header',
+                    visibleItemCount: recentApplications.length,
+                  })}
+                >
+                  View all
+                </Button>
+              )}
+            />
             <div className="divide-y divide-[var(--border-default)]">
               {recentApplications.length > 0 ? recentApplications.slice(0, 5).map((app: Record<string, any>, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
                       <Users size={16} />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{app.user?.fullName || 'Anonymous'}</p>
-                      <p className="text-xs text-[var(--text-muted)]">Applied for {app.job?.title}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{app.user?.fullName || 'Anonymous'}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">Applied for {app.job?.title}</p>
                     </div>
                   </div>
-                  <Badge variant={app.status === 'OFFER' ? 'success' : 'warning'}>{app.status}</Badge>
+                  <Badge className="shrink-0" variant={app.status === 'OFFER' ? 'success' : 'warning'}>{app.status}</Badge>
                 </div>
               )) : (
                 <div className="p-8 text-center">
@@ -638,52 +737,28 @@ const DashboardPage: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/jobs/post', {
-                  entryPoint: 'quick_action_create_job',
-                })}
-              >
-                Create new job listing
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/candidates', {
-                  entryPoint: 'quick_action_review_applications',
-                })}
-              >
-                Review pending applications
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/messaging', {
-                  entryPoint: 'quick_action_message_candidates',
-                })}
-              >
-                Message candidates
-              </Button>
-            </div>
-          </Card>
+          <QuickActionPanel
+            title="Quick Actions"
+            description="Shortcuts into the recruiter-owned workflows."
+            actions={quickActions}
+            onOpen={handleDashboardQuickActionOpen}
+          />
         </div>
       </div>
     );
   }
 
   // Standard User Dashboard
-  const userStatCards = [
+  const userStatCards: DashboardMetric[] = [
     { label: 'Applications', value: stats.applications, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs?tab=applied', action: 'View applications' },
     { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} />, color: 'text-blue-500', route: '/messaging', action: 'Open messages' },
     { label: 'XP Earned', value: stats.xp.toLocaleString(), icon: <TrendingUp size={16} />, color: 'text-success', route: '/challenges', action: 'Earn more XP' },
     { label: 'Level', value: stats.level, icon: <Award size={16} />, color: 'text-amber-500', route: '/profile', action: 'View profile progress' },
+  ];
+  const quickActions: DashboardQuickAction[] = [
+    { label: 'Complete your profile', route: '/profile', entryPoint: 'quick_action_complete_profile' },
+    { label: 'Continue learning', route: '/lms', entryPoint: 'quick_action_continue_learning' },
+    { label: 'Join a challenge', route: '/challenges', entryPoint: 'quick_action_join_challenge' },
   ];
 
   return (
@@ -713,58 +788,47 @@ const DashboardPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {userStatCards.map((stat, i) => (
-          <button
-            key={i}
-            type="button"
-            className={statCardClass}
-            onClick={() => handleDashboardRouteOpen('dashboard_stat_card_opened', stat.route, {
-              statKey: stat.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''),
-              entryPoint: 'talent_stat_card',
-            })}
-            aria-label={`${stat.label}: ${stat.value}. ${stat.action}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-[var(--text-secondary)]">{stat.label}</span>
-              <span className={stat.color}>{stat.icon}</span>
-            </div>
-            <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-            <p className="mt-2 text-xs text-[var(--text-muted)]">{stat.action}</p>
-          </button>
+        {userStatCards.map((stat) => (
+          <DashboardMetricCard
+            key={stat.label}
+            metric={stat}
+            entryPoint="talent_stat_card"
+            onOpen={handleDashboardMetricOpen}
+          />
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
-          <div className="p-5 border-b border-[var(--border-default)] flex items-center justify-between">
-            <div>
-                <h3 className="text-sm font-semibold">Recent Opportunities</h3>
-                <p className="text-xs text-[var(--text-muted)]">Latest matching positions</p>
-              </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDashboardRouteOpen('dashboard_panel_handoff_opened', '/jobs', {
-                entryPoint: 'recent_opportunities_header',
-                visibleItemCount: jobs.length,
-              })}
-            >
-              View all
-            </Button>
-          </div>
+          <DashboardSectionHeader
+            title="Recent Opportunities"
+            description="Latest matching positions from the jobs workflow."
+            action={(
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDashboardRouteOpen('dashboard_panel_handoff_opened', '/jobs', {
+                  entryPoint: 'recent_opportunities_header',
+                  visibleItemCount: jobs.length,
+                })}
+              >
+                View all
+              </Button>
+            )}
+          />
           <div className="divide-y divide-[var(--border-default)]">
             {jobs.length > 0 ? jobs.slice(0, 5).map((job: Job, i: number) => (
-              <div key={i} className="flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+              <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
                     <Briefcase size={16} />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{job.title}</p>
-                    <p className="text-xs text-[var(--text-muted)]">{job.companyName || 'Company'} · {job.location}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{job.title}</p>
+                    <p className="truncate text-xs text-[var(--text-muted)]">{job.companyName || 'Company'} · {job.location}</p>
                   </div>
                 </div>
-                <Badge variant="success">{job.matchScore || 85}% match</Badge>
+                <Badge className="shrink-0" variant="success">{job.matchScore || 85}% match</Badge>
               </div>
             )) : (
               <div className="p-8 text-center">
@@ -785,54 +849,26 @@ const DashboardPage: React.FC = () => {
         </Card>
 
         <div className="space-y-4">
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/profile', {
-                  entryPoint: 'quick_action_complete_profile',
-                })}
-              >
-                Complete your profile
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/lms', {
-                  entryPoint: 'quick_action_continue_learning',
-                })}
-              >
-                Continue learning
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => handleDashboardRouteOpen('dashboard_quick_action_opened', '/challenges', {
-                  entryPoint: 'quick_action_join_challenge',
-                })}
-              >
-                Join a challenge
-              </Button>
-            </div>
-          </Card>
+          <QuickActionPanel
+            title="Quick Actions"
+            description="Shortcuts into the primary talent workflows."
+            actions={quickActions}
+            onOpen={handleDashboardQuickActionOpen}
+          />
 
           <Card>
-            <div className="p-5 border-b border-[var(--border-default)]">
-              <h3 className="text-sm font-semibold">Active Challenges</h3>
-            </div>
+            <DashboardSectionHeader
+              title="Active Challenges"
+              description="Current challenge summaries from the challenges workflow."
+            />
             <div className="divide-y divide-[var(--border-default)]">
               {challenges.length > 0 ? challenges.slice(0, 3).map((c: Record<string, any>, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="text-sm font-medium">{c.title}</p>
+                <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{c.title}</p>
                     <p className="text-xs text-[var(--text-muted)]">{c.participantCount || 0} participants</p>
                   </div>
-                  <Badge variant="outline">{c.difficulty || 'Medium'}</Badge>
+                  <Badge className="shrink-0" variant="outline">{c.difficulty || 'Medium'}</Badge>
                 </div>
               )) : (
                 <div className="p-6 text-center">

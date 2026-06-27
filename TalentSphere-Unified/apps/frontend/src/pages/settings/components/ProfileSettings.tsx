@@ -26,10 +26,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 }) => {
   return (
     <Card className="p-6">
-      <h3 className="text-xl font-bold text-white mb-6">Personal Information</h3>
+      <h3 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">Personal Information</h3>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="First Name"
             value={profileData.firstName}

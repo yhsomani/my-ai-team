@@ -41,6 +41,22 @@ type LocalMessage = Message & {
   localStatus?: 'sending' | 'failed';
 };
 
+const messagingPanelClassName = 'surface-panel p-3';
+const messagingInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
+const messagingComposerPanelClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/70 p-3';
+
+const getParticipantInitials = (name?: string) => {
+  const initials = (name || 'User')
+    .trim()
+    .split(/\s+/)
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || 'U';
+};
+
 const getTimestampMs = (value?: string | Date) => {
   if (!value) return 0;
   const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime();
@@ -109,7 +125,9 @@ const MessagingPage: React.FC = () => {
   const [attachmentSource, setAttachmentSource] = useState<'link' | 'upload' | null>(null);
   const [attachmentUploadStatus, setAttachmentUploadStatus] = useState<'idle' | 'uploading' | 'ready' | 'failed'>('idle');
   const [attachmentUploadFeedback, setAttachmentUploadFeedback] = useState('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'idle' | 'connecting' | 'connected' | 'disconnected'>('idle');
   const composerInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentUrlInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentFileInputRef = useRef<HTMLInputElement | null>(null);
   const visibleConversationIds = useMemo(
     () => conversations.map(conversation => conversation.id).filter(Boolean).sort(),
@@ -132,25 +150,39 @@ const MessagingPage: React.FC = () => {
   // Real-time listener setup
   useEffect(() => {
     const conversationIds = visibleConversationSubscriptionKey.split(',').filter(Boolean);
-    if (conversationIds.length > 0) {
-      const channel = supabase
-        .channel(`public:messages:visible-conversations:${user?.id || 'anonymous'}`);
-
-      conversationIds.forEach(conversationId => {
-        channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
-          dispatch(messageReceived({
-            message: mapRealtimeMessage(payload.new as Record<string, any>),
-            currentUserId: user?.id,
-          }));
-        });
-      });
-
-      channel.subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    if (conversationIds.length === 0) {
+      setRealtimeStatus('idle');
+      return;
     }
+
+    setRealtimeStatus('connecting');
+
+    const channel = supabase
+      .channel(`public:messages:visible-conversations:${user?.id || 'anonymous'}`);
+
+    conversationIds.forEach(conversationId => {
+      channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
+        dispatch(messageReceived({
+          message: mapRealtimeMessage(payload.new as Record<string, any>),
+          currentUserId: user?.id,
+        }));
+      });
+    });
+
+    channel.subscribe((subscriptionStatus) => {
+      if (subscriptionStatus === 'SUBSCRIBED') {
+        setRealtimeStatus('connected');
+        return;
+      }
+
+      if (subscriptionStatus === 'CHANNEL_ERROR' || subscriptionStatus === 'TIMED_OUT' || subscriptionStatus === 'CLOSED') {
+        setRealtimeStatus('disconnected');
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [dispatch, visibleConversationSubscriptionKey, user?.id]);
 
   useEffect(() => {
@@ -165,6 +197,10 @@ const MessagingPage: React.FC = () => {
       setShowAttachmentField(false);
     }
   }, [dispatch, activeConversationId, user]);
+
+  const focusAttachmentUrlInput = () => {
+    window.requestAnimationFrame(() => attachmentUrlInputRef.current?.focus());
+  };
 
   const filteredConvos = conversations.filter(c =>
     (c.participant?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -548,17 +584,31 @@ const MessagingPage: React.FC = () => {
     : `${filteredConvos.length} ${filteredConvos.length === 1 ? 'conversation' : 'conversations'}`;
   const canSendMessage = Boolean(messageText.trim() || normalizedAttachmentUrl) && !attachmentDraftInvalid && attachmentUploadStatus !== 'uploading';
   const shouldShowReplySuggestions = replySuggestions.length > 0 && !messageText.trim() && !normalizedAttachmentUrl;
+  const realtimeStatusLabel = realtimeStatus === 'connected'
+    ? 'Realtime connected'
+    : realtimeStatus === 'connecting'
+      ? 'Realtime connecting'
+      : realtimeStatus === 'disconnected'
+        ? 'Realtime disconnected'
+        : 'Realtime idle';
+  const realtimeStatusClassName = realtimeStatus === 'connected'
+    ? 'bg-success'
+    : realtimeStatus === 'connecting'
+      ? 'bg-warning'
+      : realtimeStatus === 'disconnected'
+        ? 'bg-destructive'
+        : 'bg-[var(--text-muted)]';
 
   const conversationList = (
     <>
-      <div className="p-3 border-b border-[var(--border-default)]">
+      <div className={`${messagingPanelClassName} rounded-none border-x-0 border-t-0`}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
           <input
             type="text"
             aria-label="Search conversations"
             placeholder="Search..."
-            className="w-full h-8 pl-8 pr-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] pl-8 pr-3 text-sm placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -573,7 +623,7 @@ const MessagingPage: React.FC = () => {
         )}
       </div>
       <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-default)]">
-        {status === 'loading' && [1,2,3].map(i => <Skeleton key={i} className="h-16 w-full m-1" />)}
+        {status === 'loading' && [1,2,3].map(i => <Skeleton key={i} className="m-1 h-16 w-[calc(100%-0.5rem)]" />)}
         {status === 'failed' && conversations.length === 0 && (
           <div role="alert" className="flex flex-col items-center gap-2 p-6 text-center text-sm text-[var(--text-muted)]">
             <span>Conversations could not load.</span>
@@ -591,13 +641,13 @@ const MessagingPage: React.FC = () => {
           <button
             key={convo.id}
             onClick={() => handleSelectConversation(convo.id)}
-            className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${
-              activeConversationId === convo.id ? 'bg-accent/5' : 'hover:bg-[var(--bg-primary)]'
+            className={`flex min-h-20 w-full items-center gap-3 px-3 py-3 text-left transition-colors ${
+              activeConversationId === convo.id ? 'bg-accent/10' : 'hover:bg-[var(--bg-primary)]'
             }`}
           >
             <div className="relative">
-              <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-semibold">
-                {(convo.participant?.fullName || 'U').split(' ').map(n => n[0]).join('')}
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
+                {getParticipantInitials(convo.participant?.fullName)}
               </div>
               {convo.participant?.status === 'online' && (
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-[var(--bg-secondary)]" />
@@ -609,7 +659,7 @@ const MessagingPage: React.FC = () => {
                 <div className="ml-2 flex shrink-0 items-center gap-1.5">
                   {Boolean(convo.unreadCount) && (
                     <span
-                      className="min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-semibold text-white"
+                      className="min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-semibold text-accent-foreground"
                       aria-label={`${convo.unreadCount} unread ${convo.unreadCount === 1 ? 'message' : 'messages'}`}
                     >
                       {convo.unreadCount && convo.unreadCount > 99 ? '99+' : convo.unreadCount}
@@ -643,16 +693,16 @@ const MessagingPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="flex h-[calc(100dvh-8rem)] min-h-[560px] flex-col gap-4">
       <PageHeader title="Messages" description="Chat with your connections." />
 
-      <div className="flex-1 flex gap-4 min-h-0">
+      <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[20rem_minmax(0,1fr)]">
         {/* Conversation List */}
-        <Card className="w-80 shrink-0 flex flex-col overflow-hidden hidden md:flex">
+        <Card className="hidden min-h-0 flex-col overflow-hidden md:flex">
           {conversationList}
         </Card>
 
-        <Card className={`flex-1 flex-col overflow-hidden md:hidden ${showMobileConversations || !activeConvo ? 'flex' : 'hidden'}`}>
+        <Card className={`min-h-0 flex-col overflow-hidden md:hidden ${showMobileConversations || !activeConvo ? 'flex' : 'hidden'}`}>
           <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
             <div>
               <p className="text-sm font-semibold">Conversations</p>
@@ -668,12 +718,12 @@ const MessagingPage: React.FC = () => {
         </Card>
 
         {/* Chat Window */}
-        <Card className={`flex-1 flex-col overflow-hidden ${showMobileConversations && !activeConvo ? 'hidden md:flex' : 'flex'} ${showMobileConversations && activeConvo ? 'hidden md:flex' : ''}`}>
+        <Card className={`min-h-0 flex-col overflow-hidden ${showMobileConversations && !activeConvo ? 'hidden md:flex' : 'flex'} ${showMobileConversations && activeConvo ? 'hidden md:flex' : ''}`}>
           {activeConvo ? (
             <>
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-default)] p-4">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -683,13 +733,17 @@ const MessagingPage: React.FC = () => {
                   >
                     <ArrowLeft size={16} />
                   </Button>
-                  <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
-                    {(activeConvo.participant?.fullName || 'U').split(' ').map(n => n[0]).join('')}
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                    {getParticipantInitials(activeConvo.participant?.fullName)}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{activeConvo.participant?.fullName}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{activeConvo.participant?.fullName}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
                       <span>{activeConvo.participant?.status === 'online' ? 'Online' : 'Offline'}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatusClassName}`} />
+                        {realtimeStatusLabel}
+                      </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock size={11} />
                         {messageCountLabel}
@@ -709,7 +763,7 @@ const MessagingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="hidden shrink-0 items-center gap-1 sm:flex">
                   <Button variant="ghost" size="icon" aria-label="Voice calls unavailable" title="Voice calls unavailable" disabled><Phone size={16} /></Button>
                   <Button variant="ghost" size="icon" aria-label="Video calls unavailable" title="Video calls unavailable" disabled><Video size={16} /></Button>
                   <Button variant="ghost" size="icon" aria-label="More messaging actions unavailable" title="More actions unavailable" disabled><MoreVertical size={16} /></Button>
@@ -718,7 +772,7 @@ const MessagingPage: React.FC = () => {
 
               {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
+                className="custom-scrollbar flex-1 space-y-3 overflow-y-auto bg-[var(--bg-secondary)] p-4"
                 role="log"
                 aria-live="polite"
                 aria-relevant="additions text"
@@ -758,68 +812,73 @@ const MessagingPage: React.FC = () => {
                     </Button>
                   </div>
                 )}
-                {visibleMessages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] px-4 py-2.5 rounded-xl text-sm ${
-                      msg.senderId === user?.id
-                        ? 'bg-accent text-white rounded-br-sm'
-                        : 'bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-bl-sm'
-                    } ${msg.localStatus === 'failed' ? 'border border-destructive bg-destructive/10 text-[var(--text-primary)]' : ''}`}>
-                      {msg.attachmentUrl && (
-                        <a
-                          href={msg.attachmentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`block overflow-hidden rounded-lg border text-xs transition-opacity hover:opacity-90 ${
-                            msg.senderId === user?.id
-                              ? 'border-white/30 bg-white/10 text-white'
-                              : 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)]'
-                          }`}
-                        >
-                          {isImageAttachment(msg) && (
-                            <img
-                              src={msg.attachmentUrl}
-                              alt=""
-                              className="max-h-44 w-full object-cover"
-                              loading="lazy"
-                            />
-                          )}
-                          <span className="flex items-center gap-2 px-3 py-2">
-                            <Paperclip size={13} />
-                            <span className="min-w-0 flex-1 truncate">{getAttachmentLabel(msg.attachmentUrl)}</span>
-                            <ExternalLink size={12} />
-                          </span>
-                        </a>
-                      )}
-                      {!shouldHideAttachmentFallbackContent(msg) && (
-                        <p className={msg.attachmentUrl ? 'mt-2' : ''}>{msg.content}</p>
-                      )}
-                      <div
-                        className={`mt-1 flex items-center gap-2 text-[10px] opacity-80 ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
-                        title={formatFullTimestamp(msg.timestamp)}
-                      >
-                        {msg.localStatus === 'failed' && <AlertCircle size={12} className="text-destructive" />}
-                        <span>{formatMessageTime(msg.timestamp)}</span>
-                        {msg.senderId === user?.id && <span>{getDeliveryLabel(msg as LocalMessage)}</span>}
-                        {msg.localStatus === 'failed' && (
-                          <button
-                            type="button"
-                            onClick={() => retryMessage(msg as LocalMessage)}
-                            className="inline-flex items-center gap-1 font-medium text-destructive hover:underline"
+                {visibleMessages.map((msg) => {
+                  const isOwnMessage = msg.senderId === user?.id;
+                  const isFailedMessage = msg.localStatus === 'failed';
+                  const messageBubbleClassName = isFailedMessage
+                    ? 'border border-destructive/30 bg-destructive/10 text-[var(--text-primary)]'
+                    : isOwnMessage
+                      ? 'bg-accent text-accent-foreground'
+                      : 'border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)]';
+                  const attachmentClassName = isOwnMessage && !isFailedMessage
+                    ? 'border-accent-foreground/30 bg-accent-foreground/10 text-accent-foreground'
+                    : 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)]';
+
+                  return (
+                    <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[82%] rounded-md px-4 py-2.5 text-sm leading-6 sm:max-w-[70%] ${messageBubbleClassName}`}>
+                        {msg.attachmentUrl && (
+                          <a
+                            href={msg.attachmentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`block overflow-hidden rounded-md border text-xs transition-opacity hover:opacity-90 ${attachmentClassName}`}
                           >
-                            <RotateCcw size={11} /> Retry
-                          </button>
+                            {isImageAttachment(msg) && (
+                              <img
+                                src={msg.attachmentUrl}
+                                alt=""
+                                className="max-h-44 w-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <span className="flex items-center gap-2 px-3 py-2">
+                              <Paperclip size={13} />
+                              <span className="min-w-0 flex-1 truncate">{getAttachmentLabel(msg.attachmentUrl)}</span>
+                              <ExternalLink size={12} />
+                            </span>
+                          </a>
                         )}
+                        {!shouldHideAttachmentFallbackContent(msg) && (
+                          <p className={`break-words ${msg.attachmentUrl ? 'mt-2' : ''}`}>{msg.content}</p>
+                        )}
+                        <div
+                          className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] opacity-80 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                          title={formatFullTimestamp(msg.timestamp)}
+                        >
+                          {isFailedMessage && <AlertCircle size={12} className="text-destructive" />}
+                          <span>{formatMessageTime(msg.timestamp)}</span>
+                          {isOwnMessage && <span>{getDeliveryLabel(msg as LocalMessage)}</span>}
+                          {isFailedMessage && (
+                            <button
+                              type="button"
+                              onClick={() => retryMessage(msg as LocalMessage)}
+                              className="inline-flex items-center gap-1 font-medium text-destructive hover:underline"
+                            >
+                              <RotateCcw size={11} /> Retry
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Input */}
               <div className="p-4 border-t border-[var(--border-default)]">
                 {showAttachmentField && (
-                  <div className="mb-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-2">
+                  <div id="message-attachment-panel" className={`mb-2 ${messagingComposerPanelClassName}`}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <label htmlFor="message-attachment-url" className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
                         <Paperclip size={13} /> Attachment link
@@ -842,7 +901,7 @@ const MessagingPage: React.FC = () => {
                           setAttachmentUploadFeedback('');
                           setShowAttachmentField(false);
                         }}
-                        className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                        className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                         aria-label="Remove attachment link"
                       >
                         <X size={13} />
@@ -850,6 +909,7 @@ const MessagingPage: React.FC = () => {
                     </div>
                     <input
                       id="message-attachment-url"
+                      ref={attachmentUrlInputRef}
                       type="url"
                       value={attachmentUrlInput}
                       onChange={(event) => {
@@ -861,7 +921,7 @@ const MessagingPage: React.FC = () => {
                       placeholder="https://example.com/file.pdf"
                       aria-invalid={attachmentDraftInvalid}
                       aria-describedby="message-attachment-status"
-                      className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 text-xs placeholder:text-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     />
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Button
@@ -870,6 +930,7 @@ const MessagingPage: React.FC = () => {
                         size="sm"
                         onClick={() => attachmentFileInputRef.current?.click()}
                         disabled={attachmentUploadStatus === 'uploading'}
+                        aria-controls="message-attachment-file"
                       >
                         <UploadCloud size={13} />
                         {attachmentUploadStatus === 'uploading' ? 'Uploading...' : 'Upload file'}
@@ -877,9 +938,11 @@ const MessagingPage: React.FC = () => {
                       <input
                         ref={attachmentFileInputRef}
                         type="file"
+                        id="message-attachment-file"
                         className="sr-only"
                         onChange={handleAttachmentFileSelected}
                         aria-label="Upload message attachment"
+                        tabIndex={-1}
                       />
                       {attachmentUploadFeedback && (
                         <span
@@ -904,7 +967,7 @@ const MessagingPage: React.FC = () => {
                   </div>
                 )}
                 {shouldShowReplySuggestions && (
-                  <div className="mb-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-2">
+                  <div className={`mb-2 ${messagingComposerPanelClassName}`}>
                     <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
                       <Sparkles size={13} />
                       <span>Suggested replies</span>
@@ -931,6 +994,7 @@ const MessagingPage: React.FC = () => {
                     type="button"
                     aria-label={showAttachmentField ? 'Hide attachment link field' : 'Add attachment link'}
                     aria-pressed={showAttachmentField}
+                    aria-controls="message-attachment-panel"
                     onClick={() => {
                       if (showAttachmentField) {
                         recordMessagingWorkflowAnalytics({
@@ -960,6 +1024,7 @@ const MessagingPage: React.FC = () => {
                         visibleMessageCount: visibleMessages.length,
                       });
                       setShowAttachmentField(true);
+                      focusAttachmentUrlInput();
                     }}
                   >
                     <Paperclip size={16} />
@@ -973,7 +1038,7 @@ const MessagingPage: React.FC = () => {
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder={normalizedAttachmentUrl ? 'Add a caption...' : 'Type a message...'}
                     aria-describedby="message-send-status"
-                    className="flex-1 h-10 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+                    className="h-10 min-w-0 flex-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   />
                   <Button size="icon" type="submit" disabled={!canSendMessage} aria-label="Send message">
                     <Send size={16} />
@@ -984,11 +1049,13 @@ const MessagingPage: React.FC = () => {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <EmptyState 
-                title="Select a conversation" 
-                description="Choose a contact from the list to start messaging." 
-                icon={<MessageSquare size={24} />}
-              />
+              <div className={messagingInsetClassName}>
+                <EmptyState
+                  title="Select a conversation"
+                  description="Choose a contact from the list to start messaging."
+                  icon={<MessageSquare size={24} />}
+                />
+              </div>
             </div>
           )}
         </Card>

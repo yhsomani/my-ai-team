@@ -47,6 +47,9 @@ jobs:
       - name: Validate observability contract
         run: npm run validate:observability-contract
 
+      - name: Validate UI design system
+        run: npm run validate:ui-design-system
+
       - name: Validate backend topology ADR
         run: npm run validate:backend-topology-adr
 
@@ -107,8 +110,17 @@ jobs:
       - name: Unit test frontend
         run: npm run test:unit
 
+      - name: Validate frontend IA ownership
+        run: npm run test:ia
+
       - name: Build frontend
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Test frontend route access in Chromium
+        run: npm run test:e2e:chromium
 
   scheduler-scripts:
     name: Scheduler Scripts

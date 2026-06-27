@@ -12,6 +12,10 @@ npm run validate:infrastructure-manifest
 npm run validate:docs-lifecycle
 npm run validate:runbooks
 npm run validate:observability-contract
+npm run validate:ui-design-system
+npm run test:ia
+npm run test:a11y
+npm run test:keyboard
 npm run validate:backend-topology-adr
 npm run validate:schema-authority-adr
 npm run validate:schema-migrations
@@ -38,6 +42,11 @@ npm run report:db-types
 | Active CI | `.github/workflows/talentsphere-ci.yml` at the actual git root |
 | Infrastructure references | Compose module references, frontend dev bind mounts, Kustomize service resources, and scheduler npm commands are validated against the manifest |
 | Data ownership | `data-ownership-manifest.json` classifies observed Supabase/Postgres tables, direct frontend access, reviewed SQL sources, and target owners; `npm run validate:data-ownership` also guards frontend production source against regressing from `typedSupabase` to the untyped compatibility export |
+| UX audit checklist | `docs/UX_AUDIT_CHECKLIST.md` defines dashboard, route, public landing, and major-screen review criteria for improving IA without removing behavior prematurely |
+| Design system | `docs/DESIGN_SYSTEM.md` defines frontend token, component, layout, navigation, interaction, accessibility, performance rules, public landing usage, legacy helper normalization, source-level `npm run validate:ui-design-system`, and browser-level `npm run test:a11y` plus `npm run test:keyboard` guardrails for command search, notifications, mobile navigation, tabs, modals, and auth forms |
+| Feature ownership IA | `apps/frontend/src/navigation/featureOwnership.ts` defines the primary owner and allowed secondary placements for major routes and surfaces; `npm run test:ia` validates duplicate-owner prevention, route alignment, public route classification, and explicit merge decisions |
+| Candidates workflow contract | `apps/frontend/tests/candidate-review.spec.ts` guards deterministic candidate details review, scorecard/note/status payloads, queue navigation, bulk Offer review, unsaved review reset, application pagination, profile-backed search, and review-focus filtering across browser projects |
+| Messaging workflow contract | `apps/frontend/tests/messaging-workflow.spec.ts` guards deterministic conversation selection, text send, attachment-link keyboard focus order, attachment payload submission, visible mark-read, older-history loading, and sent message rendering across browser projects |
 | API contracts | `docs/API_CONTRACT_MISMATCH_REPORT.md` validates frontend/backend/gateway/security route drift, while `docs/API_OPENAPI_CONTRACT.json` captures source-derived OpenAPI 3.1 paths, parameters, request bodies, response bodies, and component schemas for active backend controllers |
 | Auth contract | ADR-001, frontend Supabase Auth usage, Gateway HMAC verifier config, exact public-route matching, normalized `ROLE_*` forwarding, sensitive-route rate-limit wiring, and default-disabled backend local credentials are validated by `npm run validate:auth-contract` |
 | Security contract | Production startup secret validation, safe public error handling, file upload content/security policy, audited service-role scheduler runs, CI dependency/secret/container scan gates, shared validator tests, Kubernetes runtime secret references, and absence of committed production placeholder secrets are validated by `npm run validate:security-contract` |

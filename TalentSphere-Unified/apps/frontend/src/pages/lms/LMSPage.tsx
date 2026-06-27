@@ -28,6 +28,12 @@ import {
 const coursePageSizeOptions = [6, 12, 24];
 const defaultCoursePageSize = 12;
 const enrollmentLoadErrorMessage = 'Your enrolled-course progress could not be refreshed. Retry when LMS sync is available.';
+const learningPanelClassName = 'surface-panel p-3';
+const learningSectionClassName = 'surface-panel p-4';
+const learningInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 px-3 py-2';
+const learningCourseCardClassName = 'flex h-full min-h-64 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
+const learningCompactCardClassName = 'flex h-full flex-col justify-between gap-4 p-4';
+const learningProgressTrackClassName = 'h-1.5 rounded-full bg-[var(--border-default)]';
 
 type LMSRouteState = {
   aiLearningDraft?: LearningAiDraftSource;
@@ -606,7 +612,7 @@ const LMSPage: React.FC = () => {
             {pendingAiLearningDraft.suggestions.map((suggestion, index) => (
               <div
                 key={`${suggestion.searchTerm}-${index}`}
-                className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3"
+                className={`${learningInsetClassName} p-3`}
               >
                 <div className="flex h-full flex-col justify-between gap-3">
                   <div className="space-y-2">
@@ -638,7 +644,7 @@ const LMSPage: React.FC = () => {
           aria-labelledby="learning-progress-unavailable-title"
           role="status"
           aria-live="polite"
-          className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+          className={learningSectionClassName}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 gap-3">
@@ -675,36 +681,34 @@ const LMSPage: React.FC = () => {
                   const progress = getCourseProgress(course);
                   const nextLessonInfo = getNextLessonInfo(course);
                   return (
-                    <Card key={course.id} className="p-4">
-                      <div className="flex h-full flex-col justify-between gap-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-[11px] font-medium uppercase tracking-wide text-accent">{course.category || 'Course'}</p>
-                              <h3 className="text-sm font-semibold text-[var(--text-primary)]">{course.title}</h3>
-                            </div>
-                            <Badge variant="outline">{progress}%</Badge>
+                    <Card key={course.id} className={learningCompactCardClassName}>
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] font-medium text-accent">{course.category || 'Course'}</p>
+                            <h3 className="text-sm font-semibold text-[var(--text-primary)]">{course.title}</h3>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-[var(--text-muted)]">Next lesson</span>
-                              <span className="text-[var(--text-secondary)]">
-                                {nextLessonInfo.completedLessonCount}/{nextLessonInfo.lessonCount || 0}
-                              </span>
-                            </div>
-                            <p className="truncate text-xs text-[var(--text-secondary)]">
-                              {nextLessonInfo.lesson?.title || 'Course review'}
-                            </p>
-                            <div className="h-1.5 rounded-full bg-[var(--border-default)]">
-                              <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
-                            </div>
+                          <Badge variant="outline">{progress}%</Badge>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--text-muted)]">Next lesson</span>
+                            <span className="text-[var(--text-secondary)]">
+                              {nextLessonInfo.completedLessonCount}/{nextLessonInfo.lessonCount || 0}
+                            </span>
+                          </div>
+                          <p className="truncate text-xs text-[var(--text-secondary)]">
+                            {nextLessonInfo.lesson?.title || 'Course review'}
+                          </p>
+                          <div className={learningProgressTrackClassName}>
+                            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
                           </div>
                         </div>
-                        <Button size="sm" className="w-full" onClick={() => handleCourseClick(course, 'continue_learning')}>
-                          <Play size={14} className="mr-1" />
-                          Resume
-                        </Button>
                       </div>
+                      <Button size="sm" className="w-full" onClick={() => handleCourseClick(course, 'continue_learning')}>
+                        <Play size={14} className="mr-1" />
+                        Resume
+                      </Button>
                     </Card>
                   );
                 })}
@@ -720,7 +724,7 @@ const LMSPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 gap-3">
                 {recommendedCourses.map((course) => (
-                  <Card key={course.id} className="p-4">
+                  <Card key={course.id} className="p-4 transition-colors hover:border-[var(--border-strong)]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -742,141 +746,144 @@ const LMSPage: React.FC = () => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <Tabs
-          tabs={[
-            { id: 'all', label: 'All Courses' },
-            { id: 'in-progress', label: 'In Progress' },
-            { id: 'completed', label: 'Completed' },
-          ]}
-          activeTab={activeTab}
-          onTabChange={(nextTab) => {
-            recordLmsAction('lms_tab_selected', {
-              tabId: nextTab,
-              hasSearch: Boolean(normalizedSearchTerm),
-              searchLength: normalizedSearchTerm.length,
-            });
-            setActiveTab(nextTab);
-            setCoursePage(1);
-          }}
-        />
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-          <input
-            type="text"
-            placeholder="Search courses..."
-            className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCoursePage(1);
-            }}
-            onBlur={() => {
-              recordLmsAction('lms_search_submitted', {
-                tabId: activeTab,
+      <Card className="space-y-4 p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs
+            tabs={[
+              { id: 'all', label: 'All Courses' },
+              { id: 'in-progress', label: 'In Progress' },
+              { id: 'completed', label: 'Completed' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(nextTab) => {
+              recordLmsAction('lms_tab_selected', {
+                tabId: nextTab,
                 hasSearch: Boolean(normalizedSearchTerm),
                 searchLength: normalizedSearchTerm.length,
               });
+              setActiveTab(nextTab);
+              setCoursePage(1);
             }}
           />
-        </div>
-      </div>
-
-      {status !== 'loading' && filtered.length > 0 && (
-        <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
-            Showing <span className="font-medium text-[var(--text-primary)]">{firstCourseIndex}-{lastCourseIndex}</span>
-            {hasExactCourseTotal ? (
-              <>
-                {' '}of <span className="font-medium text-[var(--text-primary)]">{visibleCourseTotal}</span>
-              </>
-            ) : null}
-            {' '}{courseResultLabel}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="course-page-size" className="text-xs font-medium text-[var(--text-secondary)]">Per page</label>
-            <select
-              id="course-page-size"
-              aria-label="Courses per page"
-              className="h-8 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-              value={selectedCoursePageSize}
-              onChange={(event) => {
-                const nextPageSize = Number(event.target.value);
-                recordLmsAction('lms_page_size_changed', {
-                  tabId: activeTab,
-                  pageNumber: 1,
-                  pageSize: nextPageSize,
-                  hasSearch: Boolean(normalizedSearchTerm),
-                  searchLength: normalizedSearchTerm.length,
-                  progressFilter: activeTab,
-                });
-                setSelectedCoursePageSize(nextPageSize);
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+            <input
+              type="text"
+              aria-label="Search courses"
+              placeholder="Search courses..."
+              className="h-10 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] pl-9 pr-3 text-sm transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
                 setCoursePage(1);
               }}
-            >
-              {coursePageSizeOptions.map(pageSize => (
-                <option key={pageSize} value={pageSize}>{pageSize}</option>
-              ))}
-            </select>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  const nextPage = Math.max(1, normalizedCoursePage - 1);
-                  recordLmsAction('lms_course_page_changed', {
-                    tabId: activeTab,
-                    pageNumber: nextPage,
-                    pageSize: selectedCoursePageSize,
-                    entryPoint: 'previous_page',
-                    hasSearch: Boolean(normalizedSearchTerm),
-                    searchLength: normalizedSearchTerm.length,
-                    progressFilter: activeTab,
-                  });
-                  setCoursePage(nextPage);
-                }}
-                disabled={!canGoToPreviousCoursePage}
-                aria-label="Previous course page"
-              >
-                <ChevronLeft size={14} />
-              </Button>
-              <span className="min-w-16 text-center text-xs text-[var(--text-secondary)]">
-                Page {normalizedCoursePage}{hasExactCourseTotal ? ` of ${courseTotalPages}` : ''}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  const nextPage = Math.min(courseTotalPages, normalizedCoursePage + 1);
-                  recordLmsAction('lms_course_page_changed', {
-                    tabId: activeTab,
-                    pageNumber: nextPage,
-                    pageSize: selectedCoursePageSize,
-                    entryPoint: 'next_page',
-                    hasSearch: Boolean(normalizedSearchTerm),
-                    searchLength: normalizedSearchTerm.length,
-                    progressFilter: activeTab,
-                  });
-                  setCoursePage(nextPage);
-                }}
-                disabled={!canGoToNextCoursePage}
-                aria-label="Next course page"
-              >
-                <ChevronRight size={14} />
-              </Button>
-            </div>
+              onBlur={() => {
+                recordLmsAction('lms_search_submitted', {
+                  tabId: activeTab,
+                  hasSearch: Boolean(normalizedSearchTerm),
+                  searchLength: normalizedSearchTerm.length,
+                });
+              }}
+            />
           </div>
         </div>
-      )}
+
+        {status !== 'loading' && filtered.length > 0 && (
+          <div className={`${learningPanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+            <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
+              Showing <span className="font-medium text-[var(--text-primary)]">{firstCourseIndex}-{lastCourseIndex}</span>
+              {hasExactCourseTotal ? (
+                <>
+                  {' '}of <span className="font-medium text-[var(--text-primary)]">{visibleCourseTotal}</span>
+                </>
+              ) : null}
+              {' '}{courseResultLabel}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="course-page-size" className="text-xs font-medium text-[var(--text-secondary)]">Per page</label>
+              <select
+                id="course-page-size"
+                aria-label="Courses per page"
+                className="h-8 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                value={selectedCoursePageSize}
+                onChange={(event) => {
+                  const nextPageSize = Number(event.target.value);
+                  recordLmsAction('lms_page_size_changed', {
+                    tabId: activeTab,
+                    pageNumber: 1,
+                    pageSize: nextPageSize,
+                    hasSearch: Boolean(normalizedSearchTerm),
+                    searchLength: normalizedSearchTerm.length,
+                    progressFilter: activeTab,
+                  });
+                  setSelectedCoursePageSize(nextPageSize);
+                  setCoursePage(1);
+                }}
+              >
+                {coursePageSizeOptions.map(pageSize => (
+                  <option key={pageSize} value={pageSize}>{pageSize}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    const nextPage = Math.max(1, normalizedCoursePage - 1);
+                    recordLmsAction('lms_course_page_changed', {
+                      tabId: activeTab,
+                      pageNumber: nextPage,
+                      pageSize: selectedCoursePageSize,
+                      entryPoint: 'previous_page',
+                      hasSearch: Boolean(normalizedSearchTerm),
+                      searchLength: normalizedSearchTerm.length,
+                      progressFilter: activeTab,
+                    });
+                    setCoursePage(nextPage);
+                  }}
+                  disabled={!canGoToPreviousCoursePage}
+                  aria-label="Previous course page"
+                >
+                  <ChevronLeft size={14} />
+                </Button>
+                <span className="min-w-16 text-center text-xs text-[var(--text-secondary)]">
+                  Page {normalizedCoursePage}{hasExactCourseTotal ? ` of ${courseTotalPages}` : ''}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    const nextPage = Math.min(courseTotalPages, normalizedCoursePage + 1);
+                    recordLmsAction('lms_course_page_changed', {
+                      tabId: activeTab,
+                      pageNumber: nextPage,
+                      pageSize: selectedCoursePageSize,
+                      entryPoint: 'next_page',
+                      hasSearch: Boolean(normalizedSearchTerm),
+                      searchLength: normalizedSearchTerm.length,
+                      progressFilter: activeTab,
+                    });
+                    setCoursePage(nextPage);
+                  }}
+                  disabled={!canGoToNextCoursePage}
+                  aria-label="Next course page"
+                >
+                  <ChevronRight size={14} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {status === 'loading' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <Card key={i} className="p-5 space-y-4">
+            <Card key={i} className={`${learningCourseCardClassName} space-y-4`}>
               <div className="flex justify-between">
                 <Skeleton className="h-5 w-20" />
                 <Skeleton className="h-5 w-20" />
@@ -903,16 +910,16 @@ const LMSPage: React.FC = () => {
             const progress = getCourseProgress(course);
             const lessonCount = course.lessons?.length || 0;
             return (
-              <Card key={course.id} className="p-5 flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors">
+              <Card key={course.id} className={learningCourseCardClassName}>
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
-                    <Badge variant={progress === 100 ? 'success' : 'outline'}>{course.category}</Badge>
-                    <Badge variant="outline">{course.difficulty}</Badge>
+                    <Badge variant={progress === 100 ? 'success' : 'outline'}>{course.category || 'Course'}</Badge>
+                    <Badge variant="outline">{course.difficulty || 'Normal'}</Badge>
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold mb-1">{course.title}</h3>
+                    <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">{course.title}</h3>
                     <p className="text-xs text-[var(--text-muted)] mb-2 line-clamp-2">{course.description}</p>
-                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)]">
                       <span className="flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
                       <span className="flex items-center gap-1"><BookOpen size={12} /> {lessonCount} lessons</span>
                       {course.xp && <span className="flex items-center gap-1 text-accent font-medium">+{course.xp} XP</span>}
@@ -927,7 +934,7 @@ const LMSPage: React.FC = () => {
                         <span className="text-[var(--text-muted)]">Progress</span>
                         <span className="font-medium">{progress}%</span>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-[var(--border-default)]">
+                      <div className={learningProgressTrackClassName}>
                         <div
                           className={`h-full rounded-full transition-all ${progress === 100 ? 'bg-success' : 'bg-accent'}`}
                           style={{ width: `${progress}%` }}
@@ -966,26 +973,29 @@ const LMSPage: React.FC = () => {
       >
         {selectedCourse && (
           <div className="space-y-6 py-4">
-            <div className="flex items-center justify-between">
-              <Badge variant="outline">{selectedCourse.category}</Badge>
+            <div className={`${learningSectionClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{selectedCourse.category || 'Course'}</Badge>
+                <Badge variant="outline">{selectedCourse.difficulty || 'Normal'}</Badge>
+              </div>
               <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                 <Clock size={12} /> {selectedCourse.duration}
               </div>
             </div>
 
-            <div>
+            <div className={learningSectionClassName}>
               <h4 className="text-sm font-semibold mb-2">Description</h4>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                 {selectedCourse.description}
               </p>
             </div>
 
-            <div>
+            <div className={learningSectionClassName}>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="text-[var(--text-muted)]">Course Progress</span>
                 <span className="font-medium">{selectedCourseProgress}%</span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-[var(--border-default)]">
+              <div className={learningProgressTrackClassName}>
                 <div
                   className={`h-full rounded-full transition-all ${selectedCourseProgress === 100 ? 'bg-success' : 'bg-accent'}`}
                   style={{ width: `${selectedCourseProgress}%` }}
@@ -994,7 +1004,7 @@ const LMSPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-4">
-              <div>
+              <div className={learningSectionClassName}>
                 <h4 className="text-sm font-semibold mb-3">Curriculum</h4>
                 <div className="space-y-2">
                   {selectedCourseLessons.length > 0 ? selectedCourseLessons.map((lesson, i) => {
@@ -1040,7 +1050,7 @@ const LMSPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-5 min-h-72">
+              <div className="surface-panel min-h-72 p-5">
                 {activeLesson ? (
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
@@ -1054,11 +1064,11 @@ const LMSPage: React.FC = () => {
                     </div>
 
                     {activeLesson.videoUrl ? (
-                      <div className="aspect-video rounded-lg border border-[var(--border-default)] bg-black/20 flex items-center justify-center text-sm text-[var(--text-muted)]">
+                      <div className="aspect-video rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]/70 flex items-center justify-center text-sm text-[var(--text-muted)]">
                         Video content opens from the lesson source.
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5">
+                      <div className={`${learningInsetClassName} p-5`}>
                         <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-3">
                           <PlayCircle size={20} />
                         </div>

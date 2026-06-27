@@ -76,6 +76,8 @@ const jobsPageSizeOptions = [6, 12, 24];
 const defaultJobsPageSize = 12;
 const applicationDraftHistoryLimit = 5;
 const maxLocalApplicationDraftHistoryItems = 50;
+const jobCardClassName = 'flex h-full min-h-72 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
+const jobsPanelClassName = 'surface-panel p-3';
 
 type JobFilters = {
     jobType: string;
@@ -2353,7 +2355,7 @@ const JobsPage: React.FC = () => {
                 }
             />
 
-            <div className="space-y-3">
+            <Card className="space-y-4 p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <Tabs
                         tabs={[
@@ -2371,7 +2373,7 @@ const JobsPage: React.FC = () => {
                             type="text"
                             aria-label={activeTab === 'explore' ? 'Search jobs' : activeTab === 'postings' ? 'Search my postings' : 'Search applications'}
                             placeholder={activeTab === 'explore' ? 'Search jobs...' : activeTab === 'postings' ? 'Search my postings...' : 'Search applications...'}
-                            className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+                            className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -2412,7 +2414,7 @@ const JobsPage: React.FC = () => {
                                 <label htmlFor="job-type-filter" className="text-sm font-medium text-[var(--text-primary)]">Job Type</label>
                                 <select
                                     id="job-type-filter"
-                                    className="w-full h-9 px-3 rounded-lg border border-[var(--border-default)] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+                                    className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-panel)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                                     value={jobFilters.jobType}
                                     onChange={(e) => setJobFilters(prev => ({ ...prev, jobType: e.target.value }))}
                                 >
@@ -2475,18 +2477,18 @@ const JobsPage: React.FC = () => {
                         </div>
 
                         {savedSearches.length > 0 && (
-                            <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 p-3">
+                            <div className={jobsPanelClassName}>
                                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
                                     <BookmarkCheck size={14} className="text-accent" />
                                     <span>Saved Searches</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {savedSearches.map(savedSearch => (
-                                        <div key={savedSearch.id} className="inline-flex max-w-full overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]">
+                                        <div key={savedSearch.id} className="inline-flex max-w-full overflow-hidden rounded-md border border-[var(--border-default)] bg-[var(--bg-panel)]">
                                             <button
                                                 type="button"
                                                 onClick={() => applySavedSearch(savedSearch)}
-                                                className="flex max-w-64 items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-[var(--text-primary)] hover:bg-accent/10"
+                                                className="flex max-w-64 items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-[var(--text-primary)] hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/20"
                                                 title={savedSearch.name}
                                             >
                                                 <span className="truncate">{savedSearch.name}</span>
@@ -2521,7 +2523,7 @@ const JobsPage: React.FC = () => {
                         )}
 
                         {hiddenExploreJobs.length > 0 && (
-                            <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 p-3">
+                            <div className={jobsPanelClassName}>
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
@@ -2604,16 +2606,16 @@ const JobsPage: React.FC = () => {
                         )}
 
                         {exploreProfileStatus && (
-                            <p role="status" className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 px-3 py-2 text-xs text-[var(--text-secondary)]">
+                            <p role="status" className="surface-panel px-3 py-2 text-xs text-[var(--text-secondary)]">
                                 {exploreProfileStatus}
                             </p>
                         )}
                     </div>
                 )}
-            </div>
+            </Card>
 
             {activeTab === 'explore' && !isLoading && filteredJobs.length > 0 && (
-                <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="surface-panel flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
                         Showing <span className="font-medium text-[var(--text-primary)]">{firstJobIndex}-{lastJobIndex}</span>
                         {hasExactJobsTotal ? (
@@ -2628,7 +2630,7 @@ const JobsPage: React.FC = () => {
                         <select
                             id="jobs-page-size"
                             aria-label="Jobs per page"
-                            className="h-8 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                            className="h-8 rounded-md border border-[var(--border-default)] bg-[var(--bg-panel)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                             value={jobsPageSize}
                             onChange={(event) => {
                                 setJobsPageSize(Number(event.target.value));
@@ -2718,7 +2720,7 @@ const JobsPage: React.FC = () => {
                             const isDraft = (item.status || '').toUpperCase() === 'DRAFT';
 
                             return (
-                                <Card key={item.id} className="p-5 flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors">
+                                <Card key={item.id} className={jobCardClassName}>
                                     <div className="space-y-4">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
@@ -2786,7 +2788,7 @@ const JobsPage: React.FC = () => {
                             : null;
 
                         return (
-                            <Card key={item.id} className="p-5 flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors">
+                            <Card key={item.id} className={jobCardClassName}>
                                 <div className="space-y-4">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 items-start gap-3">
@@ -3063,7 +3065,7 @@ const JobsPage: React.FC = () => {
                     <div className="space-y-5">
                         <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="text-lg font-semibold text-white">{selectedJob.title}</h4>
+                                <h4 className="text-lg font-semibold text-[var(--text-primary)]">{selectedJob.title}</h4>
                                 <Badge variant="outline">{getJobTypeLabel(selectedJob.jobType)}</Badge>
                             </div>
                             <p className="text-sm text-[var(--text-secondary)]">{selectedJob.companyName || 'Company'} · {selectedJob.location || 'Location not listed'}</p>
@@ -3073,7 +3075,7 @@ const JobsPage: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4">
-                            <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/60 p-3">
+                            <div className={jobsPanelClassName}>
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="space-y-1">
                                         <div className="flex flex-wrap items-center gap-2">
@@ -3120,13 +3122,13 @@ const JobsPage: React.FC = () => {
                                         </p>
                                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                                             <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/50 p-2">
-                                                <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Current draft</p>
+                                                <p className="text-[10px] uppercase text-[var(--text-muted)]">Current draft</p>
                                                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
                                                     {applicationDraft.resumeUrl.trim() ? 'Resume URL set' : 'No resume URL'} · {applicationDraft.coverLetter.trim() ? 'Cover letter set' : 'No cover letter'}
                                                 </p>
                                             </div>
                                             <div className="rounded-md border border-accent/30 bg-[var(--bg-primary)]/50 p-2">
-                                                <p className="text-[10px] uppercase tracking-wide text-accent">Profile draft</p>
+                                                <p className="text-[10px] uppercase text-accent">Profile draft</p>
                                                 <p className="mt-1 text-xs text-[var(--text-primary)]">
                                                     {profileApplicationDraftReplaceReview.resumeUrl.trim() ? 'Resume URL included' : 'No resume URL'} · {profileApplicationDraftReplaceReview.coverLetter.trim() ? 'Cover letter included' : 'No cover letter'}
                                                 </p>
@@ -3163,7 +3165,7 @@ const JobsPage: React.FC = () => {
                             </div>
 
                             {applicationDraftHistory.length > 0 && (
-                                <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/40 p-3">
+                                <div className={jobsPanelClassName}>
                                     <div className="flex items-center gap-2">
                                         <Clock size={14} className="text-accent" />
                                         <p className="text-sm font-medium text-[var(--text-primary)]">Recent draft versions</p>
@@ -3218,11 +3220,11 @@ const JobsPage: React.FC = () => {
                                                 <p className="text-xs font-medium text-[var(--text-primary)]">{field.label}</p>
                                                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Current</p>
+                                                        <p className="text-[10px] uppercase text-[var(--text-muted)]">Current</p>
                                                         <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)] whitespace-pre-wrap">{field.currentValue || 'Empty'}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-wide text-accent">AI draft</p>
+                                                        <p className="text-[10px] uppercase text-accent">AI draft</p>
                                                         <p className="mt-1 text-xs leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{field.proposedValue}</p>
                                                     </div>
                                                 </div>
@@ -3291,7 +3293,7 @@ const JobsPage: React.FC = () => {
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="text-lg font-semibold text-white">{selectedApplication.job?.title || 'Application'}</h4>
+                                <h4 className="text-lg font-semibold text-[var(--text-primary)]">{selectedApplication.job?.title || 'Application'}</h4>
                                 <Badge variant={getApplicationStatusVariant(selectedApplication.status)}>
                                     {selectedApplication.status || 'PENDING'}
                                 </Badge>

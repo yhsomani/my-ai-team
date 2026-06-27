@@ -34,6 +34,21 @@ const mapCompanyData = (data: CompanyRow): Company => ({
   createdAt: data.created_at || undefined
 });
 
+const isCompanyRow = (data: unknown): data is CompanyRow => {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+
+  const candidate = data as Partial<CompanyRow>;
+  return typeof candidate.id === 'string' && typeof candidate.name === 'string';
+};
+
+const mapRequiredCompanyData = (data: unknown): Company => {
+  if (!isCompanyRow(data)) {
+    throw new Error('Company profile was not found.');
+  }
+
+  return mapCompanyData(data);
+};
+
 export const companyService = {
   getCompanies: async (): Promise<Company[]> => {
     const { data, error } = await supabase
@@ -43,7 +58,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return data.map(mapCompanyData);
+    return (Array.isArray(data) ? data : []).filter(isCompanyRow).map(mapCompanyData);
   },
 
   getCompanyById: async (id: string): Promise<Company> => {
@@ -55,7 +70,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return mapCompanyData(data);
+    return mapRequiredCompanyData(data);
   },
 
   getCompanyByUser: async (userId: string): Promise<Company> => {
@@ -67,7 +82,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return mapCompanyData(data);
+    return mapRequiredCompanyData(data);
   },
 
   registerCompany: async (company: Partial<Company>): Promise<Company> => {
@@ -96,7 +111,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return mapCompanyData(data);
+    return mapRequiredCompanyData(data);
   },
 
   updateCompany: async (id: string, company: Partial<Company>): Promise<Company> => {
@@ -119,7 +134,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return mapCompanyData(data);
+    return mapRequiredCompanyData(data);
   },
 
   verifyCompany: async (id: string): Promise<Company> => {
@@ -138,7 +153,7 @@ export const companyService = {
     
     if (error) throw error;
     
-    return mapCompanyData(data);
+    return mapRequiredCompanyData(data);
   },
 
   searchCompanies: async (keyword: string): Promise<Company[]> => {
@@ -150,6 +165,6 @@ export const companyService = {
     
     if (error) throw error;
     
-    return data.map(mapCompanyData);
+    return (Array.isArray(data) ? data : []).filter(isCompanyRow).map(mapCompanyData);
   }
 };

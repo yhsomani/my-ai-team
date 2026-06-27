@@ -12,22 +12,31 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ author, role, content, timestamp, likes }) => {
+  const initials = author
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'TS';
+
   return (
-    <Card className="mb-6 hover:shadow-primary-glow transition-shadow duration-500">
-      <div className="flex items-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-primary-gradient mr-4 flex-shrink-0" />
-        <div>
-          <HeadlineMD className="text-lg m-0">{author}</HeadlineMD>
-          <LabelSM className="block opacity-70">{role} | {timestamp}</LabelSM>
+    <Card className="mb-6 p-5 transition-shadow hover:shadow-md">
+      <div className="mb-4 flex items-center">
+        <div className="mr-4 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-accent/10 text-sm font-semibold text-accent">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <HeadlineMD className="m-0 truncate text-base">{author}</HeadlineMD>
+          <LabelSM className="block">{role} / {timestamp}</LabelSM>
         </div>
       </div>
       
-      <BodyMD className="mb-6 leading-relaxed">
+      <BodyMD className="mb-6 break-words">
         {content}
       </BodyMD>
       
-      <div className="flex items-center justify-between pt-4 border-t border-glass-stroke">
-        <div className="flex gap-4">
+      <div className="flex flex-col gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm">
             Like ({likes})
           </Button>

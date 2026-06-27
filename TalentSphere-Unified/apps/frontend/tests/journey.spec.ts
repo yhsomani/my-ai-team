@@ -1,20 +1,19 @@
 import { test, expect } from '@playwright/test';
+import { USER_ROLES } from '../src/navigation/routeRegistry';
+import { installE2EAuth, installNetworkStubs } from './helpers/e2e';
 
 test.describe('Platform Journey: Hire-to-Learner', () => {
-  const baseURL = process.env.BASE_URL || 'http://localhost:3000';
-
   test('should register and access dashboard', async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as any).__E2E_TESTING__ = true;
-    });
+    await installNetworkStubs(page);
+    await installE2EAuth(page, null);
 
     const timestamp = Date.now();
     const testEmail = `node-${timestamp}@nexustesting.com`;
     const testName = `Neural Candidate ${timestamp}`;
 
     // Register page
-    await page.goto(`${baseURL}/register`);
-    await expect(page.locator('h1')).toContainText('Initialize', { timeout: 10000 });
+    await page.goto('/register');
+    await expect(page.locator('h1')).toContainText('Create your account', { timeout: 10000 });
 
     // Fill form - use flexible selectors
     await page.fill('input[type="text"]', testName).catch(async () => {
@@ -33,24 +32,30 @@ test.describe('Platform Journey: Hire-to-Learner', () => {
   });
 
   test('should navigate between main sections', async ({ page }) => {
+    await installNetworkStubs(page);
+    await installE2EAuth(page, [USER_ROLES.user, USER_ROLES.recruiter]);
+
     // Try dashboard first
-    await page.goto(`${baseURL}/dashboard`);
+    await page.goto('/dashboard');
     
     // Try jobs page
-    await page.goto(`${baseURL}/jobs`);
+    await page.goto('/jobs');
     await expect(page.locator('h1, main h1, [class*="heading"]')).toBeVisible({ timeout: 10000 }).catch(() => {
-      return expect(page.locator('input[type="search"]')).toBeVisible();
+      return expect(page.getByPlaceholder('Search jobs...')).toBeVisible();
     });
 
     // Try LMS page
-    await page.goto(`${baseURL}/lms`);
+    await page.goto('/lms');
     await expect(page.locator('h1, main h1')).toBeVisible({ timeout: 10000 }).catch(() => {
       return expect(page.locator('body')).toBeVisible();
     });
   });
 
   test('should handle navigation timeout gracefully', async ({ page }) => {
-    await page.goto(`${baseURL}/login`);
+    await installNetworkStubs(page);
+    await installE2EAuth(page, null);
+
+    await page.goto('/login');
     
     // Should be able to see login form
     await expect(page.locator('form')).toBeVisible({ timeout: 5000 }).catch(() => {

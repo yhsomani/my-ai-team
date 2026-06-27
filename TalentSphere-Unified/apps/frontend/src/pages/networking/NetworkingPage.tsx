@@ -42,14 +42,22 @@ const tabs: Array<{ id: NetworkTab; label: string }> = [
   { id: 'connections', label: 'Connections' },
 ];
 
+const networkingPanelClassName = 'surface-panel p-3';
+const networkingInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
+const networkingRecordCardClassName = 'flex h-full min-h-64 flex-col p-5 transition-colors hover:border-[var(--border-strong)]';
+const networkingDiscoverCardClassName = 'flex h-full min-h-[30rem] flex-col p-5 transition-colors hover:border-[var(--border-strong)]';
+const networkingSearchFieldClassName = 'h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+
 const getInitials = (name?: string) => {
-  return (name || 'U')
+  const initials = (name || 'User')
     .split(' ')
     .filter(Boolean)
     .map((part) => part[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+
+  return initials || 'U';
 };
 
 const getConnectionPerson = (connection: Connection, currentUserId?: string): PublicProfile | undefined => {
@@ -877,65 +885,90 @@ const NetworkingPage: React.FC = () => {
   }, [connections, searchTerm, user?.id]);
 
   if (status === 'failed') {
-    return <EmptyState title="Error" description={error || "Failed to load network."} />;
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title="Network"
+          description="Review suggestions, connection requests, and follow-up reminders."
+        />
+        <div className={networkingInsetClassName}>
+          <EmptyState title="Network could not load" description={error || "Failed to load network."} />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Network"
-        description="Connect with professionals in your field."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+        description="Review suggestions, connection requests, and follow-up reminders."
+      />
+
+      <div className={networkingPanelClassName}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Networking views">
+            {tabs.map((tab) => {
+              const count = tab.id === 'incoming'
+                ? incomingRequests.length
+                : tab.id === 'sent'
+                  ? sentRequests.length
+                  : tab.id === 'connections'
+                    ? connections.length
+                    : visibleProfiles.length;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-[var(--bg-primary)] text-accent'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {tab.label}
+                  <span className="text-[10px] text-[var(--text-muted)]">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {hiddenSuggestionIds.size > 0 && (
               <Button variant="outline" size="sm" onClick={restoreHiddenSuggestions}>
                 Show hidden
               </Button>
             )}
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
               <input
                 type="text"
+                aria-label="Search network"
                 placeholder="Search people..."
-                className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+                className={networkingSearchFieldClassName}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-        }
-      />
+        </div>
 
-      <div className="flex flex-wrap items-center gap-1 p-1 bg-[var(--bg-secondary)] rounded-lg w-fit">
-        {tabs.map((tab) => {
-          const count = tab.id === 'incoming'
-            ? incomingRequests.length
-            : tab.id === 'sent'
-              ? sentRequests.length
-              : tab.id === 'connections'
-                ? connections.length
-                : visibleProfiles.length;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabChange(tab.id)}
-              className={`
-                px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5
-                ${activeTab === tab.id
-                  ? 'bg-[var(--bg-primary)] text-accent shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}
-              `}
-            >
-              {tab.label}
-              <span className="text-[10px] opacity-70">{count}</span>
-            </button>
-          );
-        })}
+        <p role="status" aria-live="polite" className="mt-3 text-xs text-[var(--text-secondary)]">
+          {activeTab === 'discover'
+            ? `${filtered.length} visible suggestions, ${hiddenSuggestionIds.size} hidden`
+            : activeTab === 'incoming'
+              ? `${filteredIncoming.length} incoming requests`
+              : activeTab === 'sent'
+                ? `${filteredSent.length} sent requests, ${Object.keys(remindersByRequestId).length} follow-up reminders`
+                : `${filteredConnections.length} accepted connections`}
+        </p>
       </div>
 
       {activeTab === 'discover' && hiddenSuggestionIds.size > 0 && (
-        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-secondary)]" role="status">
+        <div className={`${networkingInsetClassName} text-xs text-[var(--text-secondary)]`} role="status">
           {hiddenSuggestionSyncStatus === 'synced'
             ? `${hiddenSuggestionIds.size} hidden ${hiddenSuggestionIds.size === 1 ? 'suggestion is' : 'suggestions are'} synced to this account.`
             : hiddenSuggestionSyncStatus === 'unavailable'
@@ -945,7 +978,7 @@ const NetworkingPage: React.FC = () => {
       )}
 
       {activeTab === 'sent' && Object.keys(remindersByRequestId).length > 0 && (
-        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-2 text-xs text-[var(--text-secondary)]" role="status">
+        <div className={`${networkingInsetClassName} text-xs text-[var(--text-secondary)]`} role="status">
           {reminderSyncStatus === 'synced'
             ? `${Object.keys(remindersByRequestId).length} follow-up ${Object.keys(remindersByRequestId).length === 1 ? 'reminder is' : 'reminders are'} synced to account notifications.`
             : reminderSyncStatus === 'syncing'
@@ -959,7 +992,7 @@ const NetworkingPage: React.FC = () => {
       {(status === 'loading' && activeTab === 'discover') || (isNetworkLoading && activeTab !== 'discover') ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1,2,3,4,5,6].map(i => (
-            <Card key={i} className="p-5">
+            <Card key={i} className={networkingRecordCardClassName}>
               <div className="flex items-center gap-3 mb-3">
                 <Skeleton className="w-10 h-10 rounded-full" />
                 <div><Skeleton className="h-4 w-28 mb-1" /><Skeleton className="h-3 w-20" /></div>
@@ -973,22 +1006,22 @@ const NetworkingPage: React.FC = () => {
       ) : activeTab === 'discover' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((profile) => (
-            <Card key={profile.id} className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold overflow-hidden">
+            <Card key={profile.id} className={networkingDiscoverCardClassName}>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent">
                     {profile.avatarUrl ? (
                       <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
                       getInitials(profile.fullName)
                     )}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{profile.fullName || 'Unknown User'}</p>
-                    <p className="text-xs text-[var(--text-muted)]">{profile.currentRole || 'Professional'}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{profile.fullName || 'Unknown User'}</p>
+                    <p className="truncate text-xs text-[var(--text-muted)]">{profile.currentRole || 'Professional'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-1.5">
                   {typeof profile.recommendationScore === 'number' && (
                     <Badge variant="outline">{profile.recommendationScore}% fit</Badge>
                   )}
@@ -1014,7 +1047,7 @@ const NetworkingPage: React.FC = () => {
               {profile.headline && (
                 <p className="text-xs text-[var(--text-secondary)] mb-3 line-clamp-2">{profile.headline}</p>
               )}
-              <div className="mb-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3">
+              <div className={`mb-3 ${networkingInsetClassName}`}>
                 <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
                   <Lightbulb size={12} className="text-accent" />
                   <span>Why suggested</span>
@@ -1042,12 +1075,12 @@ const NetworkingPage: React.FC = () => {
                 placeholder="Optional note"
                 rows={2}
                 disabled={pendingRequestIds.has(profile.id)}
-                className="mb-3 w-full resize-none rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+                className="mb-3 min-h-16 w-full resize-none rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
               />
               <Button
                 variant={pendingRequestIds.has(profile.id) ? 'secondary' : 'default'}
                 size="sm"
-                className="w-full"
+                className="mt-auto w-full"
                 onClick={() => handleConnect(profile.id)}
                 disabled={pendingRequestIds.has(profile.id)}
                 isLoading={actionLoadingIds.has(profile.id)}
@@ -1068,15 +1101,15 @@ const NetworkingPage: React.FC = () => {
           {filteredIncoming.map((connection) => {
             const person = getConnectionPerson(connection, user?.id);
             return (
-              <Card key={connection.id} className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
+              <Card key={connection.id} className={networkingRecordCardClassName}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
                       {getInitials(person?.fullName)}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
                   <Badge variant="warning"><Clock size={11} className="mr-1" /> Pending</Badge>
@@ -1087,7 +1120,7 @@ const NetworkingPage: React.FC = () => {
                   </div>
                 )}
                 {connection.message && (
-                  <p className="text-xs text-[var(--text-secondary)] mb-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3">
+                  <p className={`mb-4 text-xs text-[var(--text-secondary)] ${networkingInsetClassName}`}>
                     {connection.message}
                   </p>
                 )}
@@ -1095,7 +1128,7 @@ const NetworkingPage: React.FC = () => {
                   <Clock size={12} />
                   <span>Received {formatConnectionAge(connection.createdAt)}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="mt-auto grid grid-cols-2 gap-2">
                   <Button variant="outline" size="sm" onClick={() => previewProfile(person, 'incoming_request_card')}>
                     <ExternalLink size={13} />
                     Profile
@@ -1123,21 +1156,21 @@ const NetworkingPage: React.FC = () => {
             const hasReminder = Boolean(reminderState);
             const selectedReminderDelay = reminderDelayByRequestId[connection.id] || reminderState?.delay || defaultReminderDelay;
             return (
-              <Card key={connection.id} className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
+              <Card key={connection.id} className={networkingRecordCardClassName}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
                       {getInitials(person?.fullName)}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
                   <Badge variant="warning"><Clock size={11} className="mr-1" /> Sent</Badge>
                 </div>
                 {connection.message && (
-                  <p className="text-xs text-[var(--text-secondary)] mb-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3">
+                  <p className={`mb-4 text-xs text-[var(--text-secondary)] ${networkingInsetClassName}`}>
                     {connection.message}
                   </p>
                 )}
@@ -1150,7 +1183,7 @@ const NetworkingPage: React.FC = () => {
                     <Badge variant="outline"><Bell size={11} className="mr-1" /> {formatReminderDueLabel(reminderState?.dueAt)}</Badge>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="mt-auto grid grid-cols-2 gap-2">
                   <label htmlFor={`reminder-delay-${connection.id}`} className="sr-only">
                     Reminder timing for {person?.fullName || 'this request'}
                   </label>
@@ -1162,7 +1195,7 @@ const NetworkingPage: React.FC = () => {
                       [connection.id]: event.target.value as ReminderDelayOption,
                     }))}
                     disabled={hasReminder}
-                    className="col-span-2 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-primary)] outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
+                    className="col-span-2 h-9 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-primary)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
                   >
                     {reminderDelayOptions.map(option => (
                       <option key={option.id} value={option.id}>{option.label}</option>
@@ -1196,15 +1229,15 @@ const NetworkingPage: React.FC = () => {
           {filteredConnections.map((connection) => {
             const person = getConnectionPerson(connection, user?.id);
             return (
-              <Card key={connection.id} className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-success-muted flex items-center justify-center text-success text-sm font-semibold">
+              <Card key={connection.id} className={networkingRecordCardClassName}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-muted text-sm font-semibold text-success">
                       {getInitials(person?.fullName)}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{person?.fullName || 'Unknown User'}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
                   <Badge variant="success"><UserCheck size={11} className="mr-1" /> Connected</Badge>
@@ -1214,7 +1247,7 @@ const NetworkingPage: React.FC = () => {
                     <MapPin size={12} /> {person.location}
                   </div>
                 )}
-                <Button variant="outline" size="sm" className="w-full" onClick={() => previewProfile(person, 'connection_card')}>
+                <Button variant="outline" size="sm" className="mt-auto w-full" onClick={() => previewProfile(person, 'connection_card')}>
                   <ExternalLink size={13} />
                   Open Profile
                 </Button>
@@ -1227,7 +1260,7 @@ const NetworkingPage: React.FC = () => {
       {profilePreview && profilePreviewDetails && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"
             aria-hidden="true"
             onMouseDown={() => setProfilePreview(null)}
           />
@@ -1235,7 +1268,7 @@ const NetworkingPage: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="networking-profile-preview-title"
-            className="relative w-full max-w-2xl overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] shadow-2xl"
+            className="surface-card relative w-full max-w-2xl overflow-hidden"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
@@ -1267,7 +1300,7 @@ const NetworkingPage: React.FC = () => {
               </div>
 
               {(profilePreviewDetails.headline || profilePreviewDetails.summary) && (
-                <div className="mb-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
+                <div className={`mb-4 ${networkingInsetClassName}`}>
                   {profilePreviewDetails.headline && (
                     <p className="text-sm font-medium text-[var(--text-primary)]">{profilePreviewDetails.headline}</p>
                   )}
@@ -1282,7 +1315,7 @@ const NetworkingPage: React.FC = () => {
                   <p className="mb-2 text-xs font-semibold uppercase text-[var(--text-muted)]">Why suggested</p>
                   <ul className="space-y-2">
                     {profilePreviewDetails.reasons.map((reason) => (
-                      <li key={reason} className="rounded-lg border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+                      <li key={reason} className="rounded-md border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                         {reason}
                       </li>
                     ))}

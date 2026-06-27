@@ -20,6 +20,11 @@ import {
 const LANGUAGES = ['javascript', 'python', 'java', 'typescript'];
 const LOCAL_CHECK_SUPPORTED_LANGUAGES = new Set(['javascript', 'typescript']);
 const LOCAL_CHECK_TIMEOUT_MS = 1500;
+const challengePanelClassName = 'surface-panel p-3';
+const challengeSectionClassName = 'surface-panel p-4';
+const challengeInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
+const challengeCardClassName = 'group flex min-h-56 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
+const challengeCodeFieldClassName = 'min-h-72 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4 font-mono text-xs leading-5 text-[var(--text-primary)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20';
 
 type LocalCheckStatus = 'passed' | 'failed' | 'error';
 type LocalCheckResult = {
@@ -624,64 +629,69 @@ const ChallengesPage: React.FC = () => {
         description="Solve real-world problems and level up your skills."
       />
 
-      <div className="flex items-center gap-1 p-1 bg-[var(--bg-secondary)] rounded-lg w-fit">
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              recordChallengeAction('challenge_category_selected', {
-                category: tab,
-                visibleChallengeCount: tab === 'all'
-                  ? challenges.length
-                  : challenges.filter(challenge => challenge.category?.toLowerCase() === tab.toLowerCase()).length,
-              });
-              setFilter(tab);
-            }}
-            className={`
-              px-4 py-1.5 text-xs font-medium rounded-md transition-all
-              ${filter === tab 
-                ? 'bg-[var(--bg-primary)] text-accent shadow-sm' 
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}
-            `}
-          >
-            {tab === 'all' ? 'All' : formatCategoryLabel(tab)}
-          </button>
-        ))}
-      </div>
+      <Card className="p-4">
+        <div className={challengePanelClassName}>
+          <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Challenge categories">
+            {categoryTabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  recordChallengeAction('challenge_category_selected', {
+                    category: tab,
+                    visibleChallengeCount: tab === 'all'
+                      ? challenges.length
+                      : challenges.filter(challenge => challenge.category?.toLowerCase() === tab.toLowerCase()).length,
+                  });
+                  setFilter(tab);
+                }}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filter === tab
+                    ? 'bg-[var(--bg-primary)] text-accent shadow-sm'
+                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {tab === 'all' ? 'All' : formatCategoryLabel(tab)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
 
       {status === 'loading' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <Skeleton key={i} className="h-48 w-full" />)}
+          {[1,2,3].map(i => <Skeleton key={i} className="h-56 w-full" />)}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState title="No challenges found" description="Try a different category." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((challenge) => (
-            <Card key={challenge.id} className="group p-5">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2.5 rounded-lg bg-accent/10 text-accent">
-                  <Trophy size={20} />
+            <Card key={challenge.id} className={challengeCardClassName}>
+              <div>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="rounded-lg bg-accent/10 p-2.5 text-accent">
+                    <Trophy size={20} />
+                  </div>
+                  <Badge variant={getDifficultyVariant(challenge.difficulty)}>
+                    {challenge.difficulty}
+                  </Badge>
                 </div>
-                <Badge variant={getDifficultyVariant(challenge.difficulty)}>
-                  {challenge.difficulty}
-                </Badge>
+                <h3 className="mb-2 font-semibold text-[var(--text-primary)] transition-colors group-hover:text-accent">
+                  {challenge.title}
+                </h3>
+                <p className="mb-4 line-clamp-3 text-xs text-[var(--text-muted)]">
+                  {challenge.description}
+                </p>
               </div>
-              
-              <h3 className="font-semibold mb-2 group-hover:text-accent transition-colors">
-                {challenge.title}
-              </h3>
-              <p className="text-xs text-[var(--text-muted)] line-clamp-2 mb-4">
-                {challenge.description}
-              </p>
 
-              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-default)]">
-                <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
+              <div className="flex items-center justify-between gap-3 border-t border-[var(--border-default)] pt-4">
+                <div className="flex flex-wrap items-center gap-3 text-[10px] text-[var(--text-muted)]">
                   <span className="flex items-center gap-1"><Users size={12} /> {challenge.participantCount || challenge.participantsCount || 0}</span>
                   <span className="flex items-center gap-1"><Clock size={12} /> {challenge.duration || challenge.timeLimit || 'N/A'}</span>
                 </div>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="h-8 text-[10px]"
                   onClick={() => handleSolve(challenge)}
                 >
@@ -704,7 +714,7 @@ const ChallengesPage: React.FC = () => {
           <div className="space-y-5">
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_16rem] gap-4">
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className={`${challengeSectionClassName} flex flex-wrap items-center gap-2`}>
                   <Badge variant={getDifficultyVariant(selectedChallenge.difficulty)}>
                     {selectedChallenge.difficulty}
                   </Badge>
@@ -712,7 +722,7 @@ const ChallengesPage: React.FC = () => {
                   <Badge variant="outline">{selectedChallenge.xpReward || selectedChallenge.xp_reward || 0} XP</Badge>
                 </div>
 
-                <div>
+                <div className={challengeSectionClassName}>
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     <FileText size={16} />
                     Prompt
@@ -722,7 +732,7 @@ const ChallengesPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div>
+                <div className={challengeSectionClassName}>
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <h4 className="text-sm font-semibold flex items-center gap-2">
                       <Code2 size={16} />
@@ -762,8 +772,8 @@ const ChallengesPage: React.FC = () => {
                       role="alert"
                       className="mb-3 rounded-lg border border-warning/30 bg-warning/10 p-3"
                     >
-                      <p className="text-sm font-medium text-warning">Reset solution to starter code?</p>
-                      <p className="mt-1 text-xs leading-relaxed text-warning">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">Reset solution to starter code?</p>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
                         This replaces your current editor contents with the starter code for this challenge. It does not submit your work or change retry history.
                       </p>
                       <div className="mt-3 flex flex-wrap justify-end gap-2">
@@ -787,18 +797,18 @@ const ChallengesPage: React.FC = () => {
                     }}
                     rows={14}
                     spellCheck={false}
-                    className="w-full min-h-72 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4 font-mono text-xs leading-5 text-[var(--text-primary)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    className={challengeCodeFieldClassName}
                   />
                 </div>
               </div>
 
               <aside className="space-y-4">
-                <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4">
+                <div className={challengeSectionClassName}>
                   <h4 className="text-sm font-semibold mb-3">Sample Cases</h4>
                   {selectedTestCases.length > 0 ? (
                     <div className="space-y-3">
                       {selectedTestCases.slice(0, 4).map((testCase, index) => (
-                        <div key={testCase.id || index} className="rounded-md border border-[var(--border-default)] p-3">
+                        <div key={testCase.id || index} className={challengeInsetClassName}>
                           <p className="text-[10px] font-medium text-[var(--text-muted)] mb-1">Case {index + 1}</p>
                           {testCase.description && (
                             <p className="text-xs text-[var(--text-secondary)] mb-2">{testCase.description}</p>
@@ -830,7 +840,7 @@ const ChallengesPage: React.FC = () => {
                       {localCheckResults.length > 0 && (
                         <div className="mt-3 space-y-2">
                           {localCheckResults.map((result) => (
-                            <div key={result.id} className="rounded-md border border-[var(--border-default)] p-3">
+                            <div key={result.id} className={challengeInsetClassName}>
                               <div className="mb-2 flex items-center justify-between gap-2">
                                 <span className="text-xs font-medium text-[var(--text-primary)]">{result.label}</span>
                                 <Badge variant={getLocalCheckStatusVariant(result.status)}>
@@ -856,7 +866,7 @@ const ChallengesPage: React.FC = () => {
                 </div>
 
                 {lastSubmission && (
-                  <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4">
+                  <div className={challengeSectionClassName}>
                     <h4 className="text-sm font-semibold mb-3">Submission</h4>
                     <div className="flex items-center gap-2 mb-2">
                       <SubmissionStatusIcon status={lastSubmission.status} />
@@ -871,7 +881,7 @@ const ChallengesPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4">
+                <div className={challengeSectionClassName}>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h4 className="text-sm font-semibold">Retry History</h4>
                     <Button
@@ -899,7 +909,7 @@ const ChallengesPage: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       {submissionHistory.slice(0, 5).map((submission, index) => (
-                        <div key={submission.id || `${submission.challenge_id}-${index}`} className="rounded-md border border-[var(--border-default)] p-3">
+                        <div key={submission.id || `${submission.challenge_id}-${index}`} className={challengeInsetClassName}>
                           <div className="mb-1 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <SubmissionStatusIcon status={submission.status} />

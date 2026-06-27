@@ -47,7 +47,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <div className="pointer-events-none fixed bottom-20 left-4 right-4 z-50 flex max-h-32 flex-col gap-2 overflow-y-auto sm:bottom-4 sm:left-auto sm:w-[min(24rem,calc(100vw-2rem))] sm:max-h-[calc(100vh-2rem)]">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
         ))}
@@ -72,7 +72,11 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: () => void }> = ({ to
   };
 
   return (
-    <div className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border ${bgs[toast.type]} bg-[var(--bg-primary)]/95 backdrop-blur-md max-w-sm w-full animate-in slide-in-from-right fade-in duration-300`}>
+    <div
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      className={`pointer-events-auto flex w-full items-start gap-3 rounded-lg border ${bgs[toast.type]} bg-[var(--bg-panel)]/95 p-4 shadow-lg backdrop-blur-md animate-in slide-in-from-right fade-in duration-300`}
+    >
       <div className="shrink-0 mt-0.5">{icons[toast.type]}</div>
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium">{toast.title}</h4>

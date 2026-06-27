@@ -44,7 +44,7 @@ export const AuraImage: React.FC<AuraImageProps> = ({
       </AnimatePresence>
 
       {error ? (
-        <div className="flex items-center justify-center w-full h-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+        <div className="flex h-full w-full items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-muted)]">
           <ImageOff size={24} />
         </div>
       ) : (

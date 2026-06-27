@@ -16,6 +16,8 @@ interface SettingsViewProps {
   confirmPrepClear: () => void;
 }
 
+const secondaryButtonClassName = 'rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-4 py-2 text-xs font-semibold text-[var(--ext-text)] transition hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
+const dangerButtonClassName = 'rounded-lg border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] px-4 py-2 text-xs font-semibold text-[var(--ext-danger)] transition hover:bg-[var(--ext-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]';
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   isCloudSyncPlanOpen,
@@ -36,31 +38,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="max-w-xl space-y-8" id="opt-view-settings">
       <div className="space-y-2">
-        <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--ext-accent)]">
           <Settings2 className="h-4 w-4" />
           <span>Local Preferences</span>
         </div>
-        <h2 className="text-3xl font-extrabold font-outfit text-white tracking-tight">Companion Settings</h2>
-        <p className="text-slate-400 text-sm max-w-2xl">
+        <h2 className="text-3xl font-extrabold text-[var(--ext-text)]">Companion Settings</h2>
+        <p className="max-w-2xl text-sm text-[var(--ext-text-secondary)]">
           Configure browser-local sync status, reminder preferences, diagnostics storage, and prep-card reset controls.
         </p>
       </div>
 
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 space-y-5 shadow-xl">
-        <div className="flex items-center justify-between py-1.5">
+      <div className="space-y-5 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-6">
+        <div className="flex flex-col gap-3 py-1.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col space-y-0.5">
-            <span className="text-xs font-semibold text-white">TalentSphere Cloud Synchronization</span>
-            <span className="text-[10px] text-slate-400">Authenticated web sync is not connected yet; extension data stays in this browser.</span>
+            <span className="text-xs font-semibold text-[var(--ext-text)]">TalentSphere Cloud Synchronization</span>
+            <span className="text-[10px] text-[var(--ext-text-secondary)]">Authenticated web sync is not connected yet; extension data stays in this browser.</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950/70 px-2.5 py-1 text-[10px] font-semibold text-slate-300">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-2.5 py-1 text-[10px] font-semibold text-[var(--ext-text-secondary)]">
               <CloudOff className="h-3 w-3" />
               Local only
             </span>
             <button
               type="button"
               onClick={openCloudSyncPlan}
-              className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-1.5 text-[10px] font-semibold text-slate-300 transition hover:bg-slate-800"
+              className="rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-3 py-1.5 text-[10px] font-semibold text-[var(--ext-text)] transition hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
               id="review-cloud-sync-plan"
               aria-controls="cloud-sync-plan-review"
               aria-expanded={isCloudSyncPlanOpen}
@@ -73,12 +75,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {isCloudSyncPlanOpen && (
           <div
             role="status"
-            className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-4 space-y-3"
+            className="space-y-3 rounded-lg border border-[var(--ext-accent)] bg-[var(--ext-accent-muted)] p-4"
             id="cloud-sync-plan-review"
           >
             <div className="space-y-1">
-              <h4 className="text-xs font-semibold text-cyan-200">Cloud sync is not enabled yet</h4>
-              <p className="text-[10px] leading-relaxed text-cyan-100/80">
+              <h4 className="text-xs font-semibold text-[var(--ext-accent)]">Cloud sync is not enabled yet</h4>
+              <p className="text-[10px] leading-relaxed text-[var(--ext-text-secondary)]">
                 Tracked jobs, scanned drafts, prep cards, diagnostics logs, and local analytics remain browser-local. Future authenticated sync should require explicit review before importing or exporting extension records.
               </p>
             </div>
@@ -86,7 +88,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={closeCloudSyncPlan}
-                className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                className={secondaryButtonClassName}
               >
                 Close
               </button>
@@ -94,63 +96,63 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t border-slate-850 pt-4 py-1.5">
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--ext-border)] pt-4 py-1.5">
           <div className="flex flex-col space-y-0.5">
-            <span className="text-xs font-semibold text-white">Interview Reminder Preference</span>
-            <span className="text-[10px] text-slate-400">Store a local preference for future reminder workflows. Browser notifications are not scheduled yet.</span>
+            <span className="text-xs font-semibold text-[var(--ext-text)]">Interview Reminder Preference</span>
+            <span className="text-[10px] text-[var(--ext-text-secondary)]">Store a local preference for future reminder workflows. Browser notifications are not scheduled yet.</span>
           </div>
           <button
             type="button"
             onClick={() => setNotifications(curr => !curr)}
             aria-label="Toggle local interview reminder preference"
             aria-pressed={notifications}
-            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${
-              notifications ? 'bg-emerald-600' : 'bg-slate-800'
+            className={`flex h-6 w-10 cursor-pointer items-center rounded-full border p-1 transition focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
+              notifications ? 'border-[var(--ext-success)] bg-[var(--ext-success)]' : 'border-[var(--ext-border)] bg-[var(--ext-surface-muted)]'
             }`}
             id="toggle-notifications"
           >
-            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition duration-200 ${
+            <div className={`h-4 w-4 rounded-full bg-[var(--ext-surface)] transition duration-200 ${
               notifications ? 'translate-x-4' : 'translate-x-0'
             }`} />
           </button>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-850 pt-4 py-1.5">
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--ext-border)] pt-4 py-1.5">
           <div className="flex flex-col space-y-0.5">
-            <span className="text-xs font-semibold text-white">Store Local Usage Diagnostics</span>
-            <span className="text-[10px] text-slate-400">Keep a bounded local diagnostics queue in this browser. Export is manual and raw content is not stored.</span>
+            <span className="text-xs font-semibold text-[var(--ext-text)]">Store Local Usage Diagnostics</span>
+            <span className="text-[10px] text-[var(--ext-text-secondary)]">Keep a bounded local diagnostics queue in this browser. Export is manual and raw content is not stored.</span>
           </div>
           <button
             type="button"
             onClick={() => setAnalytics(curr => !curr)}
             aria-label="Toggle local usage diagnostics storage"
             aria-pressed={analytics}
-            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${
-              analytics ? 'bg-emerald-600' : 'bg-slate-800'
+            className={`flex h-6 w-10 cursor-pointer items-center rounded-full border p-1 transition focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] ${
+              analytics ? 'border-[var(--ext-success)] bg-[var(--ext-success)]' : 'border-[var(--ext-border)] bg-[var(--ext-surface-muted)]'
             }`}
             id="toggle-telemetry"
           >
-            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition duration-200 ${
+            <div className={`h-4 w-4 rounded-full bg-[var(--ext-surface)] transition duration-200 ${
               analytics ? 'translate-x-4' : 'translate-x-0'
             }`} />
           </button>
         </div>
       </div>
 
-      <div className="bg-slate-900/10 border border-slate-850 rounded-2xl p-5 flex items-center justify-between">
-        <div className="flex items-start space-x-3.5">
-          <div className="bg-slate-900 border border-slate-800 p-2 rounded-xl">
-            <Clock className="h-5 w-5 text-slate-400" />
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-5">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <div className="rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] p-2">
+            <Clock className="h-5 w-5 text-[var(--ext-text-muted)]" />
           </div>
-          <div>
-            <h4 className="text-xs font-semibold text-white">Interview Planner Reset</h4>
-            <p className="text-[10px] text-slate-500 mt-0.5">Clear locally saved prep cards after review. Tracker jobs, diagnostics, and settings stay unchanged.</p>
+          <div className="min-w-0">
+            <h4 className="text-xs font-semibold text-[var(--ext-text)]">Interview Planner Reset</h4>
+            <p className="mt-0.5 break-words text-[10px] text-[var(--ext-text-muted)]">Clear locally saved prep cards after review. Tracker jobs, diagnostics, and settings stay unchanged.</p>
           </div>
         </div>
         <button
           onClick={openPrepClearReview}
           disabled={!hasPrepCards}
-          className="bg-rose-950/40 hover:bg-rose-950/80 border border-rose-900/40 text-rose-400 text-xs font-semibold rounded-xl px-4 py-2 transition disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/30 disabled:text-slate-600"
+          className="shrink-0 rounded-lg border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] px-4 py-2 text-xs font-semibold text-[var(--ext-danger)] transition hover:bg-[var(--ext-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] disabled:cursor-not-allowed disabled:border-[var(--ext-border)] disabled:bg-[var(--ext-surface-muted)] disabled:text-[var(--ext-text-muted)]"
           id="reset-prep-cards-btn"
         >
           Clear Prep Cards
@@ -160,12 +162,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {isPrepClearReviewOpen && hasPrepCards && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 space-y-3"
+          className="space-y-3 rounded-lg border border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] p-5"
           id="settings-prep-clear-review"
         >
           <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-amber-200">Clear interview planner cards?</h4>
-            <p className="text-[10px] leading-relaxed text-amber-100/80">
+            <h4 className="text-xs font-semibold text-[var(--ext-warning)]">Clear interview planner cards?</h4>
+            <p className="text-[10px] leading-relaxed text-[var(--ext-text-secondary)]">
               This removes {prepCount} local prep {prepCount === 1 ? 'card' : 'cards'} from this browser. It does not clear tracked jobs, diagnostics analytics, scanned drafts, cloud-sync settings, or notification settings.
             </p>
           </div>
@@ -173,14 +175,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={cancelPrepClearReview}
-              className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+              className={secondaryButtonClassName}
             >
               Keep Cards
             </button>
             <button
               type="button"
               onClick={confirmPrepClear}
-              className="rounded-xl border border-rose-700/60 bg-rose-950/70 px-4 py-2 text-xs font-semibold text-rose-200 hover:bg-rose-900/80"
+              className={dangerButtonClassName}
             >
               Clear Cards
             </button>

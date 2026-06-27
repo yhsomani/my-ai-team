@@ -21,12 +21,14 @@ Use these documents in this order:
 | 7 | `docs/runbooks/INCIDENT_RUNBOOKS.md` | Current source-backed incident runbooks for source validation, CI, scheduler, extension, API, auth, security, data, and admin degradation failures |
 | 8 | `infra/observability/alerts/critical-alerts.json` and `infra/observability/dashboards/critical-flows-dashboard.json` | Source-level critical alert and dashboard coverage catalogs |
 | 9 | `docs/PRODUCT_UX_AUTOMATION_AUDIT.md` | Running implementation history and UX automation audit notes |
-| 10 | `docs/MODULE_MANIFEST.md` | Source ownership, infrastructure, generated/dev artifact, and documentation lifecycle validation |
-| 11 | `docs/adr/ADR-001-primary-identity-provider.md` | Accepted primary identity-provider decision and token-contract migration plan |
-| 12 | `docs/adr/ADR-002-backend-topology.md` | Accepted backend topology decision: modular monolith first with extractable service boundaries |
-| 13 | `docs/adr/ADR-003-schema-authority.md` | Accepted schema authority decision: migration-first Supabase/Postgres with generated TypeScript types and backend validation |
-| 14 | `docs/adr/ADR-004-messaging-boundary.md` | Accepted messaging boundary decision: one messaging domain boundary with chat-service orphaned until retirement or adapter merge |
-| 15 | `docs/adr/ADR-005-payment-mode.md` | Accepted payment mode decision: explicit demo billing mode until provider-backed checkout and webhook-owned state are verified |
+| 10 | `docs/UX_AUDIT_CHECKLIST.md` | Current route, dashboard, and major-screen UX audit checklist for validated UI restructuring |
+| 11 | `docs/DESIGN_SYSTEM.md` | Current design-system implementation guide for tokens, shared components, layout, navigation, and interaction patterns |
+| 12 | `docs/MODULE_MANIFEST.md` | Source ownership, infrastructure, generated/dev artifact, and documentation lifecycle validation |
+| 13 | `docs/adr/ADR-001-primary-identity-provider.md` | Accepted primary identity-provider decision and token-contract migration plan |
+| 14 | `docs/adr/ADR-002-backend-topology.md` | Accepted backend topology decision: modular monolith first with extractable service boundaries |
+| 15 | `docs/adr/ADR-003-schema-authority.md` | Accepted schema authority decision: migration-first Supabase/Postgres with generated TypeScript types and backend validation |
+| 16 | `docs/adr/ADR-004-messaging-boundary.md` | Accepted messaging boundary decision: one messaging domain boundary with chat-service orphaned until retirement or adapter merge |
+| 17 | `docs/adr/ADR-005-payment-mode.md` | Accepted payment mode decision: explicit demo billing mode until provider-backed checkout and webhook-owned state are verified |
 
 Older architecture docs remain useful as historical context, but they should not be treated as current completion evidence unless this index confirms the same claim.
 
@@ -36,6 +38,7 @@ Older architecture docs remain useful as historical context, but they should not
 |---|---|---|
 | Frontend runtime | `apps/frontend` is the active React/Vite app; `apps/frontend/src/src` is not present | Single active frontend source tree |
 | Frontend package manager | Root `package.json` has npm workspace scripts and root `package-lock.json`; no root `pnpm-lock.yaml` | Use npm commands unless a task explicitly targets another package manager |
+| Frontend UX/design system | `docs/UX_AUDIT_CHECKLIST.md`, `docs/DESIGN_SYSTEM.md`, `scripts/validate-ui-design-system.mjs`, `apps/frontend/src/navigation/featureOwnership.ts`, `apps/frontend/tests/visual-layout.spec.ts`, `apps/frontend/tests/accessibility-semantics.spec.ts`, `apps/frontend/tests/keyboard-navigation.spec.ts`, `apps/frontend/tests/candidate-review.spec.ts`, `apps/frontend/tests/messaging-workflow.spec.ts`, `apps/frontend/src/index.css`, shared UI primitives, `LandingPage.tsx`, and `routeRegistry.ts` are present | Redesign execution is governed by a current UX audit checklist, design-system guide, source-level UI validator, feature ownership IA contract, major-route desktop/mobile layout audit, major-route accessibility semantics audit, focused keyboard navigation guardrail covering command search, notifications including account read/load-more actions, mobile nav, tabs, modals, and auth forms, a Candidates workflow contract covering application pagination/search/focus and review actions, plus a Messaging workflow contract that includes attachment-link keyboard focus order, visible mark-read, and older-history loading; implementation scope now includes shell/primitives, public/auth routes, role dashboards, major workspaces, legacy exported helper normalization, extension token hover cleanup, and documentation, with route/dashboard removal deferred until validated |
 | Companion extension | `chrome-extension-project` exists with its own package lock and Manifest V3 code; `npm run test:messaging` validates content scan extraction and background/content message wiring, `npm run test:portal-fixtures` validates LinkedIn/Indeed/Glassdoor selector fixture parsing, `npm run test:storage-migrations` validates versioned local storage migration logic and install/update wiring, `npm run test:contract` validates MV3 permissions/hosts, local-only sync posture, bounded diagnostics, metadata allowlists, and raw resume/job diagnostics exclusion, and `npm run test:runtime-smoke` validates the built artifact, host-mapped portal fixture tabs, popup, local storage, and background messaging in a live Chromium-compatible MV3 runtime with a Node 20-compatible CDP transport | Separate local extension companion, not cloud-synced to web app; source-level portal fixture parsing, host-mapped runtime portal fixture execution, manifest icons, and Chromium runtime popup/storage/background smoke are verified and wired into the extension CI job, while GitHub-hosted browser availability, live public-portal drift, Google Chrome-specific unpacked registration, Web Store packaging, and published behavior remain pending |
 | Product data access | Frontend services use Supabase directly for many workflows and API Gateway/Spring fallbacks for others | Explicit hybrid, not a pure backend-owned API layer |
 | Schema authority | `data-ownership-manifest.json`, `supabase-schema.sql`, `infra/db/migrations/0001_initial_baseline.sql`, `infra/db/generated/database.types.ts`, `infra/db/legacy-schema-disposition.json`, `apps/frontend/src/lib/supabaseClient.ts`, `scripts/validate-typed-supabase-boundary.mjs`, `infra/supabase_master.sql`, and ADR-003 are present | ADR-003 accepts migration-first Supabase/Postgres authority with generated TypeScript types and backend validation; the initial baseline migration, source-derived relationship-aware generated types, frontend `typedSupabase` boundary, generated RPC typing, legacy/duplicate table dispositions, trigger insert-column validation, and typed billing/challenge/application/settings service migrations are source-validated, while live Supabase migration execution, smaller domain-ordered migrations, live Supabase-generated relationship types, live RLS behavior, query-plan/index validation, and remaining service-by-service typed repository adoption remain pending |
@@ -100,6 +103,10 @@ npm run validate:infrastructure-manifest
 npm run validate:docs-lifecycle
 npm run validate:runbooks
 npm run validate:observability-contract
+npm run validate:ui-design-system
+npm run test:ia
+npm run test:a11y
+npm run test:keyboard
 npm run validate:backend-topology-adr
 npm run validate:schema-authority-adr
 npm run report:db-types

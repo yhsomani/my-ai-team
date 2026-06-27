@@ -30,23 +30,23 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
+        <main className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
             <div className="w-full max-w-sm space-y-8">
                 {/* Logo & Heading */}
                 <div className="text-center space-y-4">
-                    <Link to="/" className="inline-flex">
-                        <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white">
+                    <Link to="/" className="inline-flex" aria-label="TalentSphere home">
+                        <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-accent-foreground">
                             <Layers size={20} />
                         </div>
                     </Link>
                     <div>
-                        <h1 className="text-xl font-semibold tracking-tight">Sign in to TalentSphere</h1>
+                        <h1 className="text-xl font-semibold">Sign in to TalentSphere</h1>
                         <p className="text-sm text-[var(--text-secondary)] mt-1">Enter your credentials to continue</p>
                     </div>
                 </div>
 
                 {/* Login Card */}
-                <div className="p-6 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)]">
+                <div className="p-6 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]">
                     {error && (
                         <div className="mb-4 p-3 rounded-lg bg-destructive-muted border border-destructive/20" data-testid="error-message">
                             <p className="text-sm text-destructive">{error}</p>
@@ -67,12 +67,13 @@ const LoginPage: React.FC = () => {
 
                         <div>
                             <div className="flex justify-between items-center mb-1.5">
-                                <label className="text-sm font-medium text-[var(--text-primary)]">Password</label>
+                                <label htmlFor="login-password" className="text-sm font-medium text-[var(--text-primary)]">Password</label>
                                 <button type="button" className="text-xs text-accent hover:text-accent-hover transition-colors">
                                     Forgot password?
                                 </button>
                             </div>
                             <Input
+                                id="login-password"
                                 icon={<Lock size={16} />}
                                 type="password"
                                 required
@@ -128,7 +129,7 @@ const LoginPage: React.FC = () => {
                     </Link>
                 </p>
             </div>
-        </div>
+        </main>
     );
 };
 

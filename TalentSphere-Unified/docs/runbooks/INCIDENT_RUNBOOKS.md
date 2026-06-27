@@ -426,7 +426,7 @@ Resolution:
 
 Runtime follow-up:
 
-Browser E2E coverage, deployed frontend behavior, and production CDN behavior are Not verified from the codebase in this local loop.
+Local Playwright coverage now verifies auth-page rendering, primary navigation, mobile bottom navigation priority, route/access role gates, dashboard/jobs/learning navigation, and deterministic local `/api/*` handling across Chromium, Firefox, and WebKit. Hosted CI execution of the E2E step, deployed frontend behavior, live Supabase/backend data, and production CDN behavior remain Not verified from the codebase in this local loop.
 
 ## Incident: CI Security Scan Failure
 

@@ -86,23 +86,23 @@ const RegisterPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
+        <main className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
             <div className="w-full max-w-md space-y-8">
                 {/* Logo & Heading */}
                 <div className="text-center space-y-4">
-                    <Link to="/" className="inline-flex">
-                        <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white">
+                    <Link to="/" className="inline-flex" aria-label="TalentSphere home">
+                        <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-accent-foreground">
                             <Layers size={20} />
                         </div>
                     </Link>
                     <div>
-                        <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
+                        <h1 className="text-xl font-semibold">Create your account</h1>
                         <p className="text-sm text-[var(--text-secondary)] mt-1">Get started with TalentSphere</p>
                     </div>
                 </div>
 
                 {/* Registration Card */}
-                <div className="p-6 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)]">
+                <div className="p-6 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]">
                     {error && (
                         <div className="mb-4 p-3 rounded-lg bg-destructive-muted border border-destructive/20" data-testid="error-message">
                             <p className="text-sm text-destructive">{error}</p>
@@ -207,7 +207,7 @@ const RegisterPage: React.FC = () => {
                     </Link>
                 </p>
             </div>
-        </div>
+        </main>
     );
 };
 

@@ -17,7 +17,7 @@ export function PageTemplate({
   showHeader = true,
 }: PageTemplateProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
       {showHeader && (
         <PageHeader
           title={title}
@@ -25,7 +25,7 @@ export function PageTemplate({
           actions={actions}
         />
       )}
-      <main className="p-6">
+      <main className="min-w-0">
         {children}
       </main>
     </div>

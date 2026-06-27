@@ -35,23 +35,23 @@ No unmatched frontend API client calls were found against active controller rout
 | --- | --- | --- | --- | --- |
 | POST | /api/v1/files/upload | POST /api/v1/files/upload | apps/frontend/src/services/fileUploadService.ts:46 | upload (services/file-service/src/main/java/com/talentsphere/file/controller/FileController.java:22) |
 | DELETE | /api/v1/files | DELETE /api/v1/files | apps/frontend/src/services/fileUploadService.ts:69 | delete (services/file-service/src/main/java/com/talentsphere/file/controller/FileController.java:40) |
-| GET | /api/v1/jobs | GET /api/v1/jobs | apps/frontend/src/services/jobService.ts:308 | getActiveJobs (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:18) |
-| GET | /api/v1/jobs/{id} | GET /api/v1/jobs/{id} | apps/frontend/src/services/jobService.ts:644 | getJobById (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:52) |
-| GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:247 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
-| GET | /api/v1/lms/courses | GET /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:281 | list (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:21) |
-| GET | /api/v1/lms/courses/{courseId} | GET /api/v1/lms/courses/{courseId} | apps/frontend/src/services/lmsService.ts:342 | getById (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:32) |
-| GET | /api/v1/lms/courses/{courseId}/lessons | GET /api/v1/lms/courses/{courseId}/lessons | apps/frontend/src/services/lmsService.ts:348 | getLessons (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:42) |
-| GET | /api/v1/lms/courses/slug/{slug} | GET /api/v1/lms/courses/slug/{slug} | apps/frontend/src/services/lmsService.ts:380 | getBySlug (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:37) |
-| POST | /api/v1/lms/courses/{courseId}/enroll | POST /api/v1/lms/courses/{courseId}/enroll | apps/frontend/src/services/lmsService.ts:386 | enroll (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:47) |
-| GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:404 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
-| POST | /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | POST /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | apps/frontend/src/services/lmsService.ts:420 | completeLesson (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:63) |
-| GET | /api/v1/lms/courses/{courseId}/enrollment | GET /api/v1/lms/courses/{courseId}/enrollment | apps/frontend/src/services/lmsService.ts:878 | getEnrollment (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:71) |
-| POST | /api/v1/lms/courses | POST /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:1015 | create (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:26) |
-| GET | /api/v1/networking/suggestions/{encodeURIComponent(userId)} | GET /api/v1/networking/suggestions/{userId} | apps/frontend/src/services/networkingService.ts:229 | getSuggestions (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:39) |
-| GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:404 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
-| GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:472 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
-| GET | /api/v1/networking/connections/{param} | GET /api/v1/networking/connections/{userId} | apps/frontend/src/services/networkingService.ts:649 | getConnections (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:34) |
-| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:357 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
+| GET | /api/v1/jobs | GET /api/v1/jobs | apps/frontend/src/services/jobService.ts:363 | getActiveJobs (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:18) |
+| GET | /api/v1/jobs/{id} | GET /api/v1/jobs/{id} | apps/frontend/src/services/jobService.ts:707 | getJobById (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:52) |
+| GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:312 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
+| GET | /api/v1/lms/courses | GET /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:346 | list (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:21) |
+| GET | /api/v1/lms/courses/{courseId} | GET /api/v1/lms/courses/{courseId} | apps/frontend/src/services/lmsService.ts:407 | getById (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:32) |
+| GET | /api/v1/lms/courses/{courseId}/lessons | GET /api/v1/lms/courses/{courseId}/lessons | apps/frontend/src/services/lmsService.ts:413 | getLessons (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:42) |
+| GET | /api/v1/lms/courses/slug/{slug} | GET /api/v1/lms/courses/slug/{slug} | apps/frontend/src/services/lmsService.ts:445 | getBySlug (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:37) |
+| POST | /api/v1/lms/courses/{courseId}/enroll | POST /api/v1/lms/courses/{courseId}/enroll | apps/frontend/src/services/lmsService.ts:451 | enroll (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:47) |
+| GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:469 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
+| POST | /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | POST /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | apps/frontend/src/services/lmsService.ts:485 | completeLesson (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:63) |
+| GET | /api/v1/lms/courses/{courseId}/enrollment | GET /api/v1/lms/courses/{courseId}/enrollment | apps/frontend/src/services/lmsService.ts:886 | getEnrollment (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:71) |
+| POST | /api/v1/lms/courses | POST /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:1033 | create (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:26) |
+| GET | /api/v1/networking/suggestions/{encodeURIComponent(userId)} | GET /api/v1/networking/suggestions/{userId} | apps/frontend/src/services/networkingService.ts:259 | getSuggestions (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:39) |
+| GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:434 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
+| GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:507 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
+| GET | /api/v1/networking/connections/{param} | GET /api/v1/networking/connections/{userId} | apps/frontend/src/services/networkingService.ts:692 | getConnections (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:34) |
+| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:380 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
 
 ## Controller Routes Without Gateway Prefix
 
@@ -218,7 +218,7 @@ No legacy `/api/*` security matcher paths were found.
 | notifications | apps/frontend/src/services/notificationService.ts |
 | payments | apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts |
 | product_analytics_events | apps/frontend/src/lib/productAnalytics.ts, apps/frontend/src/services/adminService.ts |
-| profiles | apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/adminService.ts, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/gamificationService.ts, apps/frontend/src/services/messagingService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/recruiterService.ts, apps/frontend/src/services/settingsService.ts |
+| profiles | apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/adminService.ts, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/messagingService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/recruiterService.ts, apps/frontend/src/services/settingsService.ts |
 | resume_artifacts | apps/frontend/src/services/profileService.ts |
 | resume_export_events | apps/frontend/src/services/profileService.ts |
 | saved_job_searches | apps/frontend/src/services/jobService.ts |
@@ -227,7 +227,7 @@ No legacy `/api/*` security matcher paths were found.
 | subscriptions | apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts |
 | system_settings | apps/frontend/src/services/adminService.ts |
 | user_badges | apps/frontend/src/services/gamificationService.ts |
-| user_profiles | apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts |
+| user_profiles | apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/settingsService.ts |
 | xp_transactions | apps/frontend/src/services/gamificationService.ts |
 
 ## Follow-Up Priorities

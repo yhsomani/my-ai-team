@@ -9,7 +9,7 @@ const NotFound: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
             <div className="max-w-md w-full text-center space-y-6">
-                <div className="text-7xl font-bold tracking-tighter text-[var(--text-primary)]">
+                <div className="text-7xl font-bold text-[var(--text-primary)]">
                     4<span className="text-accent">0</span>4
                 </div>
                 <div className="space-y-2">

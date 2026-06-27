@@ -115,6 +115,17 @@ const parseCompanyEmployeeCount = (value: string) => {
 const maxJobPostDraftHistory = 5;
 const maxStoredJobPostDraftHistory = 50;
 const unsavedJobPostDraftKey = 'new';
+const postJobPanelClassName = 'surface-panel p-4';
+const postJobInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
+const postJobLabelClassName = 'mb-1 block text-sm font-medium text-[var(--text-secondary)]';
+const postJobSmallLabelClassName = 'mb-1 block text-xs font-medium text-[var(--text-secondary)]';
+const postJobMetaLabelClassName = 'text-xs font-semibold uppercase text-[var(--text-muted)]';
+const postJobInputClassName = 'h-10 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
+const postJobInputWithIconClassName = 'h-10 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] pl-10 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
+const postJobTextareaClassName = 'min-h-28 w-full resize-none rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-2 text-sm leading-6 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
+const postJobTextareaWithIconClassName = 'min-h-28 w-full resize-none rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] py-2 pl-10 pr-3 text-sm leading-6 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
+const postJobIconClassName = 'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]';
+const postJobTopIconClassName = 'pointer-events-none absolute left-3 top-3 h-4 w-4 text-[var(--text-muted)]';
 
 const formatDraftHistoryTime = (value: string) => (
   new Intl.DateTimeFormat(undefined, {
@@ -970,18 +981,18 @@ const PostJobPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
       />
 
       {isCompanySetupOnboarding && !isReviewing && (
-        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+        <div className={postJobPanelClassName}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">Recruiter onboarding</p>
-              <p className="mt-1 text-sm leading-6 text-slate-300">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Recruiter onboarding</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
                 Set up reusable company context for job drafts and candidate review. Creating or updating company details here does not save a job draft, publish a role, contact candidates, or send notifications.
               </p>
             </div>
@@ -1025,21 +1036,21 @@ const PostJobPage: React.FC = () => {
         </div>
       </AuraModal>
 
-      <Card className="p-8">
+      <Card className="p-4 sm:p-5">
         <form onSubmit={isReviewing ? handleSaveDraft : handleReviewDraft} className="space-y-6">
           {isReviewing ? (
             <section aria-labelledby="job-draft-review-heading" className="space-y-5">
-              <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-3 border-b border-[var(--border-default)] pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-accent">Draft review</p>
-                  <h2 id="job-draft-review-heading" className="mt-1 text-2xl font-semibold text-white">
+                  <p className="text-xs font-semibold uppercase text-accent">Draft review</p>
+                  <h2 id="job-draft-review-heading" className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">
                     {reviewSummary.title}
                   </h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
                     {reviewSummary.jobTypeLabel} - {reviewSummary.location}
                   </p>
                 </div>
-                <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-sm font-medium text-amber-200">
+                <span className="inline-flex w-fit items-center gap-2 rounded-md border border-warning/30 bg-warning-muted px-3 py-1 text-sm font-medium text-warning">
                   <CheckCircle2 size={16} />
                   {isEditingDraft ? 'Updates Draft' : 'Saves as Draft'}
                 </span>
@@ -1047,32 +1058,32 @@ const PostJobPage: React.FC = () => {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Salary range</p>
-                  <p className="mt-1 text-sm text-slate-200">{reviewSummary.salaryLabel}</p>
+                  <p className={postJobMetaLabelClassName}>Salary range</p>
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">{reviewSummary.salaryLabel}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requirements</p>
-                  <p className="mt-1 text-sm text-slate-200">{reviewSummary.requirementCount} listed</p>
+                  <p className={postJobMetaLabelClassName}>Requirements</p>
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">{reviewSummary.requirementCount} listed</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Company</p>
-                  <p className="mt-1 text-sm text-slate-200">{companySummary.label}</p>
+                  <p className={postJobMetaLabelClassName}>Company</p>
+                  <p className="mt-1 text-sm text-[var(--text-primary)]">{companySummary.label}</p>
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</p>
-                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">
+                <p className={postJobMetaLabelClassName}>Description</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[var(--text-secondary)]">
                   {reviewSummary.descriptionPreview}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requirement preview</p>
-                <ul className="mt-2 space-y-2 text-sm text-slate-300">
+                <p className={postJobMetaLabelClassName}>Requirement preview</p>
+                <ul className="mt-2 space-y-2 text-sm text-[var(--text-secondary)]">
                   {reviewSummary.requirements.map((requirement) => (
                     <li key={requirement} className="flex gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-success" />
                       <span>{requirement}</span>
                     </li>
                   ))}
@@ -1080,23 +1091,23 @@ const PostJobPage: React.FC = () => {
               </div>
 
               {isEditingDraft && (
-                <div className="rounded-xl border border-accent/30 bg-accent/10 p-4">
+                <div className={postJobInsetClassName}>
                   <p className="text-sm font-semibold text-accent">Changes to save</p>
                   {editChangeSummary.length > 0 ? (
-                    <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                    <ul className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
                       {editChangeSummary.map(change => (
                         <li key={change.label} className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
-                          <span className="font-medium text-white">{change.label}</span>
+                          <span className="font-medium text-[var(--text-primary)]">{change.label}</span>
                           <span>
-                            <span className="text-slate-400">{change.before}</span>
-                            <span className="px-2 text-slate-500">to</span>
+                            <span className="text-[var(--text-secondary)]">{change.before}</span>
+                            <span className="px-2 text-[var(--text-muted)]">to</span>
                             <span>{change.after}</span>
                           </span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 text-sm text-slate-300">
+                    <p className="mt-2 text-sm text-[var(--text-secondary)]">
                       No field changes detected. Save Changes will leave the draft content unchanged.
                     </p>
                   )}
@@ -1104,18 +1115,18 @@ const PostJobPage: React.FC = () => {
               )}
 
               {duplicateMatches.length > 0 && (
-                <div role="alert" className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4">
-                  <p className="text-sm font-semibold text-amber-100">Possible duplicate job</p>
-                  <p className="mt-1 text-sm text-amber-100/80">
+                <div role="alert" className="rounded-md border border-warning/30 bg-warning-muted p-4">
+                  <p className="text-sm font-semibold text-warning">Possible duplicate job</p>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
                     {duplicateMatches.length === 1
                       ? 'An active draft or published job already matches this title, location, and job type.'
                       : `${duplicateMatches.length} active drafts or published jobs already match this title, location, and job type.`}
                   </p>
-                  <ul className="mt-3 space-y-2 text-sm text-amber-50/90">
+                  <ul className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
                     {duplicateMatches.map((match) => (
                       <li key={match.id} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                         <span>{match.title} - {match.location} - {match.jobTypeLabel}</span>
-                        <span className="text-xs font-semibold uppercase tracking-wide">{match.status}</span>
+                        <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">{match.status}</span>
                       </li>
                     ))}
                   </ul>
@@ -1124,22 +1135,22 @@ const PostJobPage: React.FC = () => {
             </section>
           ) : (
             <>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className={postJobPanelClassName}>
                 {editDraftStatus && (
-                  <p role="status" aria-live="polite" className="mb-3 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
+                  <p role="status" aria-live="polite" className="mb-3 rounded-md border border-accent/30 bg-accent-muted px-3 py-2 text-xs text-accent">
                     {editDraftStatus}
                   </p>
                 )}
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="min-w-0 flex-1">
-                    <label htmlFor="job-template-select" className="block text-sm font-medium text-slate-300 mb-1">
+                    <label htmlFor="job-template-select" className={postJobLabelClassName}>
                       Job templates
                     </label>
                     <select
                       id="job-template-select"
                       value={selectedTemplateId}
                       onChange={(event) => setSelectedTemplateId(event.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                      className={postJobInputClassName}
                     >
                       <option value="">Select a saved template</option>
                       {templates.map(template => (
@@ -1148,7 +1159,7 @@ const PostJobPage: React.FC = () => {
                         </option>
                       ))}
                     </select>
-                    <p role="status" aria-live="polite" className="mt-2 text-xs text-slate-400">
+                    <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--text-secondary)]">
                       {templateStatus || 'Templates sync to your recruiter account when available and remain editable drafts. Saving still requires review.'}
                     </p>
                   </div>
@@ -1188,26 +1199,26 @@ const PostJobPage: React.FC = () => {
               </div>
 
               {(draftHistory.length > 0 || draftHistoryStatus) && (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className={postJobPanelClassName}>
                   <div className="flex items-center gap-2">
-                    <History size={16} className="text-slate-400" />
-                    <p className="text-sm font-medium text-slate-200">Recent draft versions</p>
+                    <History size={16} className="text-[var(--text-secondary)]" />
+                    <p className="text-sm font-medium text-[var(--text-primary)]">Recent draft versions</p>
                   </div>
                   {draftHistoryStatus && (
-                    <p role="status" aria-live="polite" className="mt-2 text-xs text-slate-400">
+                    <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--text-secondary)]">
                       {draftHistoryStatus}
                     </p>
                   )}
                   {draftHistory.length > 0 && (
                     <div className="mt-3 space-y-2">
                       {draftHistory.map(entry => (
-                        <div key={entry.id} className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div key={entry.id} className="flex flex-col gap-3 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-white">{entry.title || 'Untitled role'}</p>
-                            <p className="text-xs text-slate-400">
+                            <p className="truncate text-sm font-medium text-[var(--text-primary)]">{entry.title || 'Untitled role'}</p>
+                            <p className="text-xs text-[var(--text-secondary)]">
                               {getDraftHistoryReasonLabel(entry.reason)} - {entry.location || 'No location'} - {formatDraftHistoryTime(entry.updatedAt)}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-[var(--text-muted)]">
                               {entry.persistedTo === 'server' ? 'Account synced' : 'Local only'}
                             </p>
                           </div>
@@ -1227,94 +1238,94 @@ const PostJobPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className={postJobPanelClassName}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 gap-3">
-                    <Building2 className="mt-0.5 h-5 w-5 flex-none text-slate-400" />
+                    <Building2 className="mt-0.5 h-5 w-5 flex-none text-[var(--text-secondary)]" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-200">Company context</p>
-                      <p className="mt-1 text-sm text-white">{companySummary.label}</p>
-                      <p role="status" aria-live="polite" className="mt-1 text-xs text-slate-400">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">Company context</p>
+                      <p className="mt-1 text-sm text-[var(--text-primary)]">{companySummary.label}</p>
+                      <p role="status" aria-live="polite" className="mt-1 text-xs text-[var(--text-secondary)]">
                         {companyStatus || companySummary.detail}
                       </p>
                     </div>
                   </div>
                   {companyContext?.id && (
-                    <label htmlFor="attach-company-context" className="flex items-center gap-2 text-sm text-slate-300">
+                    <label htmlFor="attach-company-context" className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                       <input
                         id="attach-company-context"
                         type="checkbox"
                         checked={attachCompany}
                         onChange={(event) => updateCompanyAttachment(event.target.checked)}
-                        className="h-4 w-4 rounded border-white/20 bg-white/10 text-accent focus:ring-accent"
+                        className="h-4 w-4 rounded border-[var(--border-default)] bg-[var(--bg-primary)] text-accent focus:ring-accent"
                       />
                       Attach company
                     </label>
                   )}
                 </div>
 
-                <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
+                <div className="mt-4 space-y-3 border-t border-[var(--border-default)] pt-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-200">Company profile details</p>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">Company profile details</p>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
                         {companyCompletion.isComplete
                           ? 'Company profile details are complete.'
                           : `Missing ${companyCompletion.missingFields.join(', ')}.`}
                       </p>
                     </div>
-                    <span className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
+                    <span className="inline-flex w-fit items-center rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
                       {companyCompletion.percent}% complete
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="company-name" className="block text-xs font-medium text-slate-300 mb-1">Company Name</label>
+                      <label htmlFor="company-name" className={postJobSmallLabelClassName}>Company Name</label>
                       <input
                         id="company-name"
                         type="text"
                         value={companyDraft.name}
                         onChange={(event) => updateCompanyDraft({ name: event.target.value })}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputClassName}
                         placeholder="e.g. Acme Labs"
                       />
                     </div>
                     <div>
-                      <label htmlFor="company-industry" className="block text-xs font-medium text-slate-300 mb-1">Industry</label>
+                      <label htmlFor="company-industry" className={postJobSmallLabelClassName}>Industry</label>
                       <input
                         id="company-industry"
                         type="text"
                         value={companyDraft.industry}
                         onChange={(event) => updateCompanyDraft({ industry: event.target.value })}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputClassName}
                         placeholder="e.g. Software"
                       />
                     </div>
                     <div>
-                      <label htmlFor="company-location" className="block text-xs font-medium text-slate-300 mb-1">Company Location</label>
+                      <label htmlFor="company-location" className={postJobSmallLabelClassName}>Company Location</label>
                       <input
                         id="company-location"
                         type="text"
                         value={companyDraft.location}
                         onChange={(event) => updateCompanyDraft({ location: event.target.value })}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputClassName}
                         placeholder={formData.location || 'e.g. New York'}
                       />
                     </div>
                     <div>
-                      <label htmlFor="company-website" className="block text-xs font-medium text-slate-300 mb-1">Website</label>
+                      <label htmlFor="company-website" className={postJobSmallLabelClassName}>Website</label>
                       <input
                         id="company-website"
                         type="url"
                         value={companyDraft.website}
                         onChange={(event) => updateCompanyDraft({ website: event.target.value })}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputClassName}
                         placeholder="https://example.com"
                       />
                     </div>
                     <div>
-                      <label htmlFor="company-employee-count" className="block text-xs font-medium text-slate-300 mb-1">Employee Count</label>
+                      <label htmlFor="company-employee-count" className={postJobSmallLabelClassName}>Employee Count</label>
                       <input
                         id="company-employee-count"
                         type="number"
@@ -1322,25 +1333,25 @@ const PostJobPage: React.FC = () => {
                         inputMode="numeric"
                         value={companyDraft.employeeCount}
                         onChange={(event) => updateCompanyDraft({ employeeCount: event.target.value })}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputClassName}
                         placeholder="e.g. 250"
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label htmlFor="company-description" className="block text-xs font-medium text-slate-300 mb-1">Description</label>
+                      <label htmlFor="company-description" className={postJobSmallLabelClassName}>Description</label>
                       <textarea
                         id="company-description"
                         value={companyDraft.description}
                         onChange={(event) => updateCompanyDraft({ description: event.target.value })}
                         rows={3}
-                        className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobTextareaClassName}
                         placeholder="Short company summary for candidates"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p role="status" aria-live="polite" className="text-xs text-slate-400">
+                    <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
                       {companySetupStatus || (companyContext?.id
                         ? 'Company profile changes save separately from this job draft.'
                         : 'Create company context here, then review the draft before saving.')}
@@ -1362,32 +1373,32 @@ const PostJobPage: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="job-title" className="block text-sm font-medium text-slate-300 mb-1">Job Title</label>
+                  <label htmlFor="job-title" className={postJobLabelClassName}>Job Title</label>
                   <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                    <Briefcase className={postJobIconClassName} />
                     <input
                       id="job-title"
                       type="text"
                       required
                       value={formData.title}
                       onChange={(e) => updateFormData({ title: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                      className={postJobInputWithIconClassName}
                       placeholder="e.g. Senior Frontend Engineer"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="job-description" className="block text-sm font-medium text-slate-300 mb-1">Job Description</label>
+                  <label htmlFor="job-description" className={postJobLabelClassName}>Job Description</label>
                   <div className="relative">
-                    <FileText className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
+                    <FileText className={postJobTopIconClassName} />
                     <textarea
                       id="job-description"
                       required
                       rows={4}
                       value={formData.description}
                       onChange={(e) => updateFormData({ description: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent resize-none"
+                      className={postJobTextareaWithIconClassName}
                       placeholder="Describe the role and responsibilities..."
                     />
                   </div>
@@ -1395,28 +1406,28 @@ const PostJobPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="job-location" className="block text-sm font-medium text-slate-300 mb-1">Location</label>
+                    <label htmlFor="job-location" className={postJobLabelClassName}>Location</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                      <MapPin className={postJobIconClassName} />
                       <input
                         id="job-location"
                         type="text"
                         required
                         value={formData.location}
                         onChange={(e) => updateFormData({ location: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputWithIconClassName}
                         placeholder="e.g. Remote, NY, etc."
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="job-type" className="block text-sm font-medium text-slate-300 mb-1">Job Type</label>
+                    <label htmlFor="job-type" className={postJobLabelClassName}>Job Type</label>
                     <select
                       id="job-type"
                       value={formData.jobType}
                       onChange={(e) => updateFormData({ jobType: e.target.value })}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-accent appearance-none"
+                      className={`${postJobInputClassName} appearance-none`}
                     >
                       <option value="FULL_TIME">Full Time</option>
                       <option value="PART_TIME">Part Time</option>
@@ -1428,30 +1439,30 @@ const PostJobPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="job-salary-min" className="block text-sm font-medium text-slate-300 mb-1">Min Salary (USD)</label>
+                    <label htmlFor="job-salary-min" className={postJobLabelClassName}>Min Salary (USD)</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                      <DollarSign className={postJobIconClassName} />
                       <input
                         id="job-salary-min"
                         type="number"
                         value={formData.salaryMin}
                         onChange={(e) => updateFormData({ salaryMin: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputWithIconClassName}
                         placeholder="e.g. 100000"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="job-salary-max" className="block text-sm font-medium text-slate-300 mb-1">Max Salary (USD)</label>
+                    <label htmlFor="job-salary-max" className={postJobLabelClassName}>Max Salary (USD)</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                      <DollarSign className={postJobIconClassName} />
                       <input
                         id="job-salary-max"
                         type="number"
                         value={formData.salaryMax}
                         onChange={(e) => updateFormData({ salaryMax: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent"
+                        className={postJobInputWithIconClassName}
                         placeholder="e.g. 150000"
                       />
                     </div>
@@ -1459,14 +1470,14 @@ const PostJobPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="job-requirements" className="block text-sm font-medium text-slate-300 mb-1">Requirements (One per line)</label>
+                  <label htmlFor="job-requirements" className={postJobLabelClassName}>Requirements (One per line)</label>
                   <textarea
                     id="job-requirements"
                     rows={4}
                     required
                     value={formData.requirements}
                     onChange={(e) => updateFormData({ requirements: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-accent resize-none"
+                    className={postJobTextareaClassName}
                     placeholder="- 5+ years React experience&#10;- Strong CS fundamentals&#10;..."
                   />
                 </div>
@@ -1475,18 +1486,18 @@ const PostJobPage: React.FC = () => {
           )}
 
           {formStatus && (
-            <p role="status" aria-live="polite" className="text-sm text-slate-300">
+            <p role="status" aria-live="polite" className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)]">
               {formStatus}
             </p>
           )}
 
           {duplicateCheckStatus && (
-            <p role="status" aria-live="polite" className="text-sm text-amber-200">
+            <p role="status" aria-live="polite" className="rounded-md border border-warning/30 bg-warning-muted px-3 py-2 text-sm text-warning">
               {duplicateCheckStatus}
             </p>
           )}
 
-          <div className="flex justify-end gap-4 pt-4 border-t border-white/10">
+          <div className="flex flex-col-reverse gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:justify-end">
             {isReviewing ? (
               <Button
                 type="button"

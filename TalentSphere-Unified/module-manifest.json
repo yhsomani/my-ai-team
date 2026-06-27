@@ -272,6 +272,70 @@
       "required": true
     },
     {
+      "id": "ui-design-system-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-ui-design-system.mjs",
+      "required": true,
+      "note": "Guards web and extension UI source against legacy theme tokens, decorative gradients, oversized radii, nonstandard letter spacing, and hard-coded black/white Tailwind utilities."
+    },
+    {
+      "id": "frontend-feature-ownership-contract",
+      "kind": "source-contract",
+      "status": "active",
+      "path": "apps/frontend/src/navigation/featureOwnership.ts",
+      "required": true,
+      "note": "Source-backed IA ownership registry that keeps every major feature assigned to one primary route or surface and classifies secondary placements."
+    },
+    {
+      "id": "frontend-feature-ownership-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/navigation/featureOwnership.test.ts",
+      "required": true,
+      "note": "Validated by npm run test:ia to prevent duplicate feature owners and route/role drift."
+    },
+    {
+      "id": "frontend-route-audit-fixtures",
+      "kind": "playwright-fixture",
+      "status": "active",
+      "path": "apps/frontend/tests/helpers/routeAudit.ts",
+      "required": true,
+      "note": "Shared deterministic route, viewport, and REST fixtures for browser-level route layout and accessibility audits."
+    },
+    {
+      "id": "frontend-route-accessibility-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/accessibility-semantics.spec.ts",
+      "required": true,
+      "note": "Validated by npm run test:a11y to guard major public, talent, recruiter, and admin route semantics."
+    },
+    {
+      "id": "frontend-keyboard-navigation-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/keyboard-navigation.spec.ts",
+      "required": true,
+      "note": "Validated by npm run test:keyboard to guard command search focus, result arrow selection, submit behavior, notification reminder/account action/read/load-more keyboard activation and focus restoration, mobile nav keyboard activation, shared tab roving focus, shared modal focus trap/restore behavior, and auth form Enter submit."
+    },
+    {
+      "id": "frontend-candidates-workflow-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/candidate-review.spec.ts",
+      "required": true,
+      "note": "Guards deterministic candidate details review, scorecard/note/status payloads, queue navigation, bulk Offer review, unsaved review reset, application pagination, profile-backed search, and review-focus filtering across browser projects."
+    },
+    {
+      "id": "frontend-messaging-workflow-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/messaging-workflow.spec.ts",
+      "required": true,
+      "note": "Guards deterministic messaging conversation selection, text send, attachment-link keyboard focus order, attachment payload submission, visible mark-read, older-history loading, and sent message rendering across browser projects."
+    },
+    {
       "id": "backend-topology-adr-validation",
       "kind": "node-script",
       "status": "active",
@@ -450,6 +514,22 @@
       "path": "docs/PRODUCT_UX_AUTOMATION_AUDIT.md",
       "required": true,
       "note": "Current running product/UX automation audit and implementation history."
+    },
+    {
+      "id": "ux-audit-checklist",
+      "kind": "current-ux-governance",
+      "status": "current",
+      "path": "docs/UX_AUDIT_CHECKLIST.md",
+      "required": true,
+      "note": "Current route, dashboard, and major-screen UX audit checklist for validated UI restructuring without behavior removal."
+    },
+    {
+      "id": "design-system-guide",
+      "kind": "current-design-system",
+      "status": "current",
+      "path": "docs/DESIGN_SYSTEM.md",
+      "required": true,
+      "note": "Current frontend design-system guide for tokens, shared components, layout, navigation, interaction, accessibility, and performance patterns."
     },
     {
       "id": "module-manifest-doc",

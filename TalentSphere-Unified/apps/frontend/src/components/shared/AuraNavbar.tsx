@@ -5,9 +5,9 @@ import { logout } from '../../store/slices/authSlice';
 import { authService } from '../../services/authService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Zap, Bell, Search, User as UserIcon, LogOut, 
+  Bell, Search, User as UserIcon, LogOut,
   Menu, X, LayoutDashboard, Briefcase, GraduationCap, 
-  Trophy, Share2, MessageSquare, Settings 
+  Trophy, Share2, MessageSquare, Layers
 } from 'lucide-react';
 import { AuraButton } from './AuraButton';
 
@@ -36,39 +36,37 @@ export const AuraNavbar: React.FC = () => {
   };
 
   const navItems = [
-    { name: 'Nexus', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { name: 'Jobs', path: '/jobs', icon: <Briefcase size={18} /> },
-    { name: 'Academy', path: '/lms', icon: <GraduationCap size={18} /> },
-    { name: 'Arena', path: '/challenges', icon: <Trophy size={18} /> },
-    { name: 'Feed', path: '/networking', icon: <Share2 size={18} /> },
+    { name: 'Learning', path: '/lms', icon: <GraduationCap size={18} /> },
+    { name: 'Challenges', path: '/challenges', icon: <Trophy size={18} /> },
+    { name: 'Network', path: '/networking', icon: <Share2 size={18} /> },
     { name: 'Messages', path: '/messaging', icon: <MessageSquare size={18} /> },
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
-      scrolled ? 'h-16 bg-Aurora-dark/80 backdrop-blur-xl border-b border-Aurora-border' : 'h-24 bg-transparent'
+    <nav className={`fixed left-0 right-0 top-0 z-[100] border-b border-[var(--border-default)] transition-all duration-200 ${
+      scrolled ? 'h-16 bg-[var(--bg-panel)]/95 backdrop-blur-sm shadow-sm' : 'h-20 bg-[var(--bg-panel)]'
     }`}>
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        {/* Logo */}
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-prismatic-gradient p-[1px]">
-            <div className="w-full h-full bg-Aurora-dark rounded-[11px] flex items-center justify-center">
-              <Zap className="w-5 h-5 text-electric animate-pulse-subtle" />
-            </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <Layers size={18} />
           </div>
-          <span className="text-xl font-bold font-display tracking-tight text-white group-hover:text-electric transition-colors">
-            Aurora<span className="text-white/40">Talent</span>
+          <span className="text-base font-semibold text-[var(--text-primary)]">
+            TalentSphere
           </span>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden lg:flex items-center gap-1">
           {user && navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                pathname === item.path ? 'text-electric bg-electric/5' : 'text-white/50 hover:text-white hover:bg-white/5'
+              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                pathname === item.path
+                  ? 'bg-accent/10 text-accent'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {item.icon}
@@ -98,16 +96,16 @@ export const AuraNavbar: React.FC = () => {
                   <Bell size={18} />
                 </AuraButton>
               </div>
-              <div className="h-6 w-px bg-Aurora-border hidden sm:block" />
-              <Link to="/profile" aria-label="Profile" className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-white/5 transition-all group">
-                <div className="w-8 h-8 rounded-full bg-Aurora-elevated border border-Aurora-border flex items-center justify-center text-white/50 group-hover:border-electric transition-colors">
+              <div className="hidden h-6 w-px bg-[var(--border-default)] sm:block" />
+              <Link to="/profile" aria-label="Profile" className="group flex items-center gap-3 rounded-md p-1 pr-3 transition-colors hover:bg-[var(--bg-secondary)]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
                   <UserIcon size={16} />
                 </div>
-                <span className="text-xs font-bold text-white hidden md:block">
+                <span className="hidden text-xs font-medium text-[var(--text-secondary)] md:block">
                   {user?.email?.split('@')[0]}
                 </span>
               </Link>
-              <AuraButton variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout} className="hover:text-red-400">
+              <AuraButton variant="ghost" size="icon" aria-label="Logout" onClick={handleLogout} className="hover:text-destructive">
                 <LogOut size={18} />
               </AuraButton>
             </>
@@ -132,7 +130,7 @@ export const AuraNavbar: React.FC = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 bg-Aurora-surface border-b border-Aurora-border p-6 lg:hidden"
+            className="absolute left-0 right-0 top-full border-b border-[var(--border-default)] bg-[var(--bg-panel)] p-4 shadow-lg lg:hidden"
           >
             <div className="grid grid-cols-2 gap-3">
               {user && navItems.map((item) => (
@@ -140,14 +138,14 @@ export const AuraNavbar: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${
+                  className={`flex flex-col items-center gap-3 rounded-lg border p-4 transition-colors ${
                     pathname === item.path 
-                    ? 'bg-electric/5 border-electric/20 text-electric' 
-                    : 'bg-white/5 border-white/5 text-white/50'
+                      ? 'border-accent/20 bg-accent/10 text-accent'
+                      : 'border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
                   }`}
                 >
                   {item.icon}
-                  <span className="text-xs font-bold uppercase tracking-wider">{item.name}</span>
+                  <span className="text-xs font-medium">{item.name}</span>
                 </Link>
               ))}
             </div>

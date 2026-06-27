@@ -17,6 +17,71 @@ declare global {
   }
 }
 
+const E2E_AUTH_OVERRIDE_KEY = 'talentsphere.e2e.auth';
+
+type AppAuthUser = {
+  id: string;
+  email: string;
+  full_name?: string;
+  roles: string[];
+};
+
+type AppAuthPayload = {
+  user: AppAuthUser | null;
+  session: Session | null;
+};
+
+type E2EAuthOverride = {
+  authenticated?: boolean;
+  id?: string;
+  email?: string;
+  full_name?: string;
+  roles?: unknown;
+};
+
+const defaultDevUser: AppAuthUser = {
+  id: 'mock-user-dev-001',
+  email: 'dev@talentsphere.test',
+  full_name: 'Dev User',
+  roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
+};
+
+const getE2EAuthOverride = (): AppAuthPayload | null => {
+  if (typeof window === 'undefined' || !window.__E2E_TESTING__) return null;
+
+  const raw = window.localStorage.getItem(E2E_AUTH_OVERRIDE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as E2EAuthOverride;
+    if (parsed.authenticated === false) {
+      return { user: null, session: null };
+    }
+
+    const roles = Array.isArray(parsed.roles)
+      ? parsed.roles.filter((role): role is string => typeof role === 'string' && role.startsWith('ROLE_'))
+      : [];
+
+    return {
+      user: {
+        id: typeof parsed.id === 'string' && parsed.id ? parsed.id : 'e2e-user-001',
+        email: typeof parsed.email === 'string' && parsed.email ? parsed.email : 'e2e@talentsphere.test',
+        full_name: typeof parsed.full_name === 'string' && parsed.full_name ? parsed.full_name : 'E2E User',
+        roles: roles.length > 0 ? roles : ['ROLE_USER'],
+      },
+      session: null,
+    };
+  } catch (error) {
+    console.warn('[Auth] Ignoring invalid E2E auth override:', error);
+    return null;
+  }
+};
+
+const getDevAuthPayload = (): AppAuthPayload => getE2EAuthOverride() || {
+  user: defaultDevUser,
+  session: null,
+};
+
 // Lazy load page components
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -78,6 +143,16 @@ function App() {
   useEffect(() => {
     dispatch(setLoading(true));
 
+    const activateDevAuth = (reason: string) => {
+      const authPayload = getDevAuthPayload();
+      dispatch(setUser(authPayload));
+      if (authPayload.user) {
+        console.info(`[Auth] Dev mock user activated ${reason}.`);
+      } else {
+        console.info(`[Auth] E2E unauthenticated state activated ${reason}.`);
+      }
+    };
+
     // Timeout: if auth doesn't resolve in 3 seconds, fall back
     const authTimeout = setTimeout(() => {
       console.warn('[Auth] Supabase auth timed out. Using fallback mode.');
@@ -85,16 +160,7 @@ function App() {
       // In dev mode, auto-login with a mock user for testing
       const isDev = import.meta.env.DEV;
       if (isDev) {
-        dispatch(setUser({
-          user: {
-            id: 'mock-user-dev-001',
-            email: 'dev@talentsphere.test',
-            full_name: 'Dev User',
-            roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
-          },
-          session: null,
-        }));
-        console.info('[Auth] Dev mock user activated. All roles granted for testing.');
+        activateDevAuth('after Supabase auth timeout');
       } else {
         dispatch(setLoading(false));
       }
@@ -116,16 +182,7 @@ function App() {
         const isDev = import.meta.env.DEV;
         if (isDev) {
           // Auto-activate mock user for local development
-          dispatch(setUser({
-            user: {
-              id: 'mock-user-dev-001',
-              email: 'dev@talentsphere.test',
-              full_name: 'Dev User',
-              roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
-            },
-            session: null,
-          }));
-          console.info('[Auth] Dev mode: mock user activated (no Supabase session).');
+          activateDevAuth('with no Supabase session');
         } else {
           dispatch(setLoading(false));
         }
@@ -137,16 +194,7 @@ function App() {
       // Dev mode fallback on error
       const isDev = import.meta.env.DEV;
       if (isDev) {
-        dispatch(setUser({
-          user: {
-            id: 'mock-user-dev-001',
-            email: 'dev@talentsphere.test',
-            full_name: 'Dev User',
-            roles: ['ROLE_USER', 'ROLE_ADMIN', 'ROLE_RECRUITER'],
-          },
-          session: null,
-        }));
-        console.info('[Auth] Dev mock user activated due to Supabase error.');
+        activateDevAuth('after Supabase error');
       } else {
         dispatch(setLoading(false));
       }

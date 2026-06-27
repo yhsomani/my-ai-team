@@ -26,15 +26,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="p-10 border-t border-slate-100 dark:border-slate-800/50 relative z-10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-3xl">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="relative z-10 border-t border-[var(--border-default)] bg-[var(--bg-panel)] p-4">
+      <div className="mx-auto max-w-4xl space-y-4">
         {showSuggestions && (
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
             {suggestions.map(s => (
               <button 
                 key={s.id}
                 onClick={() => onSendMessage(s.text)}
-                className="px-6 py-2.5 rounded-full border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-500/30 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all text-[10px] font-bold uppercase tracking-widest text-slate-400 shadow-md shadow-slate-200/20"
+                className="rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
               >
                 {s.text}
               </button>
@@ -42,17 +42,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        <div className="relative group">
-          <div className="absolute -inset-4 bg-emerald-500/5 rounded-[3.5rem] blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+        <div className="relative">
           <form 
             onSubmit={handleSubmit}
-            className="relative flex items-end gap-6 p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] focus-within:border-emerald-500/20 transition-all shadow-2xl shadow-slate-200/50 dark:shadow-none"
+            className="relative flex items-end gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 transition-colors focus-within:border-accent"
           >
-            <div className="flex-1 min-h-[56px] pl-6 pr-2 py-4 max-h-[200px] overflow-y-auto no-scrollbar">
+            <div className="max-h-[200px] min-h-10 flex-1 overflow-y-auto">
               <textarea 
                 rows={1}
-                placeholder="Transmit query to Aurora network..."
-                className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-300 text-lg resize-none font-medium leading-relaxed"
+                placeholder="Ask for career guidance..."
+                className="w-full resize-none border-none bg-transparent text-sm font-medium leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-0"
                 value={inputValue}
                 onChange={(e) => {
                   setInputValue(e.target.value);
@@ -70,20 +69,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <AuraButton 
               type="submit"
               variant="default"
-              className="h-16 w-16 rounded-[2rem] bg-emerald-900 text-white shrink-0 shadow-lg shadow-emerald-950/20 active:scale-95 transition-all"
+              size="icon"
+              className="shrink-0"
               disabled={!inputValue.trim() || isThinking}
+              aria-label="Send message"
             >
-              {isThinking ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
+              {isThinking ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
             </AuraButton>
           </form>
         </div>
 
-        <div className="flex items-center justify-between px-6 text-[9px] font-bold uppercase tracking-[0.4em] text-slate-300 italic">
-          <div className="flex items-center gap-3">
-            <Activity size={12} className="text-emerald-500" />
-            <span>Network Latency: 42ms</span>
+        <div className="flex flex-col gap-1 px-1 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Activity size={12} className="text-accent" />
+            <span>Draft guidance only</span>
           </div>
-          <span>Aurora Intelligence Node 4.2L</span>
+          <span>Review before applying in another workflow</span>
         </div>
       </div>
     </div>

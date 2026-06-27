@@ -13,22 +13,20 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isThinking, 
   return (
     <div 
       ref={scrollRef}
-      className="flex-1 overflow-y-auto no-scrollbar px-10 py-16 space-y-12 relative z-10"
+      className="relative z-10 flex-1 space-y-6 overflow-y-auto px-4 py-6"
     >
       {messages.length === 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto"
+          className="mx-auto flex h-full max-w-xl flex-col items-center justify-center text-center"
         >
-          <div className="w-28 h-28 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center mb-10 relative group shadow-2xl shadow-slate-200/50 dark:shadow-none transition-transform hover:scale-105 duration-700">
-            <div className="absolute inset-0 bg-emerald-500/10 blur-3xl opacity-0 hover:opacity-100 transition-opacity" />
-            <Sparkles size={56} className="text-emerald-900 dark:text-emerald-400 relative z-10" />
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] text-accent">
+            <Sparkles size={40} />
           </div>
-          <h3 className="text-4xl font-display font-bold text-slate-900 dark:text-white mb-6">Initialize <span className="text-emerald-600 tracking-tight">Professional Echo.</span></h3>
-          <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Greetings, Architect. I am your Aurora Co-pilot. Query any node in the Nexus network, 
-            optimize your career projection, or calibrate your technical stack.
+          <h3 className="mb-3 text-xl font-semibold text-[var(--text-primary)]">Start an AI Review</h3>
+          <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+            Ask for career guidance, then review each recommendation before applying it in Profile, Resume, Jobs, or Learning.
           </p>
         </motion.div>
       )}
@@ -38,30 +36,30 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isThinking, 
           key={msg.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full group`}
+          className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
         >
-          <div className={`flex gap-8 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all mt-1 ${
+          <div className={`flex max-w-[85%] gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
               msg.role === 'user' 
-              ? 'bg-slate-900 border-slate-800 text-white' 
-              : 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400'
+              ? 'border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
+              : 'border-accent/20 bg-accent-muted text-accent'
             }`}>
               {msg.role === 'user' ? <User size={20} /> : <Sparkles size={20} />}
             </div>
             <div className="flex flex-col gap-3">
-              <div className={`p-8 rounded-[2.5rem] shadow-xl transition-all ${
+              <div className={`rounded-lg p-4 text-sm leading-relaxed ${
                 msg.role === 'user' 
-                ? 'bg-white dark:bg-slate-900 border-none shadow-slate-200/50 dark:shadow-black/20 text-slate-900 dark:text-white font-medium italic' 
-                : 'bg-emerald-900 text-white shadow-emerald-950/20'
+                ? 'border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)]'
+                : 'bg-accent text-[var(--accent-foreground)]'
               }`}>
-                <div className="prose prose-sm max-w-none text-base leading-relaxed font-body">
+                <div className="max-w-none whitespace-pre-wrap break-words">
                   {msg.content}
                 </div>
               </div>
-              <div className={`flex items-center gap-3 px-6 text-[9px] font-bold uppercase tracking-widest ${msg.role === 'user' ? 'justify-end text-slate-400' : 'text-emerald-600 dark:text-emerald-400/50'}`}>
-                <span className="opacity-40">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                <span className="w-1 h-1 rounded-full bg-current opacity-20" />
-                <span>Status: Integrated</span>
+              <div className={`flex items-center gap-2 px-1 text-xs text-[var(--text-muted)] ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span aria-hidden="true">·</span>
+                <span>{msg.role === 'user' ? 'Prompt sent' : 'Draft response'}</span>
               </div>
             </div>
           </div>
@@ -72,19 +70,19 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isThinking, 
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex justify-start w-full"
+          className="flex w-full justify-start"
         >
-          <div className="flex gap-8 items-center">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 transition-all">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent-muted text-accent">
               <Loader2 size={20} className="animate-spin" />
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600/40 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600/60 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent/40 [animation-delay:-0.3s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent/60 [animation-delay:-0.15s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600/50 ml-3 italic">Synthesizing directive...</span>
+              <span className="ml-2 text-xs text-[var(--text-muted)]">Generating draft response...</span>
             </div>
           </div>
         </motion.div>

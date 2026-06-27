@@ -1209,11 +1209,11 @@ const ProfilePage: React.FC = () => {
                     <p className="text-xs font-medium text-[var(--text-primary)]">{field.label}</p>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
-                        <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Current</p>
+                        <p className="text-[10px] uppercase text-[var(--text-muted)]">Current</p>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">{field.currentValue || 'Empty'}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] uppercase tracking-wide text-accent">AI draft</p>
+                        <p className="text-[10px] uppercase text-accent">AI draft</p>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--text-primary)]">{field.proposedValue}</p>
                       </div>
                     </div>
