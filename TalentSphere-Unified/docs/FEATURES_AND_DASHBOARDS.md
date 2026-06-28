@@ -63,7 +63,7 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
 - Bottom mobile navigation showing role-prioritized destinations from the shared route registry.
 - Top sticky header with:
   - Mobile menu toggle.
-  - Platform search input with role-aware destination results and keyboard shortcut focus.
+  - `CommandSearch` route discovery with role-aware, label-ranked destination results.
   - Notification bell with due-aware account notifications and actionable reminder popover.
   - User avatar initial.
 - Sidebar footer with:
@@ -91,14 +91,30 @@ The route registry is covered by `apps/frontend/src/navigation/routeRegistry.tes
 
 Shell workflows:
 
-1. The header search input filters role-visible destinations by label, description, and keywords.
-2. Pressing Enter opens the first matching destination.
+1. `CommandSearch` filters role-visible destinations by label, description, and keywords, with label matches ranked before keyword-only matches.
+2. Pressing Enter opens the active matching destination.
 3. Clicking a search result navigates to that feature and closes search.
-4. `Cmd/Ctrl+K` focuses the header search input.
+4. `Cmd/Ctrl+K` focuses `CommandSearch`; the shortcut is exposed as an accessibility shortcut instead of visible instructional UI.
 5. The notification bell opens account notification rows and role-aware reminders that navigate only after the user selects one.
 6. Future scheduled networking reminders stay visible in the notification list but do not trigger the urgent unread indicator until due.
-7. Scheduled workers can promote due networking reminders and saved-search digests without taking the underlying user action.
-8. Sidebar, slide-over, desktop collapsed nav, and mobile bottom nav mark the active route with `aria-current="page"`.
+7. Account notification rows show whether data came from account sync, notification API fallback, or local browser fallback.
+8. Degraded notification fallback states include visible retry copy, failed notification loads use fixed safe copy with Retry notifications, and failed mark-all persistence restores the visible unread state instead of presenting a false read state.
+9. Scheduled workers can promote due networking reminders and saved-search digests without taking the underlying user action.
+10. Sidebar, slide-over, desktop collapsed nav, and mobile bottom nav mark the active route with `aria-current="page"`.
+11. Wildcard-route recovery shows public auth entry links for visitors and role-filtered app destinations for authenticated users.
+12. Fatal render recovery uses `ErrorBoundary` with safe token-backed copy, service-unavailable wording when applicable, a reload action, and no raw exception-message exposure.
+
+Browser-level command-search workflow coverage lives in `apps/frontend/tests/command-search-workflow.spec.ts`. It verifies label-ranked utility route discovery, role-filtered command destinations, no-result states, and recruiter command-route navigation across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+
+Browser-level notification workflow coverage lives in `apps/frontend/tests/notification-workflow.spec.ts`. It verifies account-sync labels, fallback labels and retry recovery, due-aware unread counts, scheduled reminder visibility, explicit mark-all payloads, and read-failure rollback across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+
+Unit-level Header notification recovery coverage lives in `apps/frontend/src/components/layout/Header.test.tsx`. It verifies safe notification load/read failure copy, raw provider-error exclusion, unread-state rollback, and retry through the existing Retry notifications and Mark read actions without changing notification ownership.
+
+Browser-level Not Found recovery coverage lives in `apps/frontend/tests/not-found-recovery.spec.ts`. It verifies public auth recovery links, authenticated dashboard recovery, role-filtered app destinations, and preservation of route-registry role filtering across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+
+Public Not Found recovery remains the wildcard catch-all route. It is documented as its own public-route owner in `featureOwnership.ts`, uses the same token-backed recovery surface as the rest of the redesign, and is included in the visual-layout and accessibility-semantics route audits at desktop and mobile widths.
+
+Global runtime recovery coverage lives in `apps/frontend/src/components/error/ErrorBoundary.test.tsx`. It verifies safe generic recovery copy, service-unavailable recovery copy, custom fallback passthrough, and reload recovery without exposing raw exception messages.
 
 ### Product Analytics
 
@@ -161,6 +177,7 @@ Data source:
 
 - `dashboardService.fetchDashboardData(userId)`
 - Tables: `leaderboard`, `job_applications`, `jobs`, `challenges`, `conversation_participants`, `messages`
+- Safe dashboard status-strip issue presentation for partial or failed refresh states
 - Append-only dashboard operational analytics for load, degraded-state, refresh/retry, checklist, stat-card, quick-action, and panel handoff decisions
 
 Inputs:
@@ -176,6 +193,7 @@ Dashboard contents:
 |---|---|---|
 | Header | Welcome message and "Browse Jobs" action | User name, dashboard description, job navigation button |
 | Dashboard Status | Data freshness and source health | Last refreshed timestamp plus Live, Partially refreshed, or Needs attention label |
+| Dashboard issue recovery | Affected source sections when refresh is partial or failed | Section-level issue labels with safe retry actions and no raw provider error text |
 | Stat cards | Applications, messages, XP earned, level | Numeric snapshot of user activity plus direct navigation to applications, messages, challenges, or profile |
 | Recent Opportunities | Up to 5 latest published jobs | Job title, company, location, match score |
 | Quick Actions | Profile, LMS, challenges shortcuts | Buttons to `/profile`, `/lms`, `/challenges` |
@@ -223,8 +241,14 @@ Empty/error states:
 - Loading skeleton is shown while data loads.
 - Toast error: "Failed to load dashboard data. Please try again."
 - Dashboard Status remains visible after load and shows Live, Partially refreshed, or Needs attention with the last refresh time.
-- Partial query failures list affected sections such as XP and level, application count, opportunities, challenges, or unread messages.
+- Partial query failures list affected sections such as XP and level, application count, opportunities, challenges, or unread messages without exposing raw provider error strings.
+- Top-level dashboard load failures keep the summary launchpad visible, show safe Dashboard data recovery copy, and reuse the same refresh action.
 - Empty sections show "No recent jobs found" or "No active challenges" with direct next-action buttons.
+
+Browser validation:
+
+- `apps/frontend/tests/dashboard-workflow.spec.ts` verifies talent summary metrics, recent opportunities, active challenge summaries, partial-data status and retry intent, header/stat-card/quick-action handoffs, and dashboard workflow analytics across Chromium, Firefox, and WebKit fixtures without relying on live dashboard API or Supabase services.
+- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe status-strip issue copy, raw provider-error exclusion, and retry through the existing dashboard refresh workflow.
 
 ### 4.2 Recruiter Dashboard
 
@@ -237,6 +261,7 @@ Data source:
 - `recruiterService.getStats(userId)`
 - `recruiterService.getRecentApplications(userId)`
 - Tables: `jobs`, `job_applications`, `profiles`
+- Safe dashboard status-strip issue presentation for partial or failed refresh states
 - Append-only dashboard operational analytics for load, degraded-state, refresh/retry, checklist, stat-card, quick-action, and panel handoff decisions
 
 Inputs:
@@ -252,6 +277,7 @@ Dashboard contents:
 |---|---|---|
 | Header | Recruiter Console title and "Post a Job" action | Navigation to `/jobs/post` |
 | Dashboard Status | Data freshness and source health | Last refreshed timestamp plus Live, Partially refreshed, or Needs attention label |
+| Dashboard issue recovery | Affected recruiter source sections when refresh is partial or failed | Section-level issue labels with safe retry actions and no raw provider error text |
 | Stat cards | Active Jobs, Total Applicants, New Today, Offers | Numeric recruiting funnel snapshot plus direct navigation to jobs or candidates |
 | Recent Applications | Latest 5 candidate applications | Candidate name, job title, status badge |
 | Quick Actions | Create job, review applications, message candidates | Buttons to `/jobs/post`, `/candidates`, `/messaging` |
@@ -284,6 +310,8 @@ Implementation note:
 - Recruiter-owned jobs are read from `jobs.posted_by`, matching the Supabase schema.
 - Recruiter dashboard job counts include current recruiter postings in `DRAFT` or `PUBLISHED` status.
 - Dashboard analytics is append-only and non-blocking; it never navigates, retries, creates jobs, changes applications, sends messages, or mutates recruiter data by itself.
+- `apps/frontend/tests/dashboard-workflow.spec.ts` verifies recruiter summary metrics, recent application rows, Post Job primary handoff, candidate stat-card handoff, messaging quick-action handoff, and dashboard workflow analytics across Chromium, Firefox, and WebKit fixtures.
+- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe Dashboard status issue copy, raw provider-error exclusion, and retry through the existing refresh workflow.
 
 ### 4.3 Admin Dashboard
 
@@ -301,6 +329,7 @@ Data source:
 - Explicit fallback metadata and mock service rows after a 2 second timeout or Supabase failure
 - Frontend-safe scheduler rollout catalog, optional provider run-history status API, and environment metadata for configured scheduled workers
 - Append-only admin operational analytics for console load/failure/refresh, degraded states, service investigation links, scheduled automation status review, audit retry, audit load more, and audit load completion
+- Safe top-level failed-load recovery when the console cannot assemble operational data
 
 Inputs:
 
@@ -308,6 +337,7 @@ Inputs:
 |---|---|---:|---|
 | Admin role | Auth state | Yes | Allows route access |
 | Refresh click | Admin user | No | Reloads admin stats and service health |
+| Retry admin console | Admin user after top-level load failure | No | Reuses the same refresh workflow for metrics, service health, scheduler status, analytics insights, and audit events |
 | Service health/status link click | Admin user | No | Opens read-only service or provider investigation target |
 | Scheduled automation refresh | Admin user | No | Rechecks frontend-visible scheduler rollout metadata, optional provider run history, and expected worker catalog |
 | Audit-log load more | Admin user | No | Loads the next cursor-backed audit-log page |
@@ -319,6 +349,7 @@ Dashboard contents:
 | Section | What it shows | Output to user |
 |---|---|---|
 | Header | Admin Console title, source badge, last refresh, Refresh button | System overview with data provenance |
+| Failed-load recovery | Safe explanation and Retry admin console action | Reloads the existing Admin refresh workflow without exposing raw service errors |
 | Fallback warning | Visible only when fallback/mock data is displayed | Degraded-state explanation and latency |
 | Stat cards | Total Users, System Load, Services Online, Security Alerts, source badge | Current platform health snapshot with live/mock label |
 | Scheduled Automations | Expected scheduler jobs, rollout status, optional latest-run status, schedule, command, manifest path, config-key count, optional status link, optional image/runbook hint | Read-only visibility into saved-search digest discovery, notification digest delivery, and networking reminder delivery rollout/readiness/run-history status |
@@ -326,7 +357,7 @@ Dashboard contents:
 | Audit Log panel | Recent audit event time, action, entity, actor, request context, loaded/total count, Load more | Cursor-backed operational activity without loading the full audit table |
 | Admin operational analytics | Read-only event recording | Visibility into refresh, degraded state, investigation, scheduled automation status review, audit retry, and audit pagination decisions |
 
-Browser-level admin operational coverage lives in `apps/frontend/tests/admin-operations.spec.ts`. It verifies the Admin Console, Product Analytics Insights, Scheduled Automations, Service Health, Audit Log, source labels, and expected scheduler jobs across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+Browser-level admin operational coverage lives in `apps/frontend/tests/admin-operations.spec.ts`. It verifies the Admin Console, Product Analytics Insights, Scheduled Automations, Service Health, Audit Log, source labels, expected scheduler jobs, no provider-run-history claims when no provider is configured, audit pagination, isolated audit retry recovery, service investigation handoffs, scheduled automation status refresh, and sanitized Admin operational analytics across Chromium, Firefox, and WebKit with deterministic local data boundaries. `apps/frontend/src/pages/admin/AdminDashboard.test.tsx` verifies safe top-level failed-load copy, raw error-message exclusion, and retry through the existing refresh workflow.
 
 Output data shape:
 
@@ -532,6 +563,12 @@ Register route query behavior:
 
 Frontend service: `authService`
 
+Shared UI:
+
+- Login and Register use `AuthShell` for the public auth frame, home link, heading, card surface, and footer link.
+- Public login exposes configured email/password auth only. Social OAuth and public reset-password controls are not shown because no validated LoginPage handler is wired for those controls in the current source.
+- Login/Register provider failures use safe public copy and do not expose raw provider errors or token-like values.
+
 Purpose:
 
 - Register new users.
@@ -564,6 +601,15 @@ Register page contents:
 - Create Account submit button.
 - Link to sign in for existing users.
 
+Login page contents:
+
+- Email input.
+- Password input.
+- Sign in submit button.
+- Accessible inline invalid-credential alert.
+- Safe provider-failure alert for auth service/provider failures.
+- Link to registration for new users.
+
 How it works:
 
 1. Register page asks for account type, full name, email, and password.
@@ -577,8 +623,12 @@ How it works:
 9. Talent registration routes to `/dashboard`.
 10. Recruiter registration routes to `/jobs/post?companySetup=1`.
 11. Login calls `supabase.auth.signInWithPassword`.
-12. `App.tsx` listens to Supabase auth state and stores user/session in Redux.
-13. Logout calls `supabase.auth.signOut`, clears Redux auth state, and routes to `/login`.
+12. Login/Register map provider failures to safe public copy while preserving invalid-credential and weak-password guidance.
+13. `App.tsx` listens to Supabase auth state and stores user/session in Redux.
+14. Logout calls `supabase.auth.signOut`, clears Redux auth state, and routes to `/login`.
+
+Browser-level auth-entry workflow coverage lives in `apps/frontend/tests/auth-entry-workflow.spec.ts`. It verifies configured email login, accessible invalid-credential errors, inactive provider-control removal, and registration role-intent selection across Chromium, Firefox, and WebKit.
+Unit-level auth provider recovery coverage lives in `apps/frontend/src/pages/auth/AuthEntry.test.tsx`. It verifies safe Login/Register provider-failure copy, raw provider-error exclusion, preserved invalid-credential copy, weak-password guidance, and registration role-intent context.
 
 Outputs:
 
@@ -586,6 +636,7 @@ Outputs:
 |---|---|
 | Register | Supabase auth signup response |
 | Login | Supabase auth session/user response |
+| Auth provider failure | Safe public alert copy with no raw provider error text or token-like values |
 | Logout | Empty success or thrown error |
 | Get current user | Supabase user object |
 | Get session | Supabase session object |
@@ -605,6 +656,7 @@ Implementation note:
 - Registration role descriptions are UI guidance only; they do not change role mapping or grant extra permissions.
 - Registration role query preselection is only a default selection; the user can still change account type before submitting.
 - ADR-001 makes Supabase Auth the primary login/session authority; backend auth-service local credential endpoints are compatibility-only and disabled by default.
+- Reset password remains available from authenticated Security Settings; it is not exposed as an inactive public LoginPage control.
 
 ### 5.3 Profile
 
@@ -650,12 +702,15 @@ Page contents:
 - Profile photo review modal:
   - Shows a circular preview of the selected image.
   - Provides zoom, horizontal focus, vertical focus, and reset controls before upload.
+  - Shows safe avatar-upload failure copy inside the review modal if provider upload or avatar persistence fails.
   - Upload Photo uploads only after explicit confirmation.
   - Cancel closes the modal without changing the profile.
 - Profile photo removal modal:
   - Shows the current avatar and initials fallback.
+  - Shows safe avatar-removal failure copy inside the review modal if provider persistence fails.
   - Remove Photo clears the saved avatar only after explicit confirmation.
   - Cancel closes the modal without changing the profile.
+- Profile failed-load state with safe copy and Retry profile when profile details cannot load.
 - Profile counters: connections, applications, badges.
 - Skill chips with edit and remove controls on the user's own profile when a skill row ID is available.
 - Tabs:
@@ -675,9 +730,11 @@ Page contents:
 - AI profile draft review:
   - Opens from the AI Review Queue when a profile recommendation includes structured Headline, Location, or Bio values.
   - Shows current and AI draft values before the editable fields.
+  - Shows safe profile-save failure copy inside the edit modal if provider save fails.
   - Provides Discard AI draft, Cancel, and Save Changes controls.
 - Completion task modal:
   - Reuses existing `profileService.addSkill`, `profileService.addExperience`, and `profileService.addEducation`.
+  - Shows safe completion-row save failure copy inside the row modal if provider save fails.
   - Updates local profile state after successful save.
 - Own-profile skill rows:
   - Show row-level edit and remove controls when a saved row ID is available.
@@ -689,30 +746,32 @@ Page contents:
   - Reuse the completion task modal with existing row data prefilled when editing.
   - Call update services for edited rows and replace only that row in local state after success.
   - Confirm deletion before calling the delete service.
+  - Show safe row-delete failure copy inside the delete review if provider deletion fails.
   - Disable destructive row actions while deletion is in progress.
 
 How it works:
 
 1. Page calls `profileService.getProfile(user.id)`.
 2. Service selects `user_profiles` with linked `profiles`, `skills`, `experiences`, `educations`, `certifications`, `languages`, and `projects`.
-3. Edit modal updates `user_profiles` fields.
-4. Completion task actions open targeted forms for missing profile sections.
-5. Skill, experience, and education forms write to their related Supabase tables.
-6. Skill, experience, and education edit actions prefill the same modal and call update services instead of create services.
-7. Local profile suggestions are derived from existing work history, skills, profile text, and a small keyword map.
-8. Applying a profile suggestion only pre-fills the edit modal; applying a skill suggestion only pre-fills the skill modal.
-9. Suggestions do not call update APIs until the user explicitly saves the modal.
-10. AI profile draft handoff parses structured Headline, Location, and Bio suggestions into an editable draft, shows current/proposed values, and clears route state after loading.
-11. Discard AI draft and Cancel reset unsaved fields to the current saved profile values.
-12. UI updates local state after successful save.
-13. Profile photo camera action opens a local image picker, validates image type and size, then opens a crop/preview modal without uploading immediately.
-14. Own-profile skill edit controls call `profileService.updateSkill(skillId)` and replace only that skill in local profile state after success.
-15. Own-profile skill remove controls call `profileService.deleteSkill(skillId)` and remove only that skill from local profile state after success.
-16. Own-profile experience and education remove controls confirm the action, call `profileService.deleteExperience(experienceId)` or `profileService.deleteEducation(educationId)`, and remove only that row from local profile state after success.
-17. Confirmed profile photo upload creates a reviewed square crop locally, calls file-service in the `avatars` folder with the cropped image, persists the returned URL with `profileService.updateAvatar(userId, avatarUrl)`, and updates local profile state after success.
-18. If file upload succeeds but avatar persistence fails, the page attempts to delete the uploaded file before showing failure feedback.
-19. Profile photo remove action opens a confirmation modal; confirmed removal clears `profiles.avatar_url` with `profileService.updateAvatar(userId, null)`, refreshes local state to initials, and attempts file-service cleanup after persistence succeeds.
-20. Profile workflow analytics records load, tab, edit, local suggestion, AI draft, completion task, row delete, validation, failure, and photo upload/removal decisions without storing profile text, row labels, names, descriptions, image URLs, file names, or raw error messages.
+3. If profile loading fails, the page shows fixed safe copy, hides raw provider errors, and offers Retry profile through the same `profileService.getProfile(profileUserId)` workflow.
+4. Edit modal updates `user_profiles` fields; failed saves show fixed safe copy in the edit modal and retry remains the existing Save Changes action.
+5. Completion task actions open targeted forms for missing profile sections.
+6. Skill, experience, and education forms write to their related Supabase tables; failed create/update requests show fixed safe copy in the completion modal and retry remains the existing Save action.
+7. Skill, experience, and education edit actions prefill the same modal and call update services instead of create services.
+8. Local profile suggestions are derived from existing work history, skills, profile text, and a small keyword map.
+9. Applying a profile suggestion only pre-fills the edit modal; applying a skill suggestion only pre-fills the skill modal.
+10. Suggestions do not call update APIs until the user explicitly saves the modal.
+11. AI profile draft handoff parses structured Headline, Location, and Bio suggestions into an editable draft, shows current/proposed values, and clears route state after loading.
+12. Discard AI draft and Cancel reset unsaved fields to the current saved profile values.
+13. UI updates local state after successful save.
+14. Profile photo camera action opens a local image picker, validates image type and size, then opens a crop/preview modal without uploading immediately.
+15. Own-profile skill edit controls call `profileService.updateSkill(skillId)` and replace only that skill in local profile state after success.
+16. Own-profile skill remove controls call `profileService.deleteSkill(skillId)` and remove only that skill from local profile state after success; failed deletion keeps the review open with fixed safe copy and retry remains the existing Remove action.
+17. Own-profile experience and education remove controls confirm the action, call `profileService.deleteExperience(experienceId)` or `profileService.deleteEducation(educationId)`, and remove only that row from local profile state after success; failed deletion keeps the review open with fixed safe copy and retry remains the existing Remove action.
+18. Confirmed profile photo upload creates a reviewed square crop locally, calls file-service in the `avatars` folder with the cropped image, persists the returned URL with `profileService.updateAvatar(userId, avatarUrl)`, and updates local profile state after success; failed upload or avatar persistence keeps the review open with fixed safe copy and retry remains the existing Upload Photo action.
+19. If file upload succeeds but avatar persistence fails, the page attempts to delete the uploaded file before showing safe failure feedback.
+20. Profile photo remove action opens a confirmation modal; confirmed removal clears `profiles.avatar_url` with `profileService.updateAvatar(userId, null)`, refreshes local state to initials, and attempts file-service cleanup after persistence succeeds; failed removal keeps the review open with fixed safe copy and retry remains the existing Remove Photo action.
+21. Profile workflow analytics records load, tab, edit, local suggestion, AI draft, completion task, row delete, validation, failure, and photo upload/removal decisions without storing profile text, row labels, names, descriptions, image URLs, file names, or raw error messages.
 
 Outputs:
 
@@ -729,6 +788,7 @@ Outputs:
 | Add education | New `educations` row |
 | Update education | Updated `educations` row |
 | Delete education | Empty success |
+| Recover profile action failure | Safe basic-save, completion-row save, row-delete, avatar-upload, and avatar-removal failure copy plus retry through the existing Profile action buttons |
 | Apply profile suggestion | Prefilled modal draft only |
 | Profile photo upload | Updated `profiles.avatar_url` plus refreshed local cropped avatar display |
 | Profile photo removal | Cleared `profiles.avatar_url` plus refreshed local initials display |
@@ -738,6 +798,7 @@ Implementation note:
 
 - Profile photo upload uses explicit crop preview confirmation, image validation, local square crop generation, and file-service upload; photo removal uses explicit confirmation and clears the persisted avatar before provider cleanup; provider retention proof remains a follow-up.
 - Browser-level Profile workflow coverage verifies AI profile draft save/discard, reviewed profile field saves, profile suggestion application, skill edit/delete, experience edit/delete, education add/edit/delete, tab switching, and avatar upload/crop/remove payloads across Chromium, Firefox, and WebKit.
+- `apps/frontend/src/pages/profile/ProfilePage.test.tsx` verifies safe Profile failed-load copy, safe basic-save/completion-row/row-delete/avatar action-failure copy, raw provider-error exclusion, and retry through the existing profile load and action workflows.
 - Unit coverage verifies the reviewed avatar crop exporter can fall back from unresolved canvas `toBlob` calls to data URL export before file-service upload.
 - Profile workflow analytics is append-only and non-blocking; it does not edit profile fields, insert suggestions without a click, save AI drafts automatically, create profile rows, delete rows, upload or remove photos by itself, send messages, create notifications, or mutate profile data by itself.
 
@@ -800,6 +861,7 @@ Inputs:
 Page contents:
 
 - Header with "Import Text", "Download PDF", "Upload PDF", "Download HTML", "Print PDF", and "Save Changes" buttons.
+- Profile-data failed-load alert with safe copy and Retry resume data.
 - Import Text modal:
   - Accepts pasted resume text.
   - Accepts `.txt`, `.md`, `.markdown`, `.docx`, and searchable `.pdf` resume files by reading extractable text locally into the import textarea.
@@ -844,6 +906,7 @@ Page contents:
 Outputs:
 
 - Save action persists supported resume/profile fields to `user_profiles`: headline, summary, phone, location, and website.
+- If profile data cannot load, Resume Builder keeps the route/editor/export surface available, hides raw provider errors, and retries through the same profile load workflow.
 - Import Text generates a selectable, reviewable editor draft from pasted text, supported text files, readable DOCX files, or searchable PDF files; it does not save profile fields until the user clicks Save Changes.
 - Save Skills adds only selected detected skills to the user's Profile; the user can edit or remove those skills from Profile afterward.
 - Save Rows adds only selected detected work-experience and education rows to the user's Profile; the user can edit or remove those rows from Profile afterward.
@@ -886,6 +949,7 @@ Implementation note:
 - Native PDF export is generated locally from the current reviewed editor/profile data after an explicit click; Upload PDF uses the same reviewed data and a separate explicit provider-upload click.
 - Uploaded PDF links are retained in a small account-synced/local-fallback current-user library and can be explicitly opened, copied, or deleted; deletion uses the shared app modal with dialog semantics and focus containment before provider cleanup, recent local delete receipts show confirmed provider deletion without exposing deleted artifact URLs, and formal provider retention policy plus backend lifecycle audit remain follow-up work.
 - Browser-level Resume workflow coverage verifies import text review, selected field application, imported skill/experience/education save payloads, editor save payloads, Preview tab rendering, native PDF and HTML download file names, provider PDF upload payloads, export-event sync payloads, uploaded artifact metadata payloads, Copy Link clipboard behavior, reviewed uploaded-PDF delete cancel/confirm, provider delete payloads, deleted metadata payloads, AI resume draft apply/save, and AI resume draft discard across Chromium, Firefox, and WebKit.
+- `apps/frontend/src/pages/profile/ResumeBuilder.test.tsx` verifies safe profile-data failed-load copy, safe Save Changes/Upload PDF/Delete PDF/Save Skills/Save Rows failure copy, raw provider-error exclusion, and retry through the existing load and Resume action workflows.
 - Export sync records only status metadata for explicit user-triggered export actions. Generated PDF/HTML files remain local unless the user explicitly chooses Upload PDF.
 - Resume workflow analytics is append-only and non-blocking; it records source labels, field keys/counts, skill counts, detected/selected/saved/failed profile row counts, export method/status, persistence target, artifact counts, artifact delete review/cancel decisions, input length band, normalized file type including PDF, and error category, not resume text, extracted PDF text, contact details, file names, skill names, row titles, company names, institution names, descriptions, generated files, upload URLs, artifact URLs, clipboard contents, or raw errors.
 
@@ -962,11 +1026,14 @@ Jobs page contents:
   - My Posts: recruiter-owned draft and published jobs.
 - Search input with applied-tab application search support.
 - Explore filters for location, job type, minimum salary, and maximum salary.
+- Safe Explore catalog failed-load state with Retry jobs when published job rows cannot load.
 - Clear filters button and matching/visible-result count.
 - Explore pagination controls with page size, query-backed result range, total count when available, cursor-backed next-page loading, and previous/next actions.
 - Save Search button when Explore filters are active.
 - Saved Searches row with apply, new-match tracking, and reviewed delete controls.
 - Hidden Explore jobs strip with hidden count, last hidden job, Restore Last, Restore All, and explicit current-view preference refinement controls.
+- Saved-search and hidden Explore account-sync failures keep their local controls available, use safe fallback copy, hide raw provider errors, and distinguish all-hidden Explore results from ordinary search/filter empty states.
+- Saved-search and hidden Explore browser-storage failures keep current-session saved/hidden controls available, use safe local-storage copy, hide raw quota/provider errors, and keep Restore Last available for hidden jobs.
 - Opted-in saved searches can create in-app new-match notifications shown in the header notification popover, or queue digest items through client-side deferral and server-side discovery when daily/weekly digest preferences are selected.
 - Job cards show:
   - Company logo or icon.
@@ -982,7 +1049,9 @@ Jobs page contents:
 - Applied cards show:
   - Application status badge.
   - Details button.
-- Applied-tab load failures show an Applications unavailable state with Retry Applications instead of an empty applications list.
+- Applied-tab load failures show a safe Applications unavailable state with Retry applications instead of an empty applications list, and raw provider errors are not shown.
+- My Posts load failures show a safe Recruiter postings unavailable state with Retry postings instead of an empty recruiter postings list, and raw provider errors are not shown.
+- Application-submit and recruiter publish failures show safe modal-scoped retry copy instead of raw provider errors, while keeping the draft or posting unchanged.
 - My Posts cards show:
   - Posting title.
   - Company context.
@@ -996,6 +1065,7 @@ Jobs page contents:
   - Missing title, description, location, company context, or requirement warnings.
   - Explicit Publish Job action when required details are present.
   - Edit Draft action when required details are missing.
+  - Safe publish failure alert with retry through Publish Job when provider or publish-readiness enforcement rejects the status change.
   - Copy clarifying that publishing makes the job visible in Explore and does not contact candidates automatically.
 - Browser-level recruiter publish coverage lives in `apps/frontend/tests/recruiter-publish.spec.ts`; it verifies My Posts draft rendering, publish review checklist, publish update payload, success receipt, published badge, and View Checklist state across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 - Application review modal:
@@ -1007,9 +1077,11 @@ Jobs page contents:
   - Recent draft versions with source/reason labels, saved time, preview text, and explicit Restore action.
   - Use Profile Draft action with inline replacement review when current draft content exists.
   - Reviewed Clear draft action with Keep Draft and Clear Draft controls.
+  - Safe application draft storage/sync status beside the editable draft when browser storage or account sync fails, while keeping Submit Application available.
   - Optional resume or profile URL input.
   - Optional editable cover letter input.
   - Explicit submit button.
+  - Safe application-submit failure alert with retry through Submit Application when the provider rejects submission.
   - Append-only workflow analytics for review, draft, restore, clear, submit, and failure decisions.
 - Application details modal:
   - Status badge.
@@ -1018,17 +1090,21 @@ Jobs page contents:
   - Rejected state when applicable.
   - Submitted resume link and cover letter when available.
 - Browser-level Jobs workflow coverage lives in `apps/frontend/tests/job-application.spec.ts`; it verifies Explore job rendering, Review Application draft editing, application submit payload, success receipt, Application Details content, the Applied tab entry, saved-search create/apply/review-cancel/delete payloads, and hidden Explore hide/restore payloads across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- `apps/frontend/src/pages/jobs/JobsPage.test.tsx` verifies safe Explore catalog failed-load copy, safe Applied-tab application history failed-load copy, safe My Posts recruiter postings failed-load copy, safe application-submit failure copy, safe recruiter publish failure copy, saved-search sync fallback copy, hidden Explore sync fallback copy, saved-search browser-storage failure copy, hidden Explore browser-storage failure copy, application draft browser-storage, draft-history storage, and account-sync failure copy, all-hidden Explore empty-state copy, publish-readiness policy sanitization, raw provider-error exclusion, and retry through the existing jobs catalog/application history/recruiter job load, Review Application, publish checklist, saved-search, hidden-preference, and application draft workflows.
 - Full post job page:
   - Company setup onboarding panel when opened with `companySetup=1`, including Dashboard and Continue to Role Draft controls.
-- Job template selector.
-- Use Template action that inserts the selected template into editable fields.
-- Save Current action that stores the current form as a recruiter-scoped account template when sync is available, with local fallback.
-- Delete action for the selected account/local template that opens a Delete Job Template confirmation modal before removal.
-- Template status copy explaining sync state and that saving still requires review.
+  - Job template selector.
+  - Use Template action that inserts the selected template into editable fields.
+  - Save Current action that stores the current form as a recruiter-scoped account template when sync is available, with local fallback.
+  - Delete action for the selected account/local template that opens a Delete Job Template confirmation modal before removal.
+  - Template status copy explaining sync state and that saving still requires review.
+  - Safe template browser-storage failure copy when account sync also fails, while preserving current-session template controls and current form fields.
   - Recent draft versions panel with autosaved, template-applied, reviewed, saved, and restored checkpoints.
+  - Safe draft-history browser-storage failure copy that remains visible from the review state when Review Draft creates a checkpoint.
   - Account synced or Local only labels for each draft version.
   - Explicit Restore action that replaces only the editable form fields.
   - Company context status with Attach Company checkbox when a recruiter-owned company profile is available.
+  - Safe company-context failed-load panel with Retry company context when recruiter company lookup cannot load.
   - Company profile completion percent and missing field labels.
   - Editable company profile fields for name, industry, location, website, employee count, and description.
   - Create & Attach Company action when no recruiter-owned company profile exists.
@@ -1038,9 +1114,12 @@ Jobs page contents:
   - Review Draft action that validates required fields before any job is saved.
   - Draft review state with title, job type, location, company, salary, description, requirement count, and normalized requirement preview.
   - Changes to Save panel in draft edit mode, comparing normalized field values before updating an existing draft.
+  - Safe edit-draft context failed-load panel with Retry draft context when recruiter-owned draft context cannot be loaded.
+  - Safe company create/update and draft save/update action-failure status copy with retry on the same Post Job action.
   - Advisory duplicate warning when an active recruiter job already matches title, location, and job type.
   - Back to Edit and Save Draft or Save Changes actions.
 - Browser-level Post Job workflow coverage lives in `apps/frontend/tests/post-job-workflow.spec.ts`; it verifies company context create/attach payloads, template save/apply/delete review, draft-history restore, duplicate warning review, reviewed draft save payloads, and return to Jobs postings across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- `apps/frontend/src/pages/jobs/PostJobPage.test.tsx` verifies safe edit-draft context failed-load copy, safe company-context failed-load copy, safe company create/update and draft save/update failure copy, accurate template save/delete and draft-history browser-storage failure copy, raw provider/quota-error exclusion, preserved form/review state, and retry or preserved state through the existing recruiter jobs, company lookup/action, draft save, template, and draft-history workflows.
 
 How it works:
 
@@ -1049,99 +1128,105 @@ How it works:
 3. Changing tabs updates the URL so dashboard application cards and recruiter draft saves can deep-link to the relevant workspace.
 4. `jobService.getJobsPage` first queries Supabase `jobs` and joins `companies`.
 5. If Supabase fails, it calls API Gateway `GET /api/v1/jobs`.
-6. Search, location, type, salary, limit, offset, and optional cursor are sent as query params and also applied client-side as a fallback guard.
-7. First-page Supabase reads request an exact count with limit/offset.
-8. Later Supabase pages can use opaque cursor tokens based on `posted_at` and `id`, with `limit + 1` lookahead.
-9. Explore stores per-page cursor tokens, requests one result page at a time, and shows the current result range.
-10. Search, filter, or page-size changes reset Explore pagination to page 1 and clear stored cursors.
-11. Supabase responses provide exact total count when available; cursor pages preserve the previously known total while returning `total: null`.
-12. API fallback responses use total metadata when present, cursor metadata when present, or `hasNext` from page size.
-13. `jobService.getJobs` remains available for saved-search alert checks and other array-returning callers.
-14. Explore loads the current profile while the tab is active and builds local advisory fit reasons from profile skills/location plus visible job title, description, location, and requirements.
-15. If profile data is unavailable, Explore shows a non-blocking status and job cards still support search, filtering, saved searches, and application review.
-16. Fit reasons never sort, hide, filter, apply, or mutate jobs by themselves.
-17. Hide stores the selected job in a user-scoped local hidden-Explore preference with title, company, job type, location, and hidden time context; it removes the job from the visible Explore card list and leaves applications, saved searches, and job records unchanged.
-18. When signed in, the page loads account hidden Explore jobs from `hidden_explore_jobs`, merges them with local hidden jobs by recency, writes the merged list back to local storage, and backfills missing account rows.
-19. Hide, Restore Last, and Restore All update local visibility immediately, then sync the matching account preference when available.
-20. Restore Last removes the most recent hidden job from that preference; Restore All clears the hidden-Explore preference and current-view hidden-preference refinements.
-21. If hidden preference sync fails, the UI warns that hidden jobs are stored locally and keeps the explicit restore controls available.
-22. Repeated hidden job types can surface explicit current-view refinement actions such as hiding that job type in the current Explore view.
-23. Active current-view preference refinements appear as visible chips with clear buttons.
-24. Restore Last clears a matching current-view job-type refinement.
-25. Hide, Restore Last, Restore All, and current-view refinement apply/clear actions emit append-only `preference_updated` product analytics events; analytics failures never block the preference change.
-26. Save Search opens a review modal that stores the current search text and filters under a user-specific saved-search key and syncs the record to `saved_job_searches` when account sync is available.
-27. Saved-search create/update actions emit append-only analytics with filter-count metadata but without raw search text or saved-search names.
-28. Saved-search new-match delivery checks the Job Alerts channel and digest frequency: immediate/no-digest settings can create an in-app alert, while daily/weekly digest settings queue a `notification_digest_items` row, update the reviewed match baseline, and show an immediate-alert paused status instead.
-29. `npm run discover:saved-search-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to discover new matches for alert-enabled saved searches, queue digest items, and update saved-search baselines.
-30. Kubernetes CronJobs in `infra/k8s/base/notification-digest-cronjobs.yaml` run saved-search digest discovery every 30 minutes, digest delivery hourly, and networking reminder delivery every 15 minutes when the scheduler image and Supabase service credentials are configured.
-31. Selecting a saved search re-applies its saved search text and filters to Explore and emits append-only apply analytics.
-32. Toggling saved-search new-match tracking emits append-only alert preference analytics.
-33. Delete opens a confirmation modal; Delete Search removes only that saved-search record, stops tracking new matches for that search, and emits append-only review/delete analytics.
-34. Clicking Apply opens a review modal instead of immediately submitting.
-35. While the review modal is open, the page loads the current user's profile through `profileService.getProfile(user.id)`.
-36. The application draft builder uses profile name, headline, summary/bio, website or social URL, skills, latest experience, and selected job requirements to populate editable resume/profile URL and cover-letter fields.
-37. AI application handoffs from `/ai` are stored as pending draft sources until the user chooses a job to apply to.
-38. If structured Resume URL or Cover Letter fields are present, the Review Application modal shows current/proposed values with Apply AI Draft and Dismiss controls.
-39. Apply AI Draft copies only the suggested fields into the editable draft and records the `ai` source; it does not submit.
-40. If the user edits before profile loading finishes, the late profile draft is not applied automatically; the user can still click Use Profile Draft.
-41. Use Profile Draft applies immediately only when the editable draft is empty or unchanged; otherwise it opens an inline replacement review with Keep Current and Replace Draft controls.
-42. Draft edits are stored in the current draft and recorded as recent checkpoints with rapid autosaves coalesced into one useful version.
-43. Draft history loads from local storage first, then merges account-synced `application_draft_versions` when available.
-44. Restore replaces only the editable draft fields and then autosaves that restored draft as a new checkpoint.
-45. Clear opens an inline review panel before removing any draft fields.
-46. Confirmed Clear records the current draft as a restorable checkpoint before removing the active draft.
-47. Review open, Use Profile Draft review/cancel/apply, Restore, Clear review, Clear cancel, confirmed Clear, submit success, and submit failure actions emit append-only application workflow analytics without storing resume URLs or cover letter text.
-48. Submitting the review modal calls `applicationService.submitApplication`.
-49. If application persistence fails, no mock or local application is created; the review modal keeps the editable draft visible and warns that nothing was sent.
-50. Existing applications are loaded for duplicate awareness; previously applied jobs show View Application.
-51. The Applied tab calls `applicationService.getUserApplications(user.id)` and receives normalized `JobApplication` objects with nested job data; if loading fails, the tab shows a retryable Applications unavailable state instead of treating the result as zero applications.
-52. Details opens an application timeline modal.
-53. Recruiter Post a Job action navigates to `/jobs/post`; it does not create a job from the Jobs page.
-54. Full post page loads recruiter-scoped job-post templates from browser storage first, then merges account-synced `job_post_templates` when available.
-55. Full post page loads the recruiter's company profile and defaults Attach Company on when a profile is available.
-56. When opened with `companySetup=1`, Post Job shows a recruiter onboarding panel and company-focused page title before any job draft is saved.
-57. The company setup handoff records an append-only setup-open event, then offers Dashboard and Continue to Role Draft controls so the recruiter can skip or continue explicitly.
-58. The company context panel calculates completion for company name, industry, location, website, description, and employee count.
-59. If no recruiter company profile is available, the full post page shows company setup fields inside the draft workflow.
-60. Company location can prefill from the role location when the role location is not remote and the company location field is still empty.
-61. Create & Attach Company calls `companyService.registerCompany` with the current recruiter as owner and the visible company profile fields.
-62. The created company becomes the visible attached company context, but the job draft remains unsaved until the recruiter reviews and saves it.
-63. Creating company context emits append-only onboarding analytics after the company is created; analytics failures do not block the created company or draft state.
-64. If a recruiter-owned company profile exists, Save Company Profile calls `companyService.updateCompany` and keeps job draft save/publish separate.
-65. Updating company profile details emits append-only onboarding analytics after the company update succeeds; analytics failures do not block the update.
-66. Recruiters can uncheck Attach Company before review or save.
-67. Dashboard and Continue to Role Draft onboarding controls emit explicit exit/handoff analytics before navigation.
-68. Save Current stores the current form as a reusable template, syncs it to the recruiter account when available, and keeps the form editable.
-69. Full post page loads local job-post draft history first, then merges account-synced `job_post_draft_versions` when available.
-70. Useful draft edits autosave into recent checkpoints, with rapid autosaves coalesced into one current version.
-71. Use Template copies the selected template into editable form fields, records a template-applied checkpoint, and does not submit.
-72. Delete opens a confirmation modal; Delete Template removes only the selected account/local template and leaves current form fields unchanged.
-73. Restore replaces the editable full post form and company attachment state with the selected version, then records a restored checkpoint.
-74. Restoring a draft version does not save, publish, contact candidates, create notifications, or change application status.
-75. Review Draft validates title, description, location, and at least one normalized requirement before showing the local review state.
-76. The full post page checks existing recruiter jobs and shows an advisory duplicate warning for active matches by title, location, and job type.
-77. Back to Edit returns to the editable form without creating or updating a job record.
-78. Save Draft normalizes newline or bullet requirements, includes `companyId` only when Attach Company remains enabled, calls `jobService.postJob` with `status: 'DRAFT'`, records a saved checkpoint under the created draft ID, then navigates back to `/jobs?tab=postings`.
-79. The My Posts tab calls `recruiterService.getRecruiterJobs(user.id)` for recruiter-owned postings.
-80. My Posts search matches posting title, description, location, company name, and status.
-81. Edit Draft navigates to `/jobs/post?draftId=<id>`.
-81. Draft edit mode reloads recruiter-owned jobs, verifies that the selected job belongs to the recruiter and is still `DRAFT`, then pre-fills the full post form.
-82. Draft edit mode excludes the current draft from duplicate warnings.
-83. Review Changes shows a normalized Changes to Save panel for title, description, location, job type, salary, requirements, and company attachment.
-84. Whitespace-only text differences, equivalent requirement bullet markers, and unchanged company IDs are ignored in the change summary.
-85. Save Changes normalizes requirements, applies the visible company attachment choice, calls `jobService.updateJob`, records a saved checkpoint, and returns to `/jobs?tab=postings`.
-86. Review Publish or View Checklist opens a checklist modal built from the selected posting and records append-only publish-review analytics with checklist issue metadata.
-87. If checklist blockers remain, the modal offers Edit Draft and returns the recruiter to `/jobs/post?draftId=<id>`.
-88. If blockers are clear, Publish Job calls `jobService.updateJob(id, { status: 'PUBLISHED' })`, records append-only publish success or failure analytics, updates local posting state, and refreshes Explore results.
-89. The database publish readiness policy rejects `PUBLISHED` jobs missing title, description, location, company context, or at least one non-empty requirement.
-90. Product analytics failures stay non-blocking and do not change registration, company setup, saved searches, or posting status.
-91. No candidate is contacted automatically by registration onboarding, creating company context, updating company profile details, saving, applying, deleting, or toggling saved searches, saving, editing, restoring, replacing, or clearing an application draft, restoring a job-post draft, hiding or restoring an Explore job, refining the current Explore view from hidden preferences, or publishing a job.
+6. If both catalog backends fail through the query layer, Explore shows safe failed-load copy and Retry jobs calls the existing jobs catalog `refetch` workflow.
+7. Search, location, type, salary, limit, offset, and optional cursor are sent as query params and also applied client-side as a fallback guard.
+8. First-page Supabase reads request an exact count with limit/offset.
+9. Later Supabase pages can use opaque cursor tokens based on `posted_at` and `id`, with `limit + 1` lookahead.
+10. Explore stores per-page cursor tokens, requests one result page at a time, and shows the current result range.
+11. Search, filter, or page-size changes reset Explore pagination to page 1 and clear stored cursors.
+12. Supabase responses provide exact total count when available; cursor pages preserve the previously known total while returning `total: null`.
+13. API fallback responses use total metadata when present, cursor metadata when present, or `hasNext` from page size.
+14. `jobService.getJobs` remains available for saved-search alert checks and other array-returning callers.
+15. Explore loads the current profile while the tab is active and builds local advisory fit reasons from profile skills/location plus visible job title, description, location, and requirements.
+16. If profile data is unavailable, Explore shows a non-blocking status and job cards still support search, filtering, saved searches, and application review.
+17. Fit reasons never sort, hide, filter, apply, or mutate jobs by themselves.
+18. Hide stores the selected job in a user-scoped local hidden-Explore preference with title, company, job type, location, and hidden time context; it removes the job from the visible Explore card list and leaves applications, saved searches, and job records unchanged.
+19. When signed in, the page loads account hidden Explore jobs from `hidden_explore_jobs`, merges them with local hidden jobs by recency, writes the merged list back to local storage, and backfills missing account rows.
+20. Hide, Restore Last, and Restore All update local visibility immediately, then sync the matching account preference when available.
+21. Restore Last removes the most recent hidden job from that preference; Restore All clears the hidden-Explore preference and current-view hidden-preference refinements.
+22. If hidden preference sync fails, the UI warns that hidden jobs are stored locally and keeps the explicit restore controls available.
+23. Repeated hidden job types can surface explicit current-view refinement actions such as hiding that job type in the current Explore view.
+24. Active current-view preference refinements appear as visible chips with clear buttons.
+25. Restore Last clears a matching current-view job-type refinement.
+26. Hide, Restore Last, Restore All, and current-view refinement apply/clear actions emit append-only `preference_updated` product analytics events; analytics failures never block the preference change.
+27. Save Search opens a review modal that stores the current search text and filters under a user-specific saved-search key and syncs the record to `saved_job_searches` when account sync is available.
+28. Saved-search create/update actions emit append-only analytics with filter-count metadata but without raw search text or saved-search names.
+29. Saved-search new-match delivery checks the Job Alerts channel and digest frequency: immediate/no-digest settings can create an in-app alert, while daily/weekly digest settings queue a `notification_digest_items` row, update the reviewed match baseline, and show an immediate-alert paused status instead.
+30. `npm run discover:saved-search-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to discover new matches for alert-enabled saved searches, queue digest items, and update saved-search baselines.
+31. Kubernetes CronJobs in `infra/k8s/base/notification-digest-cronjobs.yaml` run saved-search digest discovery every 30 minutes, digest delivery hourly, and networking reminder delivery every 15 minutes when the scheduler image and Supabase service credentials are configured.
+32. Selecting a saved search re-applies its saved search text and filters to Explore and emits append-only apply analytics.
+33. Toggling saved-search new-match tracking emits append-only alert preference analytics.
+34. Delete opens a confirmation modal; Delete Search removes only that saved-search record, stops tracking new matches for that search, and emits append-only review/delete analytics.
+35. Clicking Apply opens a review modal instead of immediately submitting.
+36. While the review modal is open, the page loads the current user's profile through `profileService.getProfile(user.id)`.
+37. The application draft builder uses profile name, headline, summary/bio, website or social URL, skills, latest experience, and selected job requirements to populate editable resume/profile URL and cover-letter fields.
+38. AI application handoffs from `/ai` are stored as pending draft sources until the user chooses a job to apply to.
+39. If structured Resume URL or Cover Letter fields are present, the Review Application modal shows current/proposed values with Apply AI Draft and Dismiss controls.
+40. Apply AI Draft copies only the suggested fields into the editable draft and records the `ai` source; it does not submit.
+41. If the user edits before profile loading finishes, the late profile draft is not applied automatically; the user can still click Use Profile Draft.
+42. Use Profile Draft applies immediately only when the editable draft is empty or unchanged; otherwise it opens an inline replacement review with Keep Current and Replace Draft controls.
+43. Draft edits are stored in the current draft and recorded as recent checkpoints with rapid autosaves coalesced into one useful version; if browser storage blocks the active draft, the Review Application modal shows safe inline copy and keeps editable fields available.
+44. Draft history loads from local storage first, then merges account-synced `application_draft_versions` when available; if draft-history browser storage fails or account sync fails after a local update, the modal shows safe local-fallback copy without raw quota/provider details and keeps Submit Application available.
+45. Restore replaces only the editable draft fields and then autosaves that restored draft as a new checkpoint.
+46. Clear opens an inline review panel before removing any draft fields.
+47. Confirmed Clear records the current draft as a restorable checkpoint before removing the active draft.
+48. Review open, Use Profile Draft review/cancel/apply, Restore, Clear review, Clear cancel, confirmed Clear, submit success, and submit failure actions emit append-only application workflow analytics without storing resume URLs or cover letter text.
+49. Submitting the review modal calls `applicationService.submitApplication`.
+50. If application persistence fails, no mock or local application is created; the review modal keeps the editable draft visible, shows safe retry copy, hides raw provider errors, and preserves retry through Submit Application.
+51. Existing applications are loaded for duplicate awareness; previously applied jobs show View Application.
+52. The Applied tab calls `applicationService.getUserApplications(user.id)` and receives normalized `JobApplication` objects with nested job data; if loading fails, the tab shows the safe `Application history did not respond...` recovery copy with Retry applications instead of treating the result as zero applications or showing raw provider errors.
+53. Details opens an application timeline modal.
+54. Recruiter Post a Job action navigates to `/jobs/post`; it does not create a job from the Jobs page.
+55. Full post page loads recruiter-scoped job-post templates from browser storage first, then merges account-synced `job_post_templates` when available.
+56. Full post page loads the recruiter's company profile and defaults Attach Company on when a profile is available; if the lookup fails, the company panel keeps safe retry copy and Retry company context reruns `companyService.getCompanyByUser(user.id)`.
+57. When opened with `companySetup=1`, Post Job shows a recruiter onboarding panel and company-focused page title before any job draft is saved.
+58. The company setup handoff records an append-only setup-open event, then offers Dashboard and Continue to Role Draft controls so the recruiter can skip or continue explicitly.
+59. The company context panel calculates completion for company name, industry, location, website, description, and employee count.
+60. If no recruiter company profile is available, the full post page shows company setup fields inside the draft workflow.
+61. Company location can prefill from the role location when the role location is not remote and the company location field is still empty.
+62. Create & Attach Company calls `companyService.registerCompany` with the current recruiter as owner and the visible company profile fields.
+63. The created company becomes the visible attached company context, but the job draft remains unsaved until the recruiter reviews and saves it.
+64. Creating company context emits append-only onboarding analytics after the company is created; analytics failures do not block the created company or draft state.
+65. If a recruiter-owned company profile exists, Save Company Profile calls `companyService.updateCompany` and keeps job draft save/publish separate.
+66. Updating company profile details emits append-only onboarding analytics after the company update succeeds; analytics failures do not block the update.
+67. Recruiters can uncheck Attach Company before review or save.
+68. Dashboard and Continue to Role Draft onboarding controls emit explicit exit/handoff analytics before navigation.
+69. Save Current stores the current form as a reusable template, syncs it to the recruiter account when available, and keeps the form editable; if browser storage and account sync both fail, the form stays unchanged and the template status shows safe recovery copy instead of raw quota/provider details.
+70. Full post page loads local job-post draft history first, then merges account-synced `job_post_draft_versions` when available; if Review Draft cannot persist a draft-history checkpoint to browser storage or account sync, the review state keeps Save Draft available and shows safe draft-history status copy.
+71. Useful draft edits autosave into recent checkpoints, with rapid autosaves coalesced into one current version.
+72. Use Template copies the selected template into editable form fields, records a template-applied checkpoint, and does not submit.
+73. Delete opens a confirmation modal; Delete Template removes only the selected account/local template and leaves current form fields unchanged. If browser storage or account sync blocks deletion persistence, the template status shows safe recovery copy without raw quota/provider details.
+74. Restore replaces the editable full post form and company attachment state with the selected version, then records a restored checkpoint.
+75. Restoring a draft version does not save, publish, contact candidates, create notifications, or change application status.
+76. Review Draft validates title, description, location, and at least one normalized requirement before showing the local review state.
+77. The full post page checks existing recruiter jobs and shows an advisory duplicate warning for active matches by title, location, and job type.
+78. Back to Edit returns to the editable form without creating or updating a job record.
+79. Save Draft normalizes newline or bullet requirements, includes `companyId` only when Attach Company remains enabled, calls `jobService.postJob` with `status: 'DRAFT'`, records a saved checkpoint under the created draft ID, then navigates back to `/jobs?tab=postings`.
+80. The My Posts tab calls `recruiterService.getRecruiterJobs(user.id)` for recruiter-owned postings.
+81. If My Posts loading fails with no visible posting records, the tab shows the safe `Recruiter postings did not respond...` recovery copy with Retry postings instead of treating the result as zero recruiter postings or showing raw provider errors.
+82. My Posts search matches posting title, description, location, company name, and status.
+83. Edit Draft navigates to `/jobs/post?draftId=<id>`.
+84. Draft edit mode reloads recruiter-owned jobs, verifies that the selected job belongs to the recruiter and is still `DRAFT`, then pre-fills the full post form.
+85. If draft edit context cannot be loaded, Post Job shows safe failed-load copy and Retry draft context reruns the existing `recruiterService.getRecruiterJobs(user.id)` load workflow.
+86. Draft edit mode excludes the current draft from duplicate warnings.
+87. Review Changes shows a normalized Changes to Save panel for title, description, location, job type, salary, requirements, and company attachment.
+88. Whitespace-only text differences, equivalent requirement bullet markers, and unchanged company IDs are ignored in the change summary.
+89. Save Changes normalizes requirements, applies the visible company attachment choice, calls `jobService.updateJob`, records a saved checkpoint, and returns to `/jobs?tab=postings`.
+90. If Create & Attach Company, Save Company Profile, Save Draft, or Save Changes fails, Post Job shows fixed safe copy, hides raw provider errors, preserves the owning form or review state, and keeps retry on the same action.
+91. Review Publish or View Checklist opens a checklist modal built from the selected posting and records append-only publish-review analytics with checklist issue metadata.
+92. If checklist blockers remain, the modal offers Edit Draft and returns the recruiter to `/jobs/post?draftId=<id>`.
+93. If blockers are clear, Publish Job calls `jobService.updateJob(id, { status: 'PUBLISHED' })`, records append-only publish success or failure analytics, updates local posting state, and refreshes Explore results.
+94. If Publish Job fails, the checklist modal stays open, shows safe retry copy, hides raw provider errors, keeps the draft unchanged, and preserves retry through Publish Job.
+95. The database publish readiness policy rejects `PUBLISHED` jobs missing title, description, location, company context, or at least one non-empty requirement.
+96. Product analytics failures stay non-blocking and do not change registration, company setup, saved searches, or posting status.
+97. No candidate is contacted automatically by registration onboarding, creating company context, updating company profile details, saving, applying, deleting, or toggling saved searches, saving, editing, restoring, replacing, or clearing an application draft, restoring a job-post draft, hiding or restoring an Explore job, refining the current Explore view from hidden preferences, or publishing a job.
 
 Outputs:
 
 | Operation | Output |
 |---|---|
 | Get jobs | `Job[]` |
+| Recover Explore catalog load failure | Safe failed-load copy plus retry through the existing jobs catalog refetch workflow |
 | Paginate Explore jobs | `{ jobs, total, limit, offset, hasNext, nextCursor }`; no data mutation |
 | Explain Explore fit | Local advisory fit label, matched skills, reasons, and missing profile signals; no data mutation |
 | Hide Explore job | User-scoped account/local hidden-job preference with job type/location context and updated visible Explore list; no application, saved-search, or job mutation |
@@ -1155,7 +1240,7 @@ Outputs:
 | Update company profile | Updated recruiter-owned company profile details; no job mutation |
 | Onboarding analytics | Append-only registration and company setup task/preference/handoff events; no workflow mutation by itself |
 | Post job | Created draft `Job` |
-| Recruiter postings | Recruiter-owned draft and published `Job[]` for My Posts |
+| Recruiter postings | Recruiter-owned draft and published `Job[]` for My Posts; load failure shows safe Retry postings recovery instead of an empty state or raw provider error |
 | Edit recruiter draft | Normalized local change summary, then updated existing draft `Job`; no duplicate draft and no publish action |
 | Publish recruiter posting | Updated `Job` status reflected as `PUBLISHED`; candidates are not contacted |
 | Publish readiness policy | Database-enforced acceptance or rejection of public posting status; rejected drafts remain drafts |
@@ -1175,7 +1260,7 @@ Outputs:
 | Application draft history | Recent account/local draft versions with restore actions; no application is submitted |
 | Application workflow analytics | Append-only task/prefill events with non-sensitive draft metadata; no workflow mutation by itself |
 | Apply | Created `JobApplication` only after successful persistence; failed inserts keep the editable draft open and do not create a local/mock application |
-| User applications | `JobApplication[]` with nested job data; load failure throws so the Applied tab can show retry instead of an empty state |
+| User applications | `JobApplication[]` with nested job data; load failure throws so the Applied tab can show safe Retry applications recovery instead of an empty state or raw provider error |
 
 Job output shape:
 
@@ -1282,6 +1367,8 @@ Candidate page contents:
 
 - Header with Refresh and Filter buttons.
 - Search input.
+- Safe candidate-list failed-load state with Retry candidates when application rows cannot load.
+- Safe status action-failure states inside single-status and bulk-status confirmation modals, including accurate all-failed bulk copy when no status changes were saved.
 - Result range with high-signal count, focus control, advisory/current sort control, page-size, previous-page, and cursor-backed next-page controls during normal browsing.
 - Current-page scorecard analytics for coverage, average rubric, evidence gaps, and synced/local scorecards, with direct Review gaps, Review high signal, and Show all focus actions.
 - Review first visible/in focus action, page-scoped Select visible control, selected count, target eligibility counts, Clear action, Review Interview Move action, Review Offer Move action, and Review Rejection action.
@@ -1347,6 +1434,7 @@ How it works:
 22. Bulk Rejection skips existing Offer and Rejected rows to avoid accidental offer rescinds or duplicate final-state changes.
 23. Confirm bulk status calls `recruiterService.updateApplicationStatus` for eligible selected applications only.
 24. Successful bulk updates refresh local cards and the open detail modal when relevant; failed updates remain selected for review or retry.
+    If every eligible bulk update fails, the modal states that no selected applications were moved and keeps the same confirmation action available for retry.
 25. Details opens an in-page modal for application review.
 26. Recruiter notes are loaded from browser local storage under a recruiter-scoped key and then from server notes when available.
 27. Local scorecards load immediately from recruiter-scoped local storage by application ID.
@@ -1358,6 +1446,7 @@ How it works:
 33. Use in Notes inserts the interview plan into the editable note field and does not save automatically.
 34. Interview, Offer, and Reject all open a confirmation modal before calling `recruiterService.updateApplicationStatus`.
 35. The returned status updates local page state and the open detail modal.
+    Single-status update failures keep the confirmation modal open, show fixed safe copy, hide raw provider errors, and retry through the same confirmation action without changing local status.
 36. Candidate workflow analytics records explicit review focus, detail/queue open, draft-aid, private-review reset review/cancel/confirm, scorecard, status review/outcome, and bulk review/outcome actions.
 37. Candidate workflow analytics stores only IDs, counts, status names, source flags, unsaved draft flags, score bands, and error categories; it does not store private notes, scorecard evidence, scorecard ratings, resume URLs, or cover letter text.
 
@@ -1438,8 +1527,10 @@ Implementation note:
 
 - Candidate Details opens in-page and can also open `/profile/{candidate.userId}` in read-only mode for non-owners.
 - Interview planning is draft-only: it does not create video sessions, messages, notifications, or status changes until the recruiter explicitly saves notes or confirms a status update.
+- If the application list cannot load, Candidates keeps the route heading and search/refresh context visible, hides raw provider errors, and retries through the same `recruiterService.getApplicationsPage(user.id, { limit, offset, search, cursor })` workflow.
 - Candidate scorecards are private recruiter aids; they sync through `candidate_scorecards` when available and stay browser-local when server sync is unavailable.
 - Browser-level coverage in `apps/frontend/tests/candidate-review.spec.ts` verifies deterministic candidate rendering, Candidate Details review, scorecard upsert payload, scorecard local fallback and retry, private note upsert/delete payloads, status confirmation, application status update payload, failed status handling, status-event audit payload, first-candidate queue handoff, Previous/Next queue navigation, keyboard pagination/search/details/queue navigation, Select visible, bulk Interview/Offer/Rejection eligibility and skipped review, bulk partial-failure handling, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
+- `apps/frontend/src/pages/candidates/CandidatesPage.test.tsx` verifies safe application-list failed-load copy, safe single-status and all-failed bulk status failure copy, raw provider-error exclusion, accurate all-failed bulk messaging, and retry through the existing page load and confirmation workflows.
 - Advisory signals are private recruiter aids; they only affect displayed priority order and never change candidate status or contact candidates automatically.
 - Candidate review focus filters are display-only current-page controls; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
 - Candidate analytics focus actions only change display focus; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
@@ -1462,6 +1553,7 @@ Purpose:
 - Let users enroll in courses.
 - Display lessons, progress, course metadata, and learning paths.
 - Record append-only LMS workflow analytics for explicit catalog, AI search, enrollment, and lesson decisions.
+- Show safe enrollment and progress-save action-failure recovery without exposing raw provider errors.
 
 Inputs:
 
@@ -1504,6 +1596,7 @@ Page contents:
   - Explains that progress could not be refreshed.
   - Preserves any already loaded progress.
   - Retry Progress action.
+  - Uses safe copy and does not expose raw provider errors.
 - Recommended Next panel for unstarted catalog courses:
   - Category.
   - Difficulty.
@@ -1515,6 +1608,7 @@ Page contents:
   - In Progress.
   - Completed.
 - Search input.
+- Course-catalog failure state with safe copy and Retry Courses when the course catalog fetch rejects.
 - Course pagination controls:
   - Loaded range and total when available.
   - Matching result range for search when total metadata is available.
@@ -1541,39 +1635,44 @@ Page contents:
   - Lesson player with lesson title, duration, content, and optional video placeholder.
   - Mark Complete or Enroll and Complete action for the active lesson.
   - Progress-not-saved warning when LMS mutation persistence is unavailable.
+  - Safe enrollment failure notification when enrollment persistence is unavailable.
   - Close button and Enroll Now button when the user is not enrolled.
 
 How it works:
 
 1. Page dispatches `fetchCourses({ search, limit, offset, cursor, userId, progress })` using the current search text, catalog page, selected page size, active cursor checkpoint, and active progress tab.
-2. AI learning handoffs from `/ai` are parsed into suggested catalog searches and route state is cleared after loading.
-3. Apply Search copies only the selected AI search term into the LMS search box, resets to All Courses page 1, and does not enroll or change progress.
-4. Dismiss clears the AI learning handoff without changing search, enrollment, or lesson progress.
-5. For signed-in users, the page loads enrollments with `lmsService.getUserEnrollments(user.id)` and shows a retryable progress-unavailable panel if both enrollment backends fail.
-6. `lmsService.getCoursesPage()` tries API Gateway first, sending `category`, `published`, `search`, `userId`, `progress`, `limit`, `offset`, and `cursor` when provided.
-7. If the gateway returns a legacy full-array response while search or progress filtering is active, the frontend filters matching courses before local page slicing.
-8. If the gateway fails and a progress tab is active, Supabase enrollments are resolved first and matching course IDs are applied before course pagination.
-9. If the gateway fails, it queries Supabase `courses` with search filtering, enrollment-aware progress filtering, exact count metadata on the first page, and cursor-backed `created_at`/`id` ordering for subsequent pages.
-10. Supabase lesson metadata is fetched only for the visible course IDs.
-11. If both fail, it returns an empty page.
-12. `lmsService.getCourses()` remains available as the array-returning compatibility path.
-13. Progress tabs use enrollment-aware query params and keep local display filtering as a defensive guard.
-14. Course cards and LMS tabs use enrollment progress when an enrollment exists.
-15. Continue Learning derives active courses from enrollment progress between 1 and 99 percent.
-16. Continue Learning opens the same course modal directly at the first incomplete lesson.
-17. Recommended Next selects unstarted courses, prioritizing categories that match active in-progress courses when available.
-18. Opening a course selects the first incomplete lesson, or the first lesson when nothing is started.
-19. Mark Complete calls `lmsService.markLessonComplete(enrollmentId, lessonId, userId, courseId)`, enrolling first when needed.
-20. If enrollment progress loading fails, the page preserves any already loaded enrollment state and shows a Retry Progress action instead of implying the user has no enrolled courses.
-21. If enrollment or lesson-completion persistence fails, the page keeps the lesson incomplete and warns that progress was not saved.
-22. After persisted completion, the page updates local enrollment/course state and advances to the next incomplete lesson.
-23. LMS workflow analytics records catalog load/failure, tab selection, search submission, page navigation, page-size changes, AI learning-plan review/apply/dismiss, course opening, enrollment outcomes, lesson selection, and lesson completion outcomes.
-24. LMS workflow analytics stores only bounded metadata: tab ID, course ID, lesson ID, entry point, category, difficulty, progress band, lesson/page counts, total/next-page flags, search presence and length band, progress filter, suggestion count/label/index, enrollment flags, completion status, and error category.
-25. Raw search terms, course titles, lesson titles, provider names, recommendation text, suggestion text, and raw error messages are not recorded.
+2. If the course catalog fetch rejects, the page keeps the Learning heading and catalog controls visible, shows fixed safe copy, hides raw provider errors, and exposes Retry Courses through the same `fetchCourses()` workflow.
+3. AI learning handoffs from `/ai` are parsed into suggested catalog searches, route state is cleared after loading, and the consumed handoff is guarded while React Router clears state so applying a search cannot reopen a stale suggestion panel.
+4. Apply Search copies only the selected AI search term into the LMS search box, resets to All Courses page 1, and does not enroll or change progress.
+5. Dismiss clears the AI learning handoff without changing search, enrollment, or lesson progress.
+6. For signed-in users, the page loads enrollments with `lmsService.getUserEnrollments(user.id)` and shows a retryable progress-unavailable panel with fixed safe copy if both enrollment backends fail.
+7. `lmsService.getCoursesPage()` tries API Gateway first, sending `category`, `published`, `search`, `userId`, `progress`, `limit`, `offset`, and `cursor` when provided.
+8. If the gateway returns a legacy full-array response while search or progress filtering is active, the frontend filters matching courses before local page slicing.
+9. If the gateway fails and a progress tab is active, Supabase enrollments are resolved first and matching course IDs are applied before course pagination.
+10. If the gateway fails, it queries Supabase `courses` with search filtering, enrollment-aware progress filtering, exact count metadata on the first page, and cursor-backed `created_at`/`id` ordering for subsequent pages.
+11. Supabase lesson metadata is fetched only for the visible course IDs.
+12. If both fail, it returns an empty page.
+13. `lmsService.getCourses()` remains available as the array-returning compatibility path.
+14. Progress tabs use enrollment-aware query params and keep local display filtering as a defensive guard.
+15. Course cards and LMS tabs use enrollment progress when an enrollment exists.
+16. Continue Learning derives active courses from enrollment progress between 1 and 99 percent.
+17. Continue Learning opens the same course modal directly at the first incomplete lesson.
+18. Recommended Next selects unstarted courses, prioritizing categories that match active in-progress courses when available.
+19. Opening a course selects the first incomplete lesson, or the first lesson when nothing is started.
+20. Mark Complete calls `lmsService.markLessonComplete(enrollmentId, lessonId, userId, courseId)`, enrolling first when needed.
+21. If enrollment progress loading fails, the page preserves any already loaded enrollment state and shows a Retry Progress action instead of implying the user has no enrolled courses.
+22. If enrollment or lesson-completion persistence fails, the page keeps the lesson incomplete and warns that progress was not saved.
+23. After persisted completion, the page updates local enrollment/course state and advances to the next incomplete lesson.
+24. If enrollment persistence fails, the course review stays available, safe toast copy hides raw provider errors, and retry remains on the existing Enroll Now action.
+25. If lesson-completion persistence fails, the lesson remains incomplete, progress stays unchanged, safe toast copy hides raw provider errors, and retry remains on the existing Mark Complete action.
+26. LMS workflow analytics records catalog load/failure, tab selection, search submission, page navigation, page-size changes, AI learning-plan review/apply/dismiss, course opening, enrollment outcomes, lesson selection, and lesson completion outcomes.
+27. LMS workflow analytics stores only bounded metadata: tab ID, course ID, lesson ID, entry point, category, difficulty, progress band, lesson/page counts, total/next-page flags, search presence and length band, progress filter, suggestion count/label/index, enrollment flags, completion status, and error category.
+28. Raw search terms, course titles, lesson titles, provider names, recommendation text, suggestion text, and raw error messages are not recorded.
 
 Browser validation:
 
-- `apps/frontend/tests/lms-workflow.spec.ts` verifies the AI Assistant to Learning handoff, explicit AI catalog-search application, course search and pagination controls, enrollment payloads, failed enrollment recovery, lesson-completion payloads, failed progress-persistence recovery, local progress updates, keyboard lesson selection/completion, and In Progress filtering across Chromium, Firefox, and WebKit fixtures without relying on live LMS API or Supabase services. LMS progress persistence now treats Supabase fallback read/write errors as failed saves instead of presenting unsaved lesson progress as complete.
+- `apps/frontend/tests/lms-workflow.spec.ts` verifies the AI Assistant to Learning handoff, consumed route-state draft cleanup after search application, explicit AI catalog-search application, course search and pagination controls, enrollment payloads, failed enrollment recovery, lesson-completion payloads, failed progress-persistence recovery, local progress updates, keyboard lesson selection/completion, and In Progress filtering across Chromium, Firefox, and WebKit fixtures without relying on live LMS API or Supabase services. LMS progress persistence now treats Supabase fallback read/write errors as failed saves instead of presenting unsaved lesson progress as complete.
+- `apps/frontend/src/pages/lms/LMSPage.test.tsx` verifies safe Learning course-catalog/enrolled-progress failed-load copy, enrollment/lesson-completion action-failure copy, raw provider-error exclusion, unchanged progress state, and retry through the existing course catalog, enrollment progress load, Enroll Now, and Mark Complete workflows.
 
 Output data shape:
 
@@ -1652,6 +1751,7 @@ Purpose:
 - Show retry history for the selected challenge.
 - Review starter-code resets before overwriting edited solutions.
 - Submit challenge solutions through the service layer.
+- Show safe submission action-failure recovery without exposing raw provider errors.
 - Record append-only challenge workflow analytics for explicit challenge decisions.
 
 Inputs:
@@ -1692,6 +1792,7 @@ Page contents:
   - Latest submission status, score, and feedback when available.
   - Retry History panel with prior attempts, status, language, score, timestamp, and feedback preview.
   - Refresh submission history action.
+  - Safe submission failure notification when persistence is unavailable.
   - Close, Run Local Check, and Submit Solution buttons.
 
 How it works:
@@ -1714,8 +1815,11 @@ How it works:
 16. Submission calls `challengeService.submitChallengeSolution(challengeId, userId, language, code)`.
 17. Latest submission status and score are shown after a successful submission.
 18. The new submission is added to Retry History immediately after a successful submit.
-19. Challenge workflow analytics records explicit filter, workspace, language, reset review/cancel/confirm, local-check, retry-history, and submission decisions without storing code, starter code, prompt text, sample values, feedback text, or raw error messages.
-20. Browser workflow coverage in `apps/frontend/tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit fixtures without relying on live challenge API or Supabase services. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
+19. If submission persistence fails, the workspace stays open, safe toast copy hides raw provider errors, retry history remains unchanged, and retry remains on the existing Submit Solution action.
+20. Challenge workflow analytics records explicit filter, workspace, language, reset review/cancel/confirm, local-check, retry-history, and submission decisions without storing code, starter code, prompt text, sample values, feedback text, or raw error messages.
+21. Top-level catalog load failures show safe retry copy and do not expose raw service error strings.
+22. Browser workflow coverage in `apps/frontend/tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit fixtures without relying on live challenge API or Supabase services. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
+23. Unit coverage in `apps/frontend/src/pages/challenges/ChallengesPage.test.tsx` verifies safe catalog failed-load copy, safe submission action-failure copy, raw provider-error exclusion, unchanged retry history after failed persistence, and retry through the existing fetch and Submit Solution workflows.
 
 Outputs:
 
@@ -1846,6 +1950,7 @@ AI Assistant page contents:
 - Assistant responses are marked as draft responses.
 - Assistant draft responses show source and control disclosure.
 - Assistant draft responses can be saved or dismissed as account-synced review records with local fallback.
+- Safe provider-failure draft response that does not expose raw AI provider errors.
 - AI Review Queue with:
   - Draft, saved, and dismissed counts.
   - Save all and Dismiss all actions for pending recommendations.
@@ -1861,6 +1966,7 @@ Career Path page contents:
 
 - Header with Generated Guidance or Needs data badge.
 - Retryable unavailable/incomplete-data state when career-path generation fails or returns no usable path.
+- Safe provider-unavailable copy with Retry career path when the AI provider does not respond.
 - Career path cards showing:
   - Recommended path title.
   - Review-first advisory badge.
@@ -1881,30 +1987,33 @@ How it works:
 8. Clear Chat starts a fresh local conversation, clears the draft prompt/input, and best-effort deletes the previous account AI session when signed in.
 9. Sending a message calls backend AI API `POST /api/v1/ai/chat` with `{ prompt }`.
 10. Response is appended as an assistant draft response.
-11. Assistant draft responses include source detail and a control note that no profile, resume, application, or settings data has changed.
-12. The AI Review Queue collects non-welcome assistant responses, removes duplicates, places draft recommendations first, and classifies each recommendation into a likely workflow handoff.
-13. Save or Dismiss updates local chat history metadata and attempts to sync review status to `automation_suggestions` when available.
-14. Save or Dismiss also appends an `automation_suggestion_audit_events` record with previous status, next status, session context, source label, and bulk-review metadata when available; audit storage failures use a bounded local fallback.
-15. Save all and Dismiss all update pending recommendation review states only.
-16. Open workflow navigates to the relevant route; it does not apply the recommendation.
-17. For Profile handoffs, the AI page passes recommendation text and source metadata to `/profile`; the Profile page may prefill an editable Headline, Location, and Bio draft if structured fields are present.
-18. For Resume handoffs, the AI page passes recommendation text and source metadata to `/resume`; the Resume Builder may prefill selectable Headline, Phone, Location, Website, and Summary draft fields if structured fields are present.
-19. For Jobs/Application handoffs, the AI page passes recommendation text and source metadata to `/jobs`; the Jobs page may hold a pending Resume URL/Cover Letter draft until the user chooses a job and explicitly applies it in the Review Application modal.
-20. For Learning handoffs, the AI page passes recommendation text and source metadata to `/lms`; the LMS page may show Course Search, Skill, Course, Certification, or Learning Goal catalog-search suggestions that the user can explicitly apply or dismiss.
-21. Destination apply/save/dismiss/cancel decisions for AI Profile, Resume, Application, and Learning handoffs emit `workflow_prefill_used` or `workflow_prefill_rejected` product analytics and automation audit events with local fallback.
-22. Chat-clear review/cancel/confirm decisions, recommendation generation, save/dismiss decisions, service failure states, workflow handoff opens, and destination prefill decisions emit product analytics events with local fallback.
-23. AI responses do not automatically modify profile, resume, jobs, applications, learning records, candidates, settings, messages, or notifications.
-24. `/career-path` calls backend AI API `GET /api/v1/ai/career-path/{userId}`.
-25. Career Path normalizes the returned path, timeline, required skills, and optional milestones before rendering.
-26. If generation fails or returns no path title, Career Path shows an explicit unavailable/incomplete state with Retry instead of a hard-coded default recommendation.
-27. Career Path does not show a fabricated match percentage; generated guidance is labeled as review-first before users open LMS.
-28. `analyzeResume` calls backend AI API `POST /api/v1/ai/analyze-resume`; if it fails, it extracts common skills client-side and estimates years from text.
+11. If chat generation fails, the page appends fixed safe draft copy, keeps chat/review/composer context visible, hides raw provider errors, and lets the user retry by sending another prompt through the same chat response workflow.
+12. Assistant draft responses include source detail and a control note that no profile, resume, application, or settings data has changed.
+13. The AI Review Queue collects non-welcome assistant responses, removes duplicates, places draft recommendations first, and classifies each recommendation into a likely workflow handoff.
+14. Save or Dismiss updates local chat history metadata and attempts to sync review status to `automation_suggestions` when available.
+15. Save or Dismiss also appends an `automation_suggestion_audit_events` record with previous status, next status, session context, source label, and bulk-review metadata when available; audit storage failures use a bounded local fallback.
+16. Save all and Dismiss all update pending recommendation review states only.
+17. Open workflow navigates to the relevant route; it does not apply the recommendation.
+18. For Profile handoffs, the AI page passes recommendation text and source metadata to `/profile`; the Profile page may prefill an editable Headline, Location, and Bio draft if structured fields are present.
+19. For Resume handoffs, the AI page passes recommendation text and source metadata to `/resume`; the Resume Builder may prefill selectable Headline, Phone, Location, Website, and Summary draft fields if structured fields are present.
+20. For Jobs/Application handoffs, the AI page passes recommendation text and source metadata to `/jobs`; the Jobs page may hold a pending Resume URL/Cover Letter draft until the user chooses a job and explicitly applies it in the Review Application modal.
+21. For Learning handoffs, the AI page passes recommendation text and source metadata to `/lms`; the LMS page may show Course Search, Skill, Course, Certification, or Learning Goal catalog-search suggestions that the user can explicitly apply or dismiss.
+22. Destination apply/save/dismiss/cancel decisions for AI Profile, Resume, Application, and Learning handoffs emit `workflow_prefill_used` or `workflow_prefill_rejected` product analytics and automation audit events with local fallback.
+23. Chat-clear review/cancel/confirm decisions, recommendation generation, save/dismiss decisions, service failure states, workflow handoff opens, and destination prefill decisions emit product analytics events with local fallback.
+24. AI responses do not automatically modify profile, resume, jobs, applications, learning records, candidates, settings, messages, or notifications.
+25. `/career-path` calls backend AI API `GET /api/v1/ai/career-path/{userId}`.
+26. Career Path normalizes the returned path, timeline, required skills, and optional milestones before rendering.
+27. If generation fails or returns no path title, Career Path shows an explicit unavailable/incomplete state with Retry career path instead of a hard-coded default recommendation.
+28. Provider-unavailable failures use fixed safe copy and do not expose raw AI provider error strings.
+29. Career Path does not show a fabricated match percentage; generated guidance is labeled as review-first before users open LMS.
+30. `analyzeResume` calls backend AI API `POST /api/v1/ai/analyze-resume`; if it fails, it extracts common skills client-side and estimates years from text.
 
 Outputs:
 
 | Operation | Output |
 |---|---|
 | Chat | `{ message: string }` |
+| Chat provider failure | Safe assistant draft copy, AI service connection source detail, no raw provider error text, and retry through a new prompt |
 | Chat clear review | Fresh local AI chat after explicit confirmation; no destination workflow mutation |
 | Recommendation review queue | Draft/saved/dismissed counts, reviewed recommendation state, append-only audit event, optional workflow handoff |
 | Profile draft handoff | Editable profile form patch plus current/proposed field review; no profile update until explicit save |
@@ -1936,6 +2045,10 @@ Implementation note:
 - AI recommendation review audit uses `automation_suggestion_audit_events` when available and keeps a bounded local fallback; audit failures never block Save, Dismiss, Save all, or Dismiss all.
 - AI chat-clear review restores only a fresh local chat session after explicit confirmation; it does not change profile, resume, applications, learning progress, settings, saved review decisions, messages, notifications, or destination workflow data automatically.
 - AI review queue and chat-clear analytics use `product_analytics_events` when available and keep a bounded local fallback; analytics failures never block recommendation review, chat clearing, or workflow navigation. Chat-clear analytics stores bounded message/review counts and pending-prompt state, not message content, prompts, generated responses, recommendation text, resume text, job descriptions, or raw errors.
+- `apps/frontend/tests/ai-assistant-workflow.spec.ts` verifies long-running generation state, provider failure and retry, save/dismiss review sync, audit and analytics payloads, explicit clear-chat review/cancel/delete sync, and AI Review Queue handoffs into Profile, Resume, Jobs, and Learning across Chromium, Firefox, and WebKit fixtures without relying on live AI provider, Supabase, or backend runtime services.
+- `apps/frontend/src/pages/ai/AIAssistant.test.tsx` verifies safe AI Assistant chat provider-failure copy, raw provider-error exclusion, and retry through the existing chat response workflow.
+- `apps/frontend/tests/career-path-workflow.spec.ts` verifies generated career guidance rendering, review boundaries, Learning and AI Assistant handoffs, malformed generated data as retryable, retry success, and provider-unavailable state across Chromium, Firefox, and WebKit fixtures without relying on live AI provider, Supabase, or backend runtime services.
+- `apps/frontend/src/pages/ai/AICareerPath.test.tsx` verifies safe Career Path provider-unavailable copy, raw AI/provider-error exclusion, and retry through the existing career-path generation workflow.
 
 ### 5.10 Networking
 
@@ -1981,6 +2094,8 @@ Inputs:
 Page contents:
 
 - Header: "Network".
+- Top-level suggestion-load failure state with safe retry copy and no raw service error details.
+- Card-level Connect, incoming Accept, incoming Decline, and sent-request Withdraw failure states with safe inline copy and no raw provider error details.
 - Search people input.
 - Tabs:
   - Discover.
@@ -2027,38 +2142,41 @@ Page contents:
 How it works:
 
 1. Page dispatches `fetchSuggestions(user.id)`.
-2. Suggestions exclude existing connections and the current user.
-3. Page loads pending incoming/sent requests with `networkingService.getConnectionRequests(user.id)`.
-4. Page loads accepted connections with `networkingService.getConnections(user.id)`.
-5. Page filters each tab client-side.
-6. Connect button inserts a `PENDING` row in `connections`, including the optional note when provided.
-7. Sent request state updates immediately after send and also reloads from backend state.
-8. Accept calls `networkingService.acceptConnectionRequest(connectionId)` and moves the request to Connections.
-9. Decline and Withdraw call `networkingService.rejectConnectionRequest(connectionId)` and remove the request from the relevant list.
-10. Profile actions open an inline read-only profile preview modal.
-11. Full Profile in the preview opens `/profile/{userId}` for deeper explicit review.
-12. Suggestion ranking combines available profile signals with aggregate mutual-connection counts when the database RPC is available.
-13. Mutual connection counts are returned as totals only; the UI does not expose the underlying shared connection identities.
-14. Hidden suggestion IDs load from local storage first, then merge account-scoped `networking_suggestion_preferences` when available.
-15. Hide suggestion removes the profile from Discover immediately and attempts account sync in the background.
-16. Show hidden restores local visibility immediately and clears account-scoped dismissals when available.
-17. The timing selector lets the user choose Tomorrow, In 3 days, or In 1 week before setting a reminder.
-18. Remind Me stores or clears a sent-request reminder in browser local storage under a user-scoped key and syncs an unread account notification with the selected due timestamp when available.
-19. Local reminder state normalizes legacy array storage and object storage with selected timing.
-20. When sent requests load, valid local reminders with due timestamps are backfilled into account notifications through the existing networking reminder upsert path.
-21. Malformed or legacy reminders without due timestamps remain local and are not promoted into urgent unscheduled notifications.
-22. The Sent tab explains whether reminders are synced, syncing, stored locally, or waiting for notification sync.
-23. Clearing Remind Me or withdrawing a request marks the matching reminder notification read when available.
-24. If notification sync is unavailable, the local reminder remains visible with its due date so the user does not lose the follow-up cue.
-25. `npm run run:networking-reminders -- --commit` can be scheduled by an operator/worker with Supabase service credentials to promote due unread networking reminders.
-26. The reminder runner is dry-run by default, ignores read/future/invalid/already-delivered reminders, updates the existing notification row, and never sends a message or connection request automatically.
-27. Networking workflow analytics records suggestions, tab selection, preview/full-profile handoff, connect/accept/decline/withdraw, reminder set/clear/sync/backfill, and suggestion hide/restore/sync outcomes.
-28. Networking workflow analytics stores only bounded metadata: entry point, tab, request direction/status, visible/hidden suggestion counts, incoming/sent/connection/pending counts, search length band, request-note presence and length band, recommendation-score band, mutual-connection band, reason/shared-skill/profile-skill counts, reminder delay, sync status, and error category.
-29. Names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, and raw error messages are not recorded.
+2. If suggestion loading fails, the route keeps the Network heading visible, hides raw Redux/service error strings, and exposes Retry network through the same `fetchSuggestions(user.id)` workflow.
+3. Suggestions exclude existing connections and the current user.
+4. Page loads pending incoming/sent requests with `networkingService.getConnectionRequests(user.id)`.
+5. Page loads accepted connections with `networkingService.getConnections(user.id)`.
+6. Page filters each tab client-side.
+7. Connect button inserts a `PENDING` row in `connections`, including the optional note when provided.
+8. Sent request state updates immediately after send and also reloads from backend state.
+9. Accept calls `networkingService.acceptConnectionRequest(connectionId)` and moves the request to Connections.
+10. Decline and Withdraw call `networkingService.rejectConnectionRequest(connectionId)` and remove the request from the relevant list.
+    Action failures for Connect, Accept, Decline, and Withdraw stay in the owning card with safe retry copy while preserving the same service command for retry.
+11. Profile actions open an inline read-only profile preview modal.
+12. Full Profile in the preview opens `/profile/{userId}` for deeper explicit review.
+13. Suggestion ranking combines available profile signals with aggregate mutual-connection counts when the database RPC is available.
+14. Mutual connection counts are returned as totals only; the UI does not expose the underlying shared connection identities.
+15. Hidden suggestion IDs load from local storage first, then merge account-scoped `networking_suggestion_preferences` when available.
+16. Hide suggestion removes the profile from Discover immediately and attempts account sync in the background.
+17. Show hidden restores local visibility immediately and clears account-scoped dismissals when available.
+18. The timing selector lets the user choose Tomorrow, In 3 days, or In 1 week before setting a reminder.
+19. Remind Me stores or clears a sent-request reminder in browser local storage under a user-scoped key and syncs an unread account notification with the selected due timestamp when available.
+20. Local reminder state normalizes legacy array storage and object storage with selected timing.
+21. When sent requests load, valid local reminders with due timestamps are backfilled into account notifications through the existing networking reminder upsert path.
+22. Malformed or legacy reminders without due timestamps remain local and are not promoted into urgent unscheduled notifications.
+23. The Sent tab explains whether reminders are synced, syncing, stored locally, or waiting for notification sync.
+24. Clearing Remind Me or withdrawing a request marks the matching reminder notification read when available.
+25. If notification sync is unavailable, the local reminder remains visible with its due date so the user does not lose the follow-up cue.
+26. `npm run run:networking-reminders -- --commit` can be scheduled by an operator/worker with Supabase service credentials to promote due unread networking reminders.
+27. The reminder runner is dry-run by default, ignores read/future/invalid/already-delivered reminders, updates the existing notification row, and never sends a message or connection request automatically.
+28. Networking workflow analytics records suggestions, tab selection, preview/full-profile handoff, connect/accept/decline/withdraw, reminder set/clear/sync/backfill, and suggestion hide/restore/sync outcomes.
+29. Networking workflow analytics stores only bounded metadata: entry point, tab, request direction/status, visible/hidden suggestion counts, incoming/sent/connection/pending counts, search length band, request-note presence and length band, recommendation-score band, mutual-connection band, reason/shared-skill/profile-skill counts, reminder delay, sync status, and error category.
+30. Names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, and raw error messages are not recorded.
 
 Browser validation:
 
 - `apps/frontend/tests/networking-workflow.spec.ts` verifies deterministic suggestion preview, hidden-suggestion hide/restore preference sync, reviewed connection request payloads, incoming accept/decline payloads, sent reminder set/clear status, withdraw payloads, accepted connection profile preview, keyboard preview activation, and full-profile popup route targets across Chromium, Firefox, and WebKit fixtures without relying on live Supabase or backend services.
+- `apps/frontend/src/pages/networking/NetworkingPage.test.tsx` verifies safe failed-load and action-failure copy, raw error-message exclusion, and retry through the existing suggestion fetch, Connect, Accept, Decline, and Withdraw workflows.
 
 Outputs:
 
@@ -2128,6 +2246,7 @@ Purpose:
 - Suggest safe reply drafts from the latest visible incoming message.
 - Send direct messages.
 - Send reviewed public attachment links or explicitly uploaded file-service attachments with optional captions and clear hidden attachment drafts when the field is hidden.
+- Show safe send, upload, and mark-read action-failure recovery without exposing raw provider errors.
 - Listen for inserted messages in real time.
 
 Inputs:
@@ -2162,7 +2281,7 @@ Page contents:
   - Realtime preview, activity time, and unread badge updates for visible conversations.
   - Last activity time.
   - Load more conversations action when older threads are available.
-  - Retry state when conversations cannot load.
+  - Safe retry state with Retry conversations when conversations cannot load.
 - Mobile conversation picker:
   - Conversation list is visible first on small screens.
   - Selecting a conversation switches to chat.
@@ -2173,16 +2292,18 @@ Page contents:
   - Visible incoming unread count and explicit mark-read action when unread incoming messages are visible.
   - Phone, video, and more action buttons marked unavailable when provider flows are not configured.
   - Load older messages action when more history is available.
-  - Retry state when message history cannot load.
+  - Safe Retry message history or Retry older messages state when message history cannot load.
   - Message bubbles in a polite live-update log region.
   - Attachment previews with image rendering when the link appears to be an image.
   - Message timestamps with full timestamp on hover.
   - Outgoing message delivery labels for sending, sent, delivered, read, and failed states.
   - Retry action for failed local sends.
+  - Safe action-failure status copy for failed sends, failed uploads, and failed visible mark-read attempts.
   - Suggested reply drafts when the latest visible message is incoming and the composer is empty.
   - Explicit attachment panel with URL validation, file upload, upload status, server-side size/folder/blocked-extension guardrails, removable draft state, hidden-draft clearing, labeled text composer, and accessible send button.
 - Empty state when no conversation is selected.
 - Browser-level messaging workflow coverage lives in `apps/frontend/tests/messaging-workflow.spec.ts`; it verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, failed-send retry, keyboard attachment-link focus order, uploaded-file and linked attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+- `apps/frontend/src/pages/messaging/MessagingPage.test.tsx` verifies safe conversation/message-history failed-load copy, send/upload/mark-read action-failure copy, raw provider-error exclusion, failed-message retry, and unread-state preservation through the existing Messaging workflows.
 
 How it works:
 
@@ -2191,38 +2312,41 @@ How it works:
 3. `getConversationsPage` queries `conversation_participants`, embeds `conversations!inner`, orders by conversation `updated_at` and `id`, filters out left conversations, limits each preview to the latest message, and applies `limit`/`offset` for the first page or cursor filtering for older pages.
 4. The service fetches unread incoming-message counts for only the visible conversation IDs and maps `unreadCount` onto each row.
 5. The service fetches profiles for non-current participant IDs in the visible page and maps direct-chat names/avatars plus deterministic group labels.
-6. If `hasMoreConversations` is true, the page shows an explicit Load more conversations action.
-7. Loading older threads dispatches `loadMoreConversations`, requests the next cursor page when available, and appends unique conversation rows through the entity adapter.
-8. Selecting a conversation dispatches `setActiveConversation`.
-9. On mobile, selecting a conversation hides the picker and opens the chat panel.
-10. Active conversation triggers `fetchMessages`, backed by `messagingService.getMessagesPage`.
-11. Page subscribes to Supabase `postgres_changes` inserts on `messages` for loaded visible conversation IDs using one bounded channel with per-conversation filters.
-12. Realtime inserts dispatch `messageReceived` with the mapped message and current user ID.
-13. The messaging slice appends new active-thread messages, refreshes visible conversation preview/activity timestamps, increments visible conversation unread badges only for new incoming unread messages, avoids appending non-active conversation messages to the active thread, and ignores duplicate realtime events for unread counting.
-14. The messaging slice preserves conversation creation/update timestamps, unread counts, and participant profile context for UI display.
-15. The first message fetch requests the latest bounded page in descending order, then maps it into chronological display order.
-16. If `hasOlderMessages` is true, the page shows an explicit Load older messages action.
-17. Conversation cursor pages filter older embedded conversations and use `limit + 1` lookahead.
-18. The messaging slice preserves the known conversation total when cursor pages return `total: null`.
-19. Loading older history dispatches `loadOlderMessages`, requests the next cursor page when available, and prepends unique messages by ID.
-20. Message cursor pages order by `created_at` and `id`, filter older rows, and use `limit + 1` lookahead.
-21. The messaging slice preserves the known message total when cursor pages return `total: null`.
-22. If visible incoming unread messages exist, the chat header shows an explicit unread button.
-23. Marking visible messages read dispatches `markConversationMessagesRead`, persists `read_at` and `READ` status for incoming unread messages, updates the local thread, clears the active conversation badge, and records the participant read marker when available.
-24. If history loading fails, the chat panel shows a retry action.
-25. The page merges persisted and local optimistic messages, then sorts visible messages by timestamp.
-26. If the latest visible message is incoming and the composer is empty, a local helper suggests up to three reply drafts.
-27. Selecting a suggested reply inserts editable text into the composer and does not send anything.
-28. Users can expose an attachment panel, paste a public `http` or `https` URL, or explicitly upload a file up to 10 MB through file service, then review validation/upload feedback and remove the draft before sending.
-29. Submitting the composer creates a UI-only optimistic message with `localStatus: 'sending'`, inferred `messageType`, optional `attachmentUrl`, and a generated fallback caption when no caption is typed.
-30. Sending dispatches `sendMessage` through the messaging slice.
-31. Successful sends remove the optimistic row after the persisted message reaches Redux.
-32. Failed sends keep the local row, mark it `localStatus: 'failed'`, show a failed label, and expose Retry.
-33. Retry resubmits the same message content and attachment metadata through the same send path.
-34. Service inserts into `messages` and updates `conversations.updated_at`.
-35. Hiding the attachment field through the paperclip control clears the attachment draft so a hidden link cannot be sent accidentally.
-36. Messaging workflow analytics records explicit conversation selection, load/retry, mark-read, suggested-reply, link attachment, file upload, send, failure, and retry decisions.
-37. Messaging workflow analytics stores only IDs, counts, type flags, attachment source, bounded file type/size categories, suggestion IDs, and error categories; it does not store message text, attachment URLs, or file names.
+6. If the conversation list cannot load, Messages shows fixed safe copy, hides raw provider errors, and offers Retry conversations through `fetchConversations(user.id)`.
+7. If `hasMoreConversations` is true, the page shows an explicit Load more conversations action.
+8. Loading older threads dispatches `loadMoreConversations`, requests the next cursor page when available, and appends unique conversation rows through the entity adapter.
+9. Selecting a conversation dispatches `setActiveConversation`.
+10. On mobile, selecting a conversation hides the picker and opens the chat panel.
+11. Active conversation triggers `fetchMessages`, backed by `messagingService.getMessagesPage`.
+12. Page subscribes to Supabase `postgres_changes` inserts on `messages` for loaded visible conversation IDs using one bounded channel with per-conversation filters.
+13. Realtime inserts dispatch `messageReceived` with the mapped message and current user ID.
+14. The messaging slice appends new active-thread messages, refreshes visible conversation preview/activity timestamps, increments visible conversation unread badges only for new incoming unread messages, avoids appending non-active conversation messages to the active thread, and ignores duplicate realtime events for unread counting.
+15. The messaging slice preserves conversation creation/update timestamps, unread counts, and participant profile context for UI display.
+16. The first message fetch requests the latest bounded page in descending order, then maps it into chronological display order.
+17. If `hasOlderMessages` is true, the page shows an explicit Load older messages action.
+18. Conversation cursor pages filter older embedded conversations and use `limit + 1` lookahead.
+19. The messaging slice preserves the known conversation total when cursor pages return `total: null`.
+20. Loading older history dispatches `loadOlderMessages`, requests the next cursor page when available, and prepends unique messages by ID.
+21. Message cursor pages order by `created_at` and `id`, filter older rows, and use `limit + 1` lookahead.
+22. The messaging slice preserves the known message total when cursor pages return `total: null`.
+23. If visible incoming unread messages exist, the chat header shows an explicit unread button.
+24. Marking visible messages read dispatches `markConversationMessagesRead`, persists `read_at` and `READ` status for incoming unread messages, updates the local thread, clears the active conversation badge, and records the participant read marker when available.
+25. If initial or older history loading fails, the chat panel shows fixed safe copy, hides raw provider errors, and offers Retry message history or Retry older messages through the existing message load workflow.
+26. If visible mark-read persistence fails, the chat panel shows fixed safe status copy, hides raw provider errors, and keeps unread state available for the same explicit unread action.
+27. The page merges persisted and local optimistic messages, then sorts visible messages by timestamp.
+28. If the latest visible message is incoming and the composer is empty, a local helper suggests up to three reply drafts.
+29. Selecting a suggested reply inserts editable text into the composer and does not send anything.
+30. Users can expose an attachment panel, paste a public `http` or `https` URL, or explicitly upload a file up to 10 MB through file service, then review validation/upload feedback and remove the draft before sending.
+31. If attachment upload fails, the composer shows fixed safe upload copy, hides raw file-provider errors, and keeps the Upload file action available.
+32. Submitting the composer creates a UI-only optimistic message with `localStatus: 'sending'`, inferred `messageType`, optional `attachmentUrl`, and a generated fallback caption when no caption is typed.
+33. Sending dispatches `sendMessage` through the messaging slice.
+34. Successful sends remove the optimistic row after the persisted message reaches Redux.
+35. Failed sends keep the local row, mark it `localStatus: 'failed'`, show fixed safe send-failure copy, hide raw provider errors, and expose Retry.
+36. Retry resubmits the same message content and attachment metadata through the same send path.
+37. Service inserts into `messages` and updates `conversations.updated_at`.
+38. Hiding the attachment field through the paperclip control clears the attachment draft so a hidden link cannot be sent accidentally.
+39. Messaging workflow analytics records explicit conversation selection, load/retry, mark-read, suggested-reply, link attachment, file upload, send, failure, and retry decisions.
+40. Messaging workflow analytics stores only IDs, counts, type flags, attachment source, bounded file type/size categories, suggestion IDs, and error categories; it does not store message text, attachment URLs, or file names.
 
 Outputs:
 
@@ -2343,6 +2467,8 @@ Purpose:
 - Show transaction history.
 - Create checkout sessions and subscriptions through service methods.
 - Open the secure billing provider for plan changes and payment-method updates.
+- Show safe provider-unavailable recovery without exposing raw provider errors.
+- Show safe checkout and billing portal action-failure recovery without exposing raw provider errors.
 - Record append-only billing workflow analytics for explicit load, retry, review, checkout, portal, popup-blocked, submitted, and failure outcomes.
 
 Inputs:
@@ -2358,11 +2484,12 @@ Inputs:
 | Create billing portal session | `userId` |
 | Review plan action | Selected `PaymentPlan` |
 | Update payment method action | Current `userId` |
+| Retry billing data | User action after provider-unavailable load state |
 | Billing workflow analytics | Plan ID/current plan ID, interval, currency, price band, feature count, plan count, transaction count, subscription/payment-method presence, provider action, redirect/popup outcome, entry point, and error category |
 
 Page contents:
 
-- Billing provider unavailable banner with Retry when billing data cannot be loaded.
+- Billing provider unavailable banner with safe copy and Retry billing data when billing data cannot be loaded.
 - Plan cards with:
   - Name.
   - Price.
@@ -2375,6 +2502,7 @@ Page contents:
   - Current plan.
   - Feature list.
   - Confirmation copy that checkout is completed through the billing provider.
+  - Safe plan checkout failure alert when the provider handoff fails.
   - Cancel and Continue buttons.
 - Payment method card:
   - Current method when available, or no-method state.
@@ -2382,6 +2510,7 @@ Page contents:
   - Update button.
 - Payment method update modal:
   - Confirmation copy that card changes happen through the secure billing provider.
+  - Safe billing portal failure alert when the provider handoff fails.
   - Cancel and Open Billing Portal buttons.
 - Transaction history:
   - Description.
@@ -2396,16 +2525,18 @@ How it works:
 3. `paymentService.getHistory` reads user rows from `payments`.
 4. `paymentService.getUserSubscription` reads the current active subscription.
 5. Current Plan state is derived from active subscription plan ID/name.
-6. If billing data cannot be loaded, the page shows an unavailable banner, clears stale billing data, and offers Retry.
+6. If billing data cannot be loaded, the page shows an unavailable banner with fixed safe copy, clears stale billing data, hides raw provider errors, and offers Retry billing data.
 7. If no plans are available after loading, the page shows a plan-catalog empty state with Retry Plans.
 8. Review Plan opens a confirmation modal instead of immediately changing the subscription.
 9. Confirming a plan calls `paymentService.subscribeToPlan(userId, planId)` when a plan ID exists.
 10. If a backend plan has no plan ID, the page falls back to `paymentService.createSession(userId, price, currency, description)`.
 11. Returned `url`, `checkoutUrl`, or `paymentUrl` values open in a new tab for secure checkout.
-12. Update payment method opens a confirmation modal.
-13. Confirming payment method update calls `paymentService.createBillingPortalSession(userId)` and opens the returned provider URL.
-14. No plan or payment-method change is applied on the frontend without explicit confirmation.
-15. Billing workflow analytics records load, retry, plan-review, checkout, payment-method-review, portal, popup-blocked, submitted, and failure outcomes without storing card details, invoice descriptions, provider URLs, exact amounts, plan names, feature text, or raw error messages.
+12. If checkout handoff fails, the Review Plan modal stays open with fixed safe copy, subscription state is unchanged, raw provider errors stay hidden, and the user retries through Continue.
+13. Update payment method opens a confirmation modal.
+14. Confirming payment method update calls `paymentService.createBillingPortalSession(userId)` and opens the returned provider URL.
+15. If billing portal handoff fails, the Update Payment Method modal stays open with fixed safe copy, payment-method state is unchanged, raw provider errors stay hidden, and the user retries through Open Billing Portal.
+16. No plan or payment-method change is applied on the frontend without explicit confirmation.
+17. Billing workflow analytics records load, retry, plan-review, checkout, payment-method-review, portal, popup-blocked, submitted, and failure outcomes without storing card details, invoice descriptions, provider URLs, exact amounts, plan names, feature text, or raw error messages.
 
 Outputs:
 
@@ -2451,6 +2582,7 @@ Implementation note:
 
 - Billing workflow analytics is append-only and non-blocking; it does not change plans, open provider URLs without a click, retry automatically, edit payment methods, create subscriptions, change invoices, send messages, create notifications, or mutate billing data by itself.
 - Browser-level Billing workflow coverage verifies plan catalog/current-plan rendering, populated transaction history, plan review cancel/checkout handoff payloads, billing portal handoff payloads, provider checkout failure retention and retry, popup-blocked checkout warning, provider-unavailable load state, retry recovery, explicit demo-mode copy, and billing workflow analytics across Chromium, Firefox, and WebKit.
+- `apps/frontend/src/pages/billing/BillingPage.test.tsx` verifies safe provider-unavailable and action-failure copy, raw provider-error exclusion, and retry through the existing billing data load, Review Plan, and Update Payment Method workflows.
 
 ### 5.13 Settings
 
@@ -2468,12 +2600,15 @@ Inputs:
 |---|---|
 | Profile Settings | First name, last name, email, headline, location |
 | Notifications | Email notifications, push notifications, job alerts, message notifications, digest frequency, quiet-hours toggle, quiet-hours start/end |
-| Security | Password reset confirmation, 2FA unavailable state, delete account confirmation |
+| Security | Password reset confirmation, 2FA unavailable state, account deactivation confirmation |
 | Billing | Current user ID |
 | Settings workflow analytics | Tab ID, preference key, enabled flag, digest frequency, quiet-hours enabled flag, field count, enabled channel count, billing-record presence, invoice count, error category |
 
 Page contents:
 
+- Recoverable load issue banner:
+  - Safe notification/billing load-failure copy.
+  - Retry settings action.
 - Left settings nav:
   - Profile Settings.
   - Notifications.
@@ -2485,6 +2620,7 @@ Page contents:
   - Disabled email.
   - Professional headline.
   - Location.
+  - Inline safe profile-save action failure alert when provider save fails.
   - Save Changes.
 - Notifications tab:
   - Email notifications switch with accessible name, description, and checked state.
@@ -2498,8 +2634,10 @@ Page contents:
   - Save Preferences.
 - Security tab:
   - Update Password button that opens a reset-email confirmation modal.
+  - Inline safe password-reset action failure alert inside the reset-email confirmation modal.
   - 2FA row marked Coming soon with disabled Unavailable action.
   - Deactivate Account button that opens a typed-confirmation modal.
+  - Inline safe account-deactivation action failure alert inside the typed-confirmation modal.
 - Billing tab:
   - Current plan.
   - Subscription status.
@@ -2512,28 +2650,31 @@ How it works:
 
 1. Page loads notification settings and billing data in parallel.
 2. If no notification row exists, the page creates editable local defaults for the current user; existing rows are merged with current defaults for newly added delivery controls.
-3. Profile save calls `settingsService.updateProfileSettings`.
-4. Notification switches and delivery controls update local notification preference state.
-5. Notification save calls `settingsService.updateNotifications`, which updates an existing row or inserts a new row with digest frequency and quiet-hour fields.
-6. Password reset confirmation calls `authService.resetPassword(user.email)`.
-7. 2FA is explicitly disabled until an authentication provider flow exists.
-8. Account deactivation requires typing `DEACTIVATE`, with trimmed/case-insensitive matching, then calls `settingsService.deleteAccount(user.id)`.
-9. Billing tab uses `settingsService.getBilling` for a read-only summary.
-10. Account deactivation service performs soft delete on `profiles`.
-11. Saving notification preferences does not mark notifications read, navigate, send messages, or trigger digest delivery immediately.
-12. `npm run discover:saved-search-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to find saved-search digest candidates and queue due digest items.
-13. `npm run run:notification-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to group due queued digest items into `JOB_ALERT` notifications; without `--commit`, both runners are dry-run only.
-14. Kubernetes CronJobs deploy the saved-search discovery, digest delivery, and networking reminder delivery commands with `concurrencyPolicy: Forbid`, bounded job history, retry backoff, and resource limits.
-15. `npm run run:networking-reminders -- --commit` promotes only due unread networking follow-up reminders; without `--commit`, it reports the due/future/invalid counts without writing.
-16. Billing plan changes, payment method changes, and invoice details are handled by the dedicated `/billing` page.
-17. Settings workflow analytics records explicit tab, profile-save, notification-preference, notification-save, billing-handoff, password-reset review/cancel/outcomes, and account-deactivation review/cancel/outcomes.
-18. Settings workflow analytics stores only IDs, counts, preference keys, booleans, digest frequency, billing presence, invoice count, and error category; it does not store profile field values, email addresses, quiet-hour exact times, or deactivation confirmation text.
+3. If notification or billing reads fail, Settings shows a safe recoverable banner and Retry settings reruns the same notification and billing load workflow.
+4. Profile save calls `settingsService.updateProfileSettings`; if the save fails, Settings shows fixed safe inline copy in the Profile tab and retry remains the existing Save Changes action.
+5. Notification switches and delivery controls update local notification preference state.
+6. Notification save calls `settingsService.updateNotifications`, which updates an existing row or inserts a new row with digest frequency and quiet-hour fields.
+7. Password reset confirmation calls `authService.resetPassword(user.email)`; if the provider request fails, Settings keeps the review modal open with fixed safe copy and retry remains the existing Send Reset Email action.
+8. 2FA is explicitly disabled until an authentication provider flow exists.
+9. Account deactivation requires typing `DEACTIVATE`, with trimmed/case-insensitive matching, then calls `settingsService.deleteAccount(user.id)`; if deactivation fails, Settings keeps the review modal open with fixed safe copy and retry remains the existing Confirm Deactivation action.
+10. Billing tab uses `settingsService.getBilling` for a read-only summary.
+11. Account deactivation service performs soft delete on `profiles`.
+12. Saving notification preferences does not mark notifications read, navigate, send messages, or trigger digest delivery immediately.
+13. `npm run discover:saved-search-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to find saved-search digest candidates and queue due digest items.
+14. `npm run run:notification-digests -- --commit` can be scheduled by an operator/worker with Supabase service credentials to group due queued digest items into `JOB_ALERT` notifications; without `--commit`, both runners are dry-run only.
+15. Kubernetes CronJobs deploy the saved-search discovery, digest delivery, and networking reminder delivery commands with `concurrencyPolicy: Forbid`, bounded job history, retry backoff, and resource limits.
+16. `npm run run:networking-reminders -- --commit` promotes only due unread networking follow-up reminders; without `--commit`, it reports the due/future/invalid counts without writing.
+17. Billing plan changes, payment method changes, and invoice details are handled by the dedicated `/billing` page.
+18. Settings workflow analytics records explicit tab, profile-save, notification-preference, notification-save, billing-handoff, password-reset review/cancel/outcomes, and account-deactivation review/cancel/outcomes.
+19. Settings workflow analytics stores only IDs, counts, preference keys, booleans, digest frequency, billing presence, invoice count, and error category; it does not store profile field values, email addresses, quiet-hour exact times, or deactivation confirmation text.
 
 Outputs:
 
 | Operation | Output |
 |---|---|
 | Get notifications | `NotificationSettings` or local editable defaults when no row exists |
+| Recover settings load failure | Safe notification/billing load-failure copy plus retry through the existing settings data load workflow |
+| Recover settings action failure | Safe profile-save, password-reset, and account-deactivation failure copy plus retry through the existing Settings action buttons |
 | Update notifications | Updated notification settings row, including digest frequency and quiet-hour preferences |
 | Saved-search alert delivery | Account notification row, local fallback notification, or queued digest item plus deferred reviewed-baseline update when daily/weekly digest preferences suppress immediate delivery |
 | Get billing | `BillingInfo` |
@@ -2548,6 +2689,7 @@ Implementation notes:
 
 - Settings workflow analytics is append-only and non-blocking; it does not edit profile values, change notification settings, send reset emails, deactivate accounts, open Billing, change plans, mark notifications read, send messages, create notifications, or mutate settings by itself.
 - Browser-level Settings workflow coverage verifies profile settings save payloads, keyboard-accessible notification switch changes, digest and quiet-hours delivery preference save payloads, Billing summary and handoff, password reset review cancel/send behavior, account deactivation review cancel/confirm behavior, notification save failure retention, retry success, and settings workflow analytics across Chromium, Firefox, and WebKit.
+- `apps/frontend/src/pages/settings/SettingsPage.test.tsx` verifies safe Settings notification/billing failed-load copy, safe profile-save/password-reset/account-deactivation failure copy, raw provider-error exclusion, and retry through the existing settings load and action workflows.
 
 ### 5.14 Companies
 
@@ -2569,6 +2711,7 @@ Inputs:
 | Get company by user | `userId` |
 | Register company | Name, description, website, location, logo URL, industry, employee count, owner user ID |
 | Update company | Company ID and changed fields from the Post Job company profile panel |
+| Recover Post Job action failure | Safe company create/update and draft save/update failure copy plus retry through the existing Post Job action buttons |
 | Verify company | Company ID |
 | Search companies | Keyword |
 
@@ -2647,6 +2790,7 @@ Frontend integration:
 
 - Notification bell is visible in the global header.
 - Header loads a bounded latest account notification page, can explicitly load older notifications with cursor tokens, can mark individual notifications read by opening them, can mark all unread notifications read when urgent unread rows exist, and keeps future scheduled reminders visible without urgent unread emphasis.
+- Header notification load and mark-all read failures use safe popover copy, hide provider details, and keep retry on the existing Retry notifications or Mark read controls.
 - Notification preferences and delivery controls are managed in Settings.
 
 Header notification inputs:
@@ -2672,6 +2816,8 @@ Header notification behavior:
 10. Future scheduled networking reminders do not trigger the urgent unread bell indicator until their due timestamp arrives.
 11. The networking reminder scheduler can refresh a due reminder's notification row so it resurfaces in the bounded notification feed.
 12. Mark read explicitly marks all unread notifications read; the control is not shown when only future scheduled reminders are unread.
+13. Notification load failures show fixed safe copy and Retry notifications while hiding raw provider errors and token-like values.
+14. Mark read failures roll back optimistic unread state, show fixed safe copy, and keep retry on Mark read without changing notification row navigation or scheduled reminder treatment.
 
 Backend support:
 
@@ -2843,8 +2989,8 @@ Inputs:
 Outputs:
 
 - Dashboard counters labeled as local tracker records.
-- Logs added to diagnostics.
-- Background response summary such as "Drafted {role} at {company} for review."
+- Safe live status copy for scanning, draft-ready, limited-draft, no-draft, and failed scan states.
+- Safe diagnostics log lines added to popup state without raw Chrome runtime or page-scan error strings.
 - Tracker tab opens with a reviewable scanned draft when page analysis succeeds.
 - Web-preview messaging reports the unavailable Chrome extension runtime instead of fabricating a scanned draft.
 - Usage Diagnostics-gated local operational analytics events for popup open, tab changes, options handoffs, scan requests, scan outcomes, and bounded tracker context.
@@ -2866,6 +3012,7 @@ Outputs:
 
 - Scanned draft displayed from Chrome storage key `ts_job_draft`.
 - Draft company, role, status, URL, and notes can be edited before saving.
+- Limited-confidence scanned drafts show an inline review warning before Save to Tracker.
 - Draft discard opens an inline review before clearing only the scanned draft.
 - First-run tracker state starts empty instead of seeding sample company records.
 - New job saved into Chrome storage key `ts_jobs`.
@@ -2918,30 +3065,32 @@ Tabs:
 
 Resume Match Preview inputs:
 
-- Target job description.
-- Resume text.
+- Target job description with label, helper text, invalid-state semantics, and character count.
+- Resume text with label, helper text, invalid-state semantics, and character count.
 
 Resume Match Preview outputs:
 
 - Local keyword-overlap coverage score derived from the pasted job description and resume text.
+- Safe live guidance for missing text, short text, large pasted text, comparing, and ready states.
 - Keyword coverage stays pending while local comparison is running instead of showing a placeholder score.
 - Alignment report with matched keywords, missing job keywords, and local editing suggestions.
 - Usage Diagnostics-gated local operational analytics for validation, match request, and completion outcomes using input length bands, keyword-count bands, and score bands without storing pasted text or extracted keywords.
 
 Interview Planner inputs:
 
-- Topic.
-- Review category: `Behavioral`, `Technical`, or `System Design`.
+- Topic with programmatic label, empty-topic validation, and helper association.
+- Review category with programmatic label: `Behavioral`, `Technical`, or `System Design`.
 
 Interview Planner outputs:
 
 - First-run prep list starts empty instead of seeding sample cards.
 - New prep card stored in Chrome storage key `ts_prep`.
 - Empty prep-card state explains that users can add a browser-local card from the form.
-- Completion toggle.
+- Completion toggle is a native stateful button inside a list/listitem prep-card list.
 - Reviewed Clear All flow for prep cards.
-- Settings handoff that clears only prep cards after reviewed confirmation.
-- Usage Diagnostics-gated local operational analytics for prep-card validation, add, toggle, clear-review, clear-cancel, confirmed clear, and Settings reset-review/reset-cancel/reset-confirm paths.
+- Settings handoff that clears only prep cards after reviewed confirmation and exposes its review panel relationship.
+- Safe live storage warning when prep-card load/save fails; latest changes remain visible for the current session without exposing raw quota/runtime details.
+- Usage Diagnostics-gated local operational analytics for prep-card validation, add, toggle, clear-review, clear-cancel, confirmed clear, and Settings reset-review/reset-cancel/reset-confirm paths without raw prep topics.
 
 Local Settings inputs:
 
@@ -2957,6 +3106,7 @@ Local Settings outputs:
   - `ts_settings_analytics`
 - Usage Diagnostics-gated local operational analytics saved only in this browser at `ts_extension_operational_analytics`.
 - Interview Reminder Preference stores a local setting for future reminder workflows; the extension does not schedule browser notifications yet.
+- Safe live storage warning when local preferences cannot load or persist.
 - Cloud sync Review Plan records bounded interest/context without enabling sync or moving records.
 - Reviewed Clear Prep Cards action records prep-card reset review/cancel/confirm outcomes and clears prep data only after explicit confirmation.
 
@@ -2997,6 +3147,7 @@ User-control rule:
 
 - Page scans never create tracked jobs automatically.
 - The user must review the draft and click Save to Tracker before `ts_jobs` changes.
+- Page scan failure and limited-draft recovery copy stays in the popup Dashboard or Tracker draft view and does not expose raw runtime errors.
 - Discard first opens review, then clears only `ts_job_draft` after explicit confirmation.
 - Extension cloud sync is shown as local-only until authenticated sync exists; reviewing the sync plan does not import, export, or move records.
 - Interview Reminder Preference is local-only until browser notifications and scheduling exist; toggling it does not schedule reminders or request notification permission.
@@ -3060,17 +3211,17 @@ These notes are based on current code and should be considered when testing or p
 |---|---|---|
 | Auth | Email, password, full name, role, onboarding analytics action context | User/session/JWT and append-only onboarding analytics events |
 | Dashboard | User ID, user roles, dashboard operational analytics context | Stats, jobs, challenges, applications, append-only dashboard operational analytics |
-| Jobs | Search filters, saved search state, local fit explanation state, account/local hidden Explore job state, current-view hidden-preference refinement state, account/local job-post template state, job-post draft history, company context state, company setup/completion state, company setup onboarding analytics context, job-post review state, duplicate warning state, recruiter postings, edit-draft state, edit-change summary, publish checklist state, publish readiness policy state, publish review/outcome analytics context, job data, application data, application draft history | Job list, saved searches, local advisory fit reasons, reversible account-synced/local-fallback hidden Explore preferences, explicit current-view preference refinements, account-synced/local-fallback editable job-post templates, restorable recruiter draft versions, reviewed draft jobs, edited existing drafts, normalized draft-change summaries, company-attached drafts, inline company setup/completion output, append-only onboarding analytics, duplicate warnings, recruiter posting workspace, published status updates, database-enforced publish readiness, append-only publish analytics, applications, restorable application draft versions |
+| Jobs | Search filters, saved search state, retryable saved-search sync state, retryable saved-search browser-storage state, local fit explanation state, retryable Explore catalog load state, retryable Applied-tab application history load state, retryable My Posts recruiter postings load state, retryable application-submit failure state, retryable recruiter publish failure state, account/local hidden Explore job state, retryable hidden-preference sync state, retryable hidden-preference browser-storage state, current-view hidden-preference refinement state, account/local job-post template state, job-post draft history, company context state, retryable company context load state, company setup/completion state, company setup onboarding analytics context, job-post review state, duplicate warning state, recruiter postings, edit-draft state, retryable edit-draft context load state, edit-change summary, publish checklist state, publish readiness policy state, publish review/outcome analytics context, job data, application data, application draft history, retryable application draft persistence state | Job list, safe Explore catalog load recovery, safe Applied-tab application history recovery, safe My Posts recruiter postings recovery, safe application-submit recovery, safe recruiter publish recovery, saved searches, safe saved-search local/account fallback, safe saved-search browser-storage failure copy, local advisory fit reasons, reversible account-synced/local-fallback hidden Explore preferences, safe hidden-preference browser-storage failure copy, safe all-hidden visibility-preference empty-state copy, explicit current-view preference refinements, account-synced/local-fallback editable job-post templates, restorable recruiter draft versions, reviewed draft jobs, safe edit-draft context load recovery, edited existing drafts, normalized draft-change summaries, company-attached drafts, safe company context load recovery, inline company setup/completion output, append-only onboarding analytics, duplicate warnings, recruiter posting workspace, published status updates, database-enforced publish readiness, append-only publish analytics, applications, restorable application draft versions, safe application draft storage/sync recovery |
 | Candidates | Recruiter ID, search text, review focus mode, analytics focus action, review queue action, detail queue navigation action, unsaved review draft state, private-review reset-review state, advisory sort mode, selected application IDs, bulk Interview/Offer/Rejection confirmation, status action, optional interview-plan draft, scorecard ratings/evidence, private note text, candidate workflow analytics context | Candidate list, focused candidate rows, advisory signal labels/scores/factors, current-page scorecard analytics, analytics-driven focus changes, first candidate details handoff, previous/next details handoff, unsaved review guard, reviewed private-review reset, target-specific selection summary, interview note draft, synced/local saved scorecards, saved notes, updated single or selected application status, append-only candidate workflow analytics |
-| Profile | User ID, headline/location/bio, skills/experience/education, local/AI suggestion state, profile workflow analytics context | Profile view, updated rows, prefilled drafts, append-only profile workflow analytics |
+| Profile | User ID, headline/location/bio, skills/experience/education, local/AI suggestion state, profile workflow analytics context | Profile view, updated rows, prefilled drafts, safe action-failure recovery, append-only profile workflow analytics |
 | Resume | Profile data, resume fields, import text/file state, detected field/skill selections, export activity records, resume workflow analytics context | Resume preview, saved supported fields, reviewed import drafts, saved detected skills, print-ready PDF export, local HTML export, account/local export activity, append-only resume workflow analytics |
-| LMS | Course filters, pagination params, course ID, user ID, LMS workflow analytics context | Paginated course list, enrollment, progress, append-only LMS workflow analytics |
-| Challenges | Category filter, challenge ID, language, solution code, reset-review state, retry-history action, local-check action, challenge workflow analytics context | Challenge list, local sample-check results, retry history, submissions, append-only challenge workflow analytics |
-| AI | Message, resume text, job description, user ID, recommendation review action, previous/next review status, workflow handoff action, destination prefill decision, chat-clear review state | Chat response, reviewed fresh-chat reset, review queue state, append-only review/prefill audit event, workflow handoff, analysis, career path, insight |
+| LMS | Course filters, pagination params, course ID, user ID, retryable enrollment/progress-save action state, LMS workflow analytics context | Paginated course list, enrollment, progress, safe enrollment/progress-save recovery, append-only LMS workflow analytics |
+| Challenges | Category filter, challenge ID, language, solution code, reset-review state, retry-history action, local-check action, retryable submission action state, challenge workflow analytics context | Challenge list, local sample-check results, retry history, submissions, safe submission recovery, append-only challenge workflow analytics |
+| AI | Message, resume text, job description, user ID, retryable career-path provider state, recommendation review action, previous/next review status, workflow handoff action, destination prefill decision, chat-clear review state | Chat response, reviewed fresh-chat reset, review queue state, append-only review/prefill audit event, workflow handoff, analysis, safe career-path provider recovery, career path, insight |
 | Product analytics | Event area, event name, source, optional user ID/object/metadata, extension Usage Diagnostics context | Server or local append-only analytics event, including preference update, onboarding, dashboard/admin operations, LMS, Challenges, Billing, Profile, Resume, Networking, application, candidate, messaging, settings workflow, extension operational events, and Admin aggregate insight summaries |
-| Networking | User ID, backend suggestion candidate IDs, recipient ID, search text, optional request note, explicit profile preview action, explicit reminder action and timing, local reminder fallback state, networking workflow analytics context | API-first graph-ranked suggestions with fallback profile hydration, profile preview, request state, accepted connections, follow-up reminder notification with due metadata, local-to-account reminder backfill, scheduler promotion metadata, and append-only networking workflow analytics |
-| Messaging | Conversation ID, message text, latest visible messages, optional suggested draft, optional reviewed attachment URL or uploaded file, messaging workflow analytics context | Conversation list with unread badges, suggested reply draft, message stream, local send/upload feedback, sent message/link/file attachment, append-only messaging workflow analytics |
-| Billing | User ID, plan ID, checkout data, billing portal action, billing workflow analytics context | Plans, payments, subscription info, provider handoffs, append-only billing workflow analytics |
-| Settings | Profile fields, notification toggles, digest frequency, quiet hours, password reset confirmation/cancellation, account deactivation confirmation, settings workflow analytics context | Updated settings, notification delivery preferences, billing summary, reset email request, account deactivation, append-only settings workflow analytics |
+| Networking | User ID, backend suggestion candidate IDs, recipient ID, search text, optional request note, explicit profile preview action, explicit reminder action and timing, local reminder fallback state, networking workflow analytics context | API-first graph-ranked suggestions with fallback profile hydration, profile preview, request state, safe action-failure recovery for Connect, Accept, Decline, and Withdraw, accepted connections, follow-up reminder notification with due metadata, local-to-account reminder backfill, scheduler promotion metadata, and append-only networking workflow analytics |
+| Messaging | Conversation ID, message text, latest visible messages, optional suggested draft, optional reviewed attachment URL or uploaded file, retryable send/upload/mark-read action state, messaging workflow analytics context | Conversation list with unread badges, suggested reply draft, message stream, local send/upload feedback, safe action-failure recovery, sent message/link/file attachment, append-only messaging workflow analytics |
+| Billing | User ID, plan ID, checkout data, billing portal action, retryable checkout/portal action-failure state, billing workflow analytics context | Plans, payments, subscription info, safe checkout/portal action-failure recovery, provider handoffs, append-only billing workflow analytics |
+| Settings | Profile fields, notification toggles, digest frequency, quiet hours, retryable notification/billing load state, password reset confirmation/cancellation, account deactivation confirmation, settings workflow analytics context | Updated settings, notification delivery preferences, safe load-failure recovery, safe action-failure recovery, billing summary, reset email request, account deactivation, append-only settings workflow analytics |
 | Admin | Admin role, service health/status link action, scheduled automation refresh action, audit pagination action, product analytics insight refresh action, admin operational analytics context | Platform stats, scheduled automation rollout/run-history status, service health with investigation links/log queries, product analytics aggregate counts/rates/friction signals, paginated audit events, append-only admin operational analytics |
 | Chrome extension | Local jobs, tracked-job delete review state, diagnostics console clear review state, resume text, job description, prep cards, prep-card clear review state, cloud-sync plan review state, local interview reminder preference, toggles, Usage Diagnostics setting, local operational analytics queue | Local tracker dashboard, reviewed tracked-job removal, diagnostics, reviewed console-log clearing, local keyword-overlap match preview, reviewed prep-card clearing, explicit local-only sync status, local reminder preference without scheduled notifications, bounded local operational analytics queue, and reviewed analytics export/clear controls |

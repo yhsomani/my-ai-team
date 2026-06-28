@@ -44,6 +44,9 @@ type LocalMessage = Message & {
 const messagingPanelClassName = 'surface-panel p-3';
 const messagingInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
 const messagingComposerPanelClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/70 p-3';
+const conversationLoadFailureMessage = 'Conversation data did not respond. Retry to reload conversation list, unread counts, and recent activity.';
+const messageHistoryLoadFailureMessage = 'Message history did not respond. Retry to reload the selected conversation without sending a message.';
+const olderMessagesLoadFailureMessage = 'Older messages did not respond. Retry to reload previous thread history without changing the conversation.';
 
 const getParticipantInitials = (name?: string) => {
   const initials = (name || 'User')
@@ -626,9 +629,10 @@ const MessagingPage: React.FC = () => {
         {status === 'loading' && [1,2,3].map(i => <Skeleton key={i} className="m-1 h-16 w-[calc(100%-0.5rem)]" />)}
         {status === 'failed' && conversations.length === 0 && (
           <div role="alert" className="flex flex-col items-center gap-2 p-6 text-center text-sm text-[var(--text-muted)]">
-            <span>Conversations could not load.</span>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Messages could not load</p>
+            <span>{conversationLoadFailureMessage}</span>
             <Button type="button" variant="outline" size="sm" onClick={retryLoadConversations}>
-              <RotateCcw size={13} className="mr-1" /> Retry
+              <RotateCcw size={13} className="mr-1" /> Retry conversations
             </Button>
           </div>
         )}
@@ -787,14 +791,19 @@ const MessagingPage: React.FC = () => {
                 )}
                 {messageHistoryStatus === 'failed' && (
                   <div role="alert" className="flex flex-col items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center text-xs text-[var(--text-secondary)]">
-                    <span>{messageHistoryError === 'older' ? 'Older messages could not load.' : 'Message history could not load.'}</span>
+                    <span>
+                      {messageHistoryError === 'older'
+                        ? olderMessagesLoadFailureMessage
+                        : messageHistoryLoadFailureMessage}
+                    </span>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={messageHistoryError === 'older' ? handleLoadOlderMessages : retryLoadMessages}
                     >
-                      <RotateCcw size={13} className="mr-1" /> Retry
+                      <RotateCcw size={13} className="mr-1" />
+                      {messageHistoryError === 'older' ? 'Retry older messages' : 'Retry message history'}
                     </Button>
                   </div>
                 )}

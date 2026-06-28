@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Camera, MapPin, Link as LinkIcon, Calendar, Edit2, Briefcase, GraduationCap, Award, Save, Plus, CheckCircle2, Circle, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, Camera, MapPin, Link as LinkIcon, Calendar, Edit2, Briefcase, GraduationCap, Award, Save, Plus, CheckCircle2, Circle, Trash2, Upload, RotateCcw } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -88,6 +88,12 @@ const getProfileAvatarUrl = (profile: Record<string, any> | null) => (
   profile?.avatarUrl || profile?.avatar_url || profile?.profiles?.avatar_url || ''
 );
 const maxProfileAvatarBytes = 2 * 1024 * 1024;
+const profileLoadFailureMessage = 'Profile data did not respond. Retry to reload profile details, skills, experience, education, and achievements.';
+const profileBasicSaveFailureMessage = 'Profile changes were not saved. Review the fields and try Save Changes again.';
+const profileCompletionSaveFailureMessage = 'Profile item was not saved. Review the fields and try Save again.';
+const profileAvatarUploadFailureMessage = 'Profile photo was not uploaded. Review the image and try Upload Photo again.';
+const profileAvatarRemoveFailureMessage = 'Profile photo was not removed. Try Remove Photo again from this review.';
+const profileRowDeleteFailureMessage = 'Profile item was not removed. Try Remove again from this review.';
 const isSupportedProfileAvatarFile = (file: File) => (
   file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name)
 );
@@ -127,6 +133,18 @@ const getChangedBasicProfileFields = (profile: Record<string, any> | null, formD
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const profileTextHasAlias = (text: string, alias: string) => new RegExp(`(^|[^a-z0-9])${escapeRegExp(alias.toLowerCase())}([^a-z0-9]|$)`).test(text);
 const getPrimaryExperience = (experiences: Record<string, any>[]) => experiences.find(exp => exp.current) || experiences[0];
+
+const ProfileActionFailureAlert: React.FC<{ message: string }> = ({ message }) => (
+  <div
+    role="alert"
+    className="rounded-md border border-destructive/20 bg-destructive-muted p-3"
+  >
+    <div className="flex items-start gap-2">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+      <p className="text-sm text-destructive">{message}</p>
+    </div>
+  </div>
+);
 
 const buildProfileSuggestions = (
   profile: Record<string, any> | null,
@@ -219,20 +237,25 @@ const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({ headline: '', location: '', bio: '' });
+  const [basicSaveError, setBasicSaveError] = useState<string | null>(null);
   const [pendingAiProfileDraft, setPendingAiProfileDraft] = useState<ProfileAiDraftSuggestion | null>(null);
   const [activeCompletionTask, setActiveCompletionTask] = useState<CompletionTaskType | null>(null);
   const [editingProfileRow, setEditingProfileRow] = useState<EditingProfileRow>(null);
+  const [completionTaskError, setCompletionTaskError] = useState<string | null>(null);
   const [isSavingCompletionTask, setIsSavingCompletionTask] = useState(false);
   const [deletingSkillIds, setDeletingSkillIds] = useState<Set<string>>(new Set());
   const [deletingExperienceIds, setDeletingExperienceIds] = useState<Set<string>>(new Set());
   const [deletingEducationIds, setDeletingEducationIds] = useState<Set<string>>(new Set());
   const [pendingProfileDelete, setPendingProfileDelete] = useState<PendingProfileDelete>(null);
+  const [profileDeleteError, setProfileDeleteError] = useState<string | null>(null);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [pendingAvatarPreviewUrl, setPendingAvatarPreviewUrl] = useState<string | null>(null);
   const [pendingAvatarCrop, setPendingAvatarCrop] = useState<ProfileAvatarCrop>(defaultProfileAvatarCrop);
   const [isAvatarReviewOpen, setIsAvatarReviewOpen] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isAvatarRemoveOpen, setIsAvatarRemoveOpen] = useState(false);
+  const [avatarRemoveError, setAvatarRemoveError] = useState<string | null>(null);
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const [skillForm, setSkillForm] = useState({ name: '', proficiency: 'INTERMEDIATE', yearsOfExperience: '' });
   const [experienceForm, setExperienceForm] = useState({
@@ -273,32 +296,34 @@ const ProfilePage: React.FC = () => {
     ...getProfileCompletionMetrics(profileOverride),
   }), [profile]);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!profileUserId) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await profileService.getProfile(profileUserId);
-        setProfile(data);
-        setEditFormData(getProfileBasicFormData(data));
-        recordProfileAction('profile_loaded', {
-          entryPoint: 'page_load',
-          ...getProfileCompletionMetrics(data),
-        });
-      } catch (err) {
-        console.error('Failed to fetch profile:', err);
-        setError('Unable to load this profile.');
-        recordProfileAction('profile_load_failed', {
-          entryPoint: 'page_load',
-          errorCategory: getProfileWorkflowErrorCategory(err, 'profile_load_failed'),
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+  const loadProfile = useCallback(async (entryPoint = 'page_load') => {
+    if (!profileUserId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await profileService.getProfile(profileUserId);
+      setProfile(data);
+      setEditFormData(getProfileBasicFormData(data));
+      recordProfileAction('profile_loaded', {
+        entryPoint,
+        ...getProfileCompletionMetrics(data),
+      });
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+      setProfile(null);
+      setError(profileLoadFailureMessage);
+      recordProfileAction('profile_load_failed', {
+        entryPoint,
+        errorCategory: getProfileWorkflowErrorCategory(err, 'profile_load_failed'),
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [profileUserId, recordProfileAction]);
+
+  useEffect(() => {
+    void loadProfile('page_load');
+  }, [loadProfile]);
 
   useEffect(() => {
     return () => {
@@ -347,6 +372,7 @@ const ProfilePage: React.FC = () => {
       ...getProfileBasicFormData(profile),
       ...getProfileAiDraftFormPatch(draft)
     });
+    setBasicSaveError(null);
     setIsEditModalOpen(true);
     recordProfileAction('profile_ai_draft_review_opened', {
       ...getProfileAnalyticsContext('ai_handoff'),
@@ -361,9 +387,30 @@ const ProfilePage: React.FC = () => {
     });
   }, [addToast, aiProfileDraftState, getProfileAnalyticsContext, isOwnProfile, loading, location.pathname, navigate, profile, recordProfileAction]);
 
+  const updateBasicEditFormData = (patch: Partial<typeof editFormData>) => {
+    setBasicSaveError(null);
+    setEditFormData(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateSkillForm = (patch: Partial<typeof skillForm>) => {
+    setCompletionTaskError(null);
+    setSkillForm(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateExperienceForm = (patch: Partial<typeof experienceForm>) => {
+    setCompletionTaskError(null);
+    setExperienceForm(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateEducationForm = (patch: Partial<typeof educationForm>) => {
+    setCompletionTaskError(null);
+    setEducationForm(prev => ({ ...prev, ...patch }));
+  };
+
   const openBasicEditModal = (entryPoint = 'page_header') => {
     setPendingAiProfileDraft(null);
     setEditFormData(getProfileBasicFormData(profile));
+    setBasicSaveError(null);
     setIsEditModalOpen(true);
     recordProfileAction('profile_basic_edit_opened', {
       ...getProfileAnalyticsContext(entryPoint),
@@ -403,6 +450,7 @@ const ProfilePage: React.FC = () => {
     recordProfileAiDraftDecision('rejected', { decisionReason: 'cancel' });
     setIsEditModalOpen(false);
     setPendingAiProfileDraft(null);
+    setBasicSaveError(null);
     setEditFormData(getProfileBasicFormData(profile));
   };
 
@@ -415,6 +463,7 @@ const ProfilePage: React.FC = () => {
     });
     recordProfileAiDraftDecision('rejected', { decisionReason: 'discard' });
     setPendingAiProfileDraft(null);
+    setBasicSaveError(null);
     setEditFormData(getProfileBasicFormData(profile));
     addToast({
       type: 'info',
@@ -426,6 +475,7 @@ const ProfilePage: React.FC = () => {
   const handleSaveProfile = async () => {
     if (!user || !isOwnProfile) return;
     const changedFields = getChangedBasicProfileFields(profile, editFormData);
+    setBasicSaveError(null);
     try {
       await profileService.updateProfile(user.id, {
         headline: editFormData.headline,
@@ -445,6 +495,7 @@ const ProfilePage: React.FC = () => {
       addToast({ type: 'success', title: 'Profile Updated', message: 'Your changes have been saved successfully.' });
     } catch (err) {
       console.error('Failed to update profile:', err);
+      setBasicSaveError(profileBasicSaveFailureMessage);
       recordProfileAction('profile_basic_save_failed', {
         ...getProfileAnalyticsContext(pendingAiProfileDraft ? 'ai_draft_review' : 'basic_edit_modal'),
         fieldKeys: changedFields,
@@ -460,10 +511,12 @@ const ProfilePage: React.FC = () => {
     setPendingAvatarFile(null);
     setPendingAvatarPreviewUrl(null);
     setPendingAvatarCrop(defaultProfileAvatarCrop);
+    setAvatarUploadError(null);
     setIsAvatarReviewOpen(false);
   };
 
   const updatePendingAvatarCrop = (patch: Partial<ProfileAvatarCrop>) => {
+    setAvatarUploadError(null);
     setPendingAvatarCrop(prev => normalizeProfileAvatarCrop({ ...prev, ...patch }));
   };
 
@@ -482,6 +535,7 @@ const ProfilePage: React.FC = () => {
     event.target.value = '';
 
     if (!file) return;
+    setAvatarUploadError(null);
 
     if (!isSupportedProfileAvatarFile(file)) {
       recordProfileAction('profile_photo_upload_validation_failed', {
@@ -531,6 +585,7 @@ const ProfilePage: React.FC = () => {
     if (!user?.id || !pendingAvatarFile || !isOwnProfile) return;
 
     setIsUploadingAvatar(true);
+    setAvatarUploadError(null);
     let uploadedAvatarUrl: string | null = null;
 
     try {
@@ -561,6 +616,7 @@ const ProfilePage: React.FC = () => {
       addToast({ type: 'success', title: 'Profile photo updated', message: 'Your new profile photo is now visible on your profile.' });
     } catch (err) {
       console.error('Failed to update profile photo:', err);
+      setAvatarUploadError(profileAvatarUploadFailureMessage);
       if (uploadedAvatarUrl) {
         await fileUploadService.deleteFile(uploadedAvatarUrl).catch((cleanupError) => {
           console.warn('Failed to clean up uploaded avatar after profile update failure:', cleanupError);
@@ -580,6 +636,7 @@ const ProfilePage: React.FC = () => {
 
   const handleOpenProfilePhotoRemove = () => {
     if (!isOwnProfile || !getProfileAvatarUrl(profile) || isRemovingAvatar) return;
+    setAvatarRemoveError(null);
     recordProfileAction('profile_photo_remove_review_opened', {
       ...getProfileAnalyticsContext('profile_header'),
       fieldKeys: ['avatarUrl'],
@@ -595,6 +652,7 @@ const ProfilePage: React.FC = () => {
       fieldKeys: ['avatarUrl'],
       fieldCount: 1,
     });
+    setAvatarRemoveError(null);
     setIsAvatarRemoveOpen(false);
   };
 
@@ -604,6 +662,7 @@ const ProfilePage: React.FC = () => {
     if (!currentAvatarUrl) return;
 
     setIsRemovingAvatar(true);
+    setAvatarRemoveError(null);
 
     try {
       await profileService.updateAvatar(user.id, null);
@@ -632,6 +691,7 @@ const ProfilePage: React.FC = () => {
       addToast({ type: 'success', title: 'Profile photo removed', message: 'Your profile now shows your initials instead.' });
     } catch (err) {
       console.error('Failed to remove profile photo:', err);
+      setAvatarRemoveError(profileAvatarRemoveFailureMessage);
       recordProfileAction('profile_photo_remove_failed', {
         ...getProfileAnalyticsContext('profile_photo_remove'),
         fieldKeys: ['avatarUrl'],
@@ -674,6 +734,7 @@ const ProfilePage: React.FC = () => {
     }
 
     setPendingAiProfileDraft(null);
+    setBasicSaveError(null);
     setEditFormData({
       ...getProfileBasicFormData(profile),
       [suggestion.field]: suggestion.value
@@ -702,11 +763,13 @@ const ProfilePage: React.FC = () => {
     }
     setActiveCompletionTask(null);
     setEditingProfileRow(null);
+    setCompletionTaskError(null);
     resetCompletionForms();
   };
 
   const openAddCompletionTask = (task: CompletionTaskType, entryPoint = 'completion_checklist') => {
     setEditingProfileRow(null);
+    setCompletionTaskError(null);
     resetCompletionForms();
     setActiveCompletionTask(task);
     recordProfileAction('profile_completion_task_opened', {
@@ -728,6 +791,7 @@ const ProfilePage: React.FC = () => {
     if (!user?.id || !activeCompletionTask || !isOwnProfile) return;
     const currentEditingRow = editingProfileRow;
     const rowMode = currentEditingRow ? 'edit' : 'create';
+    setCompletionTaskError(null);
 
     try {
       setIsSavingCompletionTask(true);
@@ -862,6 +926,7 @@ const ProfilePage: React.FC = () => {
       closeCompletionTaskModal('saved');
     } catch (err) {
       console.error('Failed to save profile completion task:', err);
+      setCompletionTaskError(profileCompletionSaveFailureMessage);
       recordProfileAction('profile_completion_task_save_failed', {
         ...getProfileAnalyticsContext('completion_task_modal'),
         rowType: activeCompletionTask,
@@ -884,6 +949,7 @@ const ProfilePage: React.FC = () => {
       label: getSkillName(skill) || 'this skill',
       row: skill
     });
+    setProfileDeleteError(null);
     recordProfileAction('profile_row_delete_review_opened', {
       ...getProfileAnalyticsContext('skill_row'),
       rowType: 'skill',
@@ -892,6 +958,7 @@ const ProfilePage: React.FC = () => {
 
   const handleConfirmProfileDelete = async () => {
     if (!pendingProfileDelete || !isOwnProfile) return;
+    setProfileDeleteError(null);
 
     try {
       if (pendingProfileDelete.type === 'skill') {
@@ -907,6 +974,7 @@ const ProfilePage: React.FC = () => {
           rowType: 'skill',
         });
         addToast({ type: 'success', title: 'Skill removed', message: `${label} was removed from your profile.` });
+        setProfileDeleteError(null);
         setPendingProfileDelete(null);
       }
 
@@ -923,6 +991,7 @@ const ProfilePage: React.FC = () => {
           rowType: 'experience',
         });
         addToast({ type: 'success', title: 'Experience removed', message: `${label} was removed from your profile.` });
+        setProfileDeleteError(null);
         setPendingProfileDelete(null);
       }
 
@@ -942,10 +1011,12 @@ const ProfilePage: React.FC = () => {
           rowType: 'education',
         });
         addToast({ type: 'success', title: 'Education removed', message: `${label} was removed from your profile.` });
+        setProfileDeleteError(null);
         setPendingProfileDelete(null);
       }
     } catch (err) {
       console.error('Failed to delete profile row:', err);
+      setProfileDeleteError(profileRowDeleteFailureMessage);
       recordProfileAction('profile_row_delete_failed', {
         ...getProfileAnalyticsContext('delete_confirmation'),
         rowType: pendingProfileDelete.type,
@@ -992,6 +1063,7 @@ const ProfilePage: React.FC = () => {
       yearsOfExperience: existingYears === undefined || existingYears === null ? '' : String(existingYears)
     });
     setEditingProfileRow({ type: 'skill', id: skillId });
+    setCompletionTaskError(null);
     setActiveCompletionTask('skill');
     recordProfileAction('profile_completion_task_opened', {
       ...getProfileAnalyticsContext('skill_row'),
@@ -1014,6 +1086,7 @@ const ProfilePage: React.FC = () => {
       description: experience.description || ''
     });
     setEditingProfileRow({ type: 'experience', id: experienceId });
+    setCompletionTaskError(null);
     setActiveCompletionTask('experience');
     recordProfileAction('profile_completion_task_opened', {
       ...getProfileAnalyticsContext('experience_row'),
@@ -1035,6 +1108,7 @@ const ProfilePage: React.FC = () => {
       gpa: typeof educationRow.gpa === 'number' ? String(educationRow.gpa) : educationRow.gpa || ''
     });
     setEditingProfileRow({ type: 'education', id: educationId });
+    setCompletionTaskError(null);
     setActiveCompletionTask('education');
     recordProfileAction('profile_completion_task_opened', {
       ...getProfileAnalyticsContext('education_row'),
@@ -1053,6 +1127,7 @@ const ProfilePage: React.FC = () => {
       label: experience.title || 'This role',
       row: experience
     });
+    setProfileDeleteError(null);
     recordProfileAction('profile_row_delete_review_opened', {
       ...getProfileAnalyticsContext('experience_row'),
       rowType: 'experience',
@@ -1069,6 +1144,7 @@ const ProfilePage: React.FC = () => {
       label: educationRow.institution || 'This education row',
       row: educationRow
     });
+    setProfileDeleteError(null);
     recordProfileAction('profile_row_delete_review_opened', {
       ...getProfileAnalyticsContext('education_row'),
       rowType: 'education',
@@ -1089,6 +1165,7 @@ const ProfilePage: React.FC = () => {
       ...getProfileAnalyticsContext('delete_confirmation'),
       rowType: pendingProfileDelete.type,
     });
+    setProfileDeleteError(null);
     setPendingProfileDelete(null);
   };
 
@@ -1114,7 +1191,17 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="space-y-6">
         <PageHeader title="Profile" />
-        <Card className="p-8 text-center text-sm text-[var(--text-muted)]">{error}</Card>
+        <Card
+          role="alert"
+          className="flex flex-col items-center gap-3 p-8 text-center text-sm text-[var(--text-muted)]"
+        >
+          <p className="text-base font-semibold text-[var(--text-primary)]">Profile could not load</p>
+          <p className="max-w-xl leading-6">{error}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void loadProfile('profile_load_retry')}>
+            <RotateCcw size={13} className="mr-1" />
+            Retry profile
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -1181,17 +1268,18 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
+      <PageHeader
         title={isOwnProfile ? 'Profile' : `${userName}'s Profile`}
         actions={isOwnProfile ? <Button variant="outline" size="sm" onClick={() => openBasicEditModal('page_header')}><Edit2 size={14} className="mr-1" /> Edit Profile</Button> : undefined}
       />
 
-      <AuraModal 
-        isOpen={isEditModalOpen} 
+      <AuraModal
+        isOpen={isEditModalOpen}
         onClose={closeBasicEditModal}
         title={pendingAiProfileDraft ? 'Review AI Profile Draft' : 'Edit Profile'}
       >
         <div className="space-y-4 py-4">
+          {basicSaveError && <ProfileActionFailureAlert message={basicSaveError} />}
           {pendingAiProfileDraft && (
             <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -1227,25 +1315,25 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
           )}
-          <Input 
-            label="Headline" 
-            value={editFormData.headline} 
-            onChange={(e) => setEditFormData({...editFormData, headline: e.target.value})}
+          <Input
+            label="Headline"
+            value={editFormData.headline}
+            onChange={(e) => updateBasicEditFormData({ headline: e.target.value })}
             placeholder="e.g. Senior Software Engineer"
           />
-          <Input 
-            label="Location" 
-            value={editFormData.location} 
-            onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
+          <Input
+            label="Location"
+            value={editFormData.location}
+            onChange={(e) => updateBasicEditFormData({ location: e.target.value })}
             placeholder="e.g. Remote, or New York, NY"
             icon={<MapPin size={16} />}
           />
           <div>
              <label className="block text-sm font-medium mb-1.5 text-[var(--text-primary)]">Bio</label>
-             <textarea 
+             <textarea
                className="w-full min-h-[100px] p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
                value={editFormData.bio}
-               onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
+               onChange={(e) => updateBasicEditFormData({ bio: e.target.value })}
                placeholder="Tell us about yourself..."
              />
           </div>
@@ -1269,12 +1357,17 @@ const ProfilePage: React.FC = () => {
           </>
         }
       >
+        {completionTaskError && (
+          <div className="mb-4">
+            <ProfileActionFailureAlert message={completionTaskError} />
+          </div>
+        )}
         {activeCompletionTask === 'skill' && (
           <div className="space-y-4">
             <Input
               label="Skill"
               value={skillForm.name}
-              onChange={(e) => setSkillForm({ ...skillForm, name: e.target.value })}
+              onChange={(e) => updateSkillForm({ name: e.target.value })}
               placeholder="e.g. React, Java, Product Strategy"
               required
             />
@@ -1285,7 +1378,7 @@ const ProfilePage: React.FC = () => {
                   id="skill-proficiency"
                   className="w-full h-9 px-3 rounded-lg border border-[var(--border-default)] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
                   value={skillForm.proficiency}
-                  onChange={(e) => setSkillForm({ ...skillForm, proficiency: e.target.value })}
+                  onChange={(e) => updateSkillForm({ proficiency: e.target.value })}
                 >
                   <option value="BEGINNER">Beginner</option>
                   <option value="INTERMEDIATE">Intermediate</option>
@@ -1298,7 +1391,7 @@ const ProfilePage: React.FC = () => {
                 type="number"
                 min="0"
                 value={skillForm.yearsOfExperience}
-                onChange={(e) => setSkillForm({ ...skillForm, yearsOfExperience: e.target.value })}
+                onChange={(e) => updateSkillForm({ yearsOfExperience: e.target.value })}
                 placeholder="2"
               />
             </div>
@@ -1311,14 +1404,14 @@ const ProfilePage: React.FC = () => {
               <Input
                 label="Title"
                 value={experienceForm.title}
-                onChange={(e) => setExperienceForm({ ...experienceForm, title: e.target.value })}
+                onChange={(e) => updateExperienceForm({ title: e.target.value })}
                 placeholder="e.g. Frontend Engineer"
                 required
               />
               <Input
                 label="Company"
                 value={experienceForm.company}
-                onChange={(e) => setExperienceForm({ ...experienceForm, company: e.target.value })}
+                onChange={(e) => updateExperienceForm({ company: e.target.value })}
                 placeholder="e.g. TechCorp"
                 required
               />
@@ -1326,7 +1419,7 @@ const ProfilePage: React.FC = () => {
             <Input
               label="Location"
               value={experienceForm.location}
-              onChange={(e) => setExperienceForm({ ...experienceForm, location: e.target.value })}
+              onChange={(e) => updateExperienceForm({ location: e.target.value })}
               placeholder="Remote, or New York, NY"
               icon={<MapPin size={16} />}
             />
@@ -1335,14 +1428,14 @@ const ProfilePage: React.FC = () => {
                 label="Start Date"
                 type="date"
                 value={experienceForm.startDate}
-                onChange={(e) => setExperienceForm({ ...experienceForm, startDate: e.target.value })}
+                onChange={(e) => updateExperienceForm({ startDate: e.target.value })}
                 required
               />
               <Input
                 label="End Date"
                 type="date"
                 value={experienceForm.endDate}
-                onChange={(e) => setExperienceForm({ ...experienceForm, endDate: e.target.value })}
+                onChange={(e) => updateExperienceForm({ endDate: e.target.value })}
                 disabled={experienceForm.current}
               />
             </div>
@@ -1350,7 +1443,7 @@ const ProfilePage: React.FC = () => {
               <input
                 type="checkbox"
                 checked={experienceForm.current}
-                onChange={(e) => setExperienceForm({ ...experienceForm, current: e.target.checked, endDate: e.target.checked ? '' : experienceForm.endDate })}
+                onChange={(e) => updateExperienceForm({ current: e.target.checked, endDate: e.target.checked ? '' : experienceForm.endDate })}
               />
               I currently work here
             </label>
@@ -1360,7 +1453,7 @@ const ProfilePage: React.FC = () => {
                 id="experience-description"
                 className="w-full min-h-[100px] p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
                 value={experienceForm.description}
-                onChange={(e) => setExperienceForm({ ...experienceForm, description: e.target.value })}
+                onChange={(e) => updateExperienceForm({ description: e.target.value })}
                 placeholder="Briefly describe your responsibilities and outcomes..."
               />
             </div>
@@ -1372,7 +1465,7 @@ const ProfilePage: React.FC = () => {
             <Input
               label="Institution"
               value={educationForm.institution}
-              onChange={(e) => setEducationForm({ ...educationForm, institution: e.target.value })}
+              onChange={(e) => updateEducationForm({ institution: e.target.value })}
               placeholder="e.g. Stanford University"
               required
             />
@@ -1380,13 +1473,13 @@ const ProfilePage: React.FC = () => {
               <Input
                 label="Degree"
                 value={educationForm.degree}
-                onChange={(e) => setEducationForm({ ...educationForm, degree: e.target.value })}
+                onChange={(e) => updateEducationForm({ degree: e.target.value })}
                 placeholder="e.g. B.S."
               />
               <Input
                 label="Field of Study"
                 value={educationForm.fieldOfStudy}
-                onChange={(e) => setEducationForm({ ...educationForm, fieldOfStudy: e.target.value })}
+                onChange={(e) => updateEducationForm({ fieldOfStudy: e.target.value })}
                 placeholder="e.g. Computer Science"
               />
             </div>
@@ -1395,14 +1488,14 @@ const ProfilePage: React.FC = () => {
                 label="Start Date"
                 type="date"
                 value={educationForm.startDate}
-                onChange={(e) => setEducationForm({ ...educationForm, startDate: e.target.value })}
+                onChange={(e) => updateEducationForm({ startDate: e.target.value })}
                 required
               />
               <Input
                 label="End Date"
                 type="date"
                 value={educationForm.endDate}
-                onChange={(e) => setEducationForm({ ...educationForm, endDate: e.target.value })}
+                onChange={(e) => updateEducationForm({ endDate: e.target.value })}
               />
             </div>
             <Input
@@ -1412,7 +1505,7 @@ const ProfilePage: React.FC = () => {
               max="4"
               step="0.01"
               value={educationForm.gpa}
-              onChange={(e) => setEducationForm({ ...educationForm, gpa: e.target.value })}
+              onChange={(e) => updateEducationForm({ gpa: e.target.value })}
               placeholder="3.80"
             />
           </div>
@@ -1443,6 +1536,7 @@ const ProfilePage: React.FC = () => {
         }
       >
         <div className="space-y-4">
+          {avatarUploadError && <ProfileActionFailureAlert message={avatarUploadError} />}
           <div className="mx-auto h-32 w-32 overflow-hidden rounded-full border border-[var(--border-default)] bg-accent/10">
             {pendingAvatarPreviewUrl ? (
               <img
@@ -1547,6 +1641,7 @@ const ProfilePage: React.FC = () => {
         }
       >
         <div className="space-y-4">
+          {avatarRemoveError && <ProfileActionFailureAlert message={avatarRemoveError} />}
           <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border border-[var(--border-default)] bg-accent/10">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Current profile photo" className="h-full w-full object-cover" />
@@ -1589,6 +1684,7 @@ const ProfilePage: React.FC = () => {
         }
       >
         <div className="space-y-3">
+          {profileDeleteError && <ProfileActionFailureAlert message={profileDeleteError} />}
           <p className="text-sm text-[var(--text-secondary)]">
             This will remove <span className="font-medium text-[var(--text-primary)]">{pendingProfileDelete?.label}</span> from your profile.
           </p>
@@ -1728,8 +1824,8 @@ const ProfilePage: React.FC = () => {
                 <span className="font-medium">{completionPercentage}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-[var(--border-default)]">
-                <div 
-                  className="h-full rounded-full bg-accent transition-all duration-500" 
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>

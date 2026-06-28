@@ -1,9 +1,12 @@
 import {
   Briefcase,
   Cpu,
+  CreditCard,
+  FileText,
   GraduationCap,
   LayoutDashboard,
   Layers,
+  Milestone,
   MessageSquare,
   Settings,
   Share2,
@@ -51,6 +54,10 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
     navSection: 'main',
     icon: LayoutDashboard,
     mobilePriority: { default: 1, recruiter: 1, admin: 1 },
+    search: {
+      description: 'Review progress, next actions, and role summaries',
+      keywords: 'dashboard home overview progress next actions summary',
+    },
   },
   {
     id: 'jobs',
@@ -159,6 +166,11 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
     id: 'billing',
     path: '/billing',
     label: 'Billing',
+    icon: CreditCard,
+    search: {
+      description: 'Review plans, payment history, and provider handoffs',
+      keywords: 'billing plan subscription payment checkout invoice history',
+    },
   },
   {
     id: 'settings',
@@ -193,17 +205,32 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
     id: 'resume',
     path: '/resume',
     label: 'Resume',
+    icon: FileText,
+    search: {
+      description: 'Build, import, export, and manage resume artifacts',
+      keywords: 'resume cv builder import export artifact pdf',
+    },
   },
   {
     id: 'career-path',
     path: '/career-path',
     label: 'Career Path',
+    icon: Milestone,
+    search: {
+      description: 'Review generated career guidance and milestones',
+      keywords: 'career path skills milestones guidance roadmap ai',
+    },
   },
   {
     id: 'job-post',
     path: '/jobs/post',
     label: 'Post Job',
     allowedRoles: recruiterOnlyRoles,
+    icon: Briefcase,
+    search: {
+      description: 'Create recruiter job drafts and templates',
+      keywords: 'post job create listing draft template publish recruiter',
+    },
   },
 ] as const;
 

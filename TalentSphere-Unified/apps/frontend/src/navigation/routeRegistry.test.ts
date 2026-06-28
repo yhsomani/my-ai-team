@@ -68,13 +68,21 @@ describe('routeRegistry', () => {
     const recruiterSearch = getSearchDestinations([USER_ROLES.recruiter]).map((route) => route.path);
     const adminSearch = getSearchDestinations([USER_ROLES.admin]).map((route) => route.path);
 
+    expect(userSearch).toContain('/dashboard');
     expect(userSearch).toContain('/jobs');
     expect(userSearch).toContain('/lms');
+    expect(userSearch).toContain('/resume');
+    expect(userSearch).toContain('/career-path');
+    expect(userSearch).toContain('/billing');
     expect(userSearch).not.toContain('/candidates');
+    expect(userSearch).not.toContain('/jobs/post');
     expect(recruiterSearch).toContain('/candidates');
+    expect(recruiterSearch).toContain('/jobs/post');
     expect(recruiterSearch).not.toContain('/lms');
     expect(adminSearch).toContain('/admin');
+    expect(adminSearch).toContain('/dashboard');
     expect(adminSearch).not.toContain('/jobs');
+    expect(adminSearch).not.toContain('/jobs/post');
   });
 
   it('keeps every route id unique so App route mapping stays deterministic', () => {

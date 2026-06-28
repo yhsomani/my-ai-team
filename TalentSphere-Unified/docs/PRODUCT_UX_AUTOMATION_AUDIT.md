@@ -4,7 +4,7 @@
 
 Source reviewed: `docs/FEATURES_AND_DASHBOARDS.md` and current frontend/backend code.
 Date: 2026-06-26
-Implementation status updated after the one-hundred-eighty-ninth implementation batch on 2026-06-27.
+Implementation status updated after the two-hundred-third implementation batch on 2026-06-28.
 
 ## 1. Current State Analysis
 
@@ -14,22 +14,22 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 |---|---|---|
 | Public entry | Landing, public stats | Explains product, shows stats, routes users to auth |
 | Auth | Login, register, protected routes, Supabase auth | Email/password auth, account type choice, role-specific next-step disclosure, recruiter company-setup handoff, append-only registration onboarding analytics, session listener, local dev mock user |
-| Global shell | Sidebar, header, mobile nav | Role-aware navigation, destination search, due-aware account notifications, actionable reminders, profile shortcut, theme/logout controls |
+| Global shell | Sidebar, header, mobile nav | Role-aware navigation, destination search, due-aware account notifications, actionable reminders, safe notification load/read recovery, profile shortcut, theme/logout controls |
 | Dashboards | Talent dashboard, recruiter dashboard, admin dashboard | Role-based overview for applications, jobs, challenges, candidates, system health, activation/checklist handoffs, recovery actions, and append-only dashboard/admin operational analytics |
-| Jobs | Jobs page, post job page, job service | Browse query-paginated job results with local profile/job fit reasons and reversible account-synced/local-fallback hide/restore controls, apply, review profile/manual/AI application drafts before submit, replace existing application drafts with profile drafts only after inline review, clear application drafts only after inline review, view applications, append-only application review/submission analytics, recruiter job creation, recruiter registration company-setup handoff, account-synced/local-fallback job-post templates with reviewed delete confirmation, reviewed recruiter draft save/update, restorable recruiter job-post draft versions with account sync and local fallback, advisory duplicate-post warning, company-aware draft attachment with inline recruiter company setup and profile completion, append-only company setup onboarding analytics, recruiter-owned posting workspace with edit-draft change summary, publish checklist controls, backend-owned publish readiness enforcement, and append-only publish review/outcome analytics, saved-search alerts that respect job-alert and digest preferences before immediate delivery, reviewed saved-search deletion, queued saved-search digest items, scheduler-friendly discovery/delivery runners, and Kubernetes CronJobs for digest automation |
-| Candidate pipeline | Candidates page, recruiter service | Browse cursor-backed applications, search applications, inspect details in-page, review explainable advisory candidate signals, focus the current page on all visible, needs-scorecard, or high-signal candidates, sort the current page by advisory signal, review current-page scorecard coverage analytics, use analytics cards as direct focus actions, open the first current visible/focused candidate for review, move previous/next through the current review queue inside details, guard unsaved private notes and scorecards before closing or navigating, reset unsaved private review drafts only after inline review, generate interview-plan note drafts, create server-backed/local-fallback structured private scorecards, select visible candidates, review bulk Interview/Offer/Reject moves with skipped-candidate visibility, open profile, move to interview, offer/reject candidates, and emit append-only candidate workflow analytics |
-| Profile | Profile page, profile service, file-service | View/edit headline/location/bio, review/crop/upload/remove own-profile photo, add/edit/remove own-profile skill/experience/education rows, local profile suggestions, AI review-queue profile draft handoff with visible current/proposed diffs, view achievements, and append-only profile workflow analytics |
-| Resume | Resume builder | Render profile data into controlled editor/preview, import pasted, text/markdown, readable DOCX, or searchable PDF resume content into selectable reviewed drafts, review AI resume draft handoffs with current/proposed fields, save supported fields, browser print-to-PDF export and local HTML download with account-synced/local-fallback export activity, and append-only resume workflow analytics |
-| Learning | LMS page, LMS service | Cursor-backed course listing, search/filter, AI reviewed catalog-search handoff, enrollment, retryable progress-load failure handling, lesson player, explicit lesson completion, progress display, and append-only LMS workflow analytics |
-| Challenges | Challenges page, challenge service | Challenge list, dynamic category filter, in-page workspace, starter code, reviewed starter-code reset, sample cases, local sample checks, retry history, solution submission, and append-only challenge workflow analytics |
-| AI | AI Assistant, Career Path, AI service | Career chat with server-backed/local-fallback history, reviewed chat-clear control, draft prompt confirmation, visible review queue, workflow handoff links including profile, resume, application, and learning draft handoffs, saved/dismissed review records, destination workflow prefill used/rejected audit events, append-only automation review audit events, resume analysis, match score, career path, platform insights |
-| Networking | Networking page, networking service | API-first graph-ranked suggestions with profile hydration fallback, why-suggested context, optional request notes, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, accept/decline/withdraw actions, and append-only networking workflow analytics |
-| Messaging | Messaging page, messaging service, messaging slice | Conversation list, unread badges, real-time message insert subscription, send messages, draft-only suggested replies, reviewed link attachments with hidden-draft prevention, visible message timing, conversation context, and append-only messaging workflow analytics |
-| Billing | Billing page, payment service | Plans, active subscription state, reviewed plan changes, billing portal action, payment history, checkout/subscription service methods, and append-only billing workflow analytics |
-| Settings | Settings page, settings service | Profile settings, notification toggles, digest frequency and quiet-hour delivery controls, password reset confirmation/cancellation tracking, explicit 2FA unavailable state, reviewed account deactivation confirmation, billing snapshot, and append-only settings workflow analytics |
+| Jobs | Jobs page, post job page, job service | Browse query-paginated job results with safe Explore catalog, Applied-tab, My Posts load-failure recovery, and safe application/publish action-failure recovery, local profile/job fit reasons and reversible account-synced/local-fallback hide/restore controls, apply, review profile/manual/AI application drafts before submit, replace existing application drafts with profile drafts only after inline review, clear application drafts only after inline review, view applications, append-only application review/submission analytics, recruiter job creation, recruiter registration company-setup handoff, account-synced/local-fallback job-post templates with reviewed delete confirmation, reviewed recruiter draft save/update with safe action-failure recovery, restorable recruiter job-post draft versions with account sync and local fallback, advisory duplicate-post warning, company-aware draft attachment with inline recruiter company setup/profile completion and safe action-failure recovery, append-only company setup onboarding analytics, recruiter-owned posting workspace with edit-draft change summary, publish checklist controls, backend-owned publish readiness enforcement, and append-only publish review/outcome analytics, saved-search alerts that respect job-alert and digest preferences before immediate delivery, reviewed saved-search deletion, queued saved-search digest items, scheduler-friendly discovery/delivery runners, and Kubernetes CronJobs for digest automation |
+| Candidate pipeline | Candidates page, recruiter service | Browse cursor-backed applications, search applications, inspect details in-page, review explainable advisory candidate signals, focus the current page on all visible, needs-scorecard, or high-signal candidates, sort the current page by advisory signal, review current-page scorecard coverage analytics, use analytics cards as direct focus actions, open the first current visible/focused candidate for review, move previous/next through the current review queue inside details, guard unsaved private notes and scorecards before closing or navigating, reset unsaved private review drafts only after inline review, generate interview-plan note drafts, create server-backed/local-fallback structured private scorecards, select visible candidates, review bulk Interview/Offer/Reject moves with skipped-candidate visibility, open profile, move to interview, offer/reject candidates with safe status action-failure recovery, and emit append-only candidate workflow analytics |
+| Profile | Profile page, profile service, file-service | View/edit headline/location/bio, review/crop/upload/remove own-profile photo with safe action-failure recovery, add/edit/remove own-profile skill/experience/education rows with safe save/delete failure recovery, local profile suggestions, AI review-queue profile draft handoff with visible current/proposed diffs, view achievements, and append-only profile workflow analytics |
+| Resume | Resume builder | Render profile data into controlled editor/preview, import pasted, text/markdown, readable DOCX, or searchable PDF resume content into selectable reviewed drafts, review AI resume draft handoffs with current/proposed fields, save supported fields, browser print-to-PDF export and local HTML download with account-synced/local-fallback export activity, safe load/action recovery for profile fields, imports, provider uploads, and artifact deletion, and append-only resume workflow analytics |
+| Learning | LMS page, LMS service | Cursor-backed course listing, search/filter, AI reviewed catalog-search handoff, enrollment, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, lesson player, explicit lesson completion, progress display, and append-only LMS workflow analytics |
+| Challenges | Challenges page, challenge service | Challenge list, dynamic category filter, in-page workspace, starter code, reviewed starter-code reset, sample cases, local sample checks, retry history, solution submission, safe submission action-failure recovery, and append-only challenge workflow analytics |
+| AI | AI Assistant, Career Path, AI service | Career chat with server-backed/local-fallback history, reviewed chat-clear control, draft prompt confirmation, safe chat provider-failure draft recovery, visible review queue, workflow handoff links including profile, resume, application, and learning draft handoffs, saved/dismissed review records, destination workflow prefill used/rejected audit events, append-only automation review audit events, resume analysis, match score, career path with safe provider recovery, platform insights |
+| Networking | Networking page, networking service | API-first graph-ranked suggestions with profile hydration fallback, why-suggested context, optional request notes, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics |
+| Messaging | Messaging page, messaging service, messaging slice | Conversation list, unread badges, real-time message insert subscription, send messages with safe failed-send retry, safe attachment-upload and mark-read failure recovery, draft-only suggested replies, reviewed link attachments with hidden-draft prevention, visible message timing, conversation context, and append-only messaging workflow analytics |
+| Billing | Billing page, payment service | Plans, active subscription state, reviewed plan changes, billing portal action, payment history, checkout/subscription service methods, safe load/action failure recovery, and append-only billing workflow analytics |
+| Settings | Settings page, settings service | Profile settings, notification toggles, digest frequency and quiet-hour delivery controls, safe notification/billing load-failure recovery, safe profile/security action-failure recovery, password reset confirmation/cancellation tracking, explicit 2FA unavailable state, reviewed account deactivation confirmation, billing snapshot, and append-only settings workflow analytics |
 | Admin/Ops | Admin dashboard, feature flags, service health | Platform stats, live/fallback source labels, service health details, product analytics insight summaries, health/status investigation links, log queries, refresh action, audit pagination/retry controls, feature flag backend APIs, and append-only admin operational analytics |
 | Product analytics and automation audit | Product analytics helper, product analytics insight summarizer, dashboard/admin operational analytics helper, LMS workflow analytics helper, challenge workflow analytics helper, billing workflow analytics helper, profile workflow analytics helper, resume workflow analytics helper, networking workflow analytics helper, onboarding analytics helper, saved-search analytics helper, application workflow analytics helper, candidate workflow analytics helper, messaging workflow analytics helper, settings workflow analytics helper, automation suggestion audit helper, extension operational analytics helper, Supabase schema | Event taxonomy for tasks, automation suggestions, workflow handoffs, prefill decisions, preference updates, bulk actions, errors, and degraded states; AI chat clear-review and review queue events, dashboard activation/retry/degraded/handoff events, admin refresh/service-investigation/audit-pagination/product-analytics-insight events, LMS catalog/filter/pagination/AI-search/enrollment/lesson events, Challenges category/workspace/language/reset-review/local-check/retry/submission events, Billing load/retry/plan-review/checkout/payment-method portal events, Profile load/tab/edit/suggestion/completion/delete/photo-upload/photo-removal events, Resume load/tab/import/AI-draft/skill-save/save/export/export-history events, Networking suggestions/tab/preview/connect/accept/decline/withdraw/reminder/suggestion-preference events, destination workflow prefill used/rejected decisions, Jobs application review/submission decisions, recruiter candidate review/status/bulk/private-review-reset decisions, Messaging selection/send/read/retry/draft-aid decisions, Settings profile/notification/security/billing and reviewed security cancellation decisions, Jobs recommendation hide/restore/refinement decisions, Jobs saved-search decisions, registration onboarding decisions, recruiter company setup decisions, and recruiter publish review/outcome events now persist to `product_analytics_events`; Admin can view privacy-bounded analytics counts/rates/friction signals with server and local fallback paths; extension popup/options/tracker/page-scan/resume-match-preview/interview-planner/settings/background decisions persist to a bounded local operational analytics queue when Usage Diagnostics is enabled; Save/Dismiss/Prefill/Preference/Onboarding/Search/Application/Candidate/Profile/Resume/Networking/Messaging/Settings/Dashboard/Admin/LMS/Challenges/Billing/Publish decisions write append-only audit events with local fallback |
-| Companion extension | Popup, options page, background, content script | Local tracker dashboard with local-record wording, local application tracker with reviewed tracked-job removal, editable page-scan drafts with reviewed discard, diagnostics with reviewed console-log clearing and local diagnostic test-event logging, local keyword-overlap Resume Match Preview, interview planner with reviewed prep-card clearing, Local Settings wording with prep-card reset analytics, explicit local-only sync status with sync-plan review, local interview reminder preference without scheduled notifications, Store Local Usage Diagnostics control, Usage Diagnostics-gated local operational analytics, and diagnostics-panel review/export/reviewed-clear controls for local analytics events |
+| Companion extension | Popup, options page, background, content script | Local tracker dashboard with local-record wording, local application tracker with reviewed tracked-job removal, editable page-scan drafts with reviewed discard, diagnostics with reviewed console-log clearing and local diagnostic test-event logging, local keyword-overlap Resume Match Preview with safe missing/short/large text guidance and accessible compare semantics, interview planner with reviewed prep-card clearing plus labels/live validation/stateful card toggles and safe storage warnings, Local Settings wording with prep-card reset analytics, reset-review relationships, and safe storage warnings, explicit local-only sync status with sync-plan review, local interview reminder preference without scheduled notifications, Store Local Usage Diagnostics control, Usage Diagnostics-gated local operational analytics, and diagnostics-panel review/export/reviewed-clear controls for local analytics events |
 | Backend services | Spring Boot services | Domain APIs for auth, user, profile, jobs, applications, LMS, messaging, search, files, video, payments, plus generated API contract drift reporting and architecture status indexing |
 
 ### 1.2 User Roles And Permissions
@@ -47,18 +47,18 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 | Journey | Current path | Friction |
 |---|---|---|
 | Talent onboarding | Register -> dashboard -> profile -> jobs/LMS/challenges | No guided onboarding or profile completeness wizard |
-| Talent job application | Jobs -> search/filter -> optional hide irrelevant Explore jobs -> optional AI application draft handoff -> review editable profile/manual/AI draft -> optional reviewed profile replacement, restore recent draft version, or reviewed clear -> submit -> details timeline | Profile-generated and AI-assisted application drafts, account/local draft sync, restorable recent draft versions, reviewed profile-draft replacement, reviewed draft clearing, local fit explanations, append-only application workflow analytics, and reversible account-synced/local-fallback hide/restore controls reduce manual rework; backend-owned recommendation ranking is still missing |
+| Talent job application | Jobs -> search/filter -> optional retry Explore catalog load -> optional hide irrelevant Explore jobs -> optional AI application draft handoff -> review editable profile/manual/AI draft -> optional reviewed profile replacement, restore recent draft version, or reviewed clear -> submit -> details timeline | Safe Explore catalog recovery, profile-generated and AI-assisted application drafts, account/local draft sync, restorable recent draft versions, reviewed profile-draft replacement, reviewed draft clearing, local fit explanations, append-only application workflow analytics, and reversible account-synced/local-fallback hide/restore controls reduce manual rework; backend-owned recommendation ranking is still missing |
 | Recruiter onboarding | Register as Recruiter -> company setup handoff -> optional company profile setup/completion -> continue to job draft or dashboard | Recruiters now get signup-time company setup guidance and append-only onboarding analytics; multi-company defaults and a full multi-step onboarding wizard are still missing |
-| Recruiter job posting | Dashboard/Jobs -> Post Job -> full draft workflow -> optional reusable account/local template -> optional reviewed template delete -> optional restore recent draft version -> optional company attachment or inline Create & Attach Company -> complete company profile details -> Review Draft with duplicate warning -> Save Draft -> Jobs My Posts -> Edit Draft or Review Publish -> Review Changes with change summary -> Save Changes or Publish Job, or Edit Draft when checklist blockers remain | One posting path now preserves account-synced/local-fallback templates, reviewed template deletion, restorable account/local draft versions, company attachment, inline company setup/profile completion, signup-time company setup handoff, draft review, duplicate warnings, draft visibility, edit-existing-draft, reviewed update diffs, explicit publish review, backend-owned publish readiness enforcement, append-only onboarding analytics, and append-only publish review/outcome analytics; multi-company defaults are still missing |
+| Recruiter job posting | Dashboard/Jobs -> Post Job -> full draft workflow -> optional reusable account/local template -> optional reviewed template delete -> optional restore recent draft version -> optional company attachment or inline Create & Attach Company -> complete company profile details with safe retry -> Review Draft with duplicate warning -> Save Draft with safe retry -> Jobs My Posts -> optional safe retry -> Edit Draft with safe context retry or Review Publish -> Review Changes with change summary -> Save Changes or Publish Job, or Edit Draft when checklist blockers remain | One posting path now preserves account-synced/local-fallback templates, reviewed template deletion with safe browser/account recovery, restorable account/local draft versions, safe template save/delete and draft-history browser-storage recovery, company attachment, inline company setup/profile completion, safe company create/update and draft save/update action-failure recovery, signup-time company setup handoff, draft review, duplicate warnings, draft visibility, safe My Posts load retry, edit-existing-draft safe retry, reviewed update diffs, explicit publish review, backend-owned publish readiness enforcement, append-only onboarding analytics, and append-only publish review/outcome analytics; multi-company defaults are still missing |
 | Recruiter candidate review | Candidates -> search/focus/sort by advisory signal -> select visible candidates -> Review Interview/Offer/Rejection -> Confirm, or Details -> advisory factors -> scorecard/notes -> optional reviewed reset of unsaved private review drafts -> Offer/Reject/Open profile | Append-only candidate workflow analytics now covers review focus, detail/queue opens, draft-only review aids, reviewed private-review reset, scorecard saves, status review, status outcomes, and bulk status outcomes; provider-backed scheduling and backend-owned scoring are still missing |
 | Profile completion | Profile -> completion task, AI profile draft handoff, or Resume -> Import Text detected skills/rows -> targeted modal/save | Local and AI profile drafts, append-only profile workflow analytics, and reviewed resume imports for skills, work experience, and education reduce manual field entry |
-| Resume creation | Resume -> edit supported fields or review AI/import draft fields -> apply selected -> save/export | Append-only resume workflow analytics now covers load, tabs, import, AI draft review/discard, skill saves, profile-field saves, export, and export-history states; related rows still need full edit/delete management; export uses browser print-to-PDF or local HTML download, with synced/local activity status |
-| Learning | LMS -> optional AI learning search handoff -> review/apply catalog search -> retry progress if enrolled-course state cannot load -> Continue Learning/Recommended Next -> cursor-backed, query-searchable, and enrollment-filtered catalog -> open course -> selected lesson -> enroll/mark complete | AI-assisted catalog search, retryable progress-load failures, and append-only LMS workflow analytics reduce copy/paste and reveal catalog/progress friction; resume-based learning paths, richer course content, certificates, and richer media are still missing |
-| Challenges | Challenges -> filter -> Solve Now -> edit solution -> optionally run local sample check -> review retry history -> submit | Retry timeline, reviewed starter-code reset, local JS/TS sample checks, and append-only challenge workflow analytics are visible or observable in the workspace; deep-linkable detail route is still missing |
+| Resume creation | Resume -> edit supported fields or review AI/import draft fields -> apply selected -> save/export | Append-only resume workflow analytics now covers load, tabs, import, AI draft review/discard, skill saves, profile-field saves, export, and export-history states; safe inline recovery covers failed editor saves, provider uploads, artifact deletes, and reviewed import saves without moving controls; related rows still need full edit/delete management; export uses browser print-to-PDF or local HTML download, with synced/local activity status |
+| Learning | LMS -> optional AI learning search handoff -> review/apply catalog search -> retry progress if enrolled-course state cannot load -> Continue Learning/Recommended Next -> cursor-backed, query-searchable, and enrollment-filtered catalog -> open course -> selected lesson -> enroll/mark complete with safe retry when persistence fails | AI-assisted catalog search, retryable progress-load failures, safe enrollment/progress-save action failure recovery, and append-only LMS workflow analytics reduce copy/paste and reveal catalog/progress friction; resume-based learning paths, richer course content, certificates, and richer media are still missing |
+| Challenges | Challenges -> filter -> Solve Now -> edit solution -> optionally run local sample check -> review retry history -> submit with safe retry when persistence fails | Retry timeline, reviewed starter-code reset, local JS/TS sample checks, safe submission action-failure recovery, and append-only challenge workflow analytics are visible or observable in the workspace; deep-linkable detail route is still missing |
 | AI career help | AI -> draft prompt/type prompt -> send -> receive draft response -> review queue -> save/dismiss or open workflow handoff; optional reviewed clear starts a fresh chat | Backend-synced session/review records, reviewed chat-clear control, and product analytics events now exist; Profile, Resume, Applications, and Learning have structured non-mutating review handoffs |
 | Messaging | Messages -> review unread badges -> select conversation -> optionally insert suggested reply draft -> type, attach reviewed link, or explicitly upload a file -> review caption/attachment -> send/retry -> optionally mark visible incoming messages read | Mobile conversation selection, unread triage, draft-only reply suggestions, link attachments, provider-backed file upload/download handoff, server-side upload size/folder/blocked-extension guardrails, hidden-draft prevention, retry states, and append-only workflow analytics work; backend-owned chat contracts, unread counters, presence, virus scanning, and provider storage hardening are still limited |
 | Billing | Billing -> review plan/payment method -> confirm -> provider checkout/portal | Settings shows a billing summary and hands off plan/payment work to `/billing`; append-only billing workflow analytics now observes load, retry, review, provider handoff, popup-blocked, submitted, and failure outcomes |
-| Settings | Settings -> edit profile/notifications/delivery/security or open Billing | Password reset and account deactivation require confirmation, cancellation is observable, notification digest/quiet-hour controls are explicit, 2FA is explicitly unavailable, and settings workflow analytics observes explicit save, preference, security, and billing handoff decisions |
+| Settings | Settings -> edit profile/notifications/delivery/security or open Billing | Notification/billing load failures and profile-save/password-reset/account-deactivation action failures are visible and retryable without exposing provider errors; password reset and account deactivation require confirmation, cancellation is observable, notification digest/quiet-hour controls are explicit, 2FA is explicitly unavailable, and settings workflow analytics observes explicit save, preference, security, and billing handoff decisions |
 | Admin ops | Admin -> service health -> refresh/audit pagination/investigation links | Fallback data is labeled and operational decisions are analytics-backed; real incident timeline, alert subscriptions, and provider-configured logs/metrics remain incomplete |
 
 ### 1.4 Data Flow Between Modules
@@ -83,8 +83,8 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 | Billing -> Product analytics | Billing data loads/failures, retry clicks, plan review/cancel/checkout handoffs, popup-blocked outcomes, submitted provider requests, payment-method review/cancel/portal handoffs, and provider failures emit append-only workflow analytics without card details, invoice descriptions, provider URLs, exact payment amounts, plan names, feature text, or raw error messages |
 | Profile -> Product analytics | Profile loads/failures, tab selections, basic edit/save/cancel, AI draft review/discard, local suggestion prefill, completion task open/cancel/validation/save, row delete review/cancel/complete/failure, and profile-photo upload/removal review/cancel/validation/success/failure actions emit append-only workflow analytics without headline, bio, location, full name, skill names, company names, institution names, descriptions, row labels, image URLs, file names, or raw error messages |
 | Resume -> Product analytics | Resume loads/failures, tab selections, import open/cancel/file/analyze/apply decisions, AI draft review/discard, detected-skill and detected-row saves, profile-field save outcomes, export outcomes, and export-history sync/load states emit append-only workflow analytics without resume text, contact details, file names, skill names, row text, export files, provider URLs, or raw error messages |
-| Networking -> Product analytics | Suggestions loaded/failures, tab selections, profile previews/full-profile handoffs, connect/accept/decline/withdraw outcomes, reminder set/clear/sync/backfill states, and hide/restore suggestion-preference outcomes emit append-only workflow analytics without names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, or raw error messages |
-| Chrome extension -> Local operational analytics | Popup/options opens, tab changes, page-scan lifecycle, scanned-draft save/reviewed-discard, tracker mutations including reviewed tracked-job removal, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, prep-card actions including reviewed clear/reset, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes emit bounded local events in this browser when Store Local Usage Diagnostics is enabled, without raw URLs, company names, role names, resume text, job descriptions, extracted keywords, notes, prep topics, raw page content, or raw errors; the popup diagnostics panel shows event count/latest event and lets users export or review before clearing local analytics |
+| Networking -> Product analytics | Suggestions loaded/failures, tab selections, profile previews/full-profile handoffs, connect/accept/decline/withdraw outcomes and safe action-recovery states, reminder set/clear/sync/backfill states, and hide/restore suggestion-preference outcomes emit append-only workflow analytics without names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, or raw error messages |
+| Chrome extension -> Local operational analytics | Popup/options opens, tab changes, page-scan lifecycle with safe visible scan status copy, scanned-draft save/reviewed-discard, tracker mutations including reviewed tracked-job removal, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, prep-card actions including reviewed clear/reset, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes emit bounded local events in this browser when Store Local Usage Diagnostics is enabled, without raw URLs, company names, role names, resume text, job descriptions, extracted keywords, notes, prep topics, raw page content, raw runtime errors, or raw provider errors; the popup diagnostics panel shows event count/latest event and lets users export or review before clearing local analytics |
 | Chrome extension -> Web app | Currently local-only; no real sync bridge to web app data |
 
 ### 1.5 Manual Vs Automated Processes
@@ -126,7 +126,7 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 
 ### 2.2 Authentication
 
-- Current behavior: Login/register with Talent and Recruiter account types, role-outcome descriptions, route-query role preselection, visible role-specific next steps, append-only registration onboarding analytics, `ROLE_RECRUITER` mapping for recruiter accounts, and recruiter company-setup handoff after signup.
+- Current behavior: Login/register with Talent and Recruiter account types, role-outcome descriptions, route-query role preselection, visible role-specific next steps, safe auth provider-failure copy, append-only registration onboarding analytics, `ROLE_RECRUITER` mapping for recruiter accounts, and recruiter company-setup handoff after signup.
 - UX issues: Persisted onboarding state and a full multi-step first-run wizard are still missing.
 - Accessibility issues: Account type segmented buttons now expose `aria-pressed`; continue checking focus and error states.
 - Cognitive load: Registration and app navigation now use the same Recruiter vocabulary, role descriptions explain what the selected account can do, Landing CTAs preselect the intended role, and the selected account type previews the next step.
@@ -148,7 +148,7 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 
 ### 2.5 Jobs And Applications
 
-- Current behavior: Browse cursor-backed Explore results, search/filter, review local profile/job fit reasons, hide irrelevant Explore cards with account-synced/local-fallback reversible restore controls, save/reapply account-synced saved searches with local fallback, delete saved searches only after an in-app confirmation modal, opt into in-app saved-search new-match alerts that respect the Job Alerts channel and daily/weekly digest preference before immediate delivery, queue deferred saved-search digest items, run server-side saved-search digest discovery against Supabase jobs/searches, run grouped digest delivery through dry-run-by-default scheduler commands, deploy Kubernetes CronJobs for discovery and delivery with service-role credentials, review an editable profile/manual/AI application draft before applying, replace existing application draft content with a profile draft only after inline review, restore recent application draft versions from account/local history, clear an application draft only after inline review, view applied jobs with status timeline, route recruiter posting actions to the full controlled draft workflow, reuse recruiter-scoped account-synced/local-fallback job-post templates as editable drafts, delete a selected job-post template only after an in-app confirmation modal, restore recent recruiter job-post draft versions from account/local history, attach an existing recruiter company profile to a draft by default with an explicit opt-out, create and attach minimal recruiter-owned company context from the draft form when no company is available, review a recruiter job draft before saving it as `DRAFT`, show an advisory duplicate warning when an active recruiter job already matches the draft title, location, and job type, return saved drafts to a recruiter-only My Posts tab, let recruiters edit owned draft jobs through the same reviewed form, show a normalized field-level change summary before saving draft updates, and require a visible publish checklist before a draft can be made visible in Explore.
+- Current behavior: Browse cursor-backed Explore results, search/filter, review local profile/job fit reasons, hide irrelevant Explore cards with account-synced/local-fallback reversible restore controls, save/reapply account-synced saved searches with local fallback, delete saved searches only after an in-app confirmation modal, opt into in-app saved-search new-match alerts that respect the Job Alerts channel and daily/weekly digest preference before immediate delivery, queue deferred saved-search digest items, run server-side saved-search digest discovery against Supabase jobs/searches, run grouped digest delivery through dry-run-by-default scheduler commands, deploy Kubernetes CronJobs for discovery and delivery with service-role credentials, review an editable profile/manual/AI application draft before applying, replace existing application draft content with a profile draft only after inline review, restore recent application draft versions from account/local history, clear an application draft only after inline review, view applied jobs with status timeline, route recruiter posting actions to the full controlled draft workflow, reuse recruiter-scoped account-synced/local-fallback job-post templates as editable drafts, delete a selected job-post template only after an in-app confirmation modal, restore recent recruiter job-post draft versions from account/local history, attach an existing recruiter company profile to a draft by default with an explicit opt-out, create and attach minimal recruiter-owned company context from the draft form when no company is available, review a recruiter job draft before saving it as `DRAFT`, show an advisory duplicate warning when an active recruiter job already matches the draft title, location, and job type, return saved drafts to a recruiter-only My Posts tab, show safe Retry postings when recruiter postings cannot load, let recruiters edit owned draft jobs through the same reviewed form, show a normalized field-level change summary before saving draft updates, and require a visible publish checklist before a draft can be made visible in Explore.
 - UX issues: Environment-specific scheduler image publishing and secret replacement, Kubernetes run-health verification beyond the optional Admin provider status API, multi-company defaults, service-owned backend cursor contracts, backend-owned job ranking, backend-wide preference learning, and deeper role-specific AI tailoring are still missing.
 - Accessibility issues: Job cards should expose semantic actions and status labels.
 - Bottlenecks: Company setup is now available from registration and inside posting, but multi-company defaults and persisted onboarding state are still limited.
@@ -163,14 +163,14 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 
 ### 2.7 Profile And Resume
 
-- Current behavior: Profile supports headline/location/bio editing, reviewed own-profile photo upload with image preview, crop controls, and explicit upload confirmation, explicit profile-photo removal with confirmation, inline completion tasks for skills/work experience/education, own-profile skill/experience/education add/edit/remove controls, local source-labeled profile suggestions that prefill drafts only, AI review-queue profile draft handoff with visible current/proposed field diffs, discard, cancel, explicit save, and append-only profile workflow analytics for load, tab, edit, suggestion, completion, delete, AI-draft, and photo upload/removal decisions. Resume builder imports pasted resume text, supported text files, readable DOCX files, or searchable PDF files into selectable reviewed editor drafts, detects new profile skills with explicit Save Skills review, detects dated work-experience and education rows with explicit Save Rows review, accepts structured AI resume draft handoffs into the same current/proposed review modal, saves supported profile fields, downloads a local native PDF resume, optionally uploads reviewed PDF artifacts through file-service, shows an account-synced/local-fallback artifact library with open/copy/delete controls, opens an accessible in-app confirmation modal before provider PDF deletion, records active/deleted artifact metadata when account sync is available, shows recent local delete receipts after confirmed provider deletion, downloads a local print-ready HTML resume, opens browser print-to-PDF export, records export activity locally first with account sync when available, and emits append-only resume workflow analytics for import, AI-draft, skill-save, row-save, save, export, export-history, artifact lifecycle, artifact delete review/cancel, and artifact sync decisions.
+- Current behavior: Profile supports headline/location/bio editing, reviewed own-profile photo upload with image preview, crop controls, and explicit upload confirmation, explicit profile-photo removal with confirmation, inline completion tasks for skills/work experience/education, own-profile skill/experience/education add/edit/remove controls, local source-labeled profile suggestions that prefill drafts only, AI review-queue profile draft handoff with visible current/proposed field diffs, discard, cancel, explicit save, and append-only profile workflow analytics for load, tab, edit, suggestion, completion, delete, AI-draft, and photo upload/removal decisions. Resume builder imports pasted resume text, supported text files, readable DOCX files, or searchable PDF files into selectable reviewed editor drafts, detects new profile skills with explicit Save Skills review, detects dated work-experience and education rows with explicit Save Rows review, accepts structured AI resume draft handoffs into the same current/proposed review modal, saves supported profile fields, downloads a local native PDF resume, optionally uploads reviewed PDF artifacts through file-service, shows an account-synced/local-fallback artifact library with open/copy/delete controls, opens an accessible in-app confirmation modal before provider PDF deletion, records active/deleted artifact metadata when account sync is available, shows recent local delete receipts after confirmed provider deletion, downloads a local print-ready HTML resume, opens browser print-to-PDF export, records export activity locally first with account sync when available, shows safe inline recovery for profile-data load, editor-save, provider-upload, uploaded-PDF delete, detected-skill save, and detected-profile-row save failures, and emits append-only resume workflow analytics for import, AI-draft, skill-save, row-save, save, export, export-history, artifact lifecycle, artifact delete review/cancel, and artifact sync decisions.
 - UX issues: Scanned/image-only PDF OCR, backend-owned profile recommendation approvals, and formal provider retention policy/revocation governance are still missing. Direct DOCX/searchable-PDF text import, reviewed profile skill/row imports, reviewed avatar crop/upload/removal, native PDF download, opt-in provider upload, artifact link copy/delete, local fallback, account-synced artifact metadata, and visible local delete receipts reduce export/share/revocation uncertainty, but long-term artifact lifecycle governance still needs a provider retention policy and backend lifecycle audit.
 - Accessibility issues: Uploaded-PDF deletion now uses the shared in-app modal with dialog semantics, Escape handling, focus containment, and focus restoration instead of a browser confirm. Empty-state, related-row action focus behavior, and browser-level modal verification should continue as import flows and richer profile automation are added.
 - Improvements: Add scanned-PDF OCR or provider-assisted parse review with explicit approval, provider retention/revocation audit controls, backend-audited profile recommendations, and richer server-side import confidence/audit records.
 
 ### 2.8 LMS
 
-- Current behavior: Cursor-backed, query-searchable, and enrollment-filtered course list, page-size and previous/next controls, AI review-queue learning handoff that shows suggested Course Search/Skill/Certification catalog searches before applying one, retryable progress-load failure handling, Continue Learning panel, Recommended Next catalog row, enrollment, progress-aware cards/tabs, lesson player, selectable curriculum, and explicit lesson completion.
+- Current behavior: Cursor-backed, query-searchable, and enrollment-filtered course list, page-size and previous/next controls, AI review-queue learning handoff that shows suggested Course Search/Skill/Certification catalog searches before applying one, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, Continue Learning panel, Recommended Next catalog row, enrollment, progress-aware cards/tabs, lesson player, selectable curriculum, and explicit lesson completion.
 - UX issues: Resume-based learning paths, certificates, rich media playback, and formal backend-owned LMS cursor/search/progress contracts are still missing.
 - Performance concerns: Catalog browsing now requests bounded pages, sends search with the course query, sends enrollment-aware progress filters, and uses cursor-backed Supabase fallback paging for stable next-page browsing.
 - Improvements: Add resume/profile-based recommended paths, certificates, richer lesson media, and formal Spring LMS search/progress/cursor support when the gateway owns catalog search.
@@ -190,7 +190,7 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 
 ### 2.11 Networking
 
-- Current behavior: Suggested people, why-suggested explanations, privacy-preserving mutual-connection counts when available, optional request notes, account-synced suggestion hiding with local fallback, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, Admin scheduled-automation rollout visibility, accept/decline/withdraw actions, and append-only networking workflow analytics for suggestions, tabs, preview/full-profile handoff, connect, accept, decline, withdraw, reminder, and suggestion-preference decisions.
+- Current behavior: Suggested people, why-suggested explanations, privacy-preserving mutual-connection counts when available, optional request notes, account-synced suggestion hiding with local fallback, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, Admin scheduled-automation rollout visibility, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics for suggestions, tabs, preview/full-profile handoff, connect, accept, decline, withdraw, reminder, and suggestion-preference decisions.
 - UX issues: Full profile-service-backed recommendation generation, reminder frequency controls, and backend-owned scheduler status contracts beyond the optional Admin provider run-history API are still limited.
 - Improvements: Add a full profile-service-backed recommendation contract, reminder frequency controls, and production Kubernetes status checks for scheduled reminder delivery.
 
@@ -466,7 +466,12 @@ Implementation status updated after the one-hundred-eighty-ninth implementation 
 | UX-189 | Jobs/Applications | Stop simulating successful application submission when persistence fails | P1 | Done in one-hundred-eighty-sixth batch |
 | UX-190 | Jobs/Applications | Show retryable Applied-tab load failure instead of empty applications | P1 | Done in one-hundred-eighty-seventh batch |
 | UX-191 | LMS/Progress | Stop silently completing lessons when progress persistence is unavailable | P1 | Done in one-hundred-eighty-eighth batch |
-| UX-192 | LMS/Progress | Show retryable enrollment/progress load failure instead of empty progress | P1 | Done in one-hundred-eighty-ninth batch |
+| UX-192 | LMS/Progress | Show retryable enrollment/progress load failure instead of empty progress | P1 | Done in one-hundred-eighty-ninth batch; page-level safe-copy retry contract updated in this pass |
+| UX-193 | Jobs/My Posts | Show retryable recruiter postings load failure instead of empty My Posts | P1 | Implemented in this pass |
+| UX-194 | AI/Assistant | Show safe provider-failure draft and retry without exposing raw provider errors | P1 | Implemented in this pass |
+| UX-195 | Auth/Login Register | Show safe auth provider-failure copy without exposing raw provider errors | P1 | Implemented in this pass |
+| UX-196 | Settings/Actions | Show safe profile-save, password-reset, and account-deactivation failure copy with retry | P1 | Implemented in this pass |
+| UX-197 | Profile/Actions | Show safe profile save, row save/delete, and avatar action failure copy with retry | P1 | Implemented in this pass |
 
 ## 7. Implementation Plan
 
@@ -5479,7 +5484,9 @@ The one-hundred-eighty-fourth implementation batch focused on Career Path genera
 3. Removed the hard-coded 92% match badge and replaced it with a neutral Review first advisory badge.
 4. Added Generated Guidance and Needs data header badges based on whether usable career-path data is available.
 5. Added a retryable unavailable/incomplete-data state when generation fails, the user is unavailable, or the returned response has no usable path.
-6. Preserved the explicit Explore Path action to LMS without auto-enrollment, profile edits, application actions, or learning-progress mutation.
+6. Added fixed safe provider-unavailable copy and Retry career path without exposing raw AI/provider errors.
+7. Added unit coverage for safe provider-unavailable copy, raw AI/provider-error exclusion, and retry through the existing career-path generation workflow.
+8. Preserved the explicit Explore Path action to LMS without auto-enrollment, profile edits, application actions, or learning-progress mutation.
 
 Status: completed on 2026-06-27.
 
@@ -5496,7 +5503,7 @@ Validation:
 - Backend Maven tests could not run because `mvn` is not installed and the repo has no Maven or Gradle wrapper.
 - Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
 
-User effort is reduced because users no longer need to interpret a static fallback path or fabricated match percentage as personalized career guidance. User control is preserved because retry is explicit, generated guidance remains review-first, Explore Path only navigates to LMS, and the page never enrolls users, edits profiles, changes resumes, submits applications, creates notifications, syncs provider data, or mutates learning progress automatically.
+User effort is reduced because users no longer need to interpret a static fallback path, fabricated match percentage, or raw provider failure as personalized career guidance. User control is preserved because retry is explicit, generated guidance remains review-first, Explore Path only navigates to LMS, and the page never enrolls users, edits profiles, changes resumes, submits applications, creates notifications, syncs provider data, or mutates learning progress automatically.
 
 ## 192. One-Hundred-Eighty-Fifth Implementation Batch
 
@@ -5561,16 +5568,18 @@ The one-hundred-eighty-seventh implementation batch focused on truthful Applied-
 
 1. Changed `applicationService.getUserApplications` to throw an explicit load error instead of returning an empty list when application loading fails.
 2. Added an Applied-tab `applicationsLoadError` state.
-3. Added a retryable Applications unavailable empty state with Retry Applications.
+3. Added a retryable Applications unavailable empty state with fixed safe copy, raw provider-error exclusion, and Retry applications.
 4. Preserved previously loaded applications during load failures instead of clearing visible records.
 5. Kept existing duplicate-awareness, Applied search, application details, and submit-failure behavior unchanged.
 6. Added focused regression coverage proving failed application list loading no longer resolves to an empty list.
+7. Added `JobsPage.test.tsx` unit coverage for safe Applied-tab application history failed-load copy, raw provider-error exclusion, and retry through the existing `applicationService.getUserApplications(user.id)` workflow.
 
 Status: completed on 2026-06-27.
 
 Validation:
 
 - Focused validation passed: `npx vitest run src/services/applicationService.test.ts` in `apps/frontend` passed: 1 test file, 6 tests.
+- Focused validation passed: `npm run test:unit -- --run src/pages/jobs/JobsPage.test.tsx` in `apps/frontend` passed: 1 test file, 4 tests.
 - `npm run lint --workspace talentsphere-web` passed.
 - `npm run build --workspace talentsphere-web` passed.
 - `npm run test:unit --workspace talentsphere-web` passed: 60 test files, 386 tests.
@@ -5582,7 +5591,7 @@ Validation:
 - Backend Maven tests could not run because `mvn` is not installed and the repo has no Maven or Gradle wrapper.
 - Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
 
-User effort is reduced because users no longer need to infer whether "No applications yet" means they have no submissions or the application list failed to load. User control is preserved because Retry Applications is explicit, failed loads do not clear existing records, no applications are created or deleted, no statuses are changed, and no employer or recruiter workflow is contacted automatically.
+User effort is reduced because users no longer need to infer whether "No applications yet" means they have no submissions or the application list failed to load. User control is preserved because Retry applications is explicit, failed loads do not clear existing records, no applications are created or deleted, no statuses are changed, raw provider errors are not exposed, and no employer or recruiter workflow is contacted automatically.
 
 ## 195. One-Hundred-Eighty-Eighth Implementation Batch
 
@@ -5623,6 +5632,7 @@ The one-hundred-eighty-ninth implementation batch focused on LMS enrollment/prog
 4. Preserved already loaded enrollments when a later progress refresh fails.
 5. Cleared stale progress-load errors after successful enrollment or lesson-completion updates.
 6. Added focused regression coverage proving failed enrollment loading no longer resolves to an empty progress state.
+7. Added `LMSPage.test.tsx` unit coverage for safe enrolled-progress failed-load copy, raw provider-error exclusion, and retry through the existing `lmsService.getUserEnrollments(user.id)` workflow.
 
 Status: completed on 2026-06-27.
 
@@ -5641,3 +5651,486 @@ Validation:
 - Docker image build and Kubernetes render/apply checks could not run because `docker`, `kubectl`, and `kustomize` are not installed in this environment.
 
 User effort is reduced because learners no longer have to infer whether empty Continue Learning/progress tabs mean no enrolled courses or a failed progress load. User control is preserved because Retry Progress is explicit, failed loads do not clear existing progress, enrollment and lesson completion still require user action, and the page does not fabricate enrollments, mark lessons complete, issue certificates, create notifications, change profile data, or mutate other workflows when LMS progress loading is unavailable.
+
+## 197. One-Hundred-Ninetieth Implementation Batch
+
+The one-hundred-ninetieth implementation batch focused on AI Assistant provider failure visibility:
+
+1. Added focused page-level coverage for safe AI Assistant chat provider-failure copy.
+2. Verified raw provider error strings and token-like values are not displayed after a failed chat response.
+3. Verified retry uses the existing `aiService.getChatResponse(prompt)` workflow with a new user prompt.
+4. Preserved the route heading, review queue, chat history, composer, chat persistence, review sync, analytics/audit payloads, clear-chat review, and workflow handoffs.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/ai/AIAssistant.test.tsx` in `apps/frontend` passed: 1 test file, 1 test.
+- Full validation passed after documentation updates: focused AI Assistant Chromium workflow, frontend lint, production build, full frontend unit suite, aggregate Chromium E2E, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because a failed AI chat provider response now stays inside a stable, retryable assistant draft state instead of exposing provider internals or forcing users to infer recovery. User control is preserved because retry requires a new prompt, recommendations remain review-only drafts, raw provider errors stay hidden, and no profile, resume, job, application, learning, message, setting, notification, or destination workflow is mutated automatically.
+
+## 198. One-Hundred-Ninety-First Implementation Batch
+
+The one-hundred-ninety-first implementation batch focused on public auth provider failure visibility:
+
+1. Added `authErrorCopy` to map Login/Register provider failures to safe public copy.
+2. Preserved configured invalid-credential login copy and weak-password registration guidance.
+3. Hid raw provider errors and token-like values from public auth alerts.
+4. Added focused `AuthEntry.test.tsx` coverage for Login and Register failure states while preserving registration role-intent context.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/auth/AuthEntry.test.tsx` in `apps/frontend` passed: 1 test file, 4 tests.
+- Full validation passed after documentation updates: focused auth browser workflow, frontend lint, production build, full frontend unit suite, aggregate Chromium E2E, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because auth failures now distinguish actionable user guidance from provider/internal failures without exposing implementation details. User control is preserved because users still submit the same forms, Login/Register still call the same Supabase auth service, registration role mapping and onboarding analytics are unchanged, OAuth/reset controls remain hidden until validated handlers exist, and no session, profile, job, company, notification, or destination workflow is mutated by the failure copy.
+
+## 199. One-Hundred-Ninety-Second Implementation Batch
+
+The one-hundred-ninety-second implementation batch focused on Settings action failure visibility:
+
+1. Added safe inline profile-save failure copy in the Profile Settings panel.
+2. Added safe password-reset provider failure copy inside the reset-email review modal.
+3. Added safe account-deactivation failure copy inside the typed deactivation review modal.
+4. Hid raw provider errors and token-like values from those Settings action-failure states.
+5. Added focused `SettingsPage.test.tsx` coverage proving retry remains on Save Changes, Send Reset Email, and Confirm Deactivation.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/settings/SettingsPage.test.tsx` in `apps/frontend` passed: 1 test file, 5 tests.
+- Full validation passed after documentation updates: focused Settings browser workflow, frontend lint, production build, full frontend unit suite, aggregate Chromium E2E, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because Settings action failures now remain in the exact review context where the user can retry, without exposing provider internals. User control is preserved because the same profile-save, password-reset, and account-deactivation actions are still required, notifications and billing are untouched, toasts and analytics remain unchanged, and no setting, notification, billing record, session, profile row, or account state is mutated by the recovery copy itself.
+
+## 200. One-Hundred-Ninety-Third Implementation Batch
+
+The one-hundred-ninety-third implementation batch focused on Profile action failure visibility:
+
+1. Added safe inline profile basic-save failure copy inside the Edit Profile modal.
+2. Added safe completion-row save failure copy inside the skill/experience/education modal.
+3. Added safe row-delete failure copy inside the Remove Profile Item review.
+4. Added safe avatar-upload and avatar-removal failure copy inside their existing review modals.
+5. Hid raw provider errors and token-like values from those Profile action-failure states.
+6. Added focused `ProfilePage.test.tsx` coverage proving retry remains on Save Changes, Save, Remove, Upload Photo, and Remove Photo.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/profile/ProfilePage.test.tsx` in `apps/frontend` passed: 1 test file, 7 tests.
+- Full validation passed after documentation updates: focused Profile browser workflow, frontend lint, production build, full frontend unit suite, aggregate Chromium E2E, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because Profile action failures now remain in the exact edit or review modal where the user can retry, without exposing provider internals. User control is preserved because the same profile-save, row-save, row-delete, avatar-upload, and avatar-removal actions are still required, AI drafts remain review-only, toasts and analytics remain unchanged, and no profile field, row, avatar, message, notification, resume artifact, or account state is mutated by the recovery copy itself.
+
+## 201. One-Hundred-Ninety-Fourth Implementation Batch
+
+The one-hundred-ninety-fourth implementation batch focused on Resume action failure visibility:
+
+1. Added safe inline Resume Builder save failure copy below the page header.
+2. Added safe provider-upload failure copy for Upload PDF while preserving Download PDF as the local fallback option.
+3. Added safe uploaded-PDF delete failure copy inside the Delete Uploaded PDF review modal.
+4. Added safe detected-skill and detected-profile-row save failure copy inside the import review sections.
+5. Added safe visible export/copy recovery copy for local export and artifact-link failures.
+6. Hid raw provider errors and token-like values from those Resume action-failure states.
+7. Added focused `ResumeBuilder.test.tsx` coverage proving retry remains on Save Changes, Upload PDF, Delete PDF, Save Skills, and Save Rows.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/profile/ResumeBuilder.test.tsx` in `apps/frontend` passed: 1 test file, 7 tests.
+- Full validation passed after documentation updates: focused Resume browser workflow, frontend lint, production build, full frontend unit suite, aggregate Chromium E2E, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because Resume action failures now remain next to the exact editor, import, upload, export, or review control where the user can retry, without exposing provider internals. User control is preserved because the same save, upload, delete, import-row save, export, copy, and download actions are still required, AI drafts remain review-only, and no profile row, uploaded artifact, export activity, message, notification, or account state is mutated by the recovery copy itself.
+
+## 202. One-Hundred-Ninety-Fifth Implementation Batch
+
+The one-hundred-ninety-fifth implementation batch focused on Networking action failure visibility:
+
+1. Added safe card-scoped Connect failure copy below the suggestion note field.
+2. Added safe incoming Accept and Decline failure copy inside the incoming request card.
+3. Added safe sent-request Withdraw failure copy inside the sent request card.
+4. Hid raw provider errors and token-like values from those Networking action-failure states.
+5. Preserved retry through the existing Connect, Accept, Decline, and Withdraw buttons.
+6. Added focused `NetworkingPage.test.tsx` coverage proving each failure state keeps retry on the existing action workflow.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/networking/NetworkingPage.test.tsx` in `apps/frontend` passed: 1 test file, 6 tests.
+- Focused browser validation passed: `npx playwright test tests/networking-workflow.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 3 tests.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 85 files / 495 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because Networking action failures now stay in the card where the user can retry, without exposing provider internals or forcing users to infer whether the relationship action changed state. User control is preserved because the same Connect, Accept, Decline, and Withdraw actions are still required, notes and reminders remain explicit, profile preview stays read-only, toasts and analytics remain unchanged, and no connection, notification, hidden preference, profile, message, or account state is mutated by the recovery copy itself.
+
+## 203. One-Hundred-Ninety-Sixth Implementation Batch
+
+The one-hundred-ninety-sixth implementation batch focused on Candidates action failure visibility:
+
+1. Added fixed safe copy for single Interview/Offer/Reject status failures inside the existing status confirmation modal.
+2. Kept the status confirmation modal open after provider failure so recruiters can retry from the same confirmation.
+3. Corrected all-failed bulk status update copy so it says no selected applications were moved instead of implying successful saves.
+4. Preserved partial-success bulk copy for mixed outcomes where some selected applications did move successfully.
+5. Hid raw provider errors and token-like values from Candidates status action-failure states.
+6. Added focused `CandidatesPage.test.tsx` coverage proving retry remains on the existing single-status and bulk confirmation workflows.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/candidates/CandidatesPage.test.tsx` in `apps/frontend` passed: 1 test file, 4 tests.
+- Full validation passed after documentation updates: focused Candidates browser workflow with 9 Chromium tests, frontend lint, production build, full frontend unit suite with 85 files / 497 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed candidate status changes remain in the exact review modal where the recruiter can retry, and all-failed bulk updates no longer imply that any status changes were saved. User control is preserved because the same Interview, Offer, Reject, and bulk confirmation actions are still required, eligibility rules are unchanged, notes and scorecards remain private recruiter aids, toasts and analytics remain unchanged, and no application, candidate note, scorecard, message, notification, or profile state is mutated by the recovery copy itself.
+
+## 204. One-Hundred-Ninety-Seventh Implementation Batch
+
+The one-hundred-ninety-seventh implementation batch focused on Jobs action failure visibility:
+
+1. Added safe inline application-submit failure copy inside the existing Review Application modal.
+2. Kept the Review Application modal open after provider failure so the user can retry from the same Submit Application action.
+3. Added safe recruiter publish failure copy inside the existing publish checklist modal.
+4. Converted publish-readiness provider rejection signals into fixed safe policy copy instead of rendering raw provider text.
+5. Hid raw provider errors and token-like values from Jobs action-failure states.
+6. Added focused `JobsPage.test.tsx` coverage proving retry remains on the existing Review Application and publish checklist workflows.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/jobs/JobsPage.test.tsx` in `apps/frontend` passed: 1 test file, 8 tests.
+- Full validation passed after documentation updates: focused Jobs browser workflow with 2 Chromium tests, focused recruiter publish browser workflow with 1 Chromium test, frontend lint, production build, full frontend unit suite with 85 files / 499 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed application submissions and publish attempts stay in the exact review modal where the user can retry, without exposing provider internals or implying the action saved. User control is preserved because the same Submit Application and Publish Job actions are still required, application drafts and recruiter postings remain unchanged on failure, toasts and analytics remain unchanged, and no job, application, saved search, hidden preference, company, message, notification, or profile state is mutated by the recovery copy itself.
+
+## 205. One-Hundred-Ninety-Eighth Implementation Batch
+
+The one-hundred-ninety-eighth implementation batch focused on Billing action failure visibility:
+
+1. Added safe plan checkout failure copy inside the existing Review Plan modal.
+2. Kept failed checkout attempts in the Review Plan modal so the user can retry from the same Continue action.
+3. Added safe billing portal failure copy inside the existing Update Payment Method modal.
+4. Kept failed portal handoffs in the Update Payment Method modal so the user can retry from the same Open Billing Portal action.
+5. Hid raw provider errors and token-like values from Billing action-failure states.
+6. Added focused `BillingPage.test.tsx` coverage proving retry remains on the existing Review Plan and Update Payment Method workflows.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/billing/BillingPage.test.tsx` in `apps/frontend` passed: 1 test file, 4 tests.
+- Full validation passed after documentation updates: focused Billing browser workflow with 4 Chromium tests, frontend lint, production build, full frontend unit suite with 85 files / 501 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed checkout and billing portal handoffs stay in the exact review modal where the user can retry, without exposing provider internals or implying subscription or payment-method state changed. User control is preserved because the same Continue and Open Billing Portal actions are still required, subscription/payment state remains unchanged on failure, toasts and analytics remain unchanged, and no billing, settings, payment, message, notification, or profile state is mutated by the recovery copy itself.
+
+## 206. One-Hundred-Ninety-Ninth Implementation Batch
+
+The one-hundred-ninety-ninth implementation batch focused on Messaging action failure visibility:
+
+1. Added focused unit coverage for safe failed-send copy on the existing optimistic message retry path.
+2. Verified failed messages keep their local row visible and retry through the same Retry action.
+3. Added focused unit coverage for safe attachment upload failure copy in the existing composer upload workflow.
+4. Added focused unit coverage for safe visible mark-read failure copy while unread state remains available.
+5. Verified raw provider errors and token-like values stay out of Messaging action-failure states.
+6. Documented the new Messaging action-failure contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/messaging/MessagingPage.test.tsx` in `apps/frontend` passed: 1 test file, 6 tests.
+- Full validation passed after documentation updates: focused Messaging browser workflow with 6 Chromium tests, frontend lint, production build, full frontend unit suite with 85 files / 504 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed sends, uploads, and mark-read attempts stay in the same message thread or composer context where the user can recover. User control is preserved because the same Retry, Upload file, and unread actions are still required, failed send content and unread state remain visible on failure, toasts and analytics remain unchanged, and no conversation, message, attachment, notification, profile, or billing state is mutated by the recovery copy itself.
+
+## 207. Two-Hundredth Implementation Batch
+
+The two-hundredth implementation batch focused on Learning action failure visibility:
+
+1. Added focused unit coverage for safe enrollment failure copy on the existing Enroll Now path.
+2. Verified failed enrollment attempts keep the course review modal available for retry.
+3. Added focused unit coverage for safe lesson-completion persistence failure copy on the existing Mark Complete path.
+4. Verified failed lesson-completion persistence keeps the lesson incomplete and progress unchanged.
+5. Verified raw provider errors and token-like values stay out of Learning action-failure states.
+6. Documented the new Learning action-failure contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/lms/LMSPage.test.tsx` in `apps/frontend` passed: 1 test file, 6 tests.
+- Full validation passed after documentation updates: focused Learning browser workflow with 5 Chromium tests, frontend lint, production build, full frontend unit suite with 85 files / 506 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed enrollment and lesson-completion saves stay in the same course modal where the learner can retry. User control is preserved because the same Enroll Now and Mark Complete actions are still required, progress remains unchanged on failed persistence, toasts and analytics remain unchanged, and no course, enrollment, progress, message, notification, profile, or billing state is mutated by the recovery copy itself.
+
+## 208. Two-Hundred-First Implementation Batch
+
+The two-hundred-first implementation batch focused on Challenges action failure visibility:
+
+1. Added focused unit coverage for safe challenge submission failure copy on the existing Submit Solution path.
+2. Verified failed submission attempts keep the challenge workspace available for retry.
+3. Verified failed submission persistence leaves retry history unchanged until a save succeeds.
+4. Verified retry through the same Submit Solution action records the accepted submission in the existing latest-submission and retry-history surfaces.
+5. Verified raw provider errors and token-like values stay out of Challenges action-failure states.
+6. Documented the new Challenges action-failure contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/challenges/ChallengesPage.test.tsx` in `apps/frontend` passed: 1 test file, 3 tests.
+- Full validation passed after documentation updates: focused Challenges browser workflow with 3 Chromium tests, frontend lint, production build, full frontend unit suite with 85 files / 507 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed challenge submissions stay in the same workspace where the learner can retry, with the prior attempt history still visible. User control is preserved because the same Submit Solution action is still required, retry history changes only after persistence succeeds, toasts and analytics remain unchanged, and no challenge, submission, course, message, notification, profile, or billing state is mutated by the recovery copy itself.
+
+## 209. Two-Hundred-Second Implementation Batch
+
+The two-hundred-second implementation batch focused on Notification shell recovery visibility:
+
+1. Added focused unit coverage for safe notification load failure copy on the existing Retry notifications path.
+2. Verified failed notification loads keep provider/internal error strings and token-like values out of the popover.
+3. Added focused unit coverage for mark-all read persistence failures on the existing Mark read path.
+4. Verified failed mark-all read persistence rolls back the optimistic unread state instead of presenting a false read state.
+5. Verified retry through the same Mark read action clears unread state after the mocked persistence path succeeds.
+6. Documented the new Header notification recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/components/layout/Header.test.tsx` in `apps/frontend` passed: 1 test file, 2 tests.
+- Full validation passed after documentation updates: focused Notification browser workflow with 3 Chromium tests, frontend lint, production build, full frontend unit suite with 86 files / 509 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because notification load and read persistence failures stay inside the Header popover where the user can retry the same action. User control is preserved because Retry notifications and Mark read still drive the existing service workflows, unread state is not falsely cleared after failed persistence, and no notification, reminder, route, search, message, setting, or billing behavior is mutated by the recovery copy itself.
+
+## 210. Two-Hundred-Third Implementation Batch
+
+The two-hundred-third implementation batch focused on Post Job action failure visibility:
+
+1. Added focused unit coverage for safe company creation failure copy on the existing Create & Attach Company path.
+2. Added focused unit coverage for safe company profile update failure copy on the existing Save Company Profile path.
+3. Added focused unit coverage for safe new draft save failure copy on the existing Save Draft review path.
+4. Added focused unit coverage for safe edited-draft update failure copy on the existing Save Changes review path.
+5. Verified raw provider errors and token-like values stay out of Post Job company and draft action-failure states.
+6. Verified retry through the same owning actions preserves the company form or draft review state until the mocked persistence path succeeds.
+7. Documented the new Post Job action-failure contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/jobs/PostJobPage.test.tsx` in `apps/frontend` passed: 1 test file, 6 tests.
+- Full validation passed after documentation updates: focused Post Job browser workflow with 1 Chromium test, frontend lint, production build, full frontend unit suite with 86 files / 513 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed company and draft saves stay in the same Post Job panel or review state where recruiters can retry without rebuilding the draft. User control is preserved because Create & Attach Company, Save Company Profile, Save Draft, and Save Changes still drive the existing service workflows, and no template, draft history, company setup analytics, duplicate check, publish flow, candidate contact, message, notification, or navigation behavior is mutated by the recovery copy itself.
+
+## 211. Two-Hundred-Fourth Implementation Batch
+
+The two-hundred-fourth implementation batch focused on Jobs preference recovery visibility:
+
+1. Added focused unit coverage for safe saved-search account-sync fallback copy on the existing Save Search path.
+2. Verified failed saved-search sync keeps the saved search available locally and hides raw provider strings.
+3. Added focused unit coverage for safe hidden Explore account-sync fallback copy on the existing Hide path.
+4. Added an all-hidden Explore empty-state explanation for cases where visibility preferences filter every current result.
+5. Verified existing Restore Last controls remain available after hidden-preference sync failure.
+6. Documented the new Jobs preference-recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/jobs/JobsPage.test.tsx` in `apps/frontend` passed: 1 test file, 10 tests.
+- Focused browser validation passed: `npx playwright test tests/job-application.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 2 Chromium tests.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 515 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because failed saved-search and hidden-preference sync attempts stay in the Jobs workspace with visible local fallback state and restore controls. User control is preserved because Save Search, Hide, Restore Last, and Restore All still drive the existing service/local-storage workflows, and no job, application, recruiter posting, notification, message, profile, or dashboard behavior is mutated by the recovery copy itself.
+
+## 212. Two-Hundred-Fifth Implementation Batch
+
+The two-hundred-fifth implementation batch focused on Jobs browser storage recovery visibility:
+
+1. Added focused unit coverage for safe saved-search browser-storage failure copy on the existing Save Search path.
+2. Verified blocked saved-search storage keeps the saved search visible in the current session and hides raw quota/provider strings.
+3. Added focused unit coverage for safe hidden Explore browser-storage failure copy on the existing Hide path.
+4. Updated hidden Explore storage-failure copy so it accurately applies to hide and restore preference changes.
+5. Verified hidden Explore storage failures keep hidden count, all-hidden empty-state copy, and Restore Last available.
+6. Documented the new Jobs browser-storage recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit -- --run src/pages/jobs/JobsPage.test.tsx` in `apps/frontend` passed: 1 test file, 12 tests.
+- Focused browser validation passed: `npx playwright test tests/job-application.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 2 Chromium tests.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 517 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because blocked browser storage no longer looks like a silent preference failure: the user sees safe local-storage copy while the current-session saved search or hidden-job controls remain available. User control is preserved because Save Search, Hide, Restore Last, and Restore All still drive the existing service/local-storage workflows, and no job, application, recruiter posting, notification, message, profile, or dashboard behavior is mutated by the recovery copy itself.
+
+## 213. Two-Hundred-Sixth Implementation Batch
+
+The two-hundred-sixth implementation batch focused on Post Job browser storage recovery visibility:
+
+1. Added focused unit coverage for safe template browser-storage failure copy when account sync also fails on the existing Save Current path.
+2. Verified blocked template storage keeps current form fields available and hides raw quota/provider strings.
+3. Added focused unit coverage for safe draft-history browser-storage failure copy when account sync also fails on the existing Review Draft checkpoint path.
+4. Added review-state draft-history status visibility so a Review Draft checkpoint failure remains visible beside Save Draft.
+5. Verified failed draft-history persistence keeps Save Draft available and hides raw quota/provider strings.
+6. Documented the new Post Job browser-storage recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/PostJobPage.test.tsx` passed: 1 test file, 8 tests.
+- Focused browser validation passed: `npx playwright test tests/post-job-workflow.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 1 Chromium test.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 519 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because blocked browser storage no longer creates false confidence that a template or draft-history checkpoint was saved locally. User control is preserved because Save Current and Review Draft still drive the existing template and draft-history workflows, the current form or review state remains available, and no job, company, template payload, draft-history payload, candidate contact, message, notification, route, publish, or analytics behavior is mutated by the recovery copy itself.
+
+## 214. Two-Hundred-Seventh Implementation Batch
+
+The two-hundred-seventh implementation batch focused on Jobs application draft recovery visibility:
+
+1. Added modal-local safe status copy for application draft browser-storage failures in the existing Review Application workflow.
+2. Added modal-local safe status copy for application draft-history browser-storage failures.
+3. Added modal-local safe status copy for application draft account-sync failures while preserving the existing delayed sync workflow and toast.
+4. Added focused unit coverage for blocked active-draft local storage, blocked draft-history local storage, and failed account draft sync.
+5. Verified editable draft fields and Submit Application remain available and raw quota/provider strings stay out of the UI.
+6. Documented the new Jobs application draft recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/JobsPage.test.tsx` passed: 1 test file, 15 tests.
+- Focused browser validation passed: `npx playwright test tests/job-application.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 2 Chromium tests.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 522 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because application draft persistence failures now stay beside the fields the user is editing instead of relying only on transient toasts. User control is preserved because Resume/Profile URL, Cover Letter, draft-history checkpointing, delayed account sync, and Submit Application still use existing workflows, and no job, application submission, saved search, hidden preference, recruiter posting, notification, route, or analytics behavior is mutated by the recovery copy itself.
+
+## 215. Two-Hundred-Eighth Implementation Batch
+
+The two-hundred-eighth implementation batch focused on Post Job company context recovery visibility:
+
+1. Added safe inline failed-load copy for recruiter company profile lookup failures in the existing Post Job company context panel.
+2. Added Retry company context, wired to the existing `companyService.getCompanyByUser(user.id)` lookup workflow.
+3. Preserved the existing successful empty-company state so no-profile setup fields remain available without treating that state as a provider failure.
+4. Added focused unit coverage for safe company context failed-load copy, raw provider-error exclusion, preserved editable draft/company form state, and successful retry.
+5. Verified Create & Attach Company, Save Company Profile, Save Draft, Save Changes, template sync, draft-history sync, publishing, navigation, and onboarding analytics behavior remain unchanged by the recovery copy.
+6. Documented the new Post Job company-context recovery contract in the manifest, UX checklist, design system, feature inventory, and architecture status index.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/PostJobPage.test.tsx` passed: 1 test file, 10 tests.
+- Focused browser validation passed: `npx playwright test tests/post-job-workflow.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 1 Chromium test.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 524 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because a failed company lookup no longer looks like the recruiter simply has no company profile. User control is preserved because Retry company context reruns only the existing company lookup, while company creation, company profile updates, draft save/update, publish review, template sync, draft-history sync, navigation, and analytics remain explicit existing workflows.
+
+## 216. Two-Hundred-Ninth Implementation Batch
+
+The two-hundred-ninth implementation batch focused on Post Job template delete recovery validation:
+
+1. Added focused unit coverage for the reviewed Delete Template flow when browser storage rejects the local deletion write but account deletion succeeds.
+2. Added focused unit coverage for the same reviewed delete flow when browser storage and account sync both fail.
+3. Verified current draft fields remain unchanged after template deletion attempts.
+4. Verified raw quota, provider, and token-like strings stay out of template delete recovery UI.
+5. Documented template delete recovery as part of the existing Post Job browser-storage recovery contract instead of creating a duplicate feature location.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/PostJobPage.test.tsx` passed: 1 test file, 12 tests.
+- Focused browser validation passed: `npx playwright test tests/post-job-workflow.spec.ts --project=chromium --reporter=line` in `apps/frontend` passed: 1 Chromium test.
+- Full validation passed after documentation updates: frontend lint, production build, full frontend unit suite with 86 files / 526 tests, aggregate Chromium E2E with 190 tests, module manifest validation, docs lifecycle validation, UI design-system validation, IA checks, diff check, and trailing-whitespace check.
+
+User effort is reduced because recruiters no longer have to infer whether a deleted template failed locally, in account sync, or both. User control is preserved because the reviewed Delete Template modal still drives the existing template deletion workflow, current draft fields remain untouched, and no job, company, draft-history, publish, candidate contact, message, notification, route, or analytics behavior is mutated by the recovery copy itself.
+
+## 217. Two-Hundred-Tenth Implementation Batch
+
+The two-hundred-tenth implementation batch focused on extension popup scan recovery visibility:
+
+1. Added `pageScanStatus.ts` as the shared source of safe Page Scan status and limited-draft review copy.
+2. Added Dashboard live status panels for scanning, draft-ready, limited-draft, no-draft, and failed scan states.
+3. Added an inline Tracker warning for limited-confidence scanned drafts before Save to Tracker.
+4. Replaced visible page-scan diagnostics log lines that included raw runtime errors with safe generic copy.
+5. Added `popup-ux-contract.test.mjs`, wired it into the extension package, root npm script, CI extension job, and module manifest validation list.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:popup-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-popup-ux`, extension messaging, portal fixture, storage migration, contract, and runtime smoke tests, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because scan outcomes are visible in the popup instead of being discoverable only from diagnostics logs. User control is preserved because Scan Webpage still calls the existing `analyze_page` message, scanned drafts still write to `ts_job_draft`, Save to Tracker still remains explicit, and no storage key, content/background action, draft mapping, tracked-job mutation, diagnostics export/clear behavior, local-only sync posture, or operational analytics metadata was changed.
+
+## 218. Two-Hundred-Eleventh Implementation Batch
+
+The two-hundred-eleventh implementation batch focused on extension Resume Match options recovery visibility:
+
+1. Added `resumeMatchStatus.ts` as the shared source of safe Resume Match status copy for missing text, short text, large pasted text, comparing, and ready states.
+2. Added real labels, invalid-state semantics, helper descriptions, character counts, live alert/status copy, and result-region semantics to the existing Resume Match options form.
+3. Preserved the existing local keyword-overlap algorithm, two-second comparison timing, score/report rendering, and diagnostics metadata length/count/score bands.
+4. Added `options-ux-contract.test.mjs`, wired it into the extension package, root npm script, CI extension job, and module manifest validation list.
+5. Documented the source-level options UX contract in the manifest, UX checklist, design system, feature inventory, architecture status index, and PLAN.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:options-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-options-ux`, extension messaging, portal fixture, popup UX, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because empty, short, and large pasted text states are visible beside the compare workflow instead of relying only on browser-native required-field handling. User control is preserved because Preview Match still runs only after explicit submit, the local report remains read-only, diagnostics still store only bounded metadata, and no storage key, keyword extraction rule, delayed compare behavior, prep-card workflow, settings workflow, sync posture, route, or analytics event was changed.
+
+## 219. Two-Hundred-Twelfth Implementation Batch
+
+The two-hundred-twelfth implementation batch focused on extension Interview Planner accessibility recovery:
+
+1. Added programmatic labels for the prep-card topic input and review-category select.
+2. Added safe live validation copy for empty topic submission attempts without changing the existing required-field behavior.
+3. Changed local prep cards from custom clickable containers to native stateful toggle buttons inside a list/listitem structure.
+4. Added Settings reset-review relationship attributes to the Clear Prep Cards action.
+5. Extended `options-ux-contract.test.mjs` to guard prep labels, validation, list semantics, stateful toggles, reset-review relationships, and raw prep-topic diagnostics exclusion.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:options-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-options-ux`, extension messaging, portal fixture, popup UX, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because prep-card creation and completion state are easier to understand with assistive technology and keyboard interaction. User control is preserved because Add Plan Card, card completion toggle, Clear All, Settings reset, local `ts_prep` storage, Usage Diagnostics, cloud-sync disabled state, and all operational analytics event names remain the existing workflows.
+
+## 220. Two-Hundred-Thirteenth Implementation Batch
+
+The two-hundred-thirteenth implementation batch focused on extension options storage-failure recovery:
+
+1. Extended `useChromeStorage` with a non-breaking fourth return value that reports safe load/save issue state.
+2. Changed localStorage write failures to propagate to the hook so quota-like failures can be surfaced.
+3. Added safe live storage warning panels to Interview Planner and Companion Settings for load/save failures.
+4. Kept optimistic session UI behavior so visible prep-card/settings changes remain available in the current tab even when persistence fails.
+5. Extended `options-ux-contract.test.mjs` to guard storage issue wiring, safe warning panels, and raw quota/runtime/storage-key exclusion.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:options-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-options-ux`, extension messaging, portal fixture, popup UX, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because users can see when prep cards or local settings may only exist for the current session. User control is preserved because the change does not alter storage keys, prep-card add/toggle/clear/reset handlers, local settings toggles, diagnostics opt-in, cloud-sync disabled posture, successful persistence behavior, or operational analytics event names.

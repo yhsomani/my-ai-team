@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Briefcase, BarChart3, Terminal, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Briefcase, BarChart3, Terminal, ExternalLink } from 'lucide-react';
 import { useChromeStorage } from '../hooks/useChromeStorage';
 import { extMessaging } from '../lib/messaging';
 import {
@@ -17,6 +17,13 @@ import {
   type Job,
   type JobScanDraft
 } from '../lib/jobTypes';
+import {
+  getPageScanDraftStatus,
+  getPageScanFailureStatus,
+  pageScanNoDraftStatus,
+  pageScanStartedStatus,
+  type PageScanStatusCopy,
+} from '../lib/pageScanStatus';
 
 import { DashboardView } from './views/DashboardView';
 import { JobsView } from './views/JobsView';
@@ -31,15 +38,17 @@ interface LogEntry {
 export function PopupApp() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'logs'>('dashboard');
   const [isScanningPage, setIsScanningPage] = useState(false);
+  const [pageScanStatus, setPageScanStatus] = useState<PageScanStatusCopy | null>(null);
   const [isConsoleLogsClearReviewOpen, setIsConsoleLogsClearReviewOpen] = useState(false);
   const [isOperationalAnalyticsClearReviewOpen, setIsOperationalAnalyticsClearReviewOpen] = useState(false);
   const hasRecordedOpen = useRef(false);
-  const [jobs, setJobs, jobsLoading] = useChromeStorage<Job[]>(TRACKED_JOBS_STORAGE_KEY, []);
-  const [jobDraft, setJobDraft, draftLoading] = useChromeStorage<JobScanDraft | null>(JOB_SCAN_DRAFT_STORAGE_KEY, null);
+  const [jobs, setJobs, jobsLoading, jobsStorageIssue] = useChromeStorage<Job[]>(TRACKED_JOBS_STORAGE_KEY, []);
+  const [jobDraft, setJobDraft, draftLoading, draftStorageIssue] = useChromeStorage<JobScanDraft | null>(JOB_SCAN_DRAFT_STORAGE_KEY, null);
   const [
     operationalEvents,
     setOperationalEvents,
-    operationalEventsLoading
+    operationalEventsLoading,
+    operationalEventsStorageIssue
   ] = useChromeStorage<ExtensionOperationalEvent[]>(EXTENSION_OPERATIONAL_ANALYTICS_STORAGE_KEY, []);
   const [logs, setLogs] = useState<LogEntry[]>([
     { time: '21:08:12', type: 'info', message: 'TalentSphere Companion initialized.' },
@@ -79,6 +88,13 @@ export function PopupApp() {
       lastOccurredAt: lastEvent?.occurredAt || ''
     };
   }, [operationalEvents]);
+  const activeStorageIssue = jobsStorageIssue ?? draftStorageIssue ?? operationalEventsStorageIssue;
+  const storageIssueTitle = activeStorageIssue?.operation === 'load'
+    ? 'Local popup data could not load'
+    : 'Local popup data may not persist';
+  const storageIssueMessage = activeStorageIssue?.operation === 'load'
+    ? 'Some browser-local tracker or diagnostics data may be using defaults for this session until storage is available again.'
+    : 'The latest local tracker, scanned draft, or diagnostics change is visible now, but the browser could not save it locally. Try again before relying on it after reload.';
 
   useEffect(() => {
     if (operationalAnalyticsSummary.eventCount === 0 && isOperationalAnalyticsClearReviewOpen) {
@@ -263,6 +279,7 @@ export function PopupApp() {
 
     try {
       setIsScanningPage(true);
+      setPageScanStatus(pageScanStartedStatus);
       addLog('Requesting active tab DOM parsing from background service worker...', 'info');
       void recordExtensionOperationalEvent({
         area: 'page_scan',
@@ -274,7 +291,14 @@ export function PopupApp() {
       if (response?.status === 'success' && response.draft) {
         await setJobDraft(response.draft);
         setActiveTab('jobs');
-        addLog(`Prepared tab scan draft: "${response.summary}"`, 'success');
+        const draftStatus = getPageScanDraftStatus(response.draft.confidence);
+        setPageScanStatus(draftStatus);
+        addLog(
+          draftStatus.tone === 'success'
+            ? 'Prepared scanned job draft for local review.'
+            : 'Prepared scanned job draft from limited tab details. Review fields before saving.',
+          draftStatus.tone === 'success' ? 'success' : 'warn'
+        );
         void recordExtensionOperationalEvent({
           area: 'page_scan',
           event: 'page_scan_draft_prepared',
@@ -292,22 +316,26 @@ export function PopupApp() {
         return;
       }
 
-      addLog(`Page scan did not return a draft: ${response?.error || 'No response details.'}`, 'warn');
+      const errorCategory = categorizeExtensionError(response?.error);
+      setPageScanStatus(pageScanNoDraftStatus);
+      addLog('Page scan did not return a usable draft. Open a supported job posting or add the role manually.', 'warn');
       void recordExtensionOperationalEvent({
         area: 'page_scan',
         event: 'page_scan_no_draft',
         metadata: {
           response_status: response?.status || 'missing_response',
-          error_category: categorizeExtensionError(response?.error)
+          error_category: errorCategory
         }
       });
     } catch (err) {
-      addLog(`Page scan failed: ${err instanceof Error ? err.message : String(err)}`, 'warn');
+      const errorCategory = categorizeExtensionError(err);
+      setPageScanStatus(getPageScanFailureStatus(errorCategory));
+      addLog('Page scan could not run. Review the Dashboard scan guidance or add the role manually.', 'warn');
       void recordExtensionOperationalEvent({
         area: 'page_scan',
         event: 'page_scan_failed',
         metadata: {
-          error_category: categorizeExtensionError(err)
+          error_category: errorCategory
         }
       });
     } finally {
@@ -550,8 +578,8 @@ export function PopupApp() {
             TalentSphere Companion
           </span>
         </div>
-        <button 
-          onClick={openOptionsPage} 
+        <button
+          onClick={openOptionsPage}
           className="flex shrink-0 items-center gap-1 rounded-md border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] px-2 py-1 text-xs font-medium text-[var(--ext-accent-strong)] transition duration-200 hover:border-[var(--ext-accent)] hover:bg-[var(--ext-accent-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
           id="open-options-btn"
         >
@@ -590,33 +618,49 @@ export function PopupApp() {
         </button>
       </nav>
 
+      {activeStorageIssue && (
+        <div
+          id="popup-storage-status"
+          role="alert"
+          aria-live="polite"
+          className="flex items-start gap-2 border-b border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] px-4 py-2.5"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ext-warning)]" />
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-[10px] font-semibold text-[var(--ext-warning)]">{storageIssueTitle}</p>
+            <p className="break-words text-[9px] leading-relaxed text-[var(--ext-text-secondary)]">{storageIssueMessage}</p>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 overflow-y-auto bg-[var(--ext-bg)] p-4">
         {activeTab === 'dashboard' && (
-          <DashboardView 
-            jobs={jobs} 
-            statusCounts={statusCounts} 
-            openOptionsPage={openOptionsPage} 
+          <DashboardView
+            jobs={jobs}
+            statusCounts={statusCounts}
+            openOptionsPage={openOptionsPage}
             triggerPageScan={triggerPageScan}
             isScanningPage={isScanningPage}
             hasDraft={Boolean(jobDraft)}
+            pageScanStatus={pageScanStatus}
           />
         )}
-        
+
         {activeTab === 'jobs' && (
-          <JobsView 
-            jobs={jobs} 
+          <JobsView
+            jobs={jobs}
             jobDraft={jobDraft}
-            handleAddJob={handleAddJob} 
-            handleDeleteJob={handleDeleteJob} 
-            handleUpdateStatus={handleUpdateStatus} 
+            handleAddJob={handleAddJob}
+            handleDeleteJob={handleDeleteJob}
+            handleUpdateStatus={handleUpdateStatus}
             handleSaveDraft={handleSaveDraft}
             handleDiscardDraft={handleDiscardDraft}
           />
         )}
 
         {activeTab === 'logs' && (
-          <DiagnosticsView 
-            logs={logs} 
+          <DiagnosticsView
+            logs={logs}
             analyticsLoading={operationalEventsLoading}
             analyticsSummary={operationalAnalyticsSummary}
             isConsoleLogsClearReviewOpen={isConsoleLogsClearReviewOpen}
@@ -633,10 +677,10 @@ export function PopupApp() {
           />
         )}
       </main>
-      
+
       <footer className="flex items-center justify-between gap-3 border-t border-[var(--ext-border)] bg-[var(--ext-surface)] px-4 py-1.5 text-[9px] text-[var(--ext-text-muted)]">
         <span>React extension</span>
-        <span>Local storage active</span>
+        <span>{activeStorageIssue ? 'Local storage needs attention' : 'Local storage active'}</span>
       </footer>
     </div>
   );

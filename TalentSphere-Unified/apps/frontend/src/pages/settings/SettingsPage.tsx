@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { settingsService, NotificationSettings as NotificationSettingsType, BillingInfo } from '../../services/settingsService';
 import {
-  Bell, CreditCard, User, Shield
+  AlertTriangle, Bell, CreditCard, RotateCw, User, Shield
 } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
+import { Button } from '../../components/shared/AuraButton';
 import { useToast } from '../../components/shared/Toast';
 import {
   recordSettingsWorkflowAnalytics,
@@ -42,6 +43,15 @@ const settingsNotificationPreferenceKeys = [
   'message_notifications',
 ] as const;
 
+const formatSettingsLoadSections = (sections: string[]) => {
+  if (sections.length <= 1) return sections[0] || 'Settings data';
+  return `${sections.slice(0, -1).join(', ')} and ${sections[sections.length - 1]}`;
+};
+
+const getSettingsLoadFailureMessage = (sections: string[]) => (
+  `${formatSettingsLoadSections(sections)} did not respond. Retry settings to reload account preferences before saving changes.`
+);
+
 const getSettingsWorkflowErrorCategory = (error: unknown, fallback: string) => (
   error instanceof Error ? error.name : fallback
 );
@@ -74,6 +84,8 @@ const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [settingsLoadError, setSettingsLoadError] = useState<string | null>(null);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState({
     firstName: user?.full_name?.split(' ')[0] || '',
@@ -97,36 +109,50 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
+  const loadSettingsData = useCallback(async () => {
+    if (!user) return;
 
+    setLoading(true);
+    setSettingsLoadError(null);
 
-        const [notifData, billingData] = await Promise.all([
-          settingsService.getNotifications(user.id).catch(() => null),
-          settingsService.getBilling(user.id).catch(() => null)
-        ]);
+    const [notificationResult, billingResult] = await Promise.allSettled([
+      settingsService.getNotifications(user.id),
+      settingsService.getBilling(user.id),
+    ]);
 
-        setNotifications({
-          ...createDefaultNotificationSettings(user.id),
-          ...(notifData || {}),
-        });
-        if (billingData) setBilling(billingData);
-      } catch (err) {
-        console.error("Failed to fetch settings", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const failedSections: string[] = [];
 
-    fetchData();
+    if (notificationResult.status === 'fulfilled') {
+      setNotifications({
+        ...createDefaultNotificationSettings(user.id),
+        ...(notificationResult.value || {}),
+      });
+    } else {
+      failedSections.push('Notification preferences');
+      setNotifications(createDefaultNotificationSettings(user.id));
+    }
+
+    if (billingResult.status === 'fulfilled' && billingResult.value) {
+      setBilling(billingResult.value);
+    } else if (billingResult.status === 'rejected') {
+      failedSections.push('Billing summary');
+    }
+
+    if (failedSections.length > 0) {
+      setSettingsLoadError(getSettingsLoadFailureMessage(failedSections));
+    }
+
+    setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    loadSettingsData();
+  }, [loadSettingsData]);
 
   const handleProfileSave = async () => {
     if (!user) return;
     setSaving(true);
+    setProfileSaveError(null);
     try {
       await settingsService.updateProfileSettings(user.id, {
         first_name: profileData.firstName,
@@ -139,6 +165,7 @@ const SettingsPage: React.FC = () => {
         fieldCount: getProfileSettingsFieldCount(profileData),
       });
     } catch (err) {
+      setProfileSaveError('Profile settings were not saved. Review the fields and try Save Changes again.');
       addToast({ type: 'error', title: 'Error', message: 'Failed to save profile' });
       recordSettingsAnalytics('profile_settings_save_failed', {
         fieldCount: getProfileSettingsFieldCount(profileData),
@@ -220,6 +247,25 @@ const SettingsPage: React.FC = () => {
         description="Manage account preferences, security actions, and billing handoff."
       />
 
+      {settingsLoadError && (
+        <div
+          role="alert"
+          className="flex flex-col gap-4 rounded-md border border-warning/30 bg-warning-muted p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Settings data could not fully load</h2>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">{settingsLoadError}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={loadSettingsData} disabled={loading}>
+            <RotateCw className="h-4 w-4" />
+            Retry settings
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-3">
           <Card className="p-2 sticky top-24">
@@ -249,6 +295,8 @@ const SettingsPage: React.FC = () => {
               setProfileData={setProfileData}
               handleProfileSave={handleProfileSave}
               saving={saving}
+              profileSaveError={profileSaveError}
+              clearProfileSaveError={() => setProfileSaveError(null)}
             />
           )}
 

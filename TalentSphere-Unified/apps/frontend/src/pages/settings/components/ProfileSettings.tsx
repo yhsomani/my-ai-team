@@ -16,29 +16,47 @@ interface ProfileSettingsProps {
   setProfileData: React.Dispatch<React.SetStateAction<ProfileData>>;
   handleProfileSave: () => void;
   saving: boolean;
+  profileSaveError?: string | null;
+  clearProfileSaveError?: () => void;
 }
 
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   profileData,
   setProfileData,
   handleProfileSave,
-  saving
+  saving,
+  profileSaveError,
+  clearProfileSaveError
 }) => {
+  const updateProfileData = (updates: Partial<ProfileData>) => {
+    clearProfileSaveError?.();
+    setProfileData(p => ({ ...p, ...updates }));
+  };
+
   return (
     <Card className="p-6">
       <h3 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">Personal Information</h3>
 
       <div className="space-y-6">
+        {profileSaveError && (
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/20 bg-destructive-muted p-3"
+          >
+            <p className="text-sm text-destructive">{profileSaveError}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="First Name"
             value={profileData.firstName}
-            onChange={(e) => setProfileData(p => ({ ...p, firstName: e.target.value }))}
+            onChange={(e) => updateProfileData({ firstName: e.target.value })}
           />
           <Input
             label="Last Name"
             value={profileData.lastName}
-            onChange={(e) => setProfileData(p => ({ ...p, lastName: e.target.value }))}
+            onChange={(e) => updateProfileData({ lastName: e.target.value })}
           />
         </div>
 
@@ -52,14 +70,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         <Input
           label="Professional Headline"
           value={profileData.headline}
-          onChange={(e) => setProfileData(p => ({ ...p, headline: e.target.value }))}
+          onChange={(e) => updateProfileData({ headline: e.target.value })}
           placeholder="e.g. Senior Software Engineer at Tech Corp"
         />
 
         <Input
           label="Location"
           value={profileData.location}
-          onChange={(e) => setProfileData(p => ({ ...p, location: e.target.value }))}
+          onChange={(e) => updateProfileData({ location: e.target.value })}
           placeholder="e.g. San Francisco, CA"
         />
 

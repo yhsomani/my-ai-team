@@ -42,6 +42,9 @@ const billingInsetClassName = 'rounded-lg border border-[var(--border-default)] 
 const billingDescriptionClassName = 'text-sm text-[var(--text-secondary)]';
 const billingMutedClassName = 'text-xs text-[var(--text-muted)]';
 const billingSectionTitleClassName = 'text-sm font-semibold';
+const billingLoadFailureMessage = 'Billing provider data did not respond. Retry to reload plans, payment method, subscription status, and transaction history.';
+const billingPlanActionFailureMessage = 'The plan change was not started. No subscription state changed. Review the plan and try again from this confirmation.';
+const billingPortalActionFailureMessage = 'The billing portal could not be opened. No payment method changed. Review the handoff and try again from this confirmation.';
 
 const getPaymentStatusBadgeVariant = (status: Payment['status']): 'success' | 'warning' | 'destructive' | 'outline' => {
   if (status === 'COMPLETED') return 'success';
@@ -62,6 +65,8 @@ const BillingPage: React.FC = () => {
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [billingLoadError, setBillingLoadError] = useState<string | null>(null);
+  const [billingPlanActionError, setBillingPlanActionError] = useState<string | null>(null);
+  const [billingPortalActionError, setBillingPortalActionError] = useState<string | null>(null);
 
   const userId = user?.id;
 
@@ -101,7 +106,7 @@ const BillingPage: React.FC = () => {
       setPlans([]);
       setHistory([]);
       setSubscription(null);
-      setBillingLoadError('Billing provider data is unavailable right now.');
+      setBillingLoadError(billingLoadFailureMessage);
       recordBillingAction('billing_data_load_failed', {
         entryPoint,
         errorCategory: getBillingErrorCategory(err, 'billing_load_failed'),
@@ -158,6 +163,7 @@ const BillingPage: React.FC = () => {
       return;
     }
     recordBillingAction('billing_plan_review_opened', getPlanAnalyticsContext(plan, 'plan_card'));
+    setBillingPlanActionError(null);
     setSelectedPlan(plan);
     setIsPlanModalOpen(true);
   };
@@ -167,6 +173,7 @@ const BillingPage: React.FC = () => {
     if (selectedPlan) {
       recordBillingAction('billing_plan_review_cancelled', getPlanAnalyticsContext(selectedPlan, 'review_modal'));
     }
+    setBillingPlanActionError(null);
     setIsPlanModalOpen(false);
   };
 
@@ -181,12 +188,14 @@ const BillingPage: React.FC = () => {
       return;
     }
     recordBillingAction('billing_payment_method_review_opened', getBillingOverviewAnalyticsContext('payment_method_card'));
+    setBillingPortalActionError(null);
     setIsPaymentMethodModalOpen(true);
   };
 
   const handleClosePaymentMethodReview = () => {
     if (isProcessing) return;
     recordBillingAction('billing_payment_method_review_cancelled', getBillingOverviewAnalyticsContext('review_modal'));
+    setBillingPortalActionError(null);
     setIsPaymentMethodModalOpen(false);
   };
 
@@ -204,6 +213,7 @@ const BillingPage: React.FC = () => {
       providerAction: 'checkout',
     });
     setIsProcessing(true);
+    setBillingPlanActionError(null);
     try {
       const currency = selectedPlan.currency || 'usd';
       let response: any;
@@ -246,6 +256,7 @@ const BillingPage: React.FC = () => {
           message: 'Your subscription request was sent for processing.'
         });
       }
+      setBillingPlanActionError(null);
       setIsPlanModalOpen(false);
     } catch (err) {
       console.error('Plan change failed:', err);
@@ -255,6 +266,7 @@ const BillingPage: React.FC = () => {
         errorCategory: getBillingErrorCategory(err, 'plan_checkout_failed'),
       });
       addToast({ type: 'error', title: 'Plan change failed', message: 'Please try again later.' });
+      setBillingPlanActionError(billingPlanActionFailureMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -276,6 +288,7 @@ const BillingPage: React.FC = () => {
       providerAction: 'billing_portal',
     });
     setIsProcessing(true);
+    setBillingPortalActionError(null);
     try {
       const response = await paymentService.createBillingPortalSession(user.id);
       const actionUrl = getActionUrl(response);
@@ -305,6 +318,7 @@ const BillingPage: React.FC = () => {
           message: 'Your billing portal request was sent for processing.'
         });
       }
+      setBillingPortalActionError(null);
       setIsPaymentMethodModalOpen(false);
     } catch (err) {
       console.error('Payment method update failed:', err);
@@ -314,6 +328,7 @@ const BillingPage: React.FC = () => {
         errorCategory: getBillingErrorCategory(err, 'billing_portal_failed'),
       });
       addToast({ type: 'error', title: 'Update failed', message: 'Payment method portal is unavailable right now.' });
+      setBillingPortalActionError(billingPortalActionFailureMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -358,11 +373,11 @@ const BillingPage: React.FC = () => {
               <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Billing provider unavailable</p>
-                <p className={billingDescriptionClassName}>{billingLoadError} You can retry without changing your current subscription.</p>
+                <p className={billingDescriptionClassName}>{billingLoadError} Your current subscription is not changed.</p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => handleRetryBillingData('load_error_retry')}>
-              Retry
+              Retry billing data
             </Button>
           </div>
         </Card>
@@ -514,6 +529,12 @@ const BillingPage: React.FC = () => {
               </p>
             </div>
 
+            {billingPlanActionError && (
+              <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {billingPlanActionError}
+              </p>
+            )}
+
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variant="outline" onClick={handleClosePlanReview} disabled={isProcessing}>Cancel</Button>
               <Button onClick={handleConfirmPlan} isLoading={isProcessing}>
@@ -537,6 +558,11 @@ const BillingPage: React.FC = () => {
               ? 'Payment method changes open in the secure billing provider. Your current card is not changed until you confirm the update there.'
               : 'Payment method updates are disabled as a live provider action in demo billing mode.'}
           </p>
+          {billingPortalActionError && (
+            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {billingPortalActionError}
+            </p>
+          )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={handleClosePaymentMethodReview} disabled={isProcessing}>Cancel</Button>
             <Button onClick={handleUpdatePaymentMethod} isLoading={isProcessing}>

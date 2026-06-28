@@ -61,6 +61,7 @@ export const extStorage = {
         localStorage.setItem(key, JSON.stringify(value));
       } catch (err) {
         console.error('[extStorage] Error setting local storage for key:', key, err);
+        throw err;
       }
     }
   },

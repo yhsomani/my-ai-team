@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { extStorage } from '../lib/storage';
 
+export type ChromeStorageOperation = 'load' | 'save';
+
+export interface ChromeStorageIssue {
+  key: string;
+  operation: ChromeStorageOperation;
+  occurredAt: string;
+}
+
 /**
  * Custom React hook to sync state reactively with storage (extension or web local storage).
  * Upgraded with cross-context reactive synchronization and race-condition-free functional setters.
@@ -8,13 +16,14 @@ import { extStorage } from '../lib/storage';
 export function useChromeStorage<T>(
   key: string,
   initialValue: T
-): [T, (val: T | ((curr: T) => T)) => Promise<void>, boolean] {
+): [T, (val: T | ((curr: T) => T)) => Promise<void>, boolean, ChromeStorageIssue | null] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [loading, setLoading] = useState(true);
-  
+  const [storageIssue, setStorageIssue] = useState<ChromeStorageIssue | null>(null);
+
   // Maintain a ref to the latest state to avoid closure stale-state issues in functional updates
   const stateRef = useRef<T>(storedValue);
-  
+
   useEffect(() => {
     stateRef.current = storedValue;
   }, [storedValue]);
@@ -27,8 +36,14 @@ export function useChromeStorage<T>(
         if (val !== undefined) {
           setStoredValue(val);
         }
+        setStorageIssue(null);
       } catch (err) {
         console.error(`[useChromeStorage] Error loading key "${key}":`, err);
+        setStorageIssue({
+          key,
+          operation: 'load',
+          occurredAt: new Date().toISOString()
+        });
       } finally {
         setLoading(false);
       }
@@ -76,11 +91,16 @@ export function useChromeStorage<T>(
       const valueToStore = value instanceof Function ? value(stateRef.current) : value;
       setStoredValue(valueToStore);
       await extStorage.set(key, valueToStore);
+      setStorageIssue(null);
     } catch (err) {
       console.error(`[useChromeStorage] Error saving key "${key}":`, err);
+      setStorageIssue({
+        key,
+        operation: 'save',
+        occurredAt: new Date().toISOString()
+      });
     }
   };
 
-  return [storedValue, setValue, loading];
+  return [storedValue, setValue, loading, storageIssue];
 }
-

@@ -45,6 +45,8 @@
     "test:networking-reminders": "node scripts/run-networking-reminders.test.mjs",
     "test:extension-messaging": "cd chrome-extension-project && npm run test:messaging",
     "test:extension-portal-fixtures": "cd chrome-extension-project && npm run test:portal-fixtures",
+    "test:extension-options-ux": "cd chrome-extension-project && npm run test:options-ux",
+    "test:extension-popup-ux": "cd chrome-extension-project && npm run test:popup-ux",
     "test:extension-contract": "cd chrome-extension-project && npm run test:contract",
     "test:extension-storage-migrations": "cd chrome-extension-project && npm run test:storage-migrations",
     "test:extension-runtime-smoke": "cd chrome-extension-project && npm run test:runtime-smoke",

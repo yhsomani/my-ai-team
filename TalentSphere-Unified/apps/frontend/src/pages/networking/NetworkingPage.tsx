@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Bell, Check, Clock, ExternalLink, Lightbulb, MapPin, Search, UserCheck, UserPlus, Users, X } from 'lucide-react';
+import { AlertTriangle, Bell, Check, Clock, ExternalLink, Lightbulb, MapPin, Search, UserCheck, UserPlus, Users, X } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -47,6 +47,25 @@ const networkingInsetClassName = 'rounded-md border border-[var(--border-default
 const networkingRecordCardClassName = 'flex h-full min-h-64 flex-col p-5 transition-colors hover:border-[var(--border-strong)]';
 const networkingDiscoverCardClassName = 'flex h-full min-h-[30rem] flex-col p-5 transition-colors hover:border-[var(--border-strong)]';
 const networkingSearchFieldClassName = 'h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+const networkingConnectFailureMessage = 'Connection request was not sent. Review the note and try Connect again from this card.';
+const networkingAcceptFailureMessage = 'Connection request was not accepted. Try Accept again from this card.';
+const networkingDeclineFailureMessage = 'Connection request was not declined. Try Decline again from this card.';
+const networkingWithdrawFailureMessage = 'Sent request was not withdrawn. Try Withdraw again from this card.';
+
+type NetworkingActionFailure = {
+  title: string;
+  message: string;
+};
+
+const NetworkingActionFailureAlert = ({ title, message }: NetworkingActionFailure) => (
+  <div
+    role="alert"
+    className="rounded-md border border-destructive/30 bg-destructive-muted/10 p-3 text-xs text-[var(--text-secondary)]"
+  >
+    <p className="font-semibold text-[var(--text-primary)]">{title}</p>
+    <p className="mt-1 leading-5">{message}</p>
+  </div>
+);
 
 const getInitials = (name?: string) => {
   const initials = (name || 'User')
@@ -137,6 +156,7 @@ const NetworkingPage: React.FC = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [requestMessages, setRequestMessages] = useState<Record<string, string>>({});
   const [actionLoadingIds, setActionLoadingIds] = useState<Set<string>>(new Set());
+  const [actionFailures, setActionFailures] = useState<Record<string, NetworkingActionFailure>>({});
   const [isNetworkLoading, setIsNetworkLoading] = useState(false);
   const [remindersByRequestId, setRemindersByRequestId] = useState<Record<string, NetworkingReminderState>>({});
   const [reminderDelayByRequestId, setReminderDelayByRequestId] = useState<Record<string, ReminderDelayOption>>({});
@@ -151,6 +171,22 @@ const NetworkingPage: React.FC = () => {
   const profilePreviewDetails = useMemo(() => (
     profilePreview ? buildNetworkingProfilePreview(profilePreview) : null
   ), [profilePreview]);
+
+  const clearActionFailure = (key: string) => {
+    setActionFailures(prev => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const setActionFailure = (key: string, failure: NetworkingActionFailure) => {
+    setActionFailures(prev => ({
+      ...prev,
+      [key]: failure,
+    }));
+  };
 
   const recordNetworkingAction = useCallback((
     action: NetworkingWorkflowAnalyticsAction,
@@ -493,7 +529,12 @@ const NetworkingPage: React.FC = () => {
   const handleConnect = async (id: string) => {
     const targetProfile = profiles.find(profile => profile.id === id);
     const requestNote = requestMessages[id]?.trim() || '';
+    const failureKey = `connect:${id}`;
     if (!user) {
+        setActionFailure(failureKey, {
+          title: 'Connection request was not sent',
+          message: 'Sign in before sending a connection request.',
+        });
         recordNetworkingAction('networking_connect_request_failed', {
           ...getNetworkingListContext(),
           requestDirection: 'discover',
@@ -506,7 +547,8 @@ const NetworkingPage: React.FC = () => {
         addToast({ type: 'warning', title: 'Login Required', message: 'Please log in to connect with others.' });
         return;
     }
-    
+
+    clearActionFailure(failureKey);
     setActionLoadingIds(prev => new Set(prev).add(id));
     try {
         const connection = await networkingService.sendConnectionRequest(id, user.id, requestNote || undefined);
@@ -517,6 +559,7 @@ const NetworkingPage: React.FC = () => {
           delete next[id];
           return next;
         });
+        clearActionFailure(failureKey);
         recordNetworkingAction('networking_connect_request_sent', {
           ...getNetworkingListContext(),
           requestDirection: 'discover',
@@ -537,6 +580,10 @@ const NetworkingPage: React.FC = () => {
           ...getProfileAnalyticsMetadata(targetProfile),
           errorCategory: getNetworkingWorkflowErrorCategory(error, 'connection_request_failed'),
         });
+        setActionFailure(failureKey, {
+          title: 'Connection request was not sent',
+          message: networkingConnectFailureMessage,
+        });
         addToast({ type: 'error', title: 'Request Failed', message: 'Please try again later.' });
     } finally {
         setActionLoadingIds(prev => {
@@ -549,12 +596,15 @@ const NetworkingPage: React.FC = () => {
 
   const handleAccept = async (connection: Connection) => {
     const person = getConnectionPerson(connection, user?.id);
+    const failureKey = `incoming:${connection.id}`;
+    clearActionFailure(failureKey);
     setActionLoadingIds(prev => new Set(prev).add(connection.id));
     try {
       await networkingService.acceptConnectionRequest(connection.id);
       const acceptedConnection = { ...connection, status: 'ACCEPTED' as const, updatedAt: new Date().toISOString() };
       setIncomingRequests(prev => prev.filter(item => item.id !== connection.id));
       setConnections(prev => [acceptedConnection, ...prev]);
+      clearActionFailure(failureKey);
       recordNetworkingAction('networking_incoming_request_accepted', {
         ...getNetworkingListContext(),
         requestDirection: 'incoming',
@@ -575,6 +625,10 @@ const NetworkingPage: React.FC = () => {
         ...getProfileAnalyticsMetadata(person),
         errorCategory: getNetworkingWorkflowErrorCategory(acceptError, 'accept_request_failed'),
       });
+      setActionFailure(failureKey, {
+        title: 'Connection request was not accepted',
+        message: networkingAcceptFailureMessage,
+      });
       addToast({ type: 'error', title: 'Accept failed', message: 'Please try again later.' });
     } finally {
       setActionLoadingIds(prev => {
@@ -587,11 +641,14 @@ const NetworkingPage: React.FC = () => {
 
   const handleReject = async (connection: Connection, mode: 'reject' | 'withdraw') => {
     const person = getConnectionPerson(connection, user?.id);
+    const failureKey = mode === 'reject' ? `incoming:${connection.id}` : `sent:${connection.id}`;
+    clearActionFailure(failureKey);
     setActionLoadingIds(prev => new Set(prev).add(connection.id));
     try {
       await networkingService.rejectConnectionRequest(connection.id);
       if (mode === 'reject') {
         setIncomingRequests(prev => prev.filter(item => item.id !== connection.id));
+        clearActionFailure(failureKey);
         recordNetworkingAction('networking_incoming_request_declined', {
           ...getNetworkingListContext(),
           requestDirection: 'incoming',
@@ -603,6 +660,7 @@ const NetworkingPage: React.FC = () => {
         addToast({ type: 'success', title: 'Request declined', message: 'The connection request was declined.' });
       } else {
         setSentRequests(prev => prev.filter(item => item.id !== connection.id));
+        clearActionFailure(failureKey);
         setPendingRequests(prev => {
           const next = new Set(prev);
           next.delete(connection.receiverId);
@@ -637,6 +695,10 @@ const NetworkingPage: React.FC = () => {
         requestNoteLength: connection.message?.length || 0,
         ...getProfileAnalyticsMetadata(person),
         errorCategory: getNetworkingWorkflowErrorCategory(rejectError, mode === 'reject' ? 'decline_request_failed' : 'withdraw_request_failed'),
+      });
+      setActionFailure(failureKey, {
+        title: mode === 'reject' ? 'Connection request was not declined' : 'Sent request was not withdrawn',
+        message: mode === 'reject' ? networkingDeclineFailureMessage : networkingWithdrawFailureMessage,
       });
       addToast({ type: 'error', title: 'Update failed', message: 'Please try again later.' });
     } finally {
@@ -854,6 +916,11 @@ const NetworkingPage: React.FC = () => {
     window.open(profilePath, '_blank', 'noopener,noreferrer');
   };
 
+  const handleNetworkLoadRetry = () => {
+    if (!user?.id) return;
+    void dispatch(fetchSuggestions(user.id));
+  };
+
   const filteredIncoming = useMemo(() => {
     if (!searchTerm) return incomingRequests;
     const lowerSearch = searchTerm.toLowerCase();
@@ -891,9 +958,12 @@ const NetworkingPage: React.FC = () => {
           title="Network"
           description="Review suggestions, connection requests, and follow-up reminders."
         />
-        <div className={networkingInsetClassName}>
-          <EmptyState title="Network could not load" description={error || "Failed to load network."} />
-        </div>
+        <EmptyState
+          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          title="Network could not load"
+          description="Networking suggestions did not respond. Retry to reload professional suggestions and connection context."
+          action={user?.id ? { label: 'Retry network', onClick: handleNetworkLoadRetry } : undefined}
+        />
       </div>
     );
   }
@@ -1071,12 +1141,20 @@ const NetworkingPage: React.FC = () => {
               <textarea
                 id={`request-note-${profile.id}`}
                 value={requestMessages[profile.id] || ''}
-                onChange={(event) => setRequestMessages(prev => ({ ...prev, [profile.id]: event.target.value }))}
+                onChange={(event) => {
+                  clearActionFailure(`connect:${profile.id}`);
+                  setRequestMessages(prev => ({ ...prev, [profile.id]: event.target.value }));
+                }}
                 placeholder="Optional note"
                 rows={2}
                 disabled={pendingRequestIds.has(profile.id)}
                 className="mb-3 min-h-16 w-full resize-none rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60"
               />
+              {actionFailures[`connect:${profile.id}`] && (
+                <div className="mb-3">
+                  <NetworkingActionFailureAlert {...actionFailures[`connect:${profile.id}`]} />
+                </div>
+              )}
               <Button
                 variant={pendingRequestIds.has(profile.id) ? 'secondary' : 'default'}
                 size="sm"
@@ -1128,6 +1206,11 @@ const NetworkingPage: React.FC = () => {
                   <Clock size={12} />
                   <span>Received {formatConnectionAge(connection.createdAt)}</span>
                 </div>
+                {actionFailures[`incoming:${connection.id}`] && (
+                  <div className="mb-3">
+                    <NetworkingActionFailureAlert {...actionFailures[`incoming:${connection.id}`]} />
+                  </div>
+                )}
                 <div className="mt-auto grid grid-cols-2 gap-2">
                   <Button variant="outline" size="sm" onClick={() => previewProfile(person, 'incoming_request_card')}>
                     <ExternalLink size={13} />
@@ -1183,6 +1266,11 @@ const NetworkingPage: React.FC = () => {
                     <Badge variant="outline"><Bell size={11} className="mr-1" /> {formatReminderDueLabel(reminderState?.dueAt)}</Badge>
                   )}
                 </div>
+                {actionFailures[`sent:${connection.id}`] && (
+                  <div className="mb-3">
+                    <NetworkingActionFailureAlert {...actionFailures[`sent:${connection.id}`]} />
+                  </div>
+                )}
                 <div className="mt-auto grid grid-cols-2 gap-2">
                   <label htmlFor={`reminder-delay-${connection.id}`} className="sr-only">
                     Reminder timing for {person?.fullName || 'this request'}

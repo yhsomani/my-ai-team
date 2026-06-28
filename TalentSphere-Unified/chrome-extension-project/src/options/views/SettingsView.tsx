@@ -1,5 +1,6 @@
 import React from 'react';
 import { CloudOff, Settings2, Clock } from 'lucide-react';
+import type { ChromeStorageIssue } from '../../hooks/useChromeStorage';
 
 interface SettingsViewProps {
   isCloudSyncPlanOpen: boolean;
@@ -11,6 +12,9 @@ interface SettingsViewProps {
   setAnalytics: (val: boolean | ((curr: boolean) => boolean)) => Promise<void> | void;
   prepCount: number;
   isPrepClearReviewOpen: boolean;
+  prepStorageIssue?: ChromeStorageIssue | null;
+  notificationsStorageIssue?: ChromeStorageIssue | null;
+  analyticsStorageIssue?: ChromeStorageIssue | null;
   openPrepClearReview: () => void;
   cancelPrepClearReview: () => void;
   confirmPrepClear: () => void;
@@ -29,11 +33,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   setAnalytics,
   prepCount,
   isPrepClearReviewOpen,
+  prepStorageIssue,
+  notificationsStorageIssue,
+  analyticsStorageIssue,
   openPrepClearReview,
   cancelPrepClearReview,
   confirmPrepClear
 }) => {
   const hasPrepCards = prepCount > 0;
+  const activeStorageIssue = prepStorageIssue ?? notificationsStorageIssue ?? analyticsStorageIssue;
+  const storageIssueTitle = activeStorageIssue?.operation === 'load'
+    ? 'Local settings could not load'
+    : 'Local settings may not persist';
+  const storageIssueMessage = activeStorageIssue?.operation === 'load'
+    ? 'Some browser-local preferences may be using defaults for this session until storage is available again.'
+    : 'The latest local preference change is visible now, but the browser could not save it locally. Try again before relying on it after reload.';
 
   return (
     <div className="max-w-xl space-y-8" id="opt-view-settings">
@@ -47,6 +61,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           Configure browser-local sync status, reminder preferences, diagnostics storage, and prep-card reset controls.
         </p>
       </div>
+
+      {activeStorageIssue && (
+        <div
+          id="settings-storage-status"
+          role="alert"
+          aria-live="polite"
+          className="flex items-start gap-3 rounded-lg border border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] p-4"
+        >
+          <Settings2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ext-warning)]" />
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-[var(--ext-warning)]">{storageIssueTitle}</p>
+            <p className="text-[10px] leading-relaxed text-[var(--ext-text-secondary)]">{storageIssueMessage}</p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-5 rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-6">
         <div className="flex flex-col gap-3 py-1.5 sm:flex-row sm:items-center sm:justify-between">
@@ -154,6 +183,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           disabled={!hasPrepCards}
           className="shrink-0 rounded-lg border border-[var(--ext-danger)] bg-[var(--ext-danger-muted)] px-4 py-2 text-xs font-semibold text-[var(--ext-danger)] transition hover:bg-[var(--ext-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)] disabled:cursor-not-allowed disabled:border-[var(--ext-border)] disabled:bg-[var(--ext-surface-muted)] disabled:text-[var(--ext-text-muted)]"
           id="reset-prep-cards-btn"
+          aria-controls="settings-prep-clear-review"
+          aria-expanded={isPrepClearReviewOpen}
         >
           Clear Prep Cards
         </button>

@@ -27,6 +27,7 @@ import {
 
 const coursePageSizeOptions = [6, 12, 24];
 const defaultCoursePageSize = 12;
+const courseCatalogLoadFailureMessage = 'Course catalog did not respond. Retry to reload course results, pagination, filters, and progress-aware catalog state.';
 const enrollmentLoadErrorMessage = 'Your enrolled-course progress could not be refreshed. Retry when LMS sync is available.';
 const learningPanelClassName = 'surface-panel p-3';
 const learningSectionClassName = 'surface-panel p-4';
@@ -81,6 +82,7 @@ const LMSPage: React.FC = () => {
   const [pendingAiLearningDraftSource, setPendingAiLearningDraftSource] = useState<LearningAiDraftSource | null>(null);
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const lastCatalogAnalyticsKey = useRef('');
+  const consumedAiLearningDraftKeyRef = useRef('');
   const normalizedSearchTerm = searchTerm.trim().replace(/\s+/g, ' ');
   const courseProgressFilter: CourseProgressFilter | undefined = activeTab === 'in-progress'
     ? 'in-progress'
@@ -107,12 +109,27 @@ const LMSPage: React.FC = () => {
     });
   }, [user?.id]);
 
+  const handleRetryCourseCatalog = useCallback(() => {
+    dispatch(fetchCourses(courseQueryParams));
+  }, [courseQueryParams, dispatch]);
+
   useEffect(() => {
     dispatch(fetchCourses(courseQueryParams));
   }, [courseQueryParams, dispatch]);
 
   useEffect(() => {
-    if (!aiLearningDraftState?.recommendationText) return;
+    if (!aiLearningDraftState?.recommendationText) {
+      consumedAiLearningDraftKeyRef.current = '';
+      return;
+    }
+
+    const draftKey = [
+      aiLearningDraftState.recommendationId,
+      aiLearningDraftState.recommendationText,
+      aiLearningDraftState.sourceLabel,
+    ].filter(Boolean).join('::');
+    if (consumedAiLearningDraftKeyRef.current === draftKey) return;
+    consumedAiLearningDraftKeyRef.current = draftKey;
 
     navigate(
       { pathname: location.pathname, search: location.search },
@@ -899,8 +916,10 @@ const LMSPage: React.FC = () => {
         </div>
       ) : status === 'failed' ? (
         <EmptyState
+          icon={<AlertCircle className="h-12 w-12 text-warning" aria-hidden="true" />}
           title="Unable to load courses"
-          description="We couldn't connect to the course catalog. Please check your connection and try again."
+          description={courseCatalogLoadFailureMessage}
+          action={{ label: 'Retry Courses', onClick: handleRetryCourseCatalog }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState title="No courses found" description="Try adjusting your search or filters." />

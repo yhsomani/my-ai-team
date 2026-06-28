@@ -56,6 +56,7 @@ const normalizeCareerPath = (data: unknown): CareerPathData | null => {
 
 const careerPathDescriptionClassName = 'text-sm text-[var(--text-secondary)]';
 const careerPathMutedClassName = 'text-xs text-[var(--text-muted)]';
+const careerPathProviderFailureMessage = 'Career-path provider did not respond. Retry career path to reload generated guidance, required skills, milestones, and review-first handoffs.';
 
 const AICareerPath: React.FC = () => {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ const AICareerPath: React.FC = () => {
     } catch (err) {
       console.error('Failed to fetch career path:', err);
       setCareerPath(null);
-      setLoadError('Career path generation is unavailable right now.');
+      setLoadError(careerPathProviderFailureMessage);
     } finally {
       setLoading(false);
     }
@@ -137,7 +138,7 @@ const AICareerPath: React.FC = () => {
             <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" size="sm" onClick={fetchPath} isLoading={loading}>
                 <RefreshCw size={14} />
-                Retry
+                Retry career path
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate('/ai')}>
                 Ask AI Assistant

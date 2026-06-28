@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { dashboardService, DashboardOnboardingSignals, DashboardStats } from '../../services/dashboardService';
 import { recruiterService, RecruiterOnboardingSignals, RecruiterStats } from '../../services/recruiterService';
-import { 
-  Briefcase, MessageSquare, TrendingUp, Award, 
+import {
+  Briefcase, MessageSquare, TrendingUp, Award,
   AlertTriangle, ArrowUpRight, Users, CheckCircle, Clock, Plus, RefreshCw, Circle
 } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
@@ -237,6 +237,48 @@ const getDashboardErrorCategory = (error: unknown) => {
   return 'request_error';
 };
 
+const dashboardIssueSections = [
+  'XP and level',
+  'Application count',
+  'Recent opportunities',
+  'Active challenges',
+  'Unread messages',
+  'Recruiter stats',
+  'Recent applications',
+] as const;
+
+const getDashboardIssuePresentation = (issue: string, index = 0) => {
+  const normalizedIssue = issue.trim().replace(/\s+/g, ' ');
+  const section = dashboardIssueSections.find((label) => (
+    normalizedIssue.toLowerCase().startsWith(label.toLowerCase())
+  ));
+
+  if (section) {
+    return {
+      id: `${section}-${index}`,
+      section,
+      message: `${section} did not refresh.`,
+      retryLabel: `Retry ${section}`,
+    };
+  }
+
+  if (normalizedIssue.toLowerCase().includes('dashboard request failed')) {
+    return {
+      id: `dashboard-data-${index}`,
+      section: 'Dashboard data',
+      message: 'Dashboard data did not refresh.',
+      retryLabel: 'Retry dashboard data',
+    };
+  }
+
+  return {
+    id: `dashboard-section-${index}`,
+    section: `Dashboard section ${index + 1}`,
+    message: 'A dashboard section did not refresh.',
+    retryLabel: `Retry dashboard section ${index + 1}`,
+  };
+};
+
 const countCompletedTasks = (tasks: OnboardingTask[]) => tasks.filter(task => task.complete).length;
 
 interface DashboardStatusStripProps {
@@ -247,7 +289,7 @@ interface DashboardStatusStripProps {
 
 const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isRefreshing = false, onRetry }) => {
   const isHealthy = status.source === 'live';
-  const visibleIssues = status.issues.slice(0, 3);
+  const visibleIssues = status.issues.slice(0, 3).map((issue, index) => getDashboardIssuePresentation(issue, index));
 
   return (
     <div
@@ -267,15 +309,18 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
           {visibleIssues.length > 0 && (
             <ul className="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
               {visibleIssues.map((issue) => (
-                <li key={issue} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{issue}</span>
+                <li key={issue.id} className="flex flex-col gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0">
+                    <span className="block font-medium text-[var(--text-primary)]">{issue.section}</span>
+                    <span className="mt-0.5 block">{issue.message}</span>
+                  </span>
                   {onRetry && (
                     <button
                       type="button"
-                      onClick={() => onRetry(issue)}
+                      onClick={() => onRetry(issue.message)}
                       disabled={isRefreshing}
                       className="inline-flex w-fit items-center gap-1 rounded-md border border-[var(--border-default)] px-2 py-1 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-primary)] disabled:pointer-events-none disabled:opacity-50"
-                      aria-label={`Retry ${issue}`}
+                      aria-label={issue.retryLabel}
                     >
                       <RefreshCw size={11} className={isRefreshing ? 'animate-spin' : ''} />
                       Retry
@@ -316,13 +361,13 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshingDashboard, setIsRefreshingDashboard] = useState(false);
   const [dashboardStatus, setDashboardStatus] = useState<DashboardLoadStatus>(defaultDashboardStatus);
-  
+
   // User Data
   const [stats, setStats] = useState<DashboardStats>({ xp: 0, level: 1, applications: 0, messages: 0 });
   const [jobs, setJobs] = useState<Job[]>([]);
   const [challenges, setChallenges] = useState<Record<string, any>[]>([]);
   const [talentOnboarding, setTalentOnboarding] = useState<DashboardOnboardingSignals>(defaultTalentOnboarding);
-  
+
   // Recruiter Data
   const [recruiterStats, setRecruiterStats] = useState<RecruiterStats>({ activeJobs: 0, totalApplications: 0, newApplications: 0, hiredCount: 0 });
   const [recentApplications, setRecentApplications] = useState<Record<string, any>[]>([]);
@@ -391,10 +436,11 @@ const DashboardPage: React.FC = () => {
 
     try {
       if (options?.retryIssue) {
+        const retryIssue = getDashboardIssuePresentation(options.retryIssue).message;
         addToast({
           type: 'info',
           title: 'Retrying dashboard section',
-          message: options.retryIssue
+          message: retryIssue
         });
       }
 
@@ -652,7 +698,7 @@ const DashboardPage: React.FC = () => {
 
     return (
       <div className="space-y-6">
-        <PageHeader 
+        <PageHeader
           title={`Recruiter Console`}
           description={`Welcome back, ${userName}. Managing your talent pipeline.`}
           actions={
@@ -763,7 +809,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
+      <PageHeader
         title={`Welcome back, ${userName}`}
         description="Here's an overview of your activity and opportunities."
         actions={

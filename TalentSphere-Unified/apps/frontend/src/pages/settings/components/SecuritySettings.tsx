@@ -34,35 +34,43 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [passwordResetError, setPasswordResetError] = useState<string | null>(null);
+  const [accountDeactivationError, setAccountDeactivationError] = useState<string | null>(null);
   const isAccountDeactivationConfirmed = deleteConfirmation.trim().toUpperCase() === accountDeactivationConfirmation;
 
   const closePasswordResetReview = () => {
     if (isSendingReset) return;
     recordSettingsAction?.('password_reset_cancelled');
+    setPasswordResetError(null);
     setIsPasswordModalOpen(false);
   };
 
   const closeAccountDeactivationReview = () => {
     if (isDeletingAccount) return;
     recordSettingsAction?.('account_delete_cancelled');
+    setAccountDeactivationError(null);
     setIsDeleteModalOpen(false);
     setDeleteConfirmation('');
   };
 
   const handlePasswordReset = async () => {
     if (!userEmail) {
+      setPasswordResetError('No account email is available for password reset.');
       addToast({ type: 'error', title: 'Email unavailable', message: 'No account email is available for password reset.' });
       recordSettingsAction?.('password_reset_failed', { errorCategory: 'missing_email' });
       return;
     }
 
     setIsSendingReset(true);
+    setPasswordResetError(null);
     try {
       await authService.resetPassword(userEmail);
       addToast({ type: 'success', title: 'Password reset email sent', message: `Check ${userEmail} for the reset link.` });
       recordSettingsAction?.('password_reset_completed');
+      setPasswordResetError(null);
       setIsPasswordModalOpen(false);
     } catch (error) {
+      setPasswordResetError('Password reset email could not be sent. Try again from this review.');
       addToast({ type: 'error', title: 'Password reset failed', message: 'Please try again later.' });
       recordSettingsAction?.('password_reset_failed', {
         errorCategory: getSecurityWorkflowErrorCategory(error, 'password_reset_failed'),
@@ -76,13 +84,16 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
     if (!userId || !isAccountDeactivationConfirmed) return;
 
     setIsDeletingAccount(true);
+    setAccountDeactivationError(null);
     try {
       await settingsService.deleteAccount(userId);
       addToast({ type: 'success', title: 'Account deactivated', message: 'Your profile has been marked inactive.' });
       recordSettingsAction?.('account_delete_completed');
+      setAccountDeactivationError(null);
       setIsDeleteModalOpen(false);
       setDeleteConfirmation('');
     } catch (error) {
+      setAccountDeactivationError('Account deactivation could not be completed. Confirm the text and try again.');
       addToast({ type: 'error', title: 'Account deactivation failed', message: 'Please try again later.' });
       recordSettingsAction?.('account_delete_failed', {
         errorCategory: getSecurityWorkflowErrorCategory(error, 'account_delete_failed'),
@@ -110,6 +121,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
               variant="outline"
               onClick={() => {
                 recordSettingsAction?.('password_reset_review_opened');
+                setPasswordResetError(null);
                 setIsPasswordModalOpen(true);
               }}
               disabled={!userEmail}
@@ -144,6 +156,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
               variant="destructive"
               onClick={() => {
                 recordSettingsAction?.('account_delete_review_opened');
+                setAccountDeactivationError(null);
                 setIsDeleteModalOpen(true);
               }}
               disabled={!userId}
@@ -166,6 +179,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
         }
       >
         <div className="space-y-3">
+          {passwordResetError && (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/20 bg-destructive-muted p-3"
+            >
+              <p className="text-sm text-destructive">{passwordResetError}</p>
+            </div>
+          )}
           <p className="text-sm text-[var(--text-secondary)]">
             TalentSphere will send a password reset link to {userEmail || 'your account email'}.
           </p>
@@ -197,6 +218,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
         }
       >
         <div className="space-y-4">
+          {accountDeactivationError && (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/20 bg-destructive-muted p-3"
+            >
+              <p className="text-sm text-destructive">{accountDeactivationError}</p>
+            </div>
+          )}
           <p className="text-sm text-[var(--text-secondary)]">
             This marks your profile inactive so it no longer appears as an active TalentSphere profile. It does not cancel billing or erase provider records.
           </p>

@@ -393,7 +393,12 @@ const AdminDashboard: React.FC = () => {
             </Button>
           }
         />
-        <EmptyState title="Error Loading Data" description={error || "Could not connect to backend services."} />
+        <EmptyState
+          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          title="Admin console could not load"
+          description="Operational data did not respond. Retry to reload metrics, service health, scheduler status, analytics insights, and audit events."
+          action={{ label: 'Retry admin console', onClick: handleAdminRefresh }}
+        />
       </div>
     );
   }
@@ -409,8 +414,8 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Admin Console" 
+      <PageHeader
+        title="Admin Console"
         description="Global system overview and administrative controls."
         badge={
           <Badge variant={getSourceBadgeVariant(metadata.source)}>

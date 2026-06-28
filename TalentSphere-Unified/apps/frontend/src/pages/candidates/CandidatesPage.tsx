@@ -138,6 +138,14 @@ const candidateReviewSectionClassName = 'surface-panel p-4';
 const candidateInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 px-3 py-2';
 const candidateOfferButtonClassName = 'border-0 bg-success text-[var(--text-inverse)] hover:bg-success/90';
 const candidateDangerButtonClassName = 'border-destructive text-destructive hover:bg-destructive/10';
+const candidateLoadFailureMessage = 'Candidate applications did not respond. Retry to reload application rows, review controls, private notes, and scorecards before changing statuses.';
+const candidateStatusFailureMessage = 'The application status could not be updated. No change was saved. Review the candidate and try again from this confirmation.';
+
+const getCandidateBulkStatusFailureMessage = (failedCount: number, succeededCount: number, targetStatus: CandidateBulkStatusTarget) => (
+  succeededCount > 0
+    ? `${failedCount} selected application${failedCount === 1 ? '' : 's'} could not be moved to ${targetStatus}. Successful updates were saved for the rest. Try again for the remaining applications from this review.`
+    : `No selected applications were moved to ${targetStatus}. Review the eligible applications and try again from this confirmation.`
+);
 
 const getCandidateNotesStorageKey = (recruiterId?: string) => `talentsphere.candidateNotes.${recruiterId || 'guest'}`;
 const getCandidateScorecardsStorageKey = (recruiterId?: string) => `talentsphere.candidateScorecards.${recruiterId || 'guest'}`;
@@ -198,6 +206,7 @@ const CandidatesPage: React.FC = () => {
   const { addToast } = useToast();
   const [candidates, setCandidates] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [candidateLoadError, setCandidateLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Application | null>(null);
@@ -270,6 +279,7 @@ const CandidatesPage: React.FC = () => {
     if (!user?.id) return;
     try {
       setLoading(true);
+      setCandidateLoadError(null);
       const page = await recruiterService.getApplicationsPage(user.id, {
         limit: candidatePageSize,
         offset: (candidatePage - 1) * candidatePageSize,
@@ -297,10 +307,16 @@ const CandidatesPage: React.FC = () => {
       setCandidates([]);
       setCandidateTotal(null);
       setCandidateHasNext(false);
+      setCandidateLoadError(candidateLoadFailureMessage);
+      addToast({
+        type: 'error',
+        title: 'Candidates unavailable',
+        message: 'Retry candidates to reload the application review queue.',
+      });
     } finally {
       setLoading(false);
     }
-  }, [candidatePage, candidatePageSize, currentCandidateCursor, normalizedSearchTerm, user?.id]);
+  }, [addToast, candidatePage, candidatePageSize, currentCandidateCursor, normalizedSearchTerm, user?.id]);
 
   useEffect(() => { fetchCandidates(); }, [fetchCandidates]);
 
@@ -450,7 +466,7 @@ const CandidatesPage: React.FC = () => {
       return true;
     } catch (err) {
       console.error('Failed to update status:', err);
-      setStatusChangeError('The application status could not be updated. No change was saved.');
+      setStatusChangeError(candidateStatusFailureMessage);
       if (currentApplication) {
         recordCandidateAnalyticsForApplication('candidate_status_failed', currentApplication, {
           targetStatus: newStatus,
@@ -1069,11 +1085,13 @@ const CandidatesPage: React.FC = () => {
     }
 
     if (failed.length > 0) {
-      setBulkStatusError(`${failed.length} selected application${failed.length === 1 ? '' : 's'} could not be moved to ${bulkStatusTarget}. Successful updates were saved.`);
+      setBulkStatusError(getCandidateBulkStatusFailureMessage(failed.length, succeeded.length, bulkStatusTarget));
       addToast({
         type: 'warning',
-        title: 'Bulk update partially saved',
-        message: `${succeeded.length} moved to ${bulkStatusTarget}; ${failed.length} still need review.`,
+        title: succeeded.length > 0 ? 'Bulk update partially saved' : 'Bulk update not saved',
+        message: succeeded.length > 0
+          ? `${succeeded.length} moved to ${bulkStatusTarget}; ${failed.length} still need review.`
+          : `${failed.length} selected application${failed.length === 1 ? '' : 's'} still need review.`,
       });
       return;
     }
@@ -1415,6 +1433,15 @@ const CandidatesPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 gap-4">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full" />)}
+        </div>
+      ) : candidateLoadError ? (
+        <div role="alert">
+          <EmptyState
+            icon={<AlertTriangle className="h-12 w-12 text-warning" />}
+            title="Candidates could not load"
+            description={candidateLoadError}
+            action={{ label: 'Retry candidates', onClick: () => fetchCandidates() }}
+          />
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState

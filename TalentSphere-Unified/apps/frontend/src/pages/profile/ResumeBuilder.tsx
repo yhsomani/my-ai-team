@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Clock, Copy, Download, ExternalLink, FileText, GripVertical, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { Clock, Copy, Download, ExternalLink, FileText, GripVertical, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
@@ -96,6 +96,7 @@ const getResumeArtifactStorageKey = (userId: string) => `talentsphere:resume-art
 const getResumeArtifactTombstoneStorageKey = (userId: string) => `talentsphere:resume-artifact-deletions:${userId}`;
 const maxResumeExportHistory = 5;
 const maxResumeArtifactUploads = 5;
+const resumeLoadFailureMessage = 'Resume profile data did not respond. Retry to reload editor fields, skills, experience, and education before saving or exporting.';
 const resumeEditableFields: Array<keyof ResumeDraft> = ['headline', 'phone', 'location', 'website', 'summary'];
 const getResumeWorkflowErrorCategory = (error: unknown, fallback = 'request_error') => {
   if (!error) return fallback;
@@ -152,6 +153,23 @@ const resumeInsetClassName = 'rounded-lg border border-[var(--border-default)] b
 const resumeSubtlePanelClassName = 'rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]';
 const resumeReviewLabelClassName = 'block text-xs font-medium text-[var(--text-muted)]';
 const resumePreviewHeadingClassName = 'text-sm font-semibold text-accent';
+const resumeSaveFailureMessage = 'Resume changes were not saved. Review the fields and try Save Changes again.';
+const resumeUploadFailureMessage = 'Resume PDF was not uploaded. Use Upload PDF again, or download a local copy.';
+const resumeExportFailureMessage = 'Resume export could not finish. Try the same export again, or use another export option.';
+const resumeArtifactDeleteFailureMessage = 'Uploaded PDF was not removed. Try Delete PDF again from this review.';
+const resumeArtifactCopyFailureMessage = 'Uploaded PDF link was not copied. Try Copy Link again, or open the PDF.';
+const resumeImportSkillsFailureMessage = 'Selected skills were not saved. Review the selections and try Save Skills again.';
+const resumeImportRowsFailureMessage = 'Selected profile rows were not saved. Review the selections and try Save Rows again.';
+
+const ResumeActionFailureAlert = ({ title, message }: { title: string; message: string }) => (
+  <div
+    role="alert"
+    className="rounded-lg border border-destructive/30 bg-destructive-muted/10 p-3 text-sm text-[var(--text-secondary)]"
+  >
+    <p className="font-semibold text-[var(--text-primary)]">{title}</p>
+    <p className="mt-1 leading-6">{message}</p>
+  </div>
+);
 
 const getResumeFileStem = (name?: string) => {
   const normalized = (name || 'Resume')
@@ -288,6 +306,14 @@ const ResumeBuilder: React.FC = () => {
   const [profile, setProfile] = useState<Record<string, any> | null>(null);
   const [resumeDraft, setResumeDraft] = useState<ResumeDraft>(initialResumeDraft);
   const [loading, setLoading] = useState(true);
+  const [resumeLoadError, setResumeLoadError] = useState<string | null>(null);
+  const [resumeSaveError, setResumeSaveError] = useState<string | null>(null);
+  const [resumeExportError, setResumeExportError] = useState<string | null>(null);
+  const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
+  const [resumeArtifactCopyError, setResumeArtifactCopyError] = useState<string | null>(null);
+  const [resumeArtifactDeleteError, setResumeArtifactDeleteError] = useState<string | null>(null);
+  const [resumeImportSkillsError, setResumeImportSkillsError] = useState<string | null>(null);
+  const [resumeImportRowsError, setResumeImportRowsError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importText, setImportText] = useState('');
@@ -329,44 +355,48 @@ const ResumeBuilder: React.FC = () => {
     ...getResumeWorkflowMetrics(profileOverride, exportHistory.length, resumeArtifactUploads.length),
   }), [exportHistory.length, profile, resumeArtifactUploads.length]);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-      try {
-        const data = await profileService.getProfile(user.id);
-        setProfile(data);
-        const profileIdentity = data?.profiles;
-        const profileFullName = [
-          profileIdentity?.first_name,
-          profileIdentity?.last_name,
-        ].filter(Boolean).join(' ').trim();
+  const loadResumeProfileData = useCallback(async (entryPoint = 'page_load') => {
+    if (!user) return;
+    setLoading(true);
+    setResumeLoadError(null);
+    try {
+      const data = await profileService.getProfile(user.id);
+      setProfile(data);
+      const profileIdentity = data?.profiles;
+      const profileFullName = [
+        profileIdentity?.first_name,
+        profileIdentity?.last_name,
+      ].filter(Boolean).join(' ').trim();
 
-        setResumeDraft({
-          fullName: profileFullName || user.email?.split('@')[0] || '',
-          email: data?.profiles?.email || user.email || '',
-          headline: data?.headline || '',
-          phone: data?.phone || '',
-          location: data?.location || '',
-          website: data?.website || '',
-          summary: data?.summary || data?.bio || '',
-        });
-        recordResumeAction('resume_loaded', {
-          entryPoint: 'page_load',
-          ...getResumeWorkflowMetrics(data),
-        });
-      } catch (err) {
-        console.error('Failed to fetch profile for resume:', err);
-        recordResumeAction('resume_load_failed', {
-          entryPoint: 'page_load',
-          errorCategory: getResumeWorkflowErrorCategory(err, 'resume_load_failed'),
-        });
-        addToast({ type: 'error', title: 'Unable to load resume data', message: 'Please refresh and try again.' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+      setResumeDraft({
+        fullName: profileFullName || user.email?.split('@')[0] || '',
+        email: data?.profiles?.email || user.email || '',
+        headline: data?.headline || '',
+        phone: data?.phone || '',
+        location: data?.location || '',
+        website: data?.website || '',
+        summary: data?.summary || data?.bio || '',
+      });
+      recordResumeAction('resume_loaded', {
+        entryPoint,
+        ...getResumeWorkflowMetrics(data),
+      });
+    } catch (err) {
+      console.error('Failed to fetch profile for resume:', err);
+      setResumeLoadError(resumeLoadFailureMessage);
+      recordResumeAction('resume_load_failed', {
+        entryPoint,
+        errorCategory: getResumeWorkflowErrorCategory(err, 'resume_load_failed'),
+      });
+      addToast({ type: 'error', title: 'Unable to load resume data', message: 'Retry resume data to reload the editor fields.' });
+    } finally {
+      setLoading(false);
+    }
   }, [addToast, recordResumeAction, user]);
+
+  useEffect(() => {
+    void loadResumeProfileData('page_load');
+  }, [loadResumeProfileData]);
 
   const readLocalExportHistory = useCallback(() => {
     if (!user?.id) return [];
@@ -739,6 +769,8 @@ const ResumeBuilder: React.FC = () => {
 
   const resetImportModalState = () => {
     setIsImportModalOpen(false);
+    setResumeImportSkillsError(null);
+    setResumeImportRowsError(null);
     if (pendingAiResumeDraft) {
       setImportText('');
       setImportFileName('');
@@ -773,6 +805,8 @@ const ResumeBuilder: React.FC = () => {
   };
 
   const openImportModal = () => {
+    setResumeImportSkillsError(null);
+    setResumeImportRowsError(null);
     recordResumeAction('resume_import_opened', getResumeAnalyticsContext('page_header'));
     setIsImportModalOpen(true);
   };
@@ -792,18 +826,21 @@ const ResumeBuilder: React.FC = () => {
   };
 
   const handleToggleImportSkill = (skill: string) => {
+    setResumeImportSkillsError(null);
     setSelectedImportSkills(prev =>
       prev.includes(skill) ? prev.filter(item => item !== skill) : [...prev, skill]
     );
   };
 
   const handleToggleImportExperience = (experienceId: string) => {
+    setResumeImportRowsError(null);
     setSelectedImportExperienceIds(prev =>
       prev.includes(experienceId) ? prev.filter(item => item !== experienceId) : [...prev, experienceId]
     );
   };
 
   const handleToggleImportEducation = (educationId: string) => {
+    setResumeImportRowsError(null);
     setSelectedImportEducationIds(prev =>
       prev.includes(educationId) ? prev.filter(item => item !== educationId) : [...prev, educationId]
     );
@@ -829,6 +866,8 @@ const ResumeBuilder: React.FC = () => {
 
     try {
       const fileText = await readResumeImportFileText(file);
+      setResumeImportSkillsError(null);
+      setResumeImportRowsError(null);
       setImportText(fileText);
       setImportFileName(file.name);
       setImportDraft(null);
@@ -878,6 +917,8 @@ const ResumeBuilder: React.FC = () => {
     }
 
     setImportText(nextValue);
+    setResumeImportSkillsError(null);
+    setResumeImportRowsError(null);
     setImportFileName('');
     setImportDraft(null);
     setSelectedImportFields([]);
@@ -907,6 +948,8 @@ const ResumeBuilder: React.FC = () => {
   };
 
   const handleAnalyzeImport = () => {
+    setResumeImportSkillsError(null);
+    setResumeImportRowsError(null);
     if (!importText.trim()) {
       recordResumeAction('resume_import_analysis_failed', {
         ...getResumeAnalyticsContext('import_modal'),
@@ -1022,6 +1065,7 @@ const ResumeBuilder: React.FC = () => {
   const handleSaveImportSkills = async () => {
     if (!user?.id) return;
 
+    setResumeImportSkillsError(null);
     const skillsToSave = importSkillSuggestions.filter(skill => selectedImportSkills.includes(skill));
     if (skillsToSave.length === 0) {
       recordResumeAction('resume_import_skills_validation_failed', {
@@ -1074,6 +1118,7 @@ const ResumeBuilder: React.FC = () => {
     };
 
     if (savedSkills.length === skillsToSave.length) {
+      setResumeImportSkillsError(null);
       recordResumeAction('resume_import_skills_saved', skillAnalyticsContext);
       addToast({
         type: 'success',
@@ -1084,6 +1129,7 @@ const ResumeBuilder: React.FC = () => {
     }
 
     if (savedSkills.length > 0) {
+      setResumeImportSkillsError('Some selected skills were not saved. Review the remaining selections and try Save Skills again.');
       recordResumeAction('resume_import_skills_partial', {
         ...skillAnalyticsContext,
         errorCategory: 'partial_skill_save_failed',
@@ -1100,12 +1146,14 @@ const ResumeBuilder: React.FC = () => {
       ...skillAnalyticsContext,
       errorCategory: 'skill_save_failed',
     });
+    setResumeImportSkillsError(resumeImportSkillsFailureMessage);
     addToast({ type: 'error', title: 'Skill save failed', message: 'No skills were saved. Please try again from Profile.' });
   };
 
   const handleSaveImportRows = async () => {
     if (!user?.id) return;
 
+    setResumeImportRowsError(null);
     const experiencesToSave = importExperienceSuggestions.filter(experience => selectedImportExperienceIds.includes(experience.id));
     const educationToSave = importEducationSuggestions.filter(educationRow => selectedImportEducationIds.includes(educationRow.id));
     const selectedRowCount = experiencesToSave.length + educationToSave.length;
@@ -1205,6 +1253,7 @@ const ResumeBuilder: React.FC = () => {
     };
 
     if (savedRowCount === selectedRowCount) {
+      setResumeImportRowsError(null);
       recordResumeAction('resume_import_rows_saved', rowAnalyticsContext);
       addToast({
         type: 'success',
@@ -1215,6 +1264,7 @@ const ResumeBuilder: React.FC = () => {
     }
 
     if (savedRowCount > 0) {
+      setResumeImportRowsError('Some selected profile rows were not saved. Review the remaining selections and try Save Rows again.');
       recordResumeAction('resume_import_rows_partial', {
         ...rowAnalyticsContext,
         errorCategory: 'partial_profile_row_save_failed',
@@ -1231,14 +1281,17 @@ const ResumeBuilder: React.FC = () => {
       ...rowAnalyticsContext,
       errorCategory: 'profile_row_save_failed',
     });
+    setResumeImportRowsError(resumeImportRowsFailureMessage);
     addToast({ type: 'error', title: 'Profile row save failed', message: 'No rows were saved. Please try again from Profile.' });
   };
 
   const handleExport = () => {
+    setResumeExportError(null);
     const printWindow = window.open('', '_blank', 'noopener,noreferrer');
     const fileName = `${getResumeFileStem(resumeDraft.fullName)} print`;
 
     if (!printWindow) {
+      setResumeExportError('Print export was blocked. Allow popups and try Print PDF again, or use Download PDF.');
       addExportRecord({
         status: 'blocked',
         method: 'browser-print',
@@ -1271,10 +1324,12 @@ const ResumeBuilder: React.FC = () => {
       exportStatus: 'ready',
       persistedTo: 'local',
     });
+    setResumeExportError(null);
     addToast({ type: 'success', title: 'Export ready', message: 'Use the print dialog to save the resume as PDF.' });
   };
 
   const handleDownloadHtml = () => {
+    setResumeExportError(null);
     const fileName = `${getResumeFileStem(resumeDraft.fullName)}-resume.html`;
 
     try {
@@ -1300,6 +1355,7 @@ const ResumeBuilder: React.FC = () => {
         exportStatus: 'ready',
         persistedTo: 'local',
       });
+      setResumeExportError(null);
       addToast({ type: 'success', title: 'Resume downloaded', message: 'A print-ready HTML resume file was created locally.' });
     } catch (err) {
       console.error('Failed to download resume HTML:', err);
@@ -1310,11 +1366,13 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: 'local',
         errorCategory: getResumeWorkflowErrorCategory(err, 'download_failed'),
       });
+      setResumeExportError(resumeExportFailureMessage);
       addToast({ type: 'error', title: 'Download failed', message: 'Please try again or use Print PDF.' });
     }
   };
 
   const handleDownloadPdf = () => {
+    setResumeExportError(null);
     const fileName = `${getResumeFileStem(resumeDraft.fullName)}-resume.pdf`;
 
     try {
@@ -1339,6 +1397,7 @@ const ResumeBuilder: React.FC = () => {
         exportStatus: 'ready',
         persistedTo: 'local',
       });
+      setResumeExportError(null);
       addToast({ type: 'success', title: 'PDF downloaded', message: 'A native PDF resume file was created locally.' });
     } catch (err) {
       console.error('Failed to download resume PDF:', err);
@@ -1349,12 +1408,14 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: 'local',
         errorCategory: getResumeWorkflowErrorCategory(err, 'pdf_download_failed'),
       });
+      setResumeExportError(resumeExportFailureMessage);
       addToast({ type: 'error', title: 'PDF download failed', message: 'Please try again, or use Download HTML or Print PDF.' });
     }
   };
 
   const handleUploadPdf = async () => {
     const fileName = `${getResumeFileStem(resumeDraft.fullName)}-resume.pdf`;
+    setResumeUploadError(null);
     setIsUploadingResumePdf(true);
 
     try {
@@ -1393,6 +1454,7 @@ const ResumeBuilder: React.FC = () => {
         exportStatus: 'ready',
         persistedTo: 'server',
       });
+      setResumeUploadError(null);
       addToast({ type: 'success', title: 'PDF uploaded', message: 'Your reviewed PDF artifact is available from the link in Export Activity.' });
     } catch (err) {
       console.error('Failed to upload resume PDF:', err);
@@ -1403,6 +1465,7 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: 'local',
         errorCategory: getResumeWorkflowErrorCategory(err, 'provider_pdf_upload_failed'),
       });
+      setResumeUploadError(resumeUploadFailureMessage);
       addToast({ type: 'error', title: 'PDF upload failed', message: 'Please try again, or use Download PDF to keep a local copy.' });
     } finally {
       setIsUploadingResumePdf(false);
@@ -1411,6 +1474,7 @@ const ResumeBuilder: React.FC = () => {
 
   const handleOpenDeleteResumeArtifact = (artifact: ResumeArtifactRecord) => {
     if (deletingResumeArtifactUrl) return;
+    setResumeArtifactDeleteError(null);
     setPendingResumeArtifactDelete(artifact);
     recordResumeAction('resume_artifact_delete_review_opened', {
       ...getResumeAnalyticsContext('artifact_delete_review'),
@@ -1422,6 +1486,7 @@ const ResumeBuilder: React.FC = () => {
 
   const handleCancelDeleteResumeArtifact = () => {
     if (!pendingResumeArtifactDelete || isDeletingPendingResumeArtifact) return;
+    setResumeArtifactDeleteError(null);
     recordResumeAction('resume_artifact_delete_cancelled', {
       ...getResumeAnalyticsContext('artifact_delete_review'),
       artifactCount: resumeArtifactUploads.length,
@@ -1436,6 +1501,7 @@ const ResumeBuilder: React.FC = () => {
     if (!artifact) return;
 
     setDeletingResumeArtifactUrl(artifact.url);
+    setResumeArtifactDeleteError(null);
     try {
       await fileUploadService.deleteFile(artifact.url);
       const deletedAt = new Date().toISOString();
@@ -1456,6 +1522,7 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: artifact.persistedTo,
       });
       setPendingResumeArtifactDelete(null);
+      setResumeArtifactDeleteError(null);
       addToast({ type: 'success', title: 'Uploaded PDF deleted', message: 'The uploaded resume artifact link was removed.' });
     } catch (err) {
       console.error('Failed to delete uploaded resume PDF:', err);
@@ -1466,6 +1533,7 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: artifact.persistedTo,
         errorCategory: getResumeWorkflowErrorCategory(err, 'provider_pdf_delete_failed'),
       });
+      setResumeArtifactDeleteError(resumeArtifactDeleteFailureMessage);
       addToast({ type: 'error', title: 'Delete failed', message: 'The uploaded PDF is still listed. Please try again later.' });
     } finally {
       setDeletingResumeArtifactUrl(null);
@@ -1474,6 +1542,7 @@ const ResumeBuilder: React.FC = () => {
 
   const handleCopyResumeArtifactLink = async (artifact: ResumeArtifactRecord) => {
     setCopyingResumeArtifactUrl(artifact.url);
+    setResumeArtifactCopyError(null);
     try {
       await copyResumeArtifactUrl(artifact.url);
       recordResumeAction('resume_artifact_link_copied', {
@@ -1482,6 +1551,7 @@ const ResumeBuilder: React.FC = () => {
         exportMethod: 'provider-pdf',
         persistedTo: artifact.persistedTo,
       });
+      setResumeArtifactCopyError(null);
       addToast({ type: 'success', title: 'Link copied', message: 'The uploaded PDF link is ready to share.' });
     } catch (err) {
       console.error('Failed to copy uploaded resume PDF link:', err);
@@ -1492,15 +1562,22 @@ const ResumeBuilder: React.FC = () => {
         persistedTo: artifact.persistedTo,
         errorCategory: getResumeWorkflowErrorCategory(err, 'provider_pdf_link_copy_failed'),
       });
+      setResumeArtifactCopyError(resumeArtifactCopyFailureMessage);
       addToast({ type: 'error', title: 'Copy failed', message: 'Open the PDF and copy the link from your browser instead.' });
     } finally {
       setCopyingResumeArtifactUrl(null);
     }
   };
 
+  const updateResumeDraftField = (field: keyof ResumeDraft, value: string) => {
+    setResumeSaveError(null);
+    setResumeDraft(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSave = async () => {
     if (!user?.id) return;
     const changedFields = getChangedResumeFields(profile, resumeDraft);
+    setResumeSaveError(null);
     setIsSaving(true);
     try {
       const updatedProfile = await profileService.updateProfile(user.id, {
@@ -1525,6 +1602,7 @@ const ResumeBuilder: React.FC = () => {
         fieldKeys: changedFields,
         fieldCount: changedFields.length,
       });
+      setResumeSaveError(null);
       addToast({ type: 'success', title: 'Saved', message: 'Resume profile fields have been saved.' });
     } catch (err) {
       console.error('Failed to save resume fields:', err);
@@ -1534,6 +1612,7 @@ const ResumeBuilder: React.FC = () => {
         fieldCount: changedFields.length,
         errorCategory: getResumeWorkflowErrorCategory(err, 'profile_update_failed'),
       });
+      setResumeSaveError(resumeSaveFailureMessage);
       addToast({ type: 'error', title: 'Save failed', message: 'Please try again later.' });
     } finally {
       setIsSaving(false);
@@ -1588,6 +1667,42 @@ const ResumeBuilder: React.FC = () => {
           </div>
         }
       />
+
+      {resumeLoadError && (
+        <Card
+          role="alert"
+          className="flex flex-col gap-3 border-warning/30 bg-warning-muted/10 p-4 text-sm text-[var(--text-secondary)] sm:flex-row sm:items-start sm:justify-between"
+        >
+          <div className="min-w-0 space-y-1">
+            <p className="font-semibold text-[var(--text-primary)]">Resume data could not load</p>
+            <p className="leading-6">{resumeLoadError}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadResumeProfileData('resume_load_retry')}
+            className="w-full shrink-0 sm:w-auto"
+          >
+            <RefreshCw size={14} className="mr-1" />
+            Retry resume data
+          </Button>
+        </Card>
+      )}
+
+      {(resumeSaveError || resumeExportError || resumeUploadError) && (
+        <div className="space-y-3">
+          {resumeSaveError && (
+            <ResumeActionFailureAlert title="Resume changes were not saved" message={resumeSaveError} />
+          )}
+          {resumeExportError && (
+            <ResumeActionFailureAlert title="Resume export could not finish" message={resumeExportError} />
+          )}
+          {resumeUploadError && (
+            <ResumeActionFailureAlert title="Resume PDF was not uploaded" message={resumeUploadError} />
+          )}
+        </div>
+      )}
 
       <AuraModal
         isOpen={isImportModalOpen}
@@ -1692,6 +1807,9 @@ const ResumeBuilder: React.FC = () => {
                       Save Skills
                     </Button>
                   </div>
+                  {resumeImportSkillsError && (
+                    <ResumeActionFailureAlert title="Detected skills were not saved" message={resumeImportSkillsError} />
+                  )}
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {importSkillSuggestions.map(skill => (
                       <label key={skill} className="flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
@@ -1727,6 +1845,9 @@ const ResumeBuilder: React.FC = () => {
                       Save Rows
                     </Button>
                   </div>
+                  {resumeImportRowsError && (
+                    <ResumeActionFailureAlert title="Detected profile rows were not saved" message={resumeImportRowsError} />
+                  )}
 
                   {importExperienceSuggestions.length > 0 && (
                     <div className="space-y-2">
@@ -1813,6 +1934,9 @@ const ResumeBuilder: React.FC = () => {
         }
       >
         <div className="space-y-3">
+          {resumeArtifactDeleteError && (
+            <ResumeActionFailureAlert title="Uploaded PDF was not removed" message={resumeArtifactDeleteError} />
+          )}
           <p className="text-sm text-[var(--text-secondary)]">
             This removes <span className="font-medium text-[var(--text-primary)]">{pendingResumeArtifactDelete?.fileName || 'this uploaded PDF'}</span> from uploaded PDFs and asks the file service to delete the provider artifact.
           </p>
@@ -1848,6 +1972,11 @@ const ResumeBuilder: React.FC = () => {
                   <p className="text-xs text-[var(--text-muted)]">{resumeArtifactUploads.length} stored link{resumeArtifactUploads.length === 1 ? '' : 's'}</p>
                 </div>
               </div>
+              {resumeArtifactCopyError && (
+                <div className="mb-3">
+                  <ResumeActionFailureAlert title="Uploaded PDF link was not copied" message={resumeArtifactCopyError} />
+                </div>
+              )}
               <div className="space-y-2">
                 {resumeArtifactUploads.map(artifact => (
                   <div key={artifact.url} className="flex flex-col gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1949,26 +2078,26 @@ const ResumeBuilder: React.FC = () => {
               <Input
                 label="Headline"
                 value={resumeDraft.headline}
-                onChange={(e) => setResumeDraft({ ...resumeDraft, headline: e.target.value })}
+                onChange={(e) => updateResumeDraftField('headline', e.target.value)}
                 placeholder="e.g. Senior Software Engineer"
               />
               <Input
                 label="Phone"
                 value={resumeDraft.phone}
-                onChange={(e) => setResumeDraft({ ...resumeDraft, phone: e.target.value })}
+                onChange={(e) => updateResumeDraftField('phone', e.target.value)}
                 placeholder="+1 555 0100"
               />
               <Input
                 label="Location"
                 value={resumeDraft.location}
-                onChange={(e) => setResumeDraft({ ...resumeDraft, location: e.target.value })}
+                onChange={(e) => updateResumeDraftField('location', e.target.value)}
                 className="sm:col-span-2"
                 placeholder="Remote, or New York, NY"
               />
               <Input
                 label="Website"
                 value={resumeDraft.website}
-                onChange={(e) => setResumeDraft({ ...resumeDraft, website: e.target.value })}
+                onChange={(e) => updateResumeDraftField('website', e.target.value)}
                 className="sm:col-span-2"
                 placeholder="https://..."
               />
@@ -1980,7 +2109,7 @@ const ResumeBuilder: React.FC = () => {
             <textarea
               className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-3 py-2 text-sm min-h-[160px] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-y"
               value={resumeDraft.summary}
-              onChange={(e) => setResumeDraft({ ...resumeDraft, summary: e.target.value })}
+              onChange={(e) => updateResumeDraftField('summary', e.target.value)}
               placeholder="Summarize your experience, strengths, and target role."
             />
             <p className="text-xs text-[var(--text-muted)]">

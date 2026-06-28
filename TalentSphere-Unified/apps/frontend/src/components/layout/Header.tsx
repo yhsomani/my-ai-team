@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Menu, ArrowRight } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import {
   getNotificationReminderDueAt,
   getNotificationScheduleState,
@@ -8,8 +8,9 @@ import {
   notificationService,
   NOTIFICATIONS_CHANGED_EVENT,
 } from '../../services/notificationService';
-import type { NotificationRecord } from '../../services/notificationService';
-import { getSearchDestinations, USER_ROLES } from '../../navigation/routeRegistry';
+import type { NotificationRecord, PaginatedNotificationsResult } from '../../services/notificationService';
+import { USER_ROLES } from '../../navigation/routeRegistry';
+import { CommandSearch } from './CommandSearch';
 
 const notificationPageSize = 8;
 
@@ -28,12 +29,8 @@ export const Header: React.FC<HeaderProps> = ({
   user
 }) => {
   const navigate = useNavigate();
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const notificationsPanelRef = useRef<HTMLDivElement>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [accountNotifications, setAccountNotifications] = useState<NotificationRecord[]>([]);
   const [notificationTotal, setNotificationTotal] = useState<number | null>(null);
@@ -42,29 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = useState(false);
   const [notificationError, setNotificationError] = useState('');
+  const [notificationMetadata, setNotificationMetadata] = useState<PaginatedNotificationsResult['metadata'] | null>(null);
   const [notificationNow, setNotificationNow] = useState(() => new Date());
   const roles = user?.roles || [];
-
-  const searchDestinations = useMemo(() => getSearchDestinations(roles), [roles]);
-
-  const searchResults = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return searchDestinations.slice(0, 5);
-
-    return searchDestinations
-      .filter(destination => (
-        destination.label.toLowerCase().includes(normalizedSearch) ||
-        destination.description.toLowerCase().includes(normalizedSearch) ||
-        destination.keywords.includes(normalizedSearch)
-      ))
-      .slice(0, 6);
-  }, [searchDestinations, searchTerm]);
-
-  const activeSearchResult = searchResults[activeSearchResultIndex] || searchResults[0];
-  const getSearchResultId = (path: string) => {
-    const normalizedPath = path.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home';
-    return `app-shell-search-result-${normalizedPath}`;
-  };
 
   const reminders = useMemo(() => {
     const items = [
@@ -100,6 +77,13 @@ export const Header: React.FC<HeaderProps> = ({
   const notificationCountLabel = notificationTotal !== null
     ? `${accountNotifications.length} of ${notificationTotal} loaded`
     : `${accountNotifications.length} loaded`;
+  const notificationSourceLabel = notificationMetadata?.source === 'account'
+    ? 'Account sync'
+    : notificationMetadata?.source === 'notification-api'
+      ? 'Notification API fallback'
+      : notificationMetadata?.source === 'local-fallback'
+        ? 'Local browser fallback'
+        : null;
 
   const formatNotificationTime = (value: string) => {
     const parsed = new Date(value);
@@ -121,6 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
       setHasMoreNotifications(false);
       setIsLoadingNotifications(false);
       setNotificationError('');
+      setNotificationMetadata(null);
       return;
     }
 
@@ -135,6 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
       setNotificationTotal(page.total);
       setNotificationNextCursor(page.nextCursor);
       setHasMoreNotifications(page.hasNext && Boolean(page.nextCursor));
+      setNotificationMetadata(page.metadata);
     } catch (error) {
       console.warn('Unable to load account notifications:', error);
       setNotificationError('Notifications could not load.');
@@ -167,6 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
       }
       setNotificationNextCursor(page.nextCursor);
       setHasMoreNotifications(page.hasNext && Boolean(page.nextCursor));
+      setNotificationMetadata(page.metadata);
     } catch (error) {
       console.warn('Unable to load more account notifications:', error);
       setNotificationError('More notifications could not load. Retry available.');
@@ -198,12 +185,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        setIsSearchOpen(true);
-      }
-
       if (event.key === 'Escape') {
         const activeElement = document.activeElement;
         const shouldRestoreNotificationFocus = activeElement instanceof HTMLElement && (
@@ -211,7 +192,6 @@ export const Header: React.FC<HeaderProps> = ({
           Boolean(notificationsPanelRef.current?.contains(activeElement))
         );
 
-        setIsSearchOpen(false);
         setIsNotificationsOpen(false);
 
         if (shouldRestoreNotificationFocus) {
@@ -224,46 +204,9 @@ export const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeydown);
   }, []);
 
-  useEffect(() => {
-    setActiveSearchResultIndex(currentIndex => Math.min(currentIndex, Math.max(searchResults.length - 1, 0)));
-  }, [searchResults.length]);
-
   const navigateTo = (path: string) => {
     navigate(path);
-    setSearchTerm('');
-    setIsSearchOpen(false);
     setIsNotificationsOpen(false);
-  };
-
-  const handleSearchSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (activeSearchResult) {
-      navigateTo(activeSearchResult.path);
-    }
-  };
-
-  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
-    if (searchResults.length === 0) return;
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setIsSearchOpen(true);
-      setActiveSearchResultIndex(index => (index + 1) % searchResults.length);
-      return;
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setIsSearchOpen(true);
-      setActiveSearchResultIndex(index => (index - 1 + searchResults.length) % searchResults.length);
-      return;
-    }
-
-    if (event.key === 'Enter' && isSearchOpen && activeSearchResult) {
-      event.preventDefault();
-      navigateTo(activeSearchResult.path);
-    }
   };
 
   const handleNotificationClick = async (notification: NotificationRecord) => {
@@ -285,12 +228,20 @@ export const Header: React.FC<HeaderProps> = ({
   const handleMarkAllNotificationsRead = async () => {
     if (!user?.id) return;
 
+    const previousNotifications = accountNotifications;
+    setNotificationError('');
     setAccountNotifications(prev => prev.map(notification => ({ ...notification, isRead: true })));
     try {
       await notificationService.markAllRead(user.id);
     } catch (error) {
       console.warn('Unable to mark notifications as read:', error);
+      setAccountNotifications(previousNotifications);
+      setNotificationError('Notifications could not be marked read. Retry available.');
     }
+  };
+
+  const handleRetryNotifications = () => {
+    void loadAccountNotifications();
   };
 
   return (
@@ -308,80 +259,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Center: Search */}
       <div className="mx-2 min-w-0 flex-1 sm:mx-4 sm:max-w-md">
-        <form className="relative" onSubmit={handleSearchSubmit}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search..."
-            role="combobox"
-            aria-label="Search platform"
-            aria-autocomplete="list"
-            aria-haspopup="listbox"
-            aria-expanded={isSearchOpen}
-            aria-controls="app-shell-search-results"
-            aria-activedescendant={
-              isSearchOpen && activeSearchResult ? getSearchResultId(activeSearchResult.path) : undefined
-            }
-            className="w-full h-9 pl-9 pr-12 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
-            value={searchTerm}
-            onFocus={() => setIsSearchOpen(true)}
-            onKeyDown={handleSearchKeyDown}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setIsSearchOpen(true);
-              setActiveSearchResultIndex(0);
-            }}
-          />
-          <kbd className="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 h-5 items-center gap-1 rounded border border-[var(--border-default)] bg-[var(--bg-primary)] px-1.5 text-[10px] font-medium text-[var(--text-muted)]">
-            ⌘K
-          </kbd>
-
-          {isSearchOpen && (
-            <div
-              id="app-shell-search-results"
-              role="listbox"
-              aria-label="Search destinations"
-              className="surface-card absolute left-0 right-0 top-11 z-50 overflow-hidden"
-            >
-              {searchResults.length > 0 ? (
-                <div className="max-h-80 overflow-y-auto p-1.5">
-                  {searchResults.map((result, index) => {
-                    const Icon = result.icon;
-                    const isActiveSearchResult = activeSearchResultIndex === index;
-                    return (
-                      <button
-                        key={result.path}
-                        id={getSearchResultId(result.path)}
-                        type="button"
-                        role="option"
-                        aria-selected={isActiveSearchResult}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onMouseEnter={() => setActiveSearchResultIndex(index)}
-                        onFocus={() => setActiveSearchResultIndex(index)}
-                        onClick={() => navigateTo(result.path)}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-accent/20 ${
-                          isActiveSearchResult ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'
-                        }`}
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                          <Icon size={15} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-medium text-[var(--text-primary)]">{result.label}</span>
-                          <span className="block truncate text-xs text-[var(--text-muted)]">{result.description}</span>
-                        </span>
-                        <ArrowRight size={14} className="text-[var(--text-muted)]" />
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div role="status" className="px-3 py-4 text-sm text-[var(--text-muted)]">No matching destinations</div>
-              )}
-            </div>
-          )}
-        </form>
+        <CommandSearch roles={roles} onNavigate={() => setIsNotificationsOpen(false)} />
       </div>
 
       {/* Right: Actions */}
@@ -414,11 +292,22 @@ export const Header: React.FC<HeaderProps> = ({
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">Notifications</p>
                     <p className="text-xs text-[var(--text-muted)]">Actionable reminders stay under your control.</p>
-                    {accountNotifications.length > 0 && (
-                      <p role="status" aria-live="polite" className="mt-1 text-[10px] text-[var(--text-muted)]">
-                        {notificationCountLabel}
-                      </p>
-                    )}
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {notificationSourceLabel && (
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
+                          notificationMetadata?.degraded
+                            ? 'border-warning/30 text-warning'
+                            : 'border-[var(--border-default)] text-[var(--text-muted)]'
+                        }`}>
+                          {notificationSourceLabel}
+                        </span>
+                      )}
+                      {accountNotifications.length > 0 && (
+                        <span role="status" aria-live="polite" className="text-[10px] text-[var(--text-muted)]">
+                          {notificationCountLabel}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {unreadAccountNotifications.length > 0 && (
                     <button
@@ -437,8 +326,27 @@ export const Header: React.FC<HeaderProps> = ({
                 ) : (
                   <>
                     {notificationError && (
-                      <div role="alert" className="mb-1 rounded-lg px-3 py-2 text-xs text-destructive">
-                        {notificationError}
+                      <div role="alert" className="mb-1 rounded-lg border border-destructive/20 px-3 py-2 text-xs text-destructive">
+                        <p>{notificationError}</p>
+                        <button
+                          type="button"
+                          onClick={handleRetryNotifications}
+                          className="mt-2 rounded-md px-2 py-1 font-medium text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive/20"
+                        >
+                          Retry notifications
+                        </button>
+                      </div>
+                    )}
+                    {!notificationError && notificationMetadata?.degraded && (
+                      <div role="status" className="mb-1 rounded-lg border border-warning/20 px-3 py-2 text-xs text-[var(--text-secondary)]">
+                        <p>{notificationMetadata.message}</p>
+                        <button
+                          type="button"
+                          onClick={handleRetryNotifications}
+                          className="mt-2 rounded-md px-2 py-1 font-medium text-warning hover:bg-warning-muted/30 focus:outline-none focus:ring-2 focus:ring-warning/20"
+                        >
+                          Retry notifications
+                        </button>
                       </div>
                     )}
                     {accountNotifications.length > 0 && (

@@ -302,7 +302,7 @@ test.describe('Billing workflow', () => {
     await expectAnalyticsAction(captures, 'billing_data_load_failed');
 
     failPlanLoad = false;
-    await alert.getByRole('button', { name: 'Retry' }).click();
+    await alert.getByRole('button', { name: 'Retry billing data' }).click();
 
     await expect(page.getByRole('heading', { name: 'Talent Pro' })).toBeVisible();
     await expect(page.getByText('Billing provider unavailable')).toBeHidden();

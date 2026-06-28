@@ -20,10 +20,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5 w-full">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-[var(--text-primary)]">
-            {label}
-            {required && <span className="text-destructive ml-0.5">*</span>}
-          </label>
+          <div className="flex items-center gap-0.5">
+            <label htmlFor={inputId} className="text-sm font-medium text-[var(--text-primary)]">
+              {label}
+            </label>
+            {required && <span aria-hidden="true" className="text-destructive">*</span>}
+          </div>
         )}
         <div className="relative">
           {icon && (

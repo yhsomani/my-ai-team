@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "test:messaging": "node scripts/messaging.test.mjs",
     "test:portal-fixtures": "node scripts/portal-fixtures.test.mjs",
+    "test:options-ux": "node scripts/options-ux-contract.test.mjs",
+    "test:popup-ux": "node scripts/popup-ux-contract.test.mjs",
     "test:contract": "node scripts/extension-contract.test.mjs",
     "test:storage-migrations": "node scripts/storage-migrations.test.mjs",
     "test:runtime-smoke": "node scripts/runtime-smoke.test.mjs",

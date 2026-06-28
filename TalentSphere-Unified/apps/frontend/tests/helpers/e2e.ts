@@ -5,8 +5,12 @@ export const E2E_AUTH_OVERRIDE_KEY = 'talentsphere.e2e.auth';
 const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
 
 type JsonRecord = Record<string, unknown>;
+type Awaitable<T> = T | Promise<T>;
 
 export type RestStubFixtures = {
+  aiSessions?: JsonRecord[];
+  automationSuggestionAuditEvents?: JsonRecord[];
+  automationSuggestions?: JsonRecord[];
   challenges?: JsonRecord[];
   challengeSubmissions?: JsonRecord[];
   enrollments?: JsonRecord[];
@@ -16,11 +20,13 @@ export type RestStubFixtures = {
   jobPostTemplates?: JsonRecord[];
   savedJobSearches?: JsonRecord[];
   hiddenExploreJobs?: JsonRecord[];
+  leaderboard?: JsonRecord | null;
   lessonProgress?: JsonRecord[];
   notificationSettings?: JsonRecord[];
   subscriptionPlans?: JsonRecord[];
   subscriptions?: JsonRecord[];
   payments?: JsonRecord[];
+  productAnalyticsEvents?: JsonRecord[];
   profile?: JsonRecord | null;
   resumeExportEvents?: JsonRecord[];
   resumeArtifacts?: JsonRecord[];
@@ -31,6 +37,7 @@ export type RestStubFixtures = {
   applicationDraft?: JsonRecord | null;
   applicationDraftHistory?: JsonRecord[];
   applicationStatusEvents?: JsonRecord[];
+  auditLogs?: JsonRecord[];
   candidateNotes?: JsonRecord[];
   candidateScorecards?: JsonRecord[];
   connections?: JsonRecord[];
@@ -57,6 +64,12 @@ export type RestStubFixtures = {
   onNetworkingSuggestionPreferenceDelete?: (context: { suggestedUserId?: string; userId?: string }) => void;
   onNetworkingSuggestionPreferenceUpsert?: (payload: JsonRecord) => JsonRecord;
   onApplicationStatusEventInsert?: (payload: JsonRecord) => JsonRecord;
+  onAuditLogRows?: (context: { cursor?: string; limit: number | null; offset: number }) => JsonRecord[];
+  onAiSessionDelete?: (context: { id?: string; userId?: string }) => void;
+  onAiSessionUpsert?: (payload: JsonRecord) => JsonRecord;
+  onAutomationSuggestionAuditInsert?: (payload: JsonRecord) => JsonRecord;
+  onAutomationSuggestionUpdate?: (payload: JsonRecord, context: { id?: string; userId?: string }) => JsonRecord;
+  onAutomationSuggestionUpsert?: (payload: JsonRecord) => JsonRecord;
   onCompanyInsert?: (payload: JsonRecord) => JsonRecord;
   onCompanyUpdate?: (payload: JsonRecord, context: { id?: string }) => JsonRecord;
   onUserProfileUpdate?: (payload: JsonRecord, context: { userId?: string }) => JsonRecord;
@@ -87,13 +100,18 @@ export type RestStubFixtures = {
   onMessageUpdate?: (payload: JsonRecord, context: { id?: string; conversationId?: string }) => JsonRecord;
   onNotificationSettingsInsert?: (payload: JsonRecord) => JsonRecord;
   onNotificationSettingsUpdate?: (payload: JsonRecord, context: { id?: string; userId?: string }) => JsonRecord;
+  onNotificationRows?: (context: { cursor?: string; limit: number | null; offset: number; userId?: string }) => JsonRecord[];
+  onNotificationUpdate?: (payload: JsonRecord, context: { id?: string; isRead?: string; userId?: string }) => JsonRecord;
   onProductAnalyticsInsert?: (payload: JsonRecord) => JsonRecord;
+  onProductAnalyticsRows?: (context: { limit: number | null; offset: number }) => JsonRecord[];
 };
 
 type ApiStubFixtures = {
   lmsCourses?: JsonRecord[];
   lmsEnrollments?: JsonRecord[];
   networkingSuggestions?: JsonRecord[];
+  onAiChat?: (context: { payload: JsonRecord; prompt?: string }) => Awaitable<JsonRecord>;
+  onAiCareerPath?: (context: { userId?: string }) => Awaitable<JsonRecord>;
   onSupabaseFunctionInvoke?: (context: { functionName: string; payload: JsonRecord }) => JsonRecord;
   onFileUpload?: (context: { contentType?: string; postData?: string }) => JsonRecord;
   onFileDelete?: (context: { url?: string | null }) => void;
@@ -109,6 +127,7 @@ type NetworkStubOptions = {
 
 const corsJsonHeaders = {
   'access-control-allow-origin': '*',
+  'access-control-expose-headers': 'content-range',
   'content-type': 'application/json',
 };
 
@@ -182,6 +201,26 @@ const getPaginationWindow = (url: URL) => {
   };
 };
 
+const getRequestPaginationWindow = (route: Route, url: URL) => {
+  const queryWindow = getPaginationWindow(url);
+  const rangeHeader = route.request().headers().range;
+  const rangeMatch = rangeHeader?.match(/^(\d+)-(\d+)$/);
+  if (!rangeMatch) {
+    return queryWindow;
+  }
+
+  const start = Number.parseInt(rangeMatch[1], 10);
+  const end = Number.parseInt(rangeMatch[2], 10);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return queryWindow;
+  }
+
+  return {
+    offset: start,
+    limit: end - start + 1,
+  };
+};
+
 const compareCreatedAtDesc = (left: JsonRecord, right: JsonRecord) => {
   const leftCreatedAt = typeof left.created_at === 'string' ? left.created_at : '';
   const rightCreatedAt = typeof right.created_at === 'string' ? right.created_at : '';
@@ -220,13 +259,58 @@ const applyNotificationCursorFilter = (rows: JsonRecord[], url: URL) => {
   return applyCreatedAtCursorFilter(rows, url, { timestampColumn: 'created_at' });
 };
 
-const fulfillNotificationRows = async (route: Route, url: URL, rows: JsonRecord[]) => {
+const fulfillAuditLogRows = async (
+  route: Route,
+  url: URL,
+  rows: JsonRecord[],
+  rowsFactory?: RestStubFixtures['onAuditLogRows'],
+) => {
+  const { offset, limit } = getRequestPaginationWindow(route, url);
+  const cursor = url.searchParams.get('or') || undefined;
+  const sourceRows = rowsFactory?.({ cursor, limit, offset }) || rows;
+  const sortedRows = [...sourceRows].sort(compareCreatedAtDesc);
+  const filteredRows = applyCreatedAtCursorFilter(sortedRows, url, { timestampColumn: 'created_at' });
+  const pageRows = limit === null ? filteredRows : filteredRows.slice(offset, offset + limit);
+
+  await fulfillJson(route, pageRows, 200, {
+    'content-range': rowsContentRange(pageRows, filteredRows.length, offset),
+  });
+};
+
+const fulfillProductAnalyticsRows = async (
+  route: Route,
+  url: URL,
+  rows: JsonRecord[],
+  rowsFactory?: RestStubFixtures['onProductAnalyticsRows'],
+) => {
+  const { offset, limit } = getRequestPaginationWindow(route, url);
+  const sourceRows = rowsFactory?.({ limit, offset }) || rows;
+  const sortedRows = [...sourceRows].sort((left, right) => {
+    const leftOccurredAt = typeof left.occurred_at === 'string' ? left.occurred_at : '';
+    const rightOccurredAt = typeof right.occurred_at === 'string' ? right.occurred_at : '';
+    return rightOccurredAt.localeCompare(leftOccurredAt);
+  });
+  const pageRows = limit === null ? sortedRows : sortedRows.slice(offset, offset + limit);
+
+  await fulfillJson(route, pageRows, 200, {
+    'content-range': rowsContentRange(pageRows, sortedRows.length, offset),
+  });
+};
+
+const fulfillNotificationRows = async (
+  route: Route,
+  url: URL,
+  rows: JsonRecord[],
+  rowsFactory?: RestStubFixtures['onNotificationRows'],
+) => {
   const userId = getEqFilterValue(url, 'user_id');
-  const sortedRows = [...rows]
+  const { offset, limit } = getPaginationWindow(url);
+  const cursor = url.searchParams.get('or') || undefined;
+  const sourceRows = rowsFactory?.({ cursor, limit, offset, userId }) || rows;
+  const sortedRows = [...sourceRows]
     .filter(row => !userId || row.user_id === userId)
     .sort(compareCreatedAtDesc);
   const filteredRows = applyNotificationCursorFilter(sortedRows, url);
-  const { offset, limit } = getPaginationWindow(url);
   const pageRows = limit === null ? filteredRows : filteredRows.slice(offset, offset + limit);
 
   await fulfillJson(route, pageRows, 200, {
@@ -280,8 +364,12 @@ const applyApplicationSearchFilter = (rows: JsonRecord[], url: URL) => {
 
 const fulfillApplicationRows = async (route: Route, url: URL, rows: JsonRecord[]) => {
   const jobIds = new Set(getInFilterValues(url, 'job_id'));
+  const statuses = new Set(getInFilterValues(url, 'status'));
+  const userId = getEqFilterValue(url, 'user_id');
   const sortedRows = [...rows]
     .filter(row => jobIds.size === 0 || (typeof row.job_id === 'string' && jobIds.has(row.job_id)))
+    .filter(row => statuses.size === 0 || (typeof row.status === 'string' && statuses.has(row.status)))
+    .filter(row => !userId || row.user_id === userId)
     .sort(compareCreatedAtDesc);
   const searchedRows = applyApplicationSearchFilter(sortedRows, url);
   const filteredRows = applyCreatedAtCursorFilter(searchedRows, url, { timestampColumn: 'created_at' });
@@ -540,12 +628,62 @@ const fulfillSingleOrManyRows = async (route: Route, rows: JsonRecord[]) => {
   });
 };
 
+const fulfillLeaderboardRows = async (route: Route, url: URL, row: JsonRecord | null | undefined) => {
+  const userId = getEqFilterValue(url, 'user_id');
+  const rows = row && (!userId || row.user_id === userId) ? [row] : [];
+  await fulfillSingleOrManyRows(route, rows);
+};
+
 const fulfillNotificationSettingsRows = async (route: Route, url: URL, rows: JsonRecord[]) => {
   const id = getEqFilterValue(url, 'id');
   const userId = getEqFilterValue(url, 'user_id');
   const filteredRows = rows
     .filter(row => !id || row.id === id)
     .filter(row => !userId || row.user_id === userId);
+
+  await fulfillSingleOrManyRows(route, filteredRows);
+};
+
+const fulfillAiSessionRows = async (route: Route, url: URL, rows: JsonRecord[]) => {
+  const id = getEqFilterValue(url, 'id');
+  const userId = getEqFilterValue(url, 'user_id');
+  const sortedRows = [...rows]
+    .filter(row => !id || row.id === id)
+    .filter(row => !userId || row.user_id === userId)
+    .sort((left, right) => {
+      const leftUpdatedAt = typeof left.updated_at === 'string' ? left.updated_at : '';
+      const rightUpdatedAt = typeof right.updated_at === 'string' ? right.updated_at : '';
+      if (leftUpdatedAt !== rightUpdatedAt) {
+        return rightUpdatedAt.localeCompare(leftUpdatedAt);
+      }
+
+      return compareCreatedAtDesc(left, right);
+    });
+  const { offset, limit } = getPaginationWindow(url);
+  const pageRows = limit === null ? sortedRows : sortedRows.slice(offset, offset + limit);
+
+  await fulfillSingleOrManyRows(route, pageRows);
+};
+
+const fulfillAutomationSuggestionRows = async (route: Route, url: URL, rows: JsonRecord[]) => {
+  const id = getEqFilterValue(url, 'id');
+  const userId = getEqFilterValue(url, 'user_id');
+  const sessionId = getEqFilterValue(url, 'session_id');
+  const reviewStatus = getEqFilterValue(url, 'review_status');
+  const filteredRows = [...rows]
+    .filter(row => !id || row.id === id)
+    .filter(row => !userId || row.user_id === userId)
+    .filter(row => !sessionId || row.session_id === sessionId)
+    .filter(row => !reviewStatus || row.review_status === reviewStatus)
+    .sort((left, right) => {
+      const leftUpdatedAt = typeof left.updated_at === 'string' ? left.updated_at : '';
+      const rightUpdatedAt = typeof right.updated_at === 'string' ? right.updated_at : '';
+      if (leftUpdatedAt !== rightUpdatedAt) {
+        return rightUpdatedAt.localeCompare(leftUpdatedAt);
+      }
+
+      return compareCreatedAtDesc(left, right);
+    });
 
   await fulfillSingleOrManyRows(route, filteredRows);
 };
@@ -1029,6 +1167,49 @@ const buildNotificationSettingsResponse = (payload: JsonRecord, context: { id?: 
   ...payload,
 });
 
+const buildAiSessionResponse = (payload: JsonRecord): JsonRecord => ({
+  id: typeof payload.id === 'string' ? payload.id : 'ai-session-e2e-001',
+  user_id: typeof payload.user_id === 'string' ? payload.user_id : 'e2e-role_user',
+  title: typeof payload.title === 'string' ? payload.title : 'AI Assistant',
+  messages: Array.isArray(payload.messages) ? payload.messages : [],
+  last_saved_at: typeof payload.last_saved_at === 'string' ? payload.last_saved_at : '2026-06-27T10:00:00.000Z',
+  created_at: typeof payload.created_at === 'string' ? payload.created_at : '2026-06-27T10:00:00.000Z',
+  updated_at: '2026-06-27T10:05:00.000Z',
+  ...payload,
+});
+
+const buildAutomationSuggestionResponse = (
+  payload: JsonRecord,
+  context: { id?: string; userId?: string } = {},
+): JsonRecord => ({
+  id: context.id || (typeof payload.id === 'string' ? payload.id : 'automation-suggestion-e2e-001'),
+  user_id: context.userId || (typeof payload.user_id === 'string' ? payload.user_id : 'e2e-role_user'),
+  session_id: typeof payload.session_id === 'string' ? payload.session_id : null,
+  suggestion_type: typeof payload.suggestion_type === 'string' ? payload.suggestion_type : 'chat_response',
+  source_label: typeof payload.source_label === 'string' ? payload.source_label : null,
+  source_detail: typeof payload.source_detail === 'string' ? payload.source_detail : null,
+  prompt: typeof payload.prompt === 'string' ? payload.prompt : null,
+  content: typeof payload.content === 'string' ? payload.content : '',
+  review_status: typeof payload.review_status === 'string' ? payload.review_status : 'draft',
+  reviewed_at: typeof payload.reviewed_at === 'string' ? payload.reviewed_at : null,
+  created_at: typeof payload.created_at === 'string' ? payload.created_at : '2026-06-27T10:00:00.000Z',
+  updated_at: '2026-06-27T10:05:00.000Z',
+  ...payload,
+});
+
+const buildAutomationSuggestionAuditResponse = (payload: JsonRecord): JsonRecord => ({
+  id: typeof payload.id === 'string' ? payload.id : 'automation-suggestion-audit-e2e-001',
+  user_id: typeof payload.user_id === 'string' ? payload.user_id : 'e2e-role_user',
+  suggestion_id: typeof payload.suggestion_id === 'string' ? payload.suggestion_id : 'automation-suggestion-e2e-001',
+  event_type: typeof payload.event_type === 'string' ? payload.event_type : 'review_status_changed',
+  previous_review_status: typeof payload.previous_review_status === 'string' ? payload.previous_review_status : null,
+  next_review_status: typeof payload.next_review_status === 'string' ? payload.next_review_status : null,
+  source: typeof payload.source === 'string' ? payload.source : 'ai_review_queue',
+  metadata: toJsonRecord(payload.metadata),
+  occurred_at: typeof payload.occurred_at === 'string' ? payload.occurred_at : '2026-06-27T10:00:00.000Z',
+  ...payload,
+});
+
 const buildSupabaseFunctionResponse = (functionName: string, payload: JsonRecord): JsonRecord => {
   if (functionName === 'create-subscription') {
     return {
@@ -1159,6 +1340,13 @@ const fulfillRestFixture = async (
 
   if (method === 'DELETE') {
     try {
+      if (tableName === 'ai_sessions') {
+        fixtures.onAiSessionDelete?.({
+          id: getEqFilterValue(url, 'id'),
+          userId: getEqFilterValue(url, 'user_id'),
+        });
+      }
+
       if (tableName === 'candidate_notes') {
         fixtures.onCandidateNoteDelete?.({
           applicationId: getEqFilterValue(url, 'application_id'),
@@ -1221,6 +1409,35 @@ const fulfillRestFixture = async (
 
   if (method === 'POST' || method === 'PATCH' || method === 'PUT') {
     try {
+      if (tableName === 'ai_sessions') {
+        const sessionPayload = readJsonPayloadRows(route)[0] || payload;
+        const response = fixtures.onAiSessionUpsert?.(sessionPayload) || buildAiSessionResponse(sessionPayload);
+        await fulfillJson(route, response, method === 'POST' ? 201 : 200);
+        return;
+      }
+
+      if (tableName === 'automation_suggestions') {
+        if (method === 'PATCH' || method === 'PUT') {
+          const id = getEqFilterValue(url, 'id');
+          const userId = getEqFilterValue(url, 'user_id');
+          const response = fixtures.onAutomationSuggestionUpdate?.(payload, { id, userId }) || buildAutomationSuggestionResponse(payload, { id, userId });
+          await fulfillJson(route, response, 200);
+          return;
+        }
+
+        const suggestionPayload = readJsonPayloadRows(route)[0] || payload;
+        const response = fixtures.onAutomationSuggestionUpsert?.(suggestionPayload) || buildAutomationSuggestionResponse(suggestionPayload);
+        await fulfillJson(route, response, 201);
+        return;
+      }
+
+      if (tableName === 'automation_suggestion_audit_events') {
+        const auditPayload = readJsonPayloadRows(route)[0] || payload;
+        const response = fixtures.onAutomationSuggestionAuditInsert?.(auditPayload) || buildAutomationSuggestionAuditResponse(auditPayload);
+        await fulfillJson(route, response, 201);
+        return;
+      }
+
       if (tableName === 'jobs') {
         if (method === 'POST') {
           const response = fixtures.onJobInsert?.(payload) || buildJobInsertResponse(payload);
@@ -1532,7 +1749,17 @@ const fulfillRestFixture = async (
       }
 
       if (tableName === 'notifications') {
-        await fulfillJson(route, payload, 200);
+        if (method === 'PATCH' || method === 'PUT') {
+          const response = fixtures.onNotificationUpdate?.(payload, {
+            id: getEqFilterValue(url, 'id'),
+            isRead: getEqFilterValue(url, 'is_read'),
+            userId: getEqFilterValue(url, 'user_id'),
+          }) || payload;
+          await fulfillJson(route, response, 200);
+          return;
+        }
+
+        await fulfillJson(route, payload, 201);
         return;
       }
 
@@ -1554,6 +1781,15 @@ const fulfillRestFixture = async (
   }
 
   switch (tableName) {
+    case 'ai_sessions':
+      await fulfillAiSessionRows(route, url, fixtures.aiSessions || []);
+      return;
+    case 'automation_suggestions':
+      await fulfillAutomationSuggestionRows(route, url, fixtures.automationSuggestions || []);
+      return;
+    case 'automation_suggestion_audit_events':
+      await fulfillRows(route, fixtures.automationSuggestionAuditEvents || []);
+      return;
     case 'challenges':
       await fulfillChallengeRows(route, url, fixtures.challenges || []);
       return;
@@ -1581,6 +1817,9 @@ const fulfillRestFixture = async (
       return;
     case 'jobs':
       await fulfillRows(route, fixtures.jobs || []);
+      return;
+    case 'leaderboard':
+      await fulfillLeaderboardRows(route, url, fixtures.leaderboard);
       return;
     case 'lesson_progress':
       try {
@@ -1642,6 +1881,13 @@ const fulfillRestFixture = async (
     case 'application_status_events':
       await fulfillRows(route, fixtures.applicationStatusEvents || []);
       return;
+    case 'audit_log':
+      try {
+        await fulfillAuditLogRows(route, url, fixtures.auditLogs || [], fixtures.onAuditLogRows);
+      } catch (error) {
+        await fulfillRestError(route, error);
+      }
+      return;
     case 'candidate_notes':
       await fulfillRows(route, fixtures.candidateNotes || []);
       return;
@@ -1658,13 +1904,24 @@ const fulfillRestFixture = async (
       await fulfillMessageRows(route, url, fixtures.messages || []);
       return;
     case 'notifications':
-      await fulfillNotificationRows(route, url, fixtures.notifications || []);
+      try {
+        await fulfillNotificationRows(route, url, fixtures.notifications || [], fixtures.onNotificationRows);
+      } catch (error) {
+        await fulfillRestError(route, error);
+      }
       return;
     case 'networking_suggestion_preferences':
       await fulfillNetworkingSuggestionPreferenceRows(route, url, fixtures.networkingSuggestionPreferences || []);
       return;
     case 'profiles':
       await fulfillProfileRows(route, url, fixtures.profiles || []);
+      return;
+    case 'product_analytics_events':
+      try {
+        await fulfillProductAnalyticsRows(route, url, fixtures.productAnalyticsEvents || [], fixtures.onProductAnalyticsRows);
+      } catch (error) {
+        await fulfillRestError(route, error);
+      }
       return;
     case 'saved_job_searches':
       await fulfillSavedJobSearchRows(route, url, fixtures.savedJobSearches || []);
@@ -1704,6 +1961,45 @@ export const installNetworkStubs = async (page: Page, options: NetworkStubOption
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+
+    if (localHosts.has(url.hostname) && url.pathname === '/api/v1/ai/chat' && request.method() === 'POST') {
+      try {
+        const payload = readJsonPayload(route);
+        const response = await (options.api?.onAiChat?.({
+          payload,
+          prompt: typeof payload.prompt === 'string' ? payload.prompt : undefined,
+        }) || {
+          data: {
+            message: 'Course Search: Product Analytics Basics\nReason: Strengthen your next learning plan.',
+          },
+        });
+        await fulfillJson(route, response, 200);
+      } catch (error) {
+        await fulfillRestError(route, error);
+      }
+      return;
+    }
+
+    if (localHosts.has(url.hostname) && url.pathname.match(/^\/api\/v1\/ai\/career-path\/[^/]+$/) && request.method() === 'GET') {
+      try {
+        const userId = decodeURIComponent(url.pathname.split('/').pop() || '');
+        const response = await (options.api?.onAiCareerPath?.({ userId }) || {
+          data: {
+            recommendedPath: 'Frontend Platform Lead',
+            estimatedTimeline: '6-9 months',
+            requiredSkills: ['React systems', 'Accessibility reviews', 'Product analytics'],
+            milestones: [
+              { label: 'Audit current UI workflows', done: true },
+              { label: 'Choose one advanced learning path', done: false },
+            ],
+          },
+        });
+        await fulfillJson(route, response, 200);
+      } catch (error) {
+        await fulfillRestError(route, error);
+      }
+      return;
+    }
 
     if (localHosts.has(url.hostname) && url.pathname === '/api/v1/files/upload' && request.method() === 'POST') {
       try {

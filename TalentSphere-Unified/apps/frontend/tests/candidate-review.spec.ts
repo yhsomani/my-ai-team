@@ -505,7 +505,9 @@ test.describe('candidate review workflow', () => {
       changed_by: recruiterId,
       reason: 'Recruiter rejected selected candidates',
     });
-    await expect(rejectionDialog.getByRole('alert')).toContainText('1 selected application could not be moved to REJECTED. Successful updates were saved.');
+    await expect(rejectionDialog.getByRole('alert')).toContainText(
+      '1 selected application could not be moved to REJECTED. Successful updates were saved for the rest. Try again for the remaining applications from this review.',
+    );
     await expect(page.getByRole('heading', { name: 'Bulk update partially saved' })).toBeVisible();
   });
 
@@ -751,13 +753,13 @@ test.describe('candidate review workflow', () => {
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Candidate 10' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Candidate 11' })).toBeHidden();
-    await expect(page.getByText(/Showing\s+1-10\s+candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-10\s+of\s+12\s+candidates/)).toBeVisible();
 
     await page.getByLabel('Next candidates page').click();
     await expect(page.getByRole('heading', { name: 'Candidate 11' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Zara Page' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeHidden();
-    await expect(page.getByText(/Showing\s+11-12\s+candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+11-12\s+of\s+12\s+candidates/)).toBeVisible();
 
     await page.getByLabel('Previous candidates page').click();
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
@@ -766,21 +768,21 @@ test.describe('candidate review workflow', () => {
     await searchCandidates.fill('Zara');
     await expect(page.getByRole('heading', { name: 'Zara Page' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeHidden();
-    await expect(page.getByText(/Showing\s+1-1\s+matching candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-1\s+of\s+1\s+matching candidates/)).toBeVisible();
 
     await searchCandidates.fill('');
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
-    await expect(page.getByText(/Showing\s+1-10\s+candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-10\s+of\s+12\s+candidates/)).toBeVisible();
     await expect(page.getByText('1/10')).toBeVisible();
 
     await page.getByLabel('Focus candidates').selectOption('needs_scorecard');
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeHidden();
     await expect(page.getByRole('heading', { name: 'Candidate 02' })).toBeVisible();
-    await expect(page.getByText(/Showing\s+1-9\s+candidates in focus/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-9\s+of\s+12\s+candidates in focus/)).toBeVisible();
 
     await page.getByLabel('Show all candidates on the current page').click();
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();
-    await expect(page.getByText(/Showing\s+1-10\s+candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-10\s+of\s+12\s+candidates/)).toBeVisible();
   });
 
   test('supports keyboard pagination, search, and review queue navigation', async ({ page }) => {
@@ -822,7 +824,7 @@ test.describe('candidate review workflow', () => {
     await expect(searchCandidates).toBeFocused();
     await page.keyboard.type('Zara');
     await expect(page.getByRole('heading', { name: 'Zara Page' })).toBeVisible();
-    await expect(page.getByText(/Showing\s+1-1\s+matching candidates/)).toBeVisible();
+    await expect(page.getByText(/Showing\s+1-1\s+of\s+1\s+matching candidates/)).toBeVisible();
 
     await searchCandidates.fill('');
     await expect(page.getByRole('heading', { name: 'Candidate 01' })).toBeVisible();

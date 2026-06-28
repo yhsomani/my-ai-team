@@ -1,4 +1,4 @@
-import { Briefcase, ExternalLink, FileSearch, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Briefcase, ExternalLink, FileSearch, Plus, Save, Search, Trash2, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 import type { Job, JobScanDraft } from '../../lib/jobTypes';
@@ -7,6 +7,7 @@ import {
   recordExtensionOperationalEvent,
   sourceCategoryFromHost
 } from '../../lib/operationalAnalytics';
+import { getScannedDraftReviewMessage } from '../../lib/pageScanStatus';
 
 interface JobsViewProps {
   jobs: Job[];
@@ -194,6 +195,7 @@ export const JobsView: React.FC<JobsViewProps> = ({
   const hasTrackedJobs = jobs.length > 0;
   const hasSearchTerm = searchTerm.trim().length > 0;
   const draftSaveDisabled = !draftForm?.company.trim() || !draftForm?.role.trim();
+  const scannedDraftReviewMessage = getScannedDraftReviewMessage(draftForm?.confidence);
   const emptyStateTitle = hasTrackedJobs ? 'No matching tracked jobs' : 'No tracked jobs yet';
   const emptyStateCopy = hasTrackedJobs
     ? 'Clear or adjust the filter to return to your saved local tracker rows.'
@@ -250,6 +252,20 @@ export const JobsView: React.FC<JobsViewProps> = ({
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
+
+          {scannedDraftReviewMessage && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-start gap-2 rounded-lg border border-[var(--ext-warning)] bg-[var(--ext-warning-muted)] p-2.5"
+              id="scanned-draft-limited-review"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ext-warning)]" />
+              <p className="break-words text-[9px] leading-relaxed text-[var(--ext-text-secondary)]">
+                {scannedDraftReviewMessage}
+              </p>
+            </div>
+          )}
 
           {isDraftDiscardReviewOpen && (
             <div

@@ -78,6 +78,16 @@ const applicationDraftHistoryLimit = 5;
 const maxLocalApplicationDraftHistoryItems = 50;
 const jobCardClassName = 'flex h-full min-h-72 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
 const jobsPanelClassName = 'surface-panel p-3';
+const jobsCatalogLoadFailureMessage = 'Job catalog did not respond. Retry jobs to reload Explore results, saved search context, and application actions before changing filters.';
+const applicationsLoadFailureMessage = 'Application history did not respond. Retry applications to reload submitted roles, statuses, and details before applying elsewhere.';
+const recruiterPostingsLoadFailureMessage = 'Recruiter postings did not respond. Retry postings to reload owned drafts, published roles, publish checklists, and edit handoffs.';
+const applicationSubmitFailureMessage = 'The application was not submitted. Your draft is still here. Review the details and try again from this confirmation.';
+const recruiterPublishFailureMessage = 'The job was not published. The draft stayed unchanged. Review the checklist and try again from this confirmation.';
+const recruiterPublishPolicyFailureMessage = 'This posting is missing required publish details. Open the draft, finish the checklist, and publish again.';
+
+const getSafeRecruiterPublishFailureMessage = (error: unknown) => (
+    getJobPublishPolicyErrorMessage(error) ? recruiterPublishPolicyFailureMessage : recruiterPublishFailureMessage
+);
 
 type JobFilters = {
     jobType: string;
@@ -127,6 +137,12 @@ const defaultApplicationDraftMeta: ApplicationDraftMeta = {
     source: 'manual',
     message: 'Add details manually or reuse your profile as an editable draft.',
 };
+
+const applicationDraftBrowserLoadFailureMessage = 'Saved application drafts could not be loaded in this browser.';
+const applicationDraftBrowserSaveFailureMessage = 'Application draft changed in this session, but browser storage blocked saving it.';
+const applicationDraftHistoryBrowserLoadFailureMessage = 'Application draft history could not be loaded in this browser.';
+const applicationDraftHistoryBrowserSaveFailureMessage = 'Draft history changed in this session, but browser storage blocked saving it.';
+const applicationDraftSyncUnavailableMessage = 'Application draft updated locally, but account sync is unavailable.';
 
 const normalizeJobType = (value?: string) => value?.toUpperCase().replace(/[\s-]+/g, '_') || '';
 
@@ -451,9 +467,12 @@ const JobsPage: React.FC = () => {
     const [applicationsLoadError, setApplicationsLoadError] = useState<string | null>(null);
     const [recruiterJobs, setRecruiterJobs] = useState<Record<string, any>[]>([]);
     const [isLoadingRecruiterJobs, setIsLoadingRecruiterJobs] = useState(false);
+    const [recruiterJobsLoadError, setRecruiterJobsLoadError] = useState<string | null>(null);
     const [pendingPublishJob, setPendingPublishJob] = useState<Record<string, any> | null>(null);
     const [publishingJobId, setPublishingJobId] = useState<string | null>(null);
     const [isApplying, setIsApplying] = useState<string | null>(null);
+    const [applicationSubmitError, setApplicationSubmitError] = useState<string | null>(null);
+    const [publishJobError, setPublishJobError] = useState<string | null>(null);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
     const [applicationStatusEvents, setApplicationStatusEvents] = useState<Record<string, ApplicationStatusEvent[]>>({});
@@ -472,6 +491,7 @@ const JobsPage: React.FC = () => {
     const [isLoadingApplicationDraft, setIsLoadingApplicationDraft] = useState(false);
     const [applicationDraftSavedAt, setApplicationDraftSavedAt] = useState<string | null>(null);
     const [applicationDraftHistory, setApplicationDraftHistory] = useState<ApplicationDraftHistoryEntry[]>([]);
+    const [applicationDraftPersistenceStatus, setApplicationDraftPersistenceStatus] = useState('');
     const applicationDraftTouchedRef = useRef(false);
     const applicationDraftShouldPersistRef = useRef(false);
     const applicationDraftSyncTimersRef = useRef<Record<string, number>>({});
@@ -581,6 +601,7 @@ const JobsPage: React.FC = () => {
         data: jobsPageData,
         isLoading: jobsLoading,
         isFetching: jobsFetching,
+        isError: jobsLoadFailed,
         refetch: refetchJobs,
     } = useGetJobsPageQuery(jobPageQueryParams);
     const jobs = jobsPageData?.jobs || [];
@@ -596,7 +617,7 @@ const JobsPage: React.FC = () => {
             setApplications(data);
         } catch (error) {
             console.error('Failed to load applications:', error);
-            setApplicationsLoadError('Applications could not be loaded. Retry to check your submitted applications.');
+            setApplicationsLoadError(applicationsLoadFailureMessage);
             addToast({ type: 'error', title: 'Applications unavailable', message: 'Submitted applications could not be loaded. Please retry.' });
         } finally {
             setIsLoadingApplications(false);
@@ -607,11 +628,13 @@ const JobsPage: React.FC = () => {
         if (!user?.id || !isRecruiter) return;
 
         setIsLoadingRecruiterJobs(true);
+        setRecruiterJobsLoadError(null);
         try {
             const jobs = await recruiterService.getRecruiterJobs(user.id);
             setRecruiterJobs(jobs);
         } catch (error) {
             console.error('Failed to load recruiter postings:', error);
+            setRecruiterJobsLoadError(recruiterPostingsLoadFailureMessage);
             addToast({ type: 'error', title: 'Postings unavailable', message: 'Recruiter postings could not be loaded.' });
         } finally {
             setIsLoadingRecruiterJobs(false);
@@ -743,7 +766,7 @@ const JobsPage: React.FC = () => {
             addToast({
                 type: 'warning',
                 title: 'Visibility preference not saved',
-                message: 'This job is hidden for now, but your browser blocked local storage.',
+                message: 'Your visibility preference changed in this session, but your browser blocked local storage.',
             });
         }
 
@@ -947,9 +970,11 @@ const JobsPage: React.FC = () => {
     const readApplicationDrafts = useCallback(() => {
         try {
             const stored = window.localStorage.getItem(applicationDraftStorageKey);
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftBrowserLoadFailureMessage ? '' : current);
             return stored ? sanitizeApplicationDrafts(JSON.parse(stored)) : {};
         } catch (error) {
             console.error('Failed to load application drafts:', error);
+            setApplicationDraftPersistenceStatus(applicationDraftBrowserLoadFailureMessage);
             return {};
         }
     }, [applicationDraftStorageKey]);
@@ -957,8 +982,10 @@ const JobsPage: React.FC = () => {
     const writeApplicationDrafts = useCallback((nextDrafts: Record<string, SavedApplicationDraft>) => {
         try {
             window.localStorage.setItem(applicationDraftStorageKey, JSON.stringify(nextDrafts));
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftBrowserSaveFailureMessage ? '' : current);
         } catch (error) {
             console.error('Failed to save application draft:', error);
+            setApplicationDraftPersistenceStatus(applicationDraftBrowserSaveFailureMessage);
             addToast({ type: 'error', title: 'Draft not saved', message: 'Your browser blocked local storage for this application draft.' });
         }
     }, [addToast, applicationDraftStorageKey]);
@@ -966,6 +993,7 @@ const JobsPage: React.FC = () => {
     const readAllApplicationDraftHistory = useCallback(() => {
         try {
             const stored = window.localStorage.getItem(applicationDraftHistoryStorageKey);
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftHistoryBrowserLoadFailureMessage ? '' : current);
             return stored
                 ? sanitizeApplicationDraftHistory(JSON.parse(stored), {
                     userId: user?.id || 'guest',
@@ -974,6 +1002,7 @@ const JobsPage: React.FC = () => {
                 : [];
         } catch (error) {
             console.error('Failed to load application draft history:', error);
+            setApplicationDraftPersistenceStatus(applicationDraftHistoryBrowserLoadFailureMessage);
             return [];
         }
     }, [applicationDraftHistoryStorageKey, user?.id]);
@@ -1001,8 +1030,10 @@ const JobsPage: React.FC = () => {
             if (selectedJob?.id === jobId) {
                 setApplicationDraftHistory(nextHistory);
             }
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftHistoryBrowserSaveFailureMessage ? '' : current);
         } catch (error) {
             console.error('Failed to save application draft history:', error);
+            setApplicationDraftPersistenceStatus(applicationDraftHistoryBrowserSaveFailureMessage);
             addToast({ type: 'error', title: 'Draft history not saved', message: 'Your browser blocked local draft history storage.' });
         }
     }, [addToast, applicationDraftHistoryStorageKey, readAllApplicationDraftHistory, selectedJob?.id, user?.id]);
@@ -1011,6 +1042,9 @@ const JobsPage: React.FC = () => {
         if (applicationDraftSyncWarningRef.current) return;
 
         applicationDraftSyncWarningRef.current = true;
+        setApplicationDraftPersistenceStatus(current => (
+            current.includes('browser storage') ? current : applicationDraftSyncUnavailableMessage
+        ));
         addToast({ type: 'warning', title: 'Draft sync unavailable', message: 'Your local draft state was updated, but account sync is unavailable.' });
     }, [addToast]);
 
@@ -1020,6 +1054,7 @@ const JobsPage: React.FC = () => {
         try {
             await applicationService.saveApplicationDraftHistoryEntry(entry);
             applicationDraftSyncWarningRef.current = false;
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftSyncUnavailableMessage ? '' : current);
         } catch (error) {
             console.warn('Application draft history stored locally only:', error);
             warnApplicationDraftSyncUnavailable();
@@ -1086,6 +1121,7 @@ const JobsPage: React.FC = () => {
                 source: draft.source,
             });
             applicationDraftSyncWarningRef.current = false;
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftSyncUnavailableMessage ? '' : current);
         } catch (error) {
             console.warn('Application draft stored locally only:', error);
             warnApplicationDraftSyncUnavailable();
@@ -1114,6 +1150,7 @@ const JobsPage: React.FC = () => {
         try {
             await applicationService.deleteApplicationDraft(user.id, jobId);
             applicationDraftSyncWarningRef.current = false;
+            setApplicationDraftPersistenceStatus(current => current === applicationDraftSyncUnavailableMessage ? '' : current);
         } catch (error) {
             console.warn('Application draft delete stored locally only:', error);
             warnApplicationDraftSyncUnavailable();
@@ -1260,6 +1297,7 @@ const JobsPage: React.FC = () => {
     const setApplicationDraftField = (field: keyof ApplicationDraft, value: string) => {
         setIsApplicationDraftClearReviewOpen(false);
         setProfileApplicationDraftReplaceReview(null);
+        setApplicationSubmitError(null);
         applicationDraftTouchedRef.current = true;
         applicationDraftShouldPersistRef.current = true;
         const nextDraft = { ...applicationDraft, [field]: value };
@@ -1597,6 +1635,8 @@ const JobsPage: React.FC = () => {
         applicationDraftSyncWarningRef.current = false;
         setIsApplicationDraftClearReviewOpen(false);
         setProfileApplicationDraftReplaceReview(null);
+        setApplicationSubmitError(null);
+        setApplicationDraftPersistenceStatus('');
         setSelectedJob(job);
         setApplicationDraftHistory(readApplicationDraftHistory(job.id));
         const savedDraft = readApplicationDrafts()[job.id];
@@ -1633,6 +1673,7 @@ const JobsPage: React.FC = () => {
     const handleApply = async () => {
         if (!user?.id || !selectedJob) return;
         setIsApplying(selectedJob.id);
+        setApplicationSubmitError(null);
         try {
             const submittedApplication = await applicationService.submitApplication({
                 jobId: selectedJob.id,
@@ -1664,6 +1705,8 @@ const JobsPage: React.FC = () => {
             addToast({ type: 'success', title: 'Application submitted successfully!' });
             removeApplicationDraft(selectedJob.id);
             applicationDraftShouldPersistRef.current = false;
+            setApplicationSubmitError(null);
+            setApplicationDraftPersistenceStatus('');
             setSelectedJob(null);
             setSelectedApplication(normalizedApplication);
         } catch (error) {
@@ -1681,6 +1724,7 @@ const JobsPage: React.FC = () => {
                 title: 'Application was not sent',
                 message: 'Your draft is still here. Review the details and try submitting again.',
             });
+            setApplicationSubmitError(applicationSubmitFailureMessage);
         } finally {
             setIsApplying(null);
         }
@@ -1691,6 +1735,7 @@ const JobsPage: React.FC = () => {
 
         const publishIssues = buildRecruiterPostingPublishIssues(pendingPublishJob);
         setPublishingJobId(pendingPublishJob.id);
+        setPublishJobError(null);
         try {
             await jobService.updateJob(pendingPublishJob.id, { status: 'PUBLISHED' });
             recordRecruiterPublishAnalytics({
@@ -1704,10 +1749,12 @@ const JobsPage: React.FC = () => {
                 job.id === pendingPublishJob.id ? { ...job, status: 'PUBLISHED' } : job
             )));
             addToast({ type: 'success', title: 'Job published', message: 'The posting is now visible to candidates.' });
+            setPublishJobError(null);
             setPendingPublishJob(null);
             refetchJobs();
         } catch (error) {
             console.error('Failed to publish job:', error);
+            const safePublishFailureMessage = getSafeRecruiterPublishFailureMessage(error);
             recordRecruiterPublishAnalytics({
                 userId: user?.id,
                 jobId: pendingPublishJob.id,
@@ -1719,8 +1766,9 @@ const JobsPage: React.FC = () => {
             addToast({
                 type: 'error',
                 title: 'Publish failed',
-                message: getJobPublishPolicyErrorMessage(error) || 'Please review the draft and try again.',
+                message: safePublishFailureMessage,
             });
+            setPublishJobError(safePublishFailureMessage);
         } finally {
             setPublishingJobId(null);
         }
@@ -1734,12 +1782,14 @@ const JobsPage: React.FC = () => {
             issues: buildRecruiterPostingPublishIssues(job),
             action: 'review_opened',
         });
+        setPublishJobError(null);
         setPendingPublishJob(job);
     };
 
     const editPendingPublishDraft = () => {
         if (!pendingPublishJob?.id) return;
         const draftId = pendingPublishJob.id;
+        setPublishJobError(null);
         setPendingPublishJob(null);
         navigate(`/jobs/post?draftId=${encodeURIComponent(draftId)}`);
     };
@@ -2322,6 +2372,7 @@ const JobsPage: React.FC = () => {
         : activeTab === 'postings'
             ? filteredRecruiterJobs
             : filteredApplications;
+    const jobsCatalogLoadError = activeTab === 'explore' && jobsLoadFailed ? jobsCatalogLoadFailureMessage : null;
     const applicationDraftBadgeVariant = applicationDraftMeta.source === 'profile'
         ? 'success'
         : applicationDraftMeta.source === 'ai'
@@ -2340,6 +2391,29 @@ const JobsPage: React.FC = () => {
     const pendingPublishIssues = pendingPublishJob ? buildRecruiterPostingPublishIssues(pendingPublishJob) : [];
     const pendingPublishStatus = (pendingPublishJob?.status || '').toUpperCase();
     const isPendingPublishJobPublished = pendingPublishStatus === 'PUBLISHED';
+    const isExploreEmptyFromVisibilityPreferences = activeTab === 'explore' &&
+        jobs.length > 0 &&
+        filteredJobs.length === 0 &&
+        hasExploreVisibilityPreferences;
+    const emptyStateTitle = activeTab === 'explore'
+        ? isExploreEmptyFromVisibilityPreferences
+            ? 'All jobs hidden in this view'
+            : 'No jobs found'
+        : activeTab === 'postings'
+            ? 'No recruiter postings yet'
+            : 'No applications yet';
+    const emptyStateDescription = activeTab === 'explore'
+        ? isExploreEmptyFromVisibilityPreferences
+            ? 'Your hidden-job preferences are filtering every job on this page. Use the hidden-job controls above to restore jobs or clear view preferences.'
+            : 'Try adjusting your search terms or filters.'
+        : activeTab === 'postings'
+            ? 'Create a reviewed draft to start tracking and publishing your roles.'
+            : 'Start exploring jobs to submit your first application.';
+    const emptyStateAction = activeTab === 'applied'
+        ? { label: 'Explore Jobs', onClick: () => setActiveTab('explore') }
+        : activeTab === 'postings'
+            ? { label: 'Create Draft', onClick: () => navigate('/jobs/post') }
+            : undefined;
 
     return (
         <div className="space-y-6">
@@ -2691,25 +2765,37 @@ const JobsPage: React.FC = () => {
                     ))}
                 </div>
             ) : activeTab === 'applied' && applicationsLoadError && applications.length === 0 ? (
-                <EmptyState
-                    icon={<AlertCircle className="h-12 w-12" />}
-                    title="Applications unavailable"
-                    description={applicationsLoadError}
-                    action={user?.id ? { label: 'Retry Applications', onClick: () => loadApplications(user.id) } : undefined}
-                />
+                <div role="alert">
+                    <EmptyState
+                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        title="Applications unavailable"
+                        description={applicationsLoadError}
+                        action={user?.id ? { label: 'Retry applications', onClick: () => loadApplications(user.id) } : undefined}
+                    />
+                </div>
+            ) : activeTab === 'postings' && recruiterJobsLoadError && recruiterJobs.length === 0 ? (
+                <div role="alert">
+                    <EmptyState
+                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        title="Recruiter postings unavailable"
+                        description={recruiterJobsLoadError}
+                        action={user?.id ? { label: 'Retry postings', onClick: () => loadRecruiterJobs() } : undefined}
+                    />
+                </div>
+            ) : jobsCatalogLoadError ? (
+                <div role="alert">
+                    <EmptyState
+                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        title="Jobs could not load"
+                        description={jobsCatalogLoadError}
+                        action={{ label: 'Retry jobs', onClick: () => refetchJobs() }}
+                    />
+                </div>
             ) : items.length === 0 ? (
                 <EmptyState
-                    title={activeTab === 'explore' ? 'No jobs found' : activeTab === 'postings' ? 'No recruiter postings yet' : 'No applications yet'}
-                    description={activeTab === 'explore'
-                        ? 'Try adjusting your search terms or filters.'
-                        : activeTab === 'postings'
-                            ? 'Create a reviewed draft to start tracking and publishing your roles.'
-                            : 'Start exploring jobs to submit your first application.'}
-                    action={activeTab === 'applied'
-                        ? { label: 'Explore Jobs', onClick: () => setActiveTab('explore') }
-                        : activeTab === 'postings'
-                            ? { label: 'Create Draft', onClick: () => navigate('/jobs/post') }
-                            : undefined}
+                    title={emptyStateTitle}
+                    description={emptyStateDescription}
+                    action={emptyStateAction}
                 />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2891,11 +2977,22 @@ const JobsPage: React.FC = () => {
 
             <AuraModal
                 isOpen={Boolean(pendingPublishJob)}
-                onClose={() => setPendingPublishJob(null)}
+                onClose={() => {
+                    setPublishJobError(null);
+                    setPendingPublishJob(null);
+                }}
                 title={isPendingPublishJobPublished ? 'Published Job Checklist' : 'Review Before Publishing'}
                 footer={
                     <>
-                        <Button variant="ghost" onClick={() => setPendingPublishJob(null)}>Close</Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setPublishJobError(null);
+                                setPendingPublishJob(null);
+                            }}
+                        >
+                            Close
+                        </Button>
                         {pendingPublishJob && !isPendingPublishJobPublished && (
                             pendingPublishIssues.length > 0 ? (
                                 <Button onClick={editPendingPublishDraft}>
@@ -2938,6 +3035,12 @@ const JobsPage: React.FC = () => {
                             <div className="rounded-lg border border-success/30 bg-success-muted p-3 text-sm text-success">
                                 This draft has title, description, location, company context, and requirements.
                             </div>
+                        )}
+
+                        {publishJobError && (
+                            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                                {publishJobError}
+                            </p>
                         )}
 
                         <p className="text-xs text-[var(--text-secondary)]">
@@ -3041,6 +3144,8 @@ const JobsPage: React.FC = () => {
                 onClose={() => {
                     cancelApplicationDraftClearReview();
                     cancelProfileApplicationDraftReplaceReview();
+                    setApplicationSubmitError(null);
+                    setApplicationDraftPersistenceStatus('');
                     setSelectedJob(null);
                 }}
                 title="Review Application"
@@ -3052,6 +3157,8 @@ const JobsPage: React.FC = () => {
                             onClick={() => {
                                 cancelApplicationDraftClearReview();
                                 cancelProfileApplicationDraftReplaceReview();
+                                setApplicationSubmitError(null);
+                                setApplicationDraftPersistenceStatus('');
                                 setSelectedJob(null);
                             }}
                         >
@@ -3088,6 +3195,11 @@ const JobsPage: React.FC = () => {
                                         {applicationDraftSavedAt && (
                                             <p className="text-xs text-[var(--text-muted)]">
                                                 Draft saved {formatDraftSavedAt(applicationDraftSavedAt)}
+                                            </p>
+                                        )}
+                                        {applicationDraftPersistenceStatus && (
+                                            <p role="status" aria-live="polite" className="text-xs text-warning">
+                                                {applicationDraftPersistenceStatus}
                                             </p>
                                         )}
                                     </div>
@@ -3163,6 +3275,12 @@ const JobsPage: React.FC = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {applicationSubmitError && (
+                                <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                                    {applicationSubmitError}
+                                </p>
+                            )}
 
                             {applicationDraftHistory.length > 0 && (
                                 <div className={jobsPanelClassName}>

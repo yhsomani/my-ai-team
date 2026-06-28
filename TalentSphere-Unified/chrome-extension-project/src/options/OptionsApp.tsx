@@ -96,7 +96,7 @@ export function OptionsApp() {
   const [isPrepClearReviewOpen, setIsPrepClearReviewOpen] = useState(false);
   const [isCloudSyncPlanOpen, setIsCloudSyncPlanOpen] = useState(false);
   const hasRecordedOpen = useRef(false);
-  const [prepItems, setPrepItems, prepLoading] = useChromeStorage<PrepItem[]>('ts_prep', []);
+  const [prepItems, setPrepItems, prepLoading, prepStorageIssue] = useChromeStorage<PrepItem[]>('ts_prep', []);
 
   const [jobDescription, setJobDescription] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -105,8 +105,18 @@ export function OptionsApp() {
   const [score, setScore] = useState(0);
   const [matchReport, setMatchReport] = useState<ResumeMatchReport | null>(null);
 
-  const [notifications, setNotifications, notificationsLoading] = useChromeStorage('ts_settings_notif', true);
-  const [analytics, setAnalytics, analyticsLoading] = useChromeStorage('ts_settings_analytics', false);
+  const [
+    notifications,
+    setNotifications,
+    notificationsLoading,
+    notificationsStorageIssue
+  ] = useChromeStorage('ts_settings_notif', true);
+  const [
+    analytics,
+    setAnalytics,
+    analyticsLoading,
+    analyticsStorageIssue
+  ] = useChromeStorage('ts_settings_analytics', false);
 
   const [newTopic, setNewTopic] = useState('');
   const [newType, setNewType] = useState<PrepItem['type']>('Technical');
@@ -430,7 +440,7 @@ export function OptionsApp() {
 
       <main className="flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10">
         {activeTab === 'ai' && (
-          <AIView 
+          <AIView
             jobDescription={jobDescription}
             setJobDescription={setJobDescription}
             resumeText={resumeText}
@@ -444,7 +454,7 @@ export function OptionsApp() {
         )}
 
         {activeTab === 'prep' && (
-          <PrepView 
+          <PrepView
             prepItems={prepItems}
             newTopic={newTopic}
             setNewTopic={setNewTopic}
@@ -453,6 +463,7 @@ export function OptionsApp() {
             handleAddPrep={handleAddPrep}
             togglePrep={togglePrep}
             isPrepClearReviewOpen={isPrepClearReviewOpen}
+            storageIssue={prepStorageIssue}
             openPrepClearReview={() => openPrepClearReview('prep')}
             cancelPrepClearReview={() => cancelPrepClearReview('prep')}
             confirmPrepClear={() => confirmPrepClear('prep')}
@@ -460,7 +471,7 @@ export function OptionsApp() {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsView 
+          <SettingsView
             isCloudSyncPlanOpen={isCloudSyncPlanOpen}
             openCloudSyncPlan={openCloudSyncPlan}
             closeCloudSyncPlan={closeCloudSyncPlan}
@@ -470,6 +481,9 @@ export function OptionsApp() {
             setAnalytics={handleAnalyticsChange}
             prepCount={prepItems.length}
             isPrepClearReviewOpen={isPrepClearReviewOpen}
+            prepStorageIssue={prepStorageIssue}
+            notificationsStorageIssue={notificationsStorageIssue}
+            analyticsStorageIssue={analyticsStorageIssue}
             openPrepClearReview={() => openPrepClearReview('settings')}
             cancelPrepClearReview={() => cancelPrepClearReview('settings')}
             confirmPrepClear={() => confirmPrepClear('settings')}

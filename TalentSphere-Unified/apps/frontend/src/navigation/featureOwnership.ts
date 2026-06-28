@@ -1,6 +1,6 @@
 import { USER_ROLES, type AppRouteId, type UserRole } from './routeRegistry';
 
-export type PublicRoutePath = '/' | '/login' | '/register';
+export type PublicRoutePath = '/' | '/login' | '/register' | '*';
 export type ShellSurface = 'ResponsiveLayout' | 'Header' | 'Sidebar';
 export type ExtensionSurface = 'Popup' | 'Options';
 export type FeatureNecessity = 'necessary' | 'candidate-for-merge' | 'local-companion';
@@ -45,7 +45,7 @@ export interface FeatureOwnershipDefinition {
   behaviorPreservation: string;
 }
 
-export const publicRoutePaths = ['/', '/login', '/register'] as const;
+export const publicRoutePaths = ['/', '/login', '/register', '*'] as const;
 
 export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
   {
@@ -93,6 +93,16 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     behaviorPreservation: 'Preserve role query parameters, registration analytics, and existing auth-service submission flow.',
   },
   {
+    id: 'not-found-recovery',
+    label: 'Not Found Recovery',
+    owner: { kind: 'public-route', routePath: '*' },
+    necessity: 'necessary',
+    primaryPurpose: 'Recover invalid or unavailable routes with safe public auth links or role-valid app destinations.',
+    secondaryEntryPoints: [],
+    consolidationDecision: 'Keep as the wildcard recovery surface rather than merging it into Dashboard or the public landing page.',
+    behaviorPreservation: 'Preserve the catch-all route, back navigation, home/dashboard recovery, auth entry links, and role-based destination filtering.',
+  },
+  {
     id: 'dashboard-launchpad',
     label: 'Dashboard Launchpad',
     owner: { kind: 'route', routeId: 'dashboard', routePath: '/dashboard' },
@@ -105,6 +115,13 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
         routeId: 'dashboard',
         routePath: '/dashboard',
         rationale: 'The route is the default authenticated landing point and primary launchpad.',
+      },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'dashboard',
+        routePath: '/dashboard',
+        rationale: 'Route discovery can return users to the launchpad without duplicating dashboard summaries elsewhere.',
       },
     ],
     consolidationDecision: 'Keep Dashboard as summary-only; detailed work stays in Jobs, Learning, Candidates, Messages, Profile, or Admin.',
@@ -155,6 +172,13 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
         routeId: 'jobs',
         routePath: '/jobs',
         rationale: 'The posting list can open the command route while keeping draft editing in Post Job.',
+      },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'job-post',
+        routePath: '/jobs/post',
+        rationale: 'Role-filtered route discovery can open Post Job while the form, draft, template, and publish controls remain owned by this route.',
       },
     ],
     consolidationDecision: 'Keep as a command route discovered from Jobs and recruiter dashboard; do not merge into Dashboard.',
@@ -326,6 +350,13 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
         routePath: '/settings',
         rationale: 'Settings may summarize billing and deep-link to Billing without duplicating plan management.',
       },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'billing',
+        routePath: '/billing',
+        rationale: 'Route discovery can open Billing while money-handling review, checkout, provider handoffs, and history stay in Billing.',
+      },
     ],
     consolidationDecision: 'Keep Billing as the money-handling owner; Settings remains a handoff and preference surface.',
     behaviorPreservation: 'Preserve billing load, explicit demo mode, checkout requests, portal handoffs, review modals, retry, and analytics.',
@@ -419,6 +450,13 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
         routePath: '/ai',
         rationale: 'AI can draft resume content, but Resume owns review and export commands.',
       },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'resume',
+        routePath: '/resume',
+        rationale: 'Route discovery can open Resume without duplicating document import, export, artifact, or review controls.',
+      },
     ],
     consolidationDecision: 'Keep Resume separate from Profile because document artifacts, import, and export workflows are distinct.',
     behaviorPreservation: 'Preserve import parsing, selected-field application, profile row saves, PDF/HTML/print exports, artifacts, local sync, and analytics.',
@@ -443,6 +481,13 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
         routeId: 'learning',
         routePath: '/lms',
         rationale: 'Required skills may link toward Learning without duplicating course ownership.',
+      },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'career-path',
+        routePath: '/career-path',
+        rationale: 'Route discovery can open the current Career Path owner while merge validation with AI Assistant remains unresolved.',
       },
     ],
     consolidationDecision: 'Keep separate until route analytics and user-flow validation justify merging into AI Assistant as a tab.',

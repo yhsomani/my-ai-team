@@ -239,6 +239,12 @@ jobs:
       - name: Test extension portal fixtures
         run: npm run test:portal-fixtures
 
+      - name: Test extension options UX contract
+        run: npm run test:options-ux
+
+      - name: Test extension popup UX contract
+        run: npm run test:popup-ux
+
       - name: Test extension storage migrations
         run: npm run test:storage-migrations
 

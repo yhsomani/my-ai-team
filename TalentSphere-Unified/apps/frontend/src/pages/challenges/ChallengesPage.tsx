@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { CheckCircle2, Clock, Code2, FileText, Play, RefreshCw, RotateCcw, Send, Trophy, Users, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Code2, FileText, Play, RefreshCw, RotateCcw, Send, Trophy, Users, XCircle } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -230,7 +230,7 @@ const ChallengesPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { addToast } = useToast();
   const challenges = useAppSelector(selectAllChallenges);
-  const { status, error } = useAppSelector((state) => state.challenges);
+  const { status } = useAppSelector((state) => state.challenges);
   const { user } = useAppSelector((state) => state.auth);
   const [filter, setFilter] = useState('all');
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
@@ -263,6 +263,10 @@ const ChallengesPage: React.FC = () => {
       dispatch(fetchChallenges());
     }
   }, [dispatch, status]);
+
+  const handleChallengeLoadRetry = () => {
+    void dispatch(fetchChallenges());
+  };
 
   const filtered = challenges.filter(c =>
     filter === 'all' || (c.category && c.category.toLowerCase() === filter.toLowerCase())
@@ -619,7 +623,20 @@ const ChallengesPage: React.FC = () => {
   const selectedTestCases = selectedChallenge ? getTestCases(selectedChallenge) : [];
 
   if (status === 'failed') {
-    return <EmptyState title="Error" description={error || "Failed to load challenges."} />;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Challenges"
+          description="Solve real-world problems and level up your skills."
+        />
+        <EmptyState
+          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          title="Challenges could not load"
+          description="The challenge catalog did not respond. Retry to reload the current list."
+          action={{ label: 'Retry challenges', onClick: handleChallengeLoadRetry }}
+        />
+      </div>
+    );
   }
 
   return (

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, User, Briefcase, Layers } from 'lucide-react';
+import { Mail, Lock, ArrowRight, User, Briefcase } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/shared/AuraButton';
 import { Input } from '../../components/shared/AuraInput';
+import { AuthShell } from './components/AuthShell';
 import {
     getPostRegistrationPath,
     getRegistrationAccountTypeFromRoleParam,
@@ -12,6 +13,7 @@ import {
     type RegistrationAccountType,
 } from '../../lib/registrationOnboarding';
 import { recordOnboardingAnalytics } from '../../lib/onboardingAnalytics';
+import { getSafeRegistrationErrorMessage } from './authErrorCopy';
 
 const RegisterPage: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -78,136 +80,133 @@ const RegisterPage: React.FC = () => {
                 entryPoint: getEntryPoint(),
                 errorCategory: String(err?.code || err?.name || err?.response?.status || 'registration_error'),
             });
-            const errorMessage = err?.response?.data?.message || err?.message || 'An unexpected error occurred during registration. Please try again later.';
-            setError(errorMessage);
+            setError(getSafeRegistrationErrorMessage(err));
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
-            <div className="w-full max-w-md space-y-8">
-                {/* Logo & Heading */}
-                <div className="text-center space-y-4">
-                    <Link to="/" className="inline-flex" aria-label="TalentSphere home">
-                        <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-accent-foreground">
-                            <Layers size={20} />
-                        </div>
-                    </Link>
-                    <div>
-                        <h1 className="text-xl font-semibold">Create your account</h1>
-                        <p className="text-sm text-[var(--text-secondary)] mt-1">Get started with TalentSphere</p>
-                    </div>
-                </div>
-
-                {/* Registration Card */}
-                <div className="p-6 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]">
-                    {error && (
-                        <div className="mb-4 p-3 rounded-lg bg-destructive-muted border border-destructive/20" data-testid="error-message">
-                            <p className="text-sm text-destructive">{error}</p>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleRegister} className="space-y-4" data-testid="register-form">
-                        {/* Account Type */}
-                        <fieldset className="space-y-2">
-                            <legend className="text-sm font-medium text-[var(--text-primary)]">Account Type</legend>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <button
-                                    type="button"
-                                    onClick={() => selectAccountType('TALENT')}
-                                    className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
-                                        userType === 'TALENT'
-                                            ? 'bg-accent/10 border-accent text-accent'
-                                            : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
-                                    }`}
-                                    aria-pressed={userType === 'TALENT'}
-                                    aria-describedby="talent-account-type-description"
-                                >
-                                    <span className="flex items-center gap-2 text-sm font-medium">
-                                        <User size={16} /> Talent
-                                    </span>
-                                    <span id="talent-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
-                                        Browse jobs, build a profile, learn skills, solve challenges, and apply.
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => selectAccountType('RECRUITER')}
-                                    className={`flex h-full flex-col items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
-                                        userType === 'RECRUITER'
-                                            ? 'bg-accent/10 border-accent text-accent'
-                                            : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
-                                    }`}
-                                    aria-pressed={userType === 'RECRUITER'}
-                                    aria-describedby="recruiter-account-type-description"
-                                >
-                                    <span className="flex items-center gap-2 text-sm font-medium">
-                                        <Briefcase size={16} /> Recruiter
-                                    </span>
-                                    <span id="recruiter-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
-                                        Post jobs, review candidates, manage applications, and coordinate hiring.
-                                    </span>
-                                </button>
-                            </div>
-                        </fieldset>
-
-                        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2">
-                            <p className="text-sm font-medium text-[var(--text-primary)]">{nextStep.title}</p>
-                            <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{nextStep.description}</p>
-                        </div>
-
-                        <Input
-                            label="Full Name"
-                            icon={<User size={16} />}
-                            type="text"
-                            required
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="John Doe"
-                        />
-
-                        <Input
-                            label="Email"
-                            icon={<Mail size={16} />}
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                        />
-
-                        <Input
-                            label="Password"
-                            icon={<Lock size={16} />}
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            helperText="Must be at least 8 characters"
-                        />
-
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            isLoading={loading}
-                        >
-                            Create Account
-                            {!loading && <ArrowRight size={16} className="ml-1.5" />}
-                        </Button>
-                    </form>
-                </div>
-
-                <p className="text-center text-sm text-[var(--text-secondary)]">
+        <AuthShell
+            title="Create your account"
+            description="Choose your role and set up email access."
+            footer={(
+                <>
                     Already have an account?{' '}
-                    <Link to="/login" className="text-accent hover:text-accent-hover font-medium transition-colors">
+                    <Link to="/login" className="font-medium text-accent transition-colors hover:text-accent-hover">
                         Sign in
                     </Link>
-                </p>
-            </div>
-        </main>
+                </>
+            )}
+        >
+            {error && (
+                <div
+                    id="registration-error"
+                    role="alert"
+                    className="mb-4 rounded-md border border-destructive/20 bg-destructive-muted p-3"
+                    data-testid="error-message"
+                >
+                    <p className="text-sm text-destructive">{error}</p>
+                </div>
+            )}
+
+            <form
+                onSubmit={handleRegister}
+                className="space-y-4"
+                data-testid="register-form"
+                aria-describedby={error ? 'registration-error' : undefined}
+            >
+                <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium text-[var(--text-primary)]">Account Type</legend>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={() => selectAccountType('TALENT')}
+                            className={`flex h-full flex-col items-start gap-2 rounded-md border p-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+                                userType === 'TALENT'
+                                    ? 'border-accent bg-accent/10 text-accent'
+                                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
+                            }`}
+                            aria-pressed={userType === 'TALENT'}
+                            aria-describedby="talent-account-type-description"
+                        >
+                            <span className="flex items-center gap-2 text-sm font-medium">
+                                <User size={16} /> Talent
+                            </span>
+                            <span id="talent-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
+                                Browse jobs, build a profile, learn skills, solve challenges, and apply.
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => selectAccountType('RECRUITER')}
+                            className={`flex h-full flex-col items-start gap-2 rounded-md border p-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+                                userType === 'RECRUITER'
+                                    ? 'border-accent bg-accent/10 text-accent'
+                                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
+                            }`}
+                            aria-pressed={userType === 'RECRUITER'}
+                            aria-describedby="recruiter-account-type-description"
+                        >
+                            <span className="flex items-center gap-2 text-sm font-medium">
+                                <Briefcase size={16} /> Recruiter
+                            </span>
+                            <span id="recruiter-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
+                                Post jobs, review candidates, manage applications, and coordinate hiring.
+                            </span>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{nextStep.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{nextStep.description}</p>
+                </div>
+
+                <Input
+                    label="Full Name"
+                    icon={<User size={16} />}
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Full name"
+                    autoComplete="name"
+                />
+
+                <Input
+                    label="Email"
+                    icon={<Mail size={16} />}
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                />
+
+                <Input
+                    label="Password"
+                    icon={<Lock size={16} />}
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a password"
+                    helperText="Must be at least 8 characters"
+                    autoComplete="new-password"
+                />
+
+                <Button
+                    type="submit"
+                    className="w-full"
+                    isLoading={loading}
+                >
+                    Create Account
+                    {!loading && <ArrowRight size={16} className="ml-1.5" />}
+                </Button>
+            </form>
+        </AuthShell>
     );
 };
 

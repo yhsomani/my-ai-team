@@ -64,6 +64,7 @@ test.describe('keyboard navigation guardrail', () => {
     await expect(searchInput).toBeFocused();
 
     await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
     const learningOption = page.getByRole('option', { name: /Learning/ });
     await expect(learningOption).toHaveAttribute('aria-selected', 'true');
     await expect(searchInput).toHaveAttribute('aria-activedescendant', /lms$/);
@@ -201,7 +202,7 @@ test.describe('keyboard navigation guardrail', () => {
     await page.keyboard.press('Enter');
 
     const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
-    await expect(notificationsRegion.getByText('8 loaded')).toBeVisible();
+    await expect(notificationsRegion.getByText('8 of 10 loaded')).toBeVisible();
 
     const loadMoreButton = notificationsRegion.getByRole('button', { name: 'Load more notifications' });
     await loadMoreButton.focus();
@@ -209,7 +210,7 @@ test.describe('keyboard navigation guardrail', () => {
 
     await page.keyboard.press('Enter');
     await expect(notificationsRegion.getByRole('button', { name: /Notification 10/ })).toBeVisible();
-    await expect(notificationsRegion.getByText('10 loaded')).toBeVisible();
+    await expect(notificationsRegion.getByText('10 of 10 loaded')).toBeVisible();
     await expect(loadMoreButton).toBeHidden();
   });
 

@@ -1,7 +1,8 @@
-import { Sparkles, Clock, CheckCircle2, FileText, ScanSearch } from 'lucide-react';
+import { AlertTriangle, Sparkles, Clock, CheckCircle2, FileText, ScanSearch } from 'lucide-react';
 import React from 'react';
 
 import type { Job } from '../../lib/jobTypes';
+import type { PageScanStatusCopy } from '../../lib/pageScanStatus';
 
 interface DashboardViewProps {
   jobs: Job[];
@@ -10,6 +11,7 @@ interface DashboardViewProps {
   triggerPageScan: () => void;
   isScanningPage: boolean;
   hasDraft: boolean;
+  pageScanStatus: PageScanStatusCopy | null;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -18,8 +20,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   openOptionsPage,
   triggerPageScan,
   isScanningPage,
-  hasDraft
+  hasDraft,
+  pageScanStatus
 }) => {
+  const scanStatusClassName = pageScanStatus?.tone === 'warning'
+    ? 'border-[var(--ext-warning)] bg-[var(--ext-warning-muted)]'
+    : pageScanStatus?.tone === 'success'
+      ? 'border-[var(--ext-success)] bg-[var(--ext-success-muted)]'
+      : 'border-[var(--ext-border)] bg-[var(--ext-surface-muted)]';
+  const ScanStatusIcon = pageScanStatus?.tone === 'warning'
+    ? AlertTriangle
+    : pageScanStatus?.tone === 'success'
+      ? CheckCircle2
+      : ScanSearch;
+
   return (
     <div className="space-y-4" id="view-dashboard">
       <div className="rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface)] p-4">
@@ -60,7 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="mt-0.5 break-words text-[10px] text-[var(--ext-text-secondary)]">Compare pasted job and resume text locally in the options panel.</p>
           </div>
         </div>
-        <button 
+        <button
           onClick={openOptionsPage}
           className="rounded-md border border-[var(--ext-accent)] bg-[var(--ext-accent)] px-2.5 py-1.5 text-xs font-medium text-[var(--ext-on-accent)] transition duration-200 hover:bg-[var(--ext-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--ext-focus)]"
         >
@@ -85,6 +99,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span>{isScanningPage ? 'Scanning' : 'Scan Webpage'}</span>
         </button>
       </div>
+
+      {pageScanStatus && (
+        <div
+          role={pageScanStatus.tone === 'warning' ? 'alert' : 'status'}
+          aria-live="polite"
+          className={`flex items-start gap-2 rounded-lg border p-3 ${scanStatusClassName}`}
+          id="page-scan-status"
+        >
+          <ScanStatusIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ext-text)]" />
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-[var(--ext-text)]">{pageScanStatus.title}</p>
+            <p className="mt-0.5 break-words text-[9px] leading-relaxed text-[var(--ext-text-secondary)]">
+              {pageScanStatus.message}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

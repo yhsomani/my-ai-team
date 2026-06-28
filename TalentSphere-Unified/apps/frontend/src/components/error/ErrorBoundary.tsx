@@ -1,9 +1,11 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { EmptyState } from '../shared/EmptyState';
+import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
+import { Button } from '../shared/AuraButton';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onRetry?: () => void;
 }
 
 interface State {
@@ -50,6 +52,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    if (this.props.onRetry) {
+      this.props.onRetry();
+      return;
+    }
+
     window.location.reload();
   };
 
@@ -58,13 +65,41 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
+
+      const title = this.state.isServiceDown ? 'Service unavailable' : 'Something went wrong';
+      const description = this.state.isServiceDown
+        ? 'A required service did not respond. Reload the page to retry the same workflow.'
+        : 'The current screen could not continue safely. Reload the page to restore the application shell.';
+      const Icon = this.state.isServiceDown ? WifiOff : AlertTriangle;
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
-          <EmptyState
-            title={this.state.isServiceDown ? "Service Unavailable" : "Something went wrong"}
-            description={this.state.error?.message || "An unexpected error occurred in the application."}
-            action={{ label: "Reload Page", onClick: this.handleRetry }}
-          />
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bg-primary)] px-4 py-10">
+          <section
+            aria-labelledby="application-error-title"
+            className="w-full max-w-xl rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-6 text-center shadow-[var(--shadow-sm)] sm:p-8"
+          >
+            <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg border border-warning/25 bg-warning/10 text-warning">
+              <Icon className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <p className="mb-2 text-xs font-medium uppercase text-[var(--text-muted)]">
+              Application recovery
+            </p>
+            <h1 id="application-error-title" className="text-2xl font-semibold text-[var(--text-primary)]">
+              {title}
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+              {description}
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-xs leading-5 text-[var(--text-muted)]">
+              Diagnostic details were logged for developers. Internal error messages are not shown here.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Button type="button" onClick={this.handleRetry}>
+                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                Reload page
+              </Button>
+            </div>
+          </section>
         </div>
       );
     }

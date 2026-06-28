@@ -35,6 +35,11 @@ export interface PaginatedNotificationsResult {
   offset: number;
   hasNext: boolean;
   nextCursor: string | null;
+  metadata: {
+    source: 'account' | 'notification-api' | 'local-fallback';
+    degraded: boolean;
+    message: string;
+  };
 }
 
 export interface SavedSearchAlertInput {
@@ -371,7 +376,12 @@ export const notificationService = {
         limit,
         offset,
         hasNext,
-        nextCursor: hasNext && lastNotification ? encodeNotificationCursor(lastNotification) : null
+        nextCursor: hasNext && lastNotification ? encodeNotificationCursor(lastNotification) : null,
+        metadata: {
+          source: 'account',
+          degraded: false,
+          message: 'Account notifications are synced.'
+        }
       };
     } catch (supabaseError) {
       console.warn('[Notifications] Supabase notifications unavailable; trying notification service fallback.', supabaseError);
@@ -412,7 +422,12 @@ export const notificationService = {
           limit,
           offset,
           hasNext,
-          nextCursor: paged?.nextCursor || (hasNext && lastNotification ? encodeNotificationCursor(lastNotification) : null)
+          nextCursor: paged?.nextCursor || (hasNext && lastNotification ? encodeNotificationCursor(lastNotification) : null),
+          metadata: {
+            source: 'notification-api',
+            degraded: true,
+            message: 'Account notification storage is unavailable. Showing notification API fallback data.'
+          }
         };
       } catch (apiError) {
         console.warn('[Notifications] Notification service unavailable; using local notifications.', apiError);
@@ -423,7 +438,12 @@ export const notificationService = {
           limit,
           offset,
           hasNext: paged.hasNext,
-          nextCursor: paged.nextCursor
+          nextCursor: paged.nextCursor,
+          metadata: {
+            source: 'local-fallback',
+            degraded: true,
+            message: 'Notification providers are unavailable. Showing local browser notifications only.'
+          }
         };
       }
     }
