@@ -64,6 +64,16 @@ class CompanyServiceTest {
     }
 
     @Test
+    void registerCompanyFallback_Fails_WhenCompanyWasNotPersisted() {
+        Company company = Company.builder().name("Pending Corp").industry("Tech").build();
+
+        ApiResponse<Company> response = companyService.registerCompanyFallback(company, new RuntimeException("Database unavailable"));
+
+        assertFalse(response.isSuccess());
+        assertEquals("Company registration temporarily unavailable. Please try again.", response.getMessage());
+    }
+
+    @Test
     void getAllCompanies_Success() {
         when(companyRepository.findAll()).thenReturn(List.of(new Company()));
         

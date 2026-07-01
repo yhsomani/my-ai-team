@@ -6,14 +6,31 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
+type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className, ...props }) => (
-  <div
-    className={cn(
-      'animate-pulse rounded-lg bg-[var(--border-default)]',
-      className
-    )}
-    {...props}
-  />
-);
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className,
+  role,
+  'aria-hidden': ariaHidden,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
+  ...props
+}) => {
+  const hasExplicitSemantics = role !== undefined || ariaLabel !== undefined || ariaLabelledBy !== undefined;
+
+  return (
+    <div
+      data-ui="skeleton"
+      data-slot="skeleton"
+      role={role}
+      aria-hidden={ariaHidden ?? (hasExplicitSemantics ? undefined : true)}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
+      className={cn(
+        'motion-safe:animate-pulse rounded-lg bg-[var(--border-default)]',
+        className
+      )}
+      {...props}
+    />
+  );
+};

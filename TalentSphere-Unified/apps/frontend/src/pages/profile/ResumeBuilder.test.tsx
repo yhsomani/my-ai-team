@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -158,6 +158,16 @@ const renderResumeBuilder = () => {
   return store;
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach(icon => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('ResumeBuilder', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -242,6 +252,83 @@ describe('ResumeBuilder', () => {
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
   });
 
+  it('exposes editor fields, import review, export activity, and preview with semantic structure', async () => {
+    vi.mocked(profileService.getProfile).mockResolvedValue({
+      ...profileFixture,
+      experiences: [
+        {
+          id: 'experience-ops',
+          title: 'Resume Operations Lead',
+          company: 'Talent Systems',
+          location: 'Remote',
+          startDate: '2022-01-01',
+          current: true,
+          description: 'Built workflow reviews for resume teams.',
+        },
+      ],
+      educations: [
+        {
+          id: 'education-state',
+          degree: 'MBA Product Strategy',
+          institution: 'State University',
+          startDate: '2018-08-01',
+          endDate: '2020-05-01',
+        },
+      ],
+    } as any);
+    vi.mocked(profileService.getResumeArtifacts).mockResolvedValue([uploadedArtifactFixture] as any);
+
+    renderResumeBuilder();
+
+    await screen.findByLabelText('Headline');
+    expect(screen.getByRole('toolbar', { name: 'Resume actions' })).toBeTruthy();
+    expect(screen.getByRole('tablist', { name: 'Resume sections' })).toBeTruthy();
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Resume export activity' })).toBeTruthy();
+    });
+    const exportActivity = screen.getByRole('region', { name: 'Resume export activity' });
+    expect(within(exportActivity).getByRole('listitem', { name: /Riley-Resume-resume\.pdf.*Account synced/i })).toBeTruthy();
+    expectDecorativeSvgIcons(exportActivity);
+
+    const editorPanel = screen.getByRole('tabpanel', { name: 'Editor' });
+    const editorFields = within(editorPanel).getByRole('list', { name: 'Resume editor fields' });
+    expect(within(editorFields).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(editorFields).getByLabelText('Headline')).toBeTruthy();
+    expect(within(editorFields).getByLabelText('Full Name')).toBeTruthy();
+    expect(within(editorPanel).getByRole('region', { name: 'Professional summary editor' })).toBeTruthy();
+    expect(within(editorPanel).getByRole('textbox', { name: 'Professional Summary' })).toBeTruthy();
+    expect(within(editorPanel).getByRole('listitem', { name: /Resume Operations Lead at Talent Systems.*Remote.*2022.*Present.*Built workflow reviews/i })).toBeTruthy();
+    expect(within(editorPanel).getByRole('listitem', { name: 'Design Systems skill' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Import Text' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Resume text'), { target: { value: importTextFixture } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Generate Draft' }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByRole('region', { name: 'Resume import review' })).toBeTruthy();
+    });
+    const importReview = within(dialog).getByRole('region', { name: 'Resume import review' });
+    const detectedFields = within(importReview).getByRole('list', { name: 'Detected resume fields' });
+    expect(within(detectedFields).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(within(detectedFields).getByText('Headline')).toBeTruthy();
+    expect(within(detectedFields).getByText('Candidate Experience Lead')).toBeTruthy();
+    expect(within(importReview).getByRole('listitem', { name: 'React skill' })).toBeTruthy();
+    expect(within(importReview).getByRole('listitem', { name: /MBA at State University.*Product Strategy.*2020/i })).toBeTruthy();
+    expectDecorativeSvgIcons(dialog);
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Preview' }));
+
+    const previewPanel = screen.getByRole('tabpanel', { name: 'Preview' });
+    expect(within(previewPanel).getByRole('region', { name: 'Resume preview' })).toBeTruthy();
+    expect(within(previewPanel).getByRole('listitem', { name: /Resume Operations Lead at Talent Systems.*Remote.*2022.*Present.*Built workflow reviews/i })).toBeTruthy();
+    expect(within(previewPanel).getByRole('listitem', { name: /MBA Product Strategy at State University.*2020/i })).toBeTruthy();
+    expect(within(previewPanel).getByRole('listitem', { name: 'Design Systems skill' })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+  });
+
   it('shows safe resume save failure copy and retries Save Changes', async () => {
     vi.mocked(profileService.updateProfile)
       .mockRejectedValueOnce(new Error('Profile update failed with service_role_token=secret'))
@@ -313,7 +400,9 @@ describe('ResumeBuilder', () => {
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Open PDF' })).toBeTruthy();
     });
+    expectDecorativeSvgIcons(screen.getByRole('region', { name: 'Resume export activity' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expectDecorativeSvgIcons(await screen.findByRole('dialog', { name: 'Delete Uploaded PDF' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete PDF' }));
 
     await waitFor(() => {

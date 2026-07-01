@@ -1,3 +1,5 @@
+import { normalizeAIProvenance, type AIProvenanceMode } from './aiProvenance';
+
 export type AISuggestionReviewStatus = 'draft' | 'saved' | 'dismissed';
 
 export type AISuggestionWorkflowKey =
@@ -16,6 +18,7 @@ export interface AISuggestionReviewMessage {
   createdAt?: string;
   sourceLabel?: string;
   sourceDetail?: string;
+  provenanceMode?: AIProvenanceMode;
   controlNote?: string;
   reviewStatus?: AISuggestionReviewStatus;
   reviewedAt?: string;
@@ -160,14 +163,15 @@ export const buildAISuggestionReviewQueue = (
     })
     .map<AISuggestionReviewQueueItem>(message => {
       const handoff = classifyAISuggestionWorkflow(message.content);
+      const provenance = normalizeAIProvenance(message);
       return {
         ...handoff,
         id: message.id,
         content: compact(message.content),
         createdAt: message.createdAt,
-        sourceLabel: compact(message.sourceLabel) || 'TalentSphere AI assistant',
-        sourceDetail: compact(message.sourceDetail) || 'Generated from your prompt through the chat-assistant service.',
-        controlNote: compact(message.controlNote) || 'This queue records review state only. It does not change profile, resume, applications, or settings.',
+        sourceLabel: provenance.sourceLabel,
+        sourceDetail: provenance.sourceDetail,
+        controlNote: compact(message.controlNote) || provenance.controlNote,
         reviewStatus: getReviewStatus(message.reviewStatus),
         reviewedAt: message.reviewedAt,
       };

@@ -8,6 +8,7 @@ const adrPath = path.join(repoRoot, 'docs', 'adr', 'ADR-002-backend-topology.md'
 const manifestPath = path.join(repoRoot, 'module-manifest.json');
 const planPath = path.resolve(repoRoot, '..', 'PLAN.md');
 const architectureIndexPath = path.join(repoRoot, 'docs', 'ARCHITECTURE_STATUS_INDEX.md');
+const setupDevPath = path.join(repoRoot, 'scripts', 'setup-dev.sh');
 
 const requiredPhrases = [
   'Status: Accepted',
@@ -36,7 +37,7 @@ const assertExists = (filePath, label) => {
   return true;
 };
 
-if (!assertExists(adrPath, 'ADR-002') || !assertExists(manifestPath, 'module manifest') || !assertExists(planPath, 'PLAN.md') || !assertExists(architectureIndexPath, 'architecture status index')) {
+if (!assertExists(adrPath, 'ADR-002') || !assertExists(manifestPath, 'module manifest') || !assertExists(planPath, 'PLAN.md') || !assertExists(architectureIndexPath, 'architecture status index') || !assertExists(setupDevPath, 'setup-dev script')) {
   process.exit();
 }
 
@@ -44,6 +45,7 @@ const adr = readFile(adrPath);
 const manifest = readJson(manifestPath);
 const plan = readFile(planPath);
 const architectureIndex = readFile(architectureIndexPath);
+const setupDev = readFile(setupDevPath);
 
 const firstLines = adr.split(/\r?\n/).slice(0, 8).join('\n');
 if (!/^>\s*Documentation status:/m.test(firstLines)) {
@@ -91,6 +93,16 @@ if (!plan.includes('- [x] Backend topology ADR accepted.')) {
 }
 if (!architectureIndex.includes('ADR-002 accepts modular monolith first')) {
   fail('ARCHITECTURE_STATUS_INDEX.md must summarize the accepted backend topology decision');
+}
+
+if (setupDev.includes('cd apps/backend && mvn spring-boot:run')) {
+  fail('setup-dev.sh must not advertise apps/backend as a runnable Maven app while it is only an ADR-002 target shell');
+}
+if (!setupDev.includes('apps/backend is a modular-monolith target shell, not a runnable Maven app yet')) {
+  fail('setup-dev.sh must identify apps/backend as a non-runnable target shell until migration is implemented');
+}
+if (!setupDev.includes('mvn package')) {
+  fail('setup-dev.sh must point backend validation at the current root Maven reactor');
 }
 
 if (process.exitCode) {

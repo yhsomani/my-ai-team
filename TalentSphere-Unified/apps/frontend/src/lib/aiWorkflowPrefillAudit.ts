@@ -1,4 +1,5 @@
 import { automationSuggestionAudit } from './automationSuggestionAudit';
+import { aiHeuristicProvenance } from './aiProvenance';
 import { productAnalytics, type ProductAnalyticsArea } from './productAnalytics';
 
 export type AIWorkflowPrefillDecision = 'used' | 'rejected';
@@ -37,7 +38,7 @@ export const recordAiWorkflowPrefillDecision = ({
   const eventMetadata = {
     workflow,
     decision,
-    sourceLabel: compact(sourceLabel) || 'TalentSphere AI assistant',
+    sourceLabel: compact(sourceLabel) || aiHeuristicProvenance.sourceLabel,
     ...(metadata || {}),
   };
 

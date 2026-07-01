@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -91,6 +91,15 @@ const renderSettingsPage = () => {
   return store;
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.mocked(settingsService.getNotifications).mockResolvedValue(notificationFixture);
@@ -159,12 +168,60 @@ describe('SettingsPage', () => {
       expect(screen.queryByText('Settings data could not fully load')).toBeNull();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Billing & Plans' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Billing & Plans' }));
 
     expect(screen.getByText('Talent Pro')).toBeTruthy();
     expect(screen.getByText('Visa ending in 4242')).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/stripe_secret_key/i)).toBeNull();
+  });
+
+  it('exposes settings navigation, panels, and preference groups with semantic structure', async () => {
+    renderSettingsPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Personal Information' })).toBeTruthy();
+    });
+
+    const sections = screen.getByRole('tablist', { name: 'Settings sections' });
+    expect(within(sections).getByRole('tab', { name: 'Profile Settings', selected: true })).toBeTruthy();
+    expect(screen.getByRole('tabpanel', { name: 'Profile Settings' })).toBeTruthy();
+
+    fireEvent.click(within(sections).getByRole('tab', { name: 'Notifications' }));
+    expect(within(sections).getByRole('tab', { name: 'Notifications', selected: true })).toBeTruthy();
+    expect(screen.getByRole('tabpanel', { name: 'Notifications' })).toBeTruthy();
+
+    const channels = screen.getByRole('list', { name: 'Notification channels' });
+    expect(within(channels).getByRole('listitem', { name: 'Email Notifications. Receive updates via email. On' })).toBeTruthy();
+    expect(within(channels).getByRole('listitem', { name: 'Push Notifications. Receive push notifications in browser. Off' })).toBeTruthy();
+    expectDecorativeSvgIcons(channels);
+
+    const activityAlerts = screen.getByRole('list', { name: 'Notification activity alerts' });
+    expect(within(activityAlerts).getByRole('listitem', { name: 'Job Alerts. New job postings matching your skills. On' })).toBeTruthy();
+    expect(within(activityAlerts).getByRole('listitem', { name: 'Messages. When you receive a new direct message. On' })).toBeTruthy();
+
+    fireEvent.click(within(sections).getByRole('tab', { name: 'Security' }));
+    const securityActions = screen.getByRole('list', { name: 'Security actions' });
+    expect(within(securityActions).getByRole('listitem', {
+      name: 'Password. Send a password reset link to your account email',
+    })).toBeTruthy();
+    const twoFactorState = within(securityActions).getByRole('listitem', {
+      name: 'Two-Factor Authentication. Provider integration required. Unavailable',
+    });
+    expect(within(twoFactorState).getByText('Provider required')).toBeTruthy();
+    expect((within(twoFactorState).getByRole('button', { name: 'Unavailable' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(within(securityActions).getByRole('listitem', {
+      name: 'Danger Zone. Deactivate your account profile after typed review',
+    })).toBeTruthy();
+    expectDecorativeSvgIcons(securityActions);
+
+    fireEvent.click(within(sections).getByRole('tab', { name: 'Billing & Plans' }));
+    const billingMetrics = screen.getByRole('list', { name: 'Billing summary metrics' });
+    expect(within(billingMetrics).getByRole('listitem', { name: 'Current plan: Talent Pro' })).toBeTruthy();
+    expect(within(billingMetrics).getByRole('listitem', { name: 'History: 1 invoice' })).toBeTruthy();
+    const billingHandoff = screen.getByRole('region', { name: 'Billing management handoff' });
+    expect(billingHandoff).toBeTruthy();
+    expectDecorativeSvgIcons(billingHandoff);
   });
 
   it('shows safe profile save failure copy without exposing raw provider errors and keeps save retry available', async () => {
@@ -214,10 +271,10 @@ describe('SettingsPage', () => {
     renderSettingsPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Security' })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: 'Security' })).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Security' }));
     fireEvent.click(screen.getByRole('button', { name: 'Update Password' }));
     fireEvent.click(screen.getByRole('button', { name: 'Send Reset Email' }));
 
@@ -246,10 +303,10 @@ describe('SettingsPage', () => {
     renderSettingsPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Security' })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: 'Security' })).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Security' }));
     fireEvent.click(screen.getByRole('button', { name: 'Deactivate Account' }));
     fireEvent.change(screen.getByLabelText('Confirmation'), {
       target: { value: 'DEACTIVATE' },

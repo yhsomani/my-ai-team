@@ -95,6 +95,15 @@ const renderLmsPage = () => {
   return store;
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('LMSPage', () => {
   beforeEach(() => {
     vi.mocked(lmsService.getUserEnrollments).mockResolvedValue([]);
@@ -121,6 +130,7 @@ describe('LMSPage', () => {
     expect(screen.getByRole('button', { name: 'Retry Courses' })).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/PostgREST course catalog failed/i)).toBeNull();
+    expectDecorativeSvgIcons(document.body);
   });
 
   it('retries the existing course catalog workflow from the safe failure state', async () => {
@@ -211,6 +221,58 @@ describe('LMSPage', () => {
     });
     expect(screen.queryByRole('button', { name: 'Retry Progress' })).toBeNull();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
+  });
+
+  it('exposes course progress indicators with descriptive progressbar semantics', async () => {
+    vi.mocked(lmsService.getCoursesPage).mockResolvedValue({
+      courses: [courseFixture],
+      total: 1,
+      limit: 12,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+    });
+    vi.mocked(lmsService.getUserEnrollments).mockResolvedValue([enrollmentFixture]);
+
+    renderLmsPage();
+
+    const continueProgress = await screen.findByRole('progressbar', {
+      name: 'Continue Learning progress for Resilient Course Catalogs: 40% complete',
+    });
+    expect(continueProgress.getAttribute('aria-valuemin')).toBe('0');
+    expect(continueProgress.getAttribute('aria-valuemax')).toBe('100');
+    expect(continueProgress.getAttribute('aria-valuenow')).toBe('40');
+    expect(continueProgress.getAttribute('aria-valuetext')).toBe('40% complete');
+
+    const catalogSearch = screen.getByRole('search', { name: 'Learning catalog search' });
+    expect(catalogSearch.getAttribute('data-ui')).toBe('learning-search-surface');
+    const searchInput = screen.getByLabelText('Search courses');
+    expect(catalogSearch.contains(searchInput)).toBe(true);
+    expect(searchInput.getAttribute('aria-describedby')).toBe('learning-search-help');
+    expect(screen.getByText(/Search narrows the visible course catalog/i).id).toBe('learning-search-help');
+
+    const catalogControls = screen.getByRole('group', { name: 'Learning catalog controls' });
+    expect(catalogControls.getAttribute('data-ui')).toBe('learning-catalog-controls');
+    expect(catalogControls.getAttribute('aria-describedby')).toBe('learning-control-help');
+    expect(screen.getByText(/Course tabs, page size, and pagination controls/i).id).toBe('learning-control-help');
+    expect(catalogControls.contains(screen.getByLabelText('Courses per page'))).toBe(true);
+    expect(catalogControls.contains(screen.getByRole('button', { name: 'Previous course page' }))).toBe(true);
+    expect(catalogControls.contains(screen.getByRole('button', { name: 'Next course page' }))).toBe(true);
+
+    const cardProgress = await screen.findByRole('progressbar', {
+      name: 'Course card progress for Resilient Course Catalogs: 40% complete',
+    });
+    expect(cardProgress.getAttribute('aria-valuenow')).toBe('40');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const detailProgress = await screen.findByRole('progressbar', {
+      name: 'Course detail progress for Resilient Course Catalogs: 40% complete',
+    });
+    expect(detailProgress.getAttribute('aria-valuenow')).toBe('40');
+    expect(screen.getByRole('dialog', { name: 'Resilient Course Catalogs' })).toBeTruthy();
+    expect(screen.getAllByLabelText('Duration 30 min').length).toBeGreaterThan(0);
+    expectDecorativeSvgIcons(document.body);
   });
 
   it('shows safe enrollment failure copy and retries through the existing enrollment action', async () => {

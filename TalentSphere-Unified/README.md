@@ -40,6 +40,7 @@ npm run dev
 - **docs/ARCHITECTURE_STATUS_INDEX.md** - Current architecture status, document precedence, and open architecture decisions.
 - **docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md** - Product, UX, workflow, automation, technical roadmap, and implementation backlog.
 - **docs/FEATURES_AND_DASHBOARDS.md** - Current feature inventory, routes, workflows, data sources, role access, and UI behavior.
+- **docs/USER_WORKFLOW_AUTOMATION_GUIDE.md** - Complete step-by-step operating manual for setup modes, setup-to-execution onboarding, self-service readiness checks, daily playbooks, user/recruiter/admin/extension workflows, automation run modes, feature variations, repeatable automation blueprints, execution recipes, goal-specific runbooks, end-to-end automation examples, validation matrix, troubleshooting root causes, issue investigation, and workflow streamlining.
 - **docs/API_CONTRACT_MISMATCH_REPORT.md** - Generated frontend/backend/gateway/security route inventory.
 - **docs/PRODUCT_UX_AUTOMATION_AUDIT.md** - Running UX audit and implementation history.
 - **docs/MODULE_MANIFEST.md** - Current source ownership, artifact, infrastructure, and documentation lifecycle validation rules.

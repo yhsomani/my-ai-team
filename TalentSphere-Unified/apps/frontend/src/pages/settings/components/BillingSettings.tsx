@@ -10,6 +10,8 @@ interface BillingSettingsProps {
   onOpenBilling: () => void;
 }
 
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
 const formatBillingDate = (date?: string) => {
   if (!date) return 'Not scheduled';
   const parsed = new Date(date);
@@ -37,31 +39,47 @@ export const BillingSettings: React.FC<BillingSettingsProps> = ({ billing, onOpe
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3" role="list" aria-label="Billing summary metrics">
+          <div
+            role="listitem"
+            aria-label={`Current plan: ${billing?.current_plan || 'Talent Free'}`}
+            className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+          >
             <p className="text-xs font-medium uppercase text-[var(--text-secondary)]">Current plan</p>
             <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{billing?.current_plan || 'Talent Free'}</p>
           </div>
-          <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+          <div
+            role="listitem"
+            aria-label={`Next billing date: ${formatBillingDate(billing?.next_billing_date)}`}
+            className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+          >
             <p className="text-xs font-medium uppercase text-[var(--text-secondary)]">Next billing date</p>
             <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{formatBillingDate(billing?.next_billing_date)}</p>
           </div>
-          <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+          <div
+            role="listitem"
+            aria-label={`History: ${billingHistoryCount} ${billingHistoryCount === 1 ? 'invoice' : 'invoices'}`}
+            className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+          >
             <p className="text-xs font-medium uppercase text-[var(--text-secondary)]">History</p>
             <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{billingHistoryCount} {billingHistoryCount === 1 ? 'invoice' : 'invoices'}</p>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="mt-6 flex flex-col gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4 sm:flex-row sm:items-center sm:justify-between"
+          role="region"
+          aria-label="Billing management handoff"
+        >
           <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 text-[var(--text-secondary)]" />
+            <CreditCard {...decorativeIconProps} className="h-5 w-5 text-[var(--text-secondary)]" />
             <div>
               <p className="text-sm font-medium text-[var(--text-primary)]">{billing?.payment_method || 'No payment method on file'}</p>
               <p className="text-sm text-[var(--text-secondary)]">Open Billing to review plans, invoices, and provider payment settings.</p>
             </div>
           </div>
           <Button variant="outline" onClick={onOpenBilling}>
-            Open Billing <ArrowUpRight size={14} className="ml-1.5" />
+            Open Billing <ArrowUpRight {...decorativeIconProps} size={14} className="ml-1.5" />
           </Button>
         </div>
       </Card>

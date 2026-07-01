@@ -4,8 +4,32 @@
 -- Purpose: Full E2E Testing Coverage
 -- ================================================================
 
--- Disable RLS temporarily for seeding (Re-enable after if needed, though policies usually allow insert for owners)
--- Note: We assume we are running as 'postgres' or a superuser role for seeding.
+-- Safety contract:
+-- This file truncates application data and must only be run against local,
+-- development, test, or CI databases. Set these session variables before
+-- executing the file:
+--
+--   SET app.seed_environment = 'development';
+--   SET app.allow_destructive_seed_data = 'I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA';
+--
+-- Do not commit those SET statements enabled inside this file; callers must
+-- make the environment-specific decision at execution time.
+DO $$
+DECLARE
+  seed_environment text := lower(coalesce(nullif(current_setting('app.seed_environment', true), ''), ''));
+  destructive_confirmation text := coalesce(nullif(current_setting('app.allow_destructive_seed_data', true), ''), '');
+BEGIN
+  IF seed_environment NOT IN ('local', 'development', 'dev', 'test', 'testing', 'ci') THEN
+    RAISE EXCEPTION 'Refusing destructive seed-data.sql outside local/dev/test/ci. Set app.seed_environment before running.';
+  END IF;
+
+  IF destructive_confirmation <> 'I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA' THEN
+    RAISE EXCEPTION 'Refusing destructive seed-data.sql without app.allow_destructive_seed_data confirmation.';
+  END IF;
+END $$;
+
+-- Note: This script assumes a privileged local/dev/test seed role. It bypasses
+-- normal RLS during setup and restores no production state.
 
 -- ----------------------------------------------------------------
 -- 1. CLEANUP (Idempotency)

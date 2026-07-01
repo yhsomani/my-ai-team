@@ -23,10 +23,33 @@ test.describe('Authentication Flow', () => {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { name: /^TalentSphere$/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('navigation', { name: 'Public navigation' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Public role entry points' })).toBeVisible();
     await expect(page.getByRole('link', { name: /^Join as Talent$/ })).toHaveAttribute('href', '/register?role=talent');
     await expect(page.getByRole('link', { name: /^Hire Talent$/ })).toHaveAttribute('href', '/register?role=recruiter');
+    await expect(page.getByRole('region', { name: 'Career command center' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Career command center preview rows' })).toBeVisible();
+    await expect(page.getByRole('listitem', { name: 'Applications. 8 active. Owned by its domain route.' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Platform pillars' })).toBeVisible();
+    await expect(page.getByRole('listitem', { name: /Focused job matching.*Jobs workspace/i })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Feature ownership decisions' })).toBeVisible();
+    await expect(page.getByRole('listitem', { name: 'Jobs owns search, applications, saved searches, and posts.' })).toBeVisible();
     await expect(page.getByText('Public platform snapshot')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Public platform stats' })).toBeVisible();
     await expect(page.getByText(/Live|Fallback/).first()).toBeVisible();
+  });
+
+  test('public landing keeps semantic content visible on mobile without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: /^TalentSphere$/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('link', { name: /^Join as Talent$/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Hire Talent$/ })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Public platform stats' })).toBeVisible();
+
+    const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(hasHorizontalOverflow).toBe(false);
   });
 
   test('should show error message on invalid credentials', async ({ page }) => {

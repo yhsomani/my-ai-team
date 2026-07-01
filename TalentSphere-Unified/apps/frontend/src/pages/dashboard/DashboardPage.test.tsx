@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -114,6 +114,15 @@ const renderDashboardPage = () => {
   return store;
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('DashboardPage', () => {
   afterEach(() => {
     cleanup();
@@ -134,6 +143,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('button', { name: 'Retry XP and level' })).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/PostgREST relation failed/i)).toBeNull();
+    expectDecorativeSvgIcons(document.body);
 
     const requestCountBeforeRetry = vi.mocked(dashboardService.fetchDashboardData).mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Retry XP and level' }));
@@ -170,5 +180,46 @@ describe('DashboardPage', () => {
     });
     expect(screen.getByText('Design Systems Engineer')).toBeTruthy();
     expect(screen.queryByText('Dashboard data did not refresh.')).toBeNull();
+    expectDecorativeSvgIcons(document.body);
+  });
+
+  it('exposes dashboard summary groups with list semantics', async () => {
+    vi.mocked(dashboardService.fetchDashboardData).mockResolvedValue(liveDashboardData);
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard data refreshed.')).toBeTruthy();
+    });
+
+    const metrics = screen.getByRole('list', { name: 'Talent summary metrics' });
+    expect(within(metrics).getByRole('listitem', {
+      name: 'Applications summary: 1. View applications',
+    })).toBeTruthy();
+    expect(within(metrics).getByRole('listitem', {
+      name: 'XP Earned summary: 120. Earn more XP',
+    })).toBeTruthy();
+
+    const checklist = screen.getByRole('list', { name: 'Activation checklist tasks' });
+    expect(within(checklist).getByRole('listitem', {
+      name: 'Build your profile. Completed. Update profile',
+    })).toBeTruthy();
+    expect(within(checklist).getByRole('listitem', {
+      name: 'Start a course. Not completed. Browse learning',
+    })).toBeTruthy();
+
+    const quickActions = screen.getByRole('list', { name: 'Quick Actions actions' });
+    expect(within(quickActions).getByRole('listitem', { name: 'Continue learning' })).toBeTruthy();
+
+    const opportunities = screen.getByRole('list', { name: 'Recent opportunities' });
+    expect(within(opportunities).getByRole('listitem', {
+      name: 'Recent opportunity Design Systems Engineer at Northstar Labs, Remote, 91% match',
+    })).toBeTruthy();
+
+    const challengeSummaries = screen.getByRole('list', { name: 'Active challenge summaries' });
+    expect(within(challengeSummaries).getByRole('listitem', {
+      name: 'Active challenge Frontend Refactor Sprint, 12 participants, Hard difficulty',
+    })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
   });
 });

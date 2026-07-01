@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer from '../../store/slices/authSlice';
@@ -57,8 +57,18 @@ const adminDashboardData: AdminDashboardData = {
 };
 
 const auditLogResult: PaginatedAuditLogsResult = {
-  logs: [],
-  total: 0,
+  logs: [
+    {
+      id: 'audit-admin-settings',
+      userId: 'admin-user',
+      action: 'admin.settings.reviewed',
+      entityType: 'system_settings',
+      entityId: 'settings-001',
+      ipAddress: '203.0.113.10',
+      createdAt: '2026-06-28T00:05:00.000Z',
+    },
+  ],
+  total: 1,
   limit: 5,
   offset: 0,
   hasNext: false,
@@ -68,44 +78,82 @@ const auditLogResult: PaginatedAuditLogsResult = {
 const analyticsInsights: AdminProductAnalyticsInsightsResult = {
   summary: {
     source: 'server',
-    eventCount: 0,
-    uniqueAreaCount: 0,
-    uniqueUserCount: 0,
-    failureCount: 0,
+    eventCount: 4,
+    uniqueAreaCount: 1,
+    uniqueUserCount: 2,
+    failureCount: 1,
     degradedCount: 0,
     recoveryCount: 0,
     automationGeneratedCount: 0,
-    automationAcceptedCount: 0,
+    automationAcceptedCount: 2,
     automationDismissedCount: 0,
     prefillUsedCount: 0,
     prefillRejectedCount: 0,
     handoffCount: 0,
-    acceptanceRate: null,
-    rejectionRate: null,
-    failureRate: null,
-    topAreas: [],
+    acceptanceRate: 50,
+    rejectionRate: 0,
+    failureRate: 25,
+    topAreas: [
+      {
+        area: 'admin',
+        eventCount: 4,
+        failureCount: 1,
+        degradedCount: 0,
+        automationCount: 0,
+      },
+    ],
     topEvents: [],
-    frictionSignals: [],
-    improvementOpportunities: [],
+    frictionSignals: [
+      {
+        label: 'Failed workflow events',
+        value: '1',
+        severity: 'warning',
+        description: 'One admin workflow failed and needs follow-up.',
+      },
+    ],
+    improvementOpportunities: [
+      {
+        id: 'admin-audit-retry',
+        title: 'Improve audit retry visibility',
+        priority: 'P1',
+        area: 'admin',
+        trigger: 'Audit log load failure',
+        expectedImpact: 'Admins can recover faster from temporary audit outages.',
+        suggestedAction: 'Keep audit retry controls visible with source-labeled state.',
+        userControl: 'Admins keep manual retry control.',
+      },
+    ],
   },
   metadata: {
-    source: 'empty',
+    source: 'server',
     fetchedAt: '2026-06-28T00:00:00.000Z',
     limit: 250,
     degraded: false,
-    message: 'No product analytics events are available yet.',
+    message: 'Product analytics events loaded.',
   },
 };
 
 const schedulerStatus: AdminScheduledAutomationStatusResult = {
-  jobs: [],
+  jobs: [
+    {
+      id: 'saved-search-digest-discovery',
+      name: 'Saved Search Discovery',
+      purpose: 'Find new saved-search matches and queue digest items.',
+      schedule: '*/30 * * * *',
+      command: 'npm run discover:saved-search-digests -- --commit',
+      manifestPath: 'infra/k8s/base/notification-digest-cronjobs.yaml',
+      requiredConfig: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
+      status: 'needs_verification',
+      detail: 'CronJob manifest is present, but runtime execution still needs verification.',
+    },
+  ],
   summary: {
-    total: 0,
+    total: 1,
     configuredCount: 0,
-    needsVerificationCount: 0,
+    needsVerificationCount: 1,
     degradedCount: 0,
     runHistoryReportedCount: 0,
-    runHistoryMissingCount: 0,
+    runHistoryMissingCount: 1,
     lastRunSucceededCount: 0,
     lastRunFailedCount: 0,
     lastRunRunningCount: 0,
@@ -119,6 +167,16 @@ const schedulerStatus: AdminScheduledAutomationStatusResult = {
     message: 'Scheduler catalog loaded.',
     providerStatus: 'not_configured',
   },
+};
+
+const expectSvgIconsDecorative = (container: ParentNode) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
 };
 
 const renderAdminDashboard = () => {
@@ -177,6 +235,58 @@ describe('AdminDashboard', () => {
     expect(screen.getByRole('button', { name: 'Retry admin console' })).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/internal admin query failed/i)).toBeNull();
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('exposes admin operational metrics, analytics, scheduler, service health, and audit rows with semantic structure', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Product Analytics Insights' })).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('list', { name: 'Scheduled automation jobs' })).toBeTruthy();
+    });
+
+    const adminMetrics = screen.getByRole('list', { name: 'Admin summary metrics' });
+    expect(within(adminMetrics).getByRole('listitem', {
+      name: 'Total Users: 12. Status: Active. Source: Live.',
+    })).toBeTruthy();
+    expect(within(adminMetrics).getByRole('listitem', {
+      name: 'Services Online: 1/1. Status: Healthy. Source: Live.',
+    })).toBeTruthy();
+
+    const analyticsMetrics = screen.getByRole('list', { name: 'Product analytics summary metrics' });
+    expect(within(analyticsMetrics).getByRole('listitem', { name: 'Recent Events: 4. 1 areas.' })).toBeTruthy();
+    expect(within(analyticsMetrics).getByRole('listitem', { name: 'Friction: 25%. 1 signals.' })).toBeTruthy();
+
+    expect(within(screen.getByRole('list', { name: 'Top product analytics areas' })).getByRole('listitem', {
+      name: 'admin: 4 events, 1 friction signals, 0 automation events.',
+    })).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Product analytics friction signals' })).getByRole('listitem', {
+      name: 'Failed workflow events: 1. Severity: warning.',
+    })).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Product analytics improvement opportunities' })).getByRole('listitem', {
+      name: 'Improve audit retry visibility: P1, admin.',
+    })).toBeTruthy();
+
+    const schedulerSummary = screen.getByRole('list', { name: 'Scheduled automation summary' });
+    expect(within(schedulerSummary).getByRole('listitem', { name: 'Needs Verification: 1.' })).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Scheduled automation jobs' })).getByRole('listitem', {
+      name: 'Saved Search Discovery: Needs verification. Find new saved-search matches and queue digest items. Schedule: */30 * * * *.',
+    })).toBeTruthy();
+
+    expect(screen.getByRole('table', { name: 'Service health' })).toBeTruthy();
+    expect(screen.getByRole('row', {
+      name: 'API Gateway: Running, uptime 100%, source Live.',
+    })).toBeTruthy();
+    expect(screen.getByRole('table', { name: 'Audit log events' })).toBeTruthy();
+    expect(screen.getByRole('row', {
+      name: 'admin.settings.reviewed: system_settings · settings-001 by admin-user.',
+    })).toBeTruthy();
+    expectSvgIconsDecorative(document.body);
   });
 
   it('retries the existing admin console load workflow from the safe failure state', async () => {
@@ -200,5 +310,6 @@ describe('AdminDashboard', () => {
       expect(screen.getByText('Total Users')).toBeTruthy();
     });
     expect(screen.queryByRole('heading', { name: 'Admin console could not load' })).toBeNull();
+    expectSvgIconsDecorative(document.body);
   });
 });

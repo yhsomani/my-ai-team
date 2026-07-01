@@ -40,9 +40,7 @@ public class CompanyService {
 
   public ApiResponse<Company> registerCompanyFallback(Company company, Throwable t) {
     log.error("Neural congestion detected during company registry: {}", t.getMessage());
-    company.setVerified(false);
-    company.setDescription(company.getDescription() + " (Pending Neural Verification)");
-    return ApiResponse.success(company, "Company data buffered. System in high-latency mode.");
+    return ApiResponse.error("Company registration temporarily unavailable. Please try again.");
   }
 
   @Cacheable(value = "companyCache", key = "#id")

@@ -249,11 +249,14 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Left: Mobile menu toggle */}
       <div className="flex shrink-0 items-center gap-3">
         <button
+          type="button"
           onClick={() => setIsSidebarOpen?.(!isSidebarOpen)}
-          className="lg:hidden p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel)] lg:hidden"
           aria-label="Toggle navigation menu"
+          aria-expanded={Boolean(isSidebarOpen)}
+          aria-controls="app-shell-mobile-sidebar"
         >
-          <Menu size={20} />
+          <Menu size={20} aria-hidden="true" focusable="false" />
         </button>
       </div>
 
@@ -266,14 +269,15 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex shrink-0 items-center gap-2">
         <div className="relative">
           <button
+            type="button"
             ref={notificationButtonRef}
             onClick={() => setIsNotificationsOpen(open => !open)}
-            className="relative p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+            className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel)]"
             aria-label={unreadAccountNotifications.length > 0 ? `View notifications, ${unreadAccountNotifications.length} unread` : 'View notifications'}
             aria-expanded={isNotificationsOpen}
             aria-controls="app-shell-notifications"
           >
-            <Bell size={18} />
+            <Bell size={18} aria-hidden="true" focusable="false" />
             {unreadAccountNotifications.length > 0 && (
               <span className="absolute top-0.5 right-0.5 min-h-2 min-w-2 rounded-full bg-accent" aria-hidden="true" />
             )}
@@ -365,7 +369,7 @@ export const Header: React.FC<HeaderProps> = ({
                               className="w-full rounded-md px-3 py-2 text-left hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-accent/20"
                             >
                               <span className="flex items-center gap-2">
-                                {isUrgentUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
+                                {isUrgentUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />}
                                 <span className="block min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)]">{item.title}</span>
                                 {isScheduled && (
                                   <span className="shrink-0 rounded-full border border-[var(--border-default)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">
@@ -414,7 +418,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
-        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
+        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-semibold">
           {user?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
         </div>
 

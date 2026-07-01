@@ -149,6 +149,46 @@ const formatExportTime = (date: string) => {
   return parsed.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 };
 
+const formatResumeTextToken = (value?: string | number | null) => String(value ?? '').trim();
+const getResumeExperienceLabel = (experience: Record<string, any>) => {
+  const title = formatResumeTextToken(experience.title) || 'Experience';
+  const company = formatResumeTextToken(experience.company);
+  const location = formatResumeTextToken(experience.location);
+  const startDate = formatResumeDate(getExperienceStartDate(experience));
+  const endDate = experience.current ? 'Present' : formatResumeDate(getExperienceEndDate(experience)) || 'Present';
+  const dateRange = startDate ? `${startDate} to ${endDate}` : '';
+  const description = formatResumeTextToken(experience.description);
+
+  return [
+    company ? `${title} at ${company}` : title,
+    location,
+    dateRange,
+    description,
+  ].filter(Boolean).join('. ');
+};
+const getResumeEducationLabel = (educationRow: Record<string, any>) => {
+  const fieldOfStudy = formatResumeTextToken(educationRow.fieldOfStudy || educationRow.field_of_study);
+  const title = formatResumeTextToken(educationRow.degree) || fieldOfStudy || 'Education';
+  const institution = formatResumeTextToken(educationRow.institution);
+  const completedDate = formatResumeDate(getEducationEndDate(educationRow) || getEducationStartDate(educationRow));
+
+  return [
+    institution ? `${title} at ${institution}` : title,
+    fieldOfStudy && fieldOfStudy !== title ? fieldOfStudy : '',
+    completedDate,
+  ].filter(Boolean).join('. ');
+};
+const getResumeSkillLabel = (skill: Record<string, any> | string) => `${formatResumeTextToken(getSkillName(skill)) || 'Skill'} skill`;
+const getResumeArtifactLabel = (artifact: ResumeArtifactRecord) => (
+  `${artifact.fileName || 'Uploaded PDF'}. Uploaded ${formatExportTime(artifact.uploadedAt)}. ${artifact.persistedTo === 'server' ? 'Account synced' : 'Local only'}.`
+);
+const getResumeArtifactDeletionLabel = (receipt: ResumeArtifactTombstone) => (
+  `${receipt.fileName || 'Uploaded PDF'}. Deleted ${formatExportTime(receipt.deletedAt)}. ${receipt.persistedTo === 'server' ? 'Account metadata sync requested' : 'Local receipt'}.`
+);
+const getResumeExportRecordLabel = (record: ResumeExportRecord) => (
+  `${record.fileName}. ${getExportStatusLabel(record)}. ${record.persistedTo === 'server' ? 'Account synced' : 'Local only'}. ${record.detail}`
+);
+
 const resumeInsetClassName = 'rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)]';
 const resumeSubtlePanelClassName = 'rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]';
 const resumeReviewLabelClassName = 'block text-xs font-medium text-[var(--text-muted)]';
@@ -160,6 +200,10 @@ const resumeArtifactDeleteFailureMessage = 'Uploaded PDF was not removed. Try De
 const resumeArtifactCopyFailureMessage = 'Uploaded PDF link was not copied. Try Copy Link again, or open the PDF.';
 const resumeImportSkillsFailureMessage = 'Selected skills were not saved. Review the selections and try Save Skills again.';
 const resumeImportRowsFailureMessage = 'Selected profile rows were not saved. Review the selections and try Save Rows again.';
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
 
 const ResumeActionFailureAlert = ({ title, message }: { title: string; message: string }) => (
   <div
@@ -193,6 +237,14 @@ const escapeHtml = (value?: string | number | null) => String(value ?? '')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;');
+
+const printableResumeTokens = {
+  text: '#111827',
+  supportingText: '#374151',
+  mutedText: '#6b7280',
+  accent: '#2563eb',
+  border: '#d1d5db',
+} as const;
 
 const buildPrintableResume = (
   draft: ResumeDraft,
@@ -236,17 +288,24 @@ const buildPrintableResume = (
       <head>
         <title>${escapeHtml(draft.fullName || 'Resume')}</title>
         <style>
-          body { font-family: Arial, sans-serif; color: #111827; margin: 40px; line-height: 1.5; }
+          :root {
+            --resume-text: ${printableResumeTokens.text};
+            --resume-supporting-text: ${printableResumeTokens.supportingText};
+            --resume-muted-text: ${printableResumeTokens.mutedText};
+            --resume-accent: ${printableResumeTokens.accent};
+            --resume-border: ${printableResumeTokens.border};
+          }
+          body { font-family: Arial, sans-serif; color: var(--resume-text); margin: 40px; line-height: 1.5; }
           h1 { margin: 0; font-size: 28px; }
-          h2 { margin: 28px 0 10px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #2563eb; border-bottom: 1px solid #d1d5db; padding-bottom: 6px; }
-          .headline, .contact, .muted { color: #6b7280; }
+          h2 { margin: 28px 0 10px; font-size: 13px; letter-spacing: 0; text-transform: uppercase; color: var(--resume-accent); border-bottom: 1px solid var(--resume-border); padding-bottom: 6px; }
+          .headline, .contact, .muted { color: var(--resume-muted-text); }
           .contact { margin-top: 6px; font-size: 12px; }
           .summary { white-space: pre-wrap; }
           .item { margin-bottom: 14px; }
           .item-header { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
-          .item p { margin: 6px 0 0; color: #374151; }
+          .item p { margin: 6px 0 0; color: var(--resume-supporting-text); }
           .skills { display: flex; flex-wrap: wrap; gap: 8px; }
-          .skills span { border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+          .skills span { border: 1px solid var(--resume-border); border-radius: 6px; padding: 4px 8px; font-size: 12px; }
           @media print { body { margin: 24px; } }
         </style>
       </head>
@@ -1640,12 +1699,12 @@ const ResumeBuilder: React.FC = () => {
         title="Resume Builder"
         description="Create and customize your professional resume."
         actions={
-          <div className="flex flex-wrap justify-end gap-2">
+          <div role="toolbar" aria-label="Resume actions" className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" size="sm" onClick={openImportModal}>
-              <FileText size={14} className="mr-1" /> Import Text
+              <FileText {...decorativeIconProps} size={14} className="mr-1" /> Import Text
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-              <Download size={14} className="mr-1" /> Download PDF
+              <Download {...decorativeIconProps} size={14} className="mr-1" /> Download PDF
             </Button>
             <Button
               variant="outline"
@@ -1653,16 +1712,16 @@ const ResumeBuilder: React.FC = () => {
               onClick={handleUploadPdf}
               isLoading={isUploadingResumePdf}
             >
-              <Upload size={14} className="mr-1" /> Upload PDF
+              <Upload {...decorativeIconProps} size={14} className="mr-1" /> Upload PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadHtml}>
-              <Download size={14} className="mr-1" /> Download HTML
+              <Download {...decorativeIconProps} size={14} className="mr-1" /> Download HTML
             </Button>
             <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download size={14} className="mr-1" /> Print PDF
+              <Download {...decorativeIconProps} size={14} className="mr-1" /> Print PDF
             </Button>
             <Button size="sm" onClick={handleSave} isLoading={isSaving}>
-              <Save size={14} className="mr-1" /> Save Changes
+              <Save {...decorativeIconProps} size={14} className="mr-1" /> Save Changes
             </Button>
           </div>
         }
@@ -1684,7 +1743,7 @@ const ResumeBuilder: React.FC = () => {
             onClick={() => void loadResumeProfileData('resume_load_retry')}
             className="w-full shrink-0 sm:w-auto"
           >
-            <RefreshCw size={14} className="mr-1" />
+            <RefreshCw {...decorativeIconProps} size={14} className="mr-1" />
             Retry resume data
           </Button>
         </Card>
@@ -1721,7 +1780,7 @@ const ResumeBuilder: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label htmlFor="resume-import-text" className="block text-sm font-medium mb-1.5 text-[var(--text-primary)]">Resume text</label>
-            <div className={`${resumeSubtlePanelClassName} mb-3 border-dashed p-3`}>
+            <div role="group" aria-label="Resume file import" className={`${resumeSubtlePanelClassName} mb-3 border-dashed p-3`}>
               <label htmlFor="resume-import-file" className="block text-sm font-medium text-[var(--text-primary)]">Upload text file</label>
               <input
                 id="resume-import-file"
@@ -1752,42 +1811,48 @@ const ResumeBuilder: React.FC = () => {
             />
           </div>
           {importDraft && (
-            <div className="space-y-3">
+            <div role="region" aria-label={pendingAiResumeDraft ? 'AI resume draft review' : 'Resume import review'} className="space-y-3">
               <div>
                 <p className="text-sm font-medium">{pendingAiResumeDraft ? 'Review AI draft fields' : 'Review detected fields'}</p>
                 <p className="text-xs text-[var(--text-muted)]">
                   Source: {pendingAiResumeDraft?.sourceLabel || 'pasted resume text'}. Applying only updates the editor draft.
                 </p>
               </div>
-              {importDraftEntries.length > 0 ? importDraftEntries.map((entry) => (
-                <label key={entry.key} className="flex items-start gap-3 rounded-lg border border-[var(--border-default)] p-3">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={selectedImportFields.includes(entry.key)}
-                    onChange={() => handleToggleImportField(entry.key)}
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-xs font-medium text-[var(--text-muted)]">{entry.label}</span>
-                    <span className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <span>
-                        <span className={resumeReviewLabelClassName}>Current</span>
-                        <span className="mt-1 block text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{resumeDraft[entry.key] || 'Empty'}</span>
-                      </span>
-                      <span>
-                        <span className="block text-xs font-medium text-accent">{pendingAiResumeDraft ? 'AI draft' : 'Detected'}</span>
-                        <span className="mt-1 block text-sm text-[var(--text-primary)] whitespace-pre-wrap">{entry.value}</span>
-                      </span>
-                    </span>
-                  </span>
-                </label>
-              )) : (
+              {importDraftEntries.length > 0 ? (
+                <div role="list" aria-label={pendingAiResumeDraft ? 'AI resume draft fields' : 'Detected resume fields'} className="space-y-3">
+                  {importDraftEntries.map((entry) => (
+                    <div key={entry.key} role="listitem">
+                      <label className="flex items-start gap-3 rounded-lg border border-[var(--border-default)] p-3">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={selectedImportFields.includes(entry.key)}
+                          onChange={() => handleToggleImportField(entry.key)}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-xs font-medium text-[var(--text-muted)]">{entry.label}</span>
+                          <span className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <span>
+                              <span className={resumeReviewLabelClassName}>Current</span>
+                              <span className="mt-1 block text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{resumeDraft[entry.key] || 'Empty'}</span>
+                            </span>
+                            <span>
+                              <span className="block text-xs font-medium text-accent">{pendingAiResumeDraft ? 'AI draft' : 'Detected'}</span>
+                              <span className="mt-1 block text-sm text-[var(--text-primary)] whitespace-pre-wrap">{entry.value}</span>
+                            </span>
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
                 <p className="rounded-lg border border-[var(--border-default)] p-3 text-sm text-[var(--text-muted)]">
                   No supported resume fields were detected.
                 </p>
               )}
               {importSkillSuggestions.length > 0 && (
-                <div className="space-y-3 rounded-lg border border-[var(--border-default)] p-3">
+                <div role="region" aria-label="Detected skills review" className="space-y-3 rounded-lg border border-[var(--border-default)] p-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-[var(--text-primary)]">Review detected skills</p>
@@ -1803,29 +1868,31 @@ const ResumeBuilder: React.FC = () => {
                       disabled={selectedImportSkillCount === 0 || isSavingImportSkills}
                       isLoading={isSavingImportSkills}
                     >
-                      <Plus size={14} className="mr-1" />
+                      <Plus {...decorativeIconProps} size={14} className="mr-1" />
                       Save Skills
                     </Button>
                   </div>
                   {resumeImportSkillsError && (
                     <ResumeActionFailureAlert title="Detected skills were not saved" message={resumeImportSkillsError} />
                   )}
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div role="list" aria-label="Detected skills" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {importSkillSuggestions.map(skill => (
-                      <label key={skill} className="flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={selectedImportSkills.includes(skill)}
-                          onChange={() => handleToggleImportSkill(skill)}
-                        />
-                        <span>{skill}</span>
-                      </label>
+                      <div key={skill} role="listitem" aria-label={getResumeSkillLabel(skill)}>
+                        <label className="flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedImportSkills.includes(skill)}
+                            onChange={() => handleToggleImportSkill(skill)}
+                          />
+                          <span>{skill}</span>
+                        </label>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
               {(importExperienceSuggestions.length > 0 || importEducationSuggestions.length > 0) && (
-                <div className="space-y-3 rounded-lg border border-[var(--border-default)] p-3">
+                <div role="region" aria-label="Detected profile rows review" className="space-y-3 rounded-lg border border-[var(--border-default)] p-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-[var(--text-primary)]">Review detected profile rows</p>
@@ -1841,7 +1908,7 @@ const ResumeBuilder: React.FC = () => {
                       disabled={selectedImportProfileRowCount === 0 || isSavingImportRows}
                       isLoading={isSavingImportRows}
                     >
-                      <Plus size={14} className="mr-1" />
+                      <Plus {...decorativeIconProps} size={14} className="mr-1" />
                       Save Rows
                     </Button>
                   </div>
@@ -1852,55 +1919,63 @@ const ResumeBuilder: React.FC = () => {
                   {importExperienceSuggestions.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-[var(--text-muted)]">Work Experience</p>
-                      {importExperienceSuggestions.map(experience => (
-                        <label key={experience.id} className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
-                          <input
-                            type="checkbox"
-                            className="mt-1"
-                            checked={selectedImportExperienceIds.includes(experience.id)}
-                            onChange={() => handleToggleImportExperience(experience.id)}
-                          />
-                          <span className="min-w-0">
-                            <span className="block font-medium text-[var(--text-primary)]">{experience.title}</span>
-                            <span className="block text-xs text-[var(--text-secondary)]">
-                              {[experience.company, experience.location].filter(Boolean).join(' | ')}
-                            </span>
-                            <span className="block text-xs text-[var(--text-muted)]">
-                              {formatResumeDate(experience.startDate)} - {experience.current ? 'Present' : formatResumeDate(experience.endDate) || 'Present'}
-                            </span>
-                            {experience.description && (
-                              <span className="mt-1 line-clamp-2 block text-xs text-[var(--text-muted)]">{experience.description}</span>
-                            )}
-                          </span>
-                        </label>
-                      ))}
+                      <div role="list" aria-label="Detected work experience rows" className="space-y-2">
+                        {importExperienceSuggestions.map(experience => (
+                          <div key={experience.id} role="listitem" aria-label={getResumeExperienceLabel(experience)}>
+                            <label className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={selectedImportExperienceIds.includes(experience.id)}
+                                onChange={() => handleToggleImportExperience(experience.id)}
+                              />
+                              <span className="min-w-0">
+                                <span className="block font-medium text-[var(--text-primary)]">{experience.title}</span>
+                                <span className="block text-xs text-[var(--text-secondary)]">
+                                  {[experience.company, experience.location].filter(Boolean).join(' | ')}
+                                </span>
+                                <span className="block text-xs text-[var(--text-muted)]">
+                                  {formatResumeDate(experience.startDate)} - {experience.current ? 'Present' : formatResumeDate(experience.endDate) || 'Present'}
+                                </span>
+                                {experience.description && (
+                                  <span className="mt-1 line-clamp-2 block text-xs text-[var(--text-muted)]">{experience.description}</span>
+                                )}
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   {importEducationSuggestions.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-[var(--text-muted)]">Education</p>
-                      {importEducationSuggestions.map(educationRow => (
-                        <label key={educationRow.id} className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
-                          <input
-                            type="checkbox"
-                            className="mt-1"
-                            checked={selectedImportEducationIds.includes(educationRow.id)}
-                            onChange={() => handleToggleImportEducation(educationRow.id)}
-                          />
-                          <span className="min-w-0">
-                            <span className="block font-medium text-[var(--text-primary)]">{educationRow.institution}</span>
-                            {(educationRow.degree || educationRow.fieldOfStudy) && (
-                              <span className="block text-xs text-[var(--text-secondary)]">
-                                {[educationRow.degree, educationRow.fieldOfStudy].filter(Boolean).join(' | ')}
+                      <div role="list" aria-label="Detected education rows" className="space-y-2">
+                        {importEducationSuggestions.map(educationRow => (
+                          <div key={educationRow.id} role="listitem" aria-label={getResumeEducationLabel(educationRow)}>
+                            <label className="flex items-start gap-3 rounded-md border border-[var(--border-default)] px-3 py-2 text-sm">
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={selectedImportEducationIds.includes(educationRow.id)}
+                                onChange={() => handleToggleImportEducation(educationRow.id)}
+                              />
+                              <span className="min-w-0">
+                                <span className="block font-medium text-[var(--text-primary)]">{educationRow.institution}</span>
+                                {(educationRow.degree || educationRow.fieldOfStudy) && (
+                                  <span className="block text-xs text-[var(--text-secondary)]">
+                                    {[educationRow.degree, educationRow.fieldOfStudy].filter(Boolean).join(' | ')}
+                                  </span>
+                                )}
+                                <span className="block text-xs text-[var(--text-muted)]">
+                                  {formatResumeDate(educationRow.startDate)} - {formatResumeDate(educationRow.endDate) || 'Present'}
+                                </span>
                               </span>
-                            )}
-                            <span className="block text-xs text-[var(--text-muted)]">
-                              {formatResumeDate(educationRow.startDate)} - {formatResumeDate(educationRow.endDate) || 'Present'}
-                            </span>
-                          </span>
-                        </label>
-                      ))}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1928,7 +2003,7 @@ const ResumeBuilder: React.FC = () => {
               onClick={handleConfirmDeleteResumeArtifact}
               isLoading={isDeletingPendingResumeArtifact}
             >
-              <Trash2 size={16} className="mr-1.5" /> Delete PDF
+              <Trash2 {...decorativeIconProps} size={16} className="mr-1.5" /> Delete PDF
             </Button>
           </>
         }
@@ -1950,6 +2025,8 @@ const ResumeBuilder: React.FC = () => {
       </AuraModal>
 
       <Tabs
+        ariaLabel="Resume sections"
+        idPrefix="resume-sections"
         tabs={[
           { id: 'editor', label: 'Editor' },
           { id: 'preview', label: 'Preview' },
@@ -1959,13 +2036,13 @@ const ResumeBuilder: React.FC = () => {
       />
 
       {(exportHistory.length > 0 || resumeArtifactUploads.length > 0 || resumeArtifactDeletionReceipts.length > 0) && (
-        <Card className="p-5 space-y-3">
+        <Card role="region" aria-label="Resume export activity" className="p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <Clock size={15} className="text-[var(--text-muted)]" />
+            <Clock {...decorativeIconProps} size={15} className="text-[var(--text-muted)]" />
             <h3 className="text-sm font-semibold">Export Activity</h3>
           </div>
           {resumeArtifactUploads.length > 0 && (
-            <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
+            <div role="region" aria-label="Uploaded PDF artifacts" className="rounded-lg border border-accent/20 bg-accent/5 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)]">Uploaded PDFs</p>
@@ -1977,9 +2054,14 @@ const ResumeBuilder: React.FC = () => {
                   <ResumeActionFailureAlert title="Uploaded PDF link was not copied" message={resumeArtifactCopyError} />
                 </div>
               )}
-              <div className="space-y-2">
+              <div role="list" aria-label="Uploaded PDFs" className="space-y-2">
                 {resumeArtifactUploads.map(artifact => (
-                  <div key={artifact.url} className="flex flex-col gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div
+                    key={artifact.url}
+                    role="listitem"
+                    aria-label={getResumeArtifactLabel(artifact)}
+                    className="flex flex-col gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{artifact.fileName}</p>
                       <p className="text-xs text-[var(--text-muted)]">{formatExportTime(artifact.uploadedAt)}</p>
@@ -1991,7 +2073,7 @@ const ResumeBuilder: React.FC = () => {
                         rel="noreferrer"
                         className="inline-flex h-8 items-center gap-1 rounded-md border border-[var(--border-default)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
                       >
-                        Open PDF <ExternalLink size={12} />
+                        Open PDF <ExternalLink {...decorativeIconProps} size={12} />
                       </a>
                       <Button
                         type="button"
@@ -2000,7 +2082,7 @@ const ResumeBuilder: React.FC = () => {
                         onClick={() => handleCopyResumeArtifactLink(artifact)}
                         isLoading={copyingResumeArtifactUrl === artifact.url}
                       >
-                        <Copy size={12} className="mr-1" />
+                        <Copy {...decorativeIconProps} size={12} className="mr-1" />
                         Copy Link
                       </Button>
                       <Button
@@ -2010,7 +2092,7 @@ const ResumeBuilder: React.FC = () => {
                         onClick={() => handleOpenDeleteResumeArtifact(artifact)}
                         isLoading={deletingResumeArtifactUrl === artifact.url}
                       >
-                        <Trash2 size={12} className="mr-1" />
+                        <Trash2 {...decorativeIconProps} size={12} className="mr-1" />
                         Delete
                       </Button>
                     </div>
@@ -2020,16 +2102,21 @@ const ResumeBuilder: React.FC = () => {
             </div>
           )}
           {resumeArtifactDeletionReceipts.length > 0 && (
-            <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
+            <div role="region" aria-label="Deleted PDF receipts" className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)]">Deleted PDF Receipts</p>
                   <p className="text-xs text-[var(--text-muted)]">Recent provider delete confirmations from this browser</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div role="list" aria-label="Deleted PDF receipts" className="space-y-2">
                 {resumeArtifactDeletionReceipts.map(receipt => (
-                  <div key={receipt.url} className="flex flex-col gap-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div
+                    key={receipt.url}
+                    role="listitem"
+                    aria-label={getResumeArtifactDeletionLabel(receipt)}
+                    className="flex flex-col gap-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{receipt.fileName || 'Uploaded PDF'}</p>
                       <p className="text-xs text-[var(--text-muted)]">Provider delete confirmed</p>
@@ -2046,9 +2133,14 @@ const ResumeBuilder: React.FC = () => {
               </div>
             </div>
           )}
-          <div className="space-y-2">
+          <div role="list" aria-label="Resume export history" className="space-y-2">
             {exportHistory.map((record) => (
-              <div key={record.id} className="flex flex-col gap-1 rounded-lg border border-[var(--border-default)] p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={record.id}
+                role="listitem"
+                aria-label={getResumeExportRecordLabel(record)}
+                className="flex flex-col gap-1 rounded-lg border border-[var(--border-default)] p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
                   <p className="text-sm font-medium">{record.fileName}</p>
                   <p className="text-xs text-[var(--text-muted)]">{record.detail}</p>
@@ -2069,82 +2161,114 @@ const ResumeBuilder: React.FC = () => {
       )}
 
       {activeTab === 'editor' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="p-5 space-y-4">
+        <div
+          id="resume-sections-panel-editor"
+          role="tabpanel"
+          aria-labelledby="resume-sections-tab-editor"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+        >
+          <Card role="region" aria-label="Personal information editor" className="p-5 space-y-4">
             <h3 className="text-sm font-semibold">Personal Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input label="Full Name" value={resumeDraft.fullName} disabled helperText="Managed from your account profile." />
-              <Input label="Email" value={resumeDraft.email} type="email" disabled helperText="Managed from your account profile." />
-              <Input
-                label="Headline"
-                value={resumeDraft.headline}
-                onChange={(e) => updateResumeDraftField('headline', e.target.value)}
-                placeholder="e.g. Senior Software Engineer"
-              />
-              <Input
-                label="Phone"
-                value={resumeDraft.phone}
-                onChange={(e) => updateResumeDraftField('phone', e.target.value)}
-                placeholder="+1 555 0100"
-              />
-              <Input
-                label="Location"
-                value={resumeDraft.location}
-                onChange={(e) => updateResumeDraftField('location', e.target.value)}
-                className="sm:col-span-2"
-                placeholder="Remote, or New York, NY"
-              />
-              <Input
-                label="Website"
-                value={resumeDraft.website}
-                onChange={(e) => updateResumeDraftField('website', e.target.value)}
-                className="sm:col-span-2"
-                placeholder="https://..."
-              />
+            <div role="list" aria-label="Resume editor fields" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div role="listitem">
+                <Input label="Full Name" value={resumeDraft.fullName} disabled helperText="Managed from your account profile." />
+              </div>
+              <div role="listitem">
+                <Input label="Email" value={resumeDraft.email} type="email" disabled helperText="Managed from your account profile." />
+              </div>
+              <div role="listitem">
+                <Input
+                  label="Headline"
+                  value={resumeDraft.headline}
+                  onChange={(e) => updateResumeDraftField('headline', e.target.value)}
+                  placeholder="e.g. Senior Software Engineer"
+                />
+              </div>
+              <div role="listitem">
+                <Input
+                  label="Phone"
+                  value={resumeDraft.phone}
+                  onChange={(e) => updateResumeDraftField('phone', e.target.value)}
+                  placeholder="+1 555 0100"
+                />
+              </div>
+              <div role="listitem" className="sm:col-span-2">
+                <Input
+                  label="Location"
+                  value={resumeDraft.location}
+                  onChange={(e) => updateResumeDraftField('location', e.target.value)}
+                  placeholder="Remote, or New York, NY"
+                />
+              </div>
+              <div role="listitem" className="sm:col-span-2">
+                <Input
+                  label="Website"
+                  value={resumeDraft.website}
+                  onChange={(e) => updateResumeDraftField('website', e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
             </div>
           </Card>
 
-          <Card className="p-5 space-y-4">
-            <h3 className="text-sm font-semibold">Professional Summary</h3>
+          <Card role="region" aria-label="Professional summary editor" className="p-5 space-y-4">
+            <label htmlFor="resume-summary" className="block text-sm font-semibold">Professional Summary</label>
             <textarea
+              id="resume-summary"
+              aria-describedby="resume-summary-help"
               className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-3 py-2 text-sm min-h-[160px] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent resize-y"
               value={resumeDraft.summary}
               onChange={(e) => updateResumeDraftField('summary', e.target.value)}
               placeholder="Summarize your experience, strengths, and target role."
             />
-            <p className="text-xs text-[var(--text-muted)]">
+            <p id="resume-summary-help" className="text-xs text-[var(--text-muted)]">
               Saved summary is reused by your profile and resume preview.
             </p>
           </Card>
 
-          <Card className="p-5 space-y-4 lg:col-span-2">
+          <Card role="region" aria-label="Resume work experience editor" className="p-5 space-y-4 lg:col-span-2">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-sm font-semibold">Work Experience</h3>
               <p className="text-xs text-[var(--text-muted)]">Manage entries from Profile completion.</p>
             </div>
-            {experiences.map((exp: Record<string, any>, i: number) => (
-              <div key={exp.id || i} className={`${resumeInsetClassName} flex min-w-0 items-start gap-3 p-4`}>
-                <GripVertical size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden="true" />
-                <div className="min-w-0 flex-1">
-                  <p className="break-words text-sm font-medium">{exp.title}</p>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {exp.company} - {formatResumeDate(getExperienceStartDate(exp))} to {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
-                  </p>
-                  {exp.description && <p className="mt-2 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
-                </div>
+            {experiences.length > 0 ? (
+              <div role="list" aria-label="Resume work experience rows" className="space-y-3">
+                {experiences.map((exp: Record<string, any>, i: number) => (
+                  <div
+                    key={exp.id || i}
+                    role="listitem"
+                    aria-label={getResumeExperienceLabel(exp)}
+                    className={`${resumeInsetClassName} flex min-w-0 items-start gap-3 p-4`}
+                  >
+                    <GripVertical {...decorativeIconProps} size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-medium">{exp.title}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {exp.company} - {formatResumeDate(getExperienceStartDate(exp))} to {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
+                      </p>
+                      {exp.description && <p className="mt-2 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-            {experiences.length === 0 && <p className="text-sm text-[var(--text-muted)] text-center py-4">No experience listed.</p>}
+            ) : (
+              <p className="text-sm text-[var(--text-muted)] text-center py-4">No experience listed.</p>
+            )}
           </Card>
 
-          <Card className="p-5 space-y-4 lg:col-span-2">
+          <Card role="region" aria-label="Resume skills editor" className="p-5 space-y-4 lg:col-span-2">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-sm font-semibold">Skills</h3>
               <p className="text-xs text-[var(--text-muted)]">Manage skills from Profile completion.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div role="list" aria-label="Resume skills" className="flex flex-wrap gap-2">
               {skills.map((s: Record<string, any> | string, i: number) => (
-                <span key={`${getSkillName(s)}-${i}`} className="inline-flex max-w-full items-center gap-1.5 break-words rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-1.5 text-sm">
+                <span
+                  key={`${getSkillName(s)}-${i}`}
+                  role="listitem"
+                  aria-label={getResumeSkillLabel(s)}
+                  className="inline-flex max-w-full items-center gap-1.5 break-words rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-1.5 text-sm"
+                >
                   {getSkillName(s)}
                 </span>
               ))}
@@ -2153,63 +2277,74 @@ const ResumeBuilder: React.FC = () => {
           </Card>
         </div>
       ) : (
-        <Card className="mx-auto w-full max-w-2xl p-5 sm:p-8">
-          <div className="space-y-6">
-            <div className="text-center border-b border-[var(--border-default)] pb-6">
-              <h2 className="break-words text-2xl font-semibold">{resumeDraft.fullName || 'Resume'}</h2>
-              <p className="break-words text-sm text-[var(--text-secondary)]">{resumeDraft.headline || 'Professional'}</p>
-              <p className="mt-1 break-words text-xs text-[var(--text-muted)]">
-                {[resumeDraft.location, resumeDraft.email, resumeDraft.phone, resumeDraft.website].filter(Boolean).join(' - ')}
-              </p>
-            </div>
-            <div>
-              <h3 className={`${resumePreviewHeadingClassName} mb-2`}>Summary</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
-                {resumeDraft.summary || 'No summary provided.'}
-              </p>
-            </div>
-            <div>
-              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Experience</h3>
-              <div className="space-y-4">
-                {experiences.map((exp: Record<string, any>, i: number) => (
-                  <div key={exp.id || i}>
-                    <p className="break-words text-sm font-medium">{exp.title} - {exp.company}</p>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      {formatResumeDate(getExperienceStartDate(exp))} - {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
-                    </p>
-                    {exp.description && <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
-                  </div>
-                ))}
-                {experiences.length === 0 && <p className="text-sm text-[var(--text-muted)]">No work experience added yet.</p>}
+        <div
+          id="resume-sections-panel-preview"
+          role="tabpanel"
+          aria-labelledby="resume-sections-tab-preview"
+        >
+          <Card role="region" aria-label="Resume preview" className="mx-auto w-full max-w-2xl p-5 sm:p-8">
+            <div className="space-y-6">
+              <div className="text-center border-b border-[var(--border-default)] pb-6">
+                <h2 className="break-words text-2xl font-semibold">{resumeDraft.fullName || 'Resume'}</h2>
+                <p className="break-words text-sm text-[var(--text-secondary)]">{resumeDraft.headline || 'Professional'}</p>
+                <p className="mt-1 break-words text-xs text-[var(--text-muted)]">
+                  {[resumeDraft.location, resumeDraft.email, resumeDraft.phone, resumeDraft.website].filter(Boolean).join(' - ')}
+                </p>
+              </div>
+              <div role="region" aria-label="Resume preview summary">
+                <h3 className={`${resumePreviewHeadingClassName} mb-2`}>Summary</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                  {resumeDraft.summary || 'No summary provided.'}
+                </p>
+              </div>
+              <div role="region" aria-label="Resume preview experience">
+                <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Experience</h3>
+                <div role="list" aria-label="Resume preview experience rows" className="space-y-4">
+                  {experiences.map((exp: Record<string, any>, i: number) => (
+                    <div key={exp.id || i} role="listitem" aria-label={getResumeExperienceLabel(exp)}>
+                      <p className="break-words text-sm font-medium">{exp.title} - {exp.company}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {formatResumeDate(getExperienceStartDate(exp))} - {exp.current ? 'Present' : formatResumeDate(getExperienceEndDate(exp)) || 'Present'}
+                      </p>
+                      {exp.description && <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">{exp.description}</p>}
+                    </div>
+                  ))}
+                  {experiences.length === 0 && <p className="text-sm text-[var(--text-muted)]">No work experience added yet.</p>}
+                </div>
+              </div>
+              <div role="region" aria-label="Resume preview education">
+                <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Education</h3>
+                <div role="list" aria-label="Resume preview education rows" className="space-y-4">
+                  {education.map((edu: Record<string, any>, i: number) => (
+                    <div key={edu.id || i} role="listitem" aria-label={getResumeEducationLabel(edu)}>
+                      <p className="break-words text-sm font-medium">{edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education'}</p>
+                      <p className="break-words text-xs text-[var(--text-muted)]">
+                        {edu.institution} - {formatResumeDate(getEducationEndDate(edu) || getEducationStartDate(edu))}
+                      </p>
+                    </div>
+                  ))}
+                  {education.length === 0 && <p className="text-sm text-[var(--text-muted)]">No education added yet.</p>}
+                </div>
+              </div>
+              <div role="region" aria-label="Resume preview skills">
+                <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Skills</h3>
+                <div role="list" aria-label="Resume preview skills" className="flex flex-wrap gap-2">
+                  {skills.map((skill: Record<string, any> | string, i: number) => (
+                    <span
+                      key={`${getSkillName(skill)}-${i}`}
+                      role="listitem"
+                      aria-label={getResumeSkillLabel(skill)}
+                      className="max-w-full break-words rounded-md border border-[var(--border-default)] px-2 py-1 text-xs"
+                    >
+                      {getSkillName(skill)}
+                    </span>
+                  ))}
+                  {skills.length === 0 && <p className="text-sm text-[var(--text-muted)]">No skills added yet.</p>}
+                </div>
               </div>
             </div>
-            <div>
-              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Education</h3>
-              <div className="space-y-4">
-                {education.map((edu: Record<string, any>, i: number) => (
-                  <div key={edu.id || i}>
-                    <p className="break-words text-sm font-medium">{edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education'}</p>
-                    <p className="break-words text-xs text-[var(--text-muted)]">
-                      {edu.institution} - {formatResumeDate(getEducationEndDate(edu) || getEducationStartDate(edu))}
-                    </p>
-                  </div>
-                ))}
-                {education.length === 0 && <p className="text-sm text-[var(--text-muted)]">No education added yet.</p>}
-              </div>
-            </div>
-            <div>
-              <h3 className={`${resumePreviewHeadingClassName} mb-3`}>Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill: Record<string, any> | string, i: number) => (
-                  <span key={`${getSkillName(skill)}-${i}`} className="max-w-full break-words rounded-md border border-[var(--border-default)] px-2 py-1 text-xs">
-                    {getSkillName(skill)}
-                  </span>
-                ))}
-                {skills.length === 0 && <p className="text-sm text-[var(--text-muted)]">No skills added yet.</p>}
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       )}
     </div>
   );

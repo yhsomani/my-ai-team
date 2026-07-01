@@ -28,6 +28,7 @@ import {
 import { DashboardView } from './views/DashboardView';
 import { JobsView } from './views/JobsView';
 import { DiagnosticsView } from './views/DiagnosticsView';
+import { LocalOnlyStatus } from '../components/LocalOnlyStatus';
 
 interface LogEntry {
   time: string;
@@ -618,6 +619,8 @@ export function PopupApp() {
         </button>
       </nav>
 
+      <LocalOnlyStatus id="popup-local-only-status" className="mx-3 mt-3" />
+
       {activeStorageIssue && (
         <div
           id="popup-storage-status"
@@ -680,7 +683,7 @@ export function PopupApp() {
 
       <footer className="flex items-center justify-between gap-3 border-t border-[var(--ext-border)] bg-[var(--ext-surface)] px-4 py-1.5 text-[9px] text-[var(--ext-text-muted)]">
         <span>React extension</span>
-        <span>{activeStorageIssue ? 'Local storage needs attention' : 'Local storage active'}</span>
+        <span>{activeStorageIssue ? 'Local storage needs attention' : 'Local only - no cloud sync'}</span>
       </footer>
     </div>
   );

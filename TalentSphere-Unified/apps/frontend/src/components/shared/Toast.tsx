@@ -47,7 +47,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-20 left-4 right-4 z-50 flex max-h-32 flex-col gap-2 overflow-y-auto sm:bottom-4 sm:left-auto sm:w-[min(24rem,calc(100vw-2rem))] sm:max-h-[calc(100vh-2rem)]">
+      <div
+        data-ui="toast-stack"
+        data-slot="toast-stack"
+        role="region"
+        aria-label="Toast notifications"
+        className="pointer-events-none fixed bottom-20 left-4 right-4 z-50 flex max-h-32 flex-col gap-2 overflow-y-auto sm:bottom-4 sm:left-auto sm:w-[min(24rem,calc(100vw-2rem))] sm:max-h-[calc(100vh-2rem)]"
+      >
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
         ))}
@@ -57,11 +63,18 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 };
 
 const ToastItem: React.FC<{ toast: ToastMessage; onRemove: () => void }> = ({ toast, onRemove }) => {
+  const typeLabels = {
+    success: 'Success',
+    error: 'Error',
+    warning: 'Warning',
+    info: 'Information',
+  };
+
   const icons = {
-    success: <CheckCircle className="text-success" size={20} />,
-    error: <AlertCircle className="text-destructive" size={20} />,
-    warning: <AlertTriangle className="text-warning" size={20} />,
-    info: <Info className="text-accent" size={20} />,
+    success: <CheckCircle className="text-success" size={20} aria-hidden="true" focusable="false" />,
+    error: <AlertCircle className="text-destructive" size={20} aria-hidden="true" focusable="false" />,
+    warning: <AlertTriangle className="text-warning" size={20} aria-hidden="true" focusable="false" />,
+    info: <Info className="text-accent" size={20} aria-hidden="true" focusable="false" />,
   };
 
   const bgs = {
@@ -73,17 +86,29 @@ const ToastItem: React.FC<{ toast: ToastMessage; onRemove: () => void }> = ({ to
 
   return (
     <div
+      data-ui="toast"
+      data-slot="toast"
+      data-toast-type={toast.type}
       role={toast.type === 'error' ? 'alert' : 'status'}
       aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+      aria-label={`${typeLabels[toast.type]} notification: ${toast.title}`}
       className={`pointer-events-auto flex w-full items-start gap-3 rounded-lg border ${bgs[toast.type]} bg-[var(--bg-panel)]/95 p-4 shadow-lg backdrop-blur-md animate-in slide-in-from-right fade-in duration-300`}
     >
-      <div className="shrink-0 mt-0.5">{icons[toast.type]}</div>
-      <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-medium">{toast.title}</h4>
-        {toast.message && <p className="text-xs text-[var(--text-muted)] mt-1">{toast.message}</p>}
+      <div data-ui="toast-icon" data-slot="toast-icon" className="shrink-0 mt-0.5">{icons[toast.type]}</div>
+      <div data-ui="toast-content" data-slot="toast-content" className="flex-1 min-w-0">
+        <h4 data-ui="toast-title" data-slot="toast-title" className="text-sm font-medium">{toast.title}</h4>
+        {toast.message && <p data-ui="toast-message" data-slot="toast-message" className="text-xs text-[var(--text-muted)] mt-1">{toast.message}</p>}
       </div>
-      <button onClick={onRemove} aria-label="Close notification" className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-        <X size={16} />
+      <button
+        data-ui="toast-dismiss"
+        data-slot="toast-dismiss"
+        type="button"
+        onClick={onRemove}
+        aria-label={`Dismiss ${toast.title} notification`}
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel)]"
+      >
+        <X size={16} aria-hidden="true" focusable="false" />
       </button>
     </div>
   );

@@ -2,7 +2,7 @@
 
 > Documentation status: Current detailed feature, route, workflow, role, and UI reference. Keep synchronized with `../../PLAN.md`.
 
-Last reviewed from code: 2026-06-26
+Last reviewed from code: 2026-06-29
 
 This file is the single detailed reference for TalentSphere features, dashboards, user inputs, outputs, workflows, data sources, backend endpoints, role access, and visible UI contents.
 
@@ -27,7 +27,7 @@ The web app centers on talent users, recruiters, and admins:
 
 The frontend route registry is defined in `apps/frontend/src/navigation/routeRegistry.ts`. `apps/frontend/src/App.tsx` maps those protected route definitions to lazy page components, and `Sidebar.tsx` plus `Header.tsx` consume the same registry for navigation, mobile priorities, search destinations, and role visibility.
 
-The feature ownership and placement contract is defined in `apps/frontend/src/navigation/featureOwnership.ts`. It identifies the one primary owner for each major route or surface and classifies secondary appearances as summaries, links, search destinations, preference snapshots, or reviewed handoffs. `npm run test:ia` validates that every protected route has exactly one primary feature owner, public routes are classified, route paths and role restrictions align with the route registry, and candidate merge decisions remain explicit.
+The feature ownership and placement contract is defined in `apps/frontend/src/navigation/featureOwnership.ts`. It identifies the one primary owner for each major route or surface, records the screen's user-journey value, records whether the screen can merge with another section, and classifies secondary appearances as summaries, links, search destinations, preference snapshots, or reviewed handoffs. `npm run test:ia` validates that every protected route has exactly one primary feature owner, public routes are classified, route paths and role restrictions align with the route registry, primary/account navigation stays limited to necessary source-backed owners, searchable utility routes are documented as command-search secondary destinations, user-journey value and merge evaluation are documented separately from behavior preservation, dashboard-hosted domain placements stay limited to approved summaries or explicit handoff links, and candidate merge decisions remain explicit.
 
 | Route | Page | Access | Main purpose |
 |---|---|---|---|
@@ -58,8 +58,8 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
 
 ### What the shell contains
 
-- Left sidebar on desktop.
-- Slide-over sidebar on mobile.
+- Left sidebar on desktop, including explicit labels for collapsed icon-only route and footer controls.
+- Named slide-over sidebar on mobile.
 - Bottom mobile navigation showing role-prioritized destinations from the shared route registry.
 - Top sticky header with:
   - Mobile menu toggle.
@@ -70,6 +70,25 @@ The authenticated app shell is built by `ResponsiveLayout`, `Sidebar`, and `Head
   - Theme toggle.
   - Sign out.
   - Desktop collapse/expand control.
+- Shared transient toast stack with a named `Toast notifications` region, toast-type-specific status/alert labels, and notification-specific dismiss controls.
+- Compatibility realtime toast stack for older notification-context imports, using a distinct `Realtime toast notifications` region and the same dismiss/timing semantics until the path is retired or migrated.
+- Shared `AuraModal` review/confirmation primitive with auditable modal structure markers, focus containment, Escape close, opener focus restoration, and background page scroll lock while open.
+- Shared loading `Skeleton` primitive with auditable skeleton root/compatibility markers that hides decorative placeholders from assistive technologies by default, preserves explicit loading semantics when supplied, and respects reduced motion.
+- Shared `EmptyState` primitive with named empty-state sections, connected descriptions, auditable root/subpart markers with compatibility slot metadata, decorative icon hiding, and caller-owned recovery actions.
+- Shared `Toggle` primitive for binary preferences with auditable root/switch markers, programmatic label/description relationships, and unchanged checked-state callbacks.
+- Shared `AuraImage` primitive with auditable image/media/loading/fallback markers plus compatibility slot metadata, performance-aware lazy/async defaults, caller-owned load/error handler preservation, named failed-image fallbacks, decorative failed-image hiding, and failed-state reset when callers provide a new source.
+- Shared `Tabs` primitive with named horizontal tablists, auditable tablist/trigger/icon markers plus compatibility slot metadata, stable tab/panel relationships when prefixes are supplied, decorative icon hiding, click selection, and Arrow/Home/End roving focus alignment.
+- Shared `Card` / `GlassCard` primitive with auditable root/subpart markers, containment-safe sizing, wrapping-safe titles/descriptions/footers, and legacy `AuraCard` compatibility exports wired to the same implementation.
+- Shared `components/shared` barrel entrypoint for canonical primitives, typography helpers, compatibility `PageTemplate`, and compatibility aliases, kept free of route logic, domain workflows, service calls, and analytics.
+- Exported legacy helper compatibility surfaces for post cards, stat cards, and status bars with named article/metric/status semantics, auditable compatibility markers, and decorative initials/icons hidden from assistive technologies.
+- Exported typography and `PageTemplate` compatibility helpers with native text semantics, caller prop preservation, wrapping-safe defaults, auditable page-template shell/content markers, optional shared page headers, and named main content landmarks.
+- Authenticated `ResponsiveLayout` shell with userless passthrough, named Application content landmark, shell root/skip-link/main/page markers plus compatibility slot metadata, resize/header-toggle sidebar offsets, and unchanged logout routing.
+- Exported legacy `AuraNavbar` compatibility helper with named navigation landmarks, active-route current state, controlled mobile-menu relationships, decorative icons, public auth links, profile/search/notification controls, and unchanged logout routing.
+- Shared `AuraThemeProvider` visual-mode context with the existing `aura-theme` key, root `light`/`dark` classes, stored-theme priority, system preference fallback, and current-session toggle behavior when browser storage is unavailable.
+- Exported legacy `MobileMenu` compatibility helper with named shortcut and expanded navigation landmarks, active-route state, decorative icons, expanded-menu description relationships, limited shortcut-route placement, and unchanged close/theme/logout callbacks.
+- Active `Sidebar` shell with named collapsed brand/home entry, primary and expanded mobile navigation landmarks, active-route state, decorative shell icons/dividers, hidden mobile overlay, and unchanged route filtering plus close/theme/sign-out/collapse callbacks.
+- Active `Header` shell with named mobile-navigation and notification triggers, explicit controlled relationships, decorative shell icons/unread dots/avatar initials, command search route discovery, notification recovery, and unchanged route/search/notification behavior.
+- Active `CommandSearch` route-discovery surface with named/described search semantics, role-aware label-ranked results, decorative search/result/arrow icons, role-filtered no-results, and unchanged route navigation plus shell close callbacks.
 
 ### Sidebar navigation
 
@@ -95,26 +114,82 @@ Shell workflows:
 2. Pressing Enter opens the active matching destination.
 3. Clicking a search result navigates to that feature and closes search.
 4. `Cmd/Ctrl+K` focuses `CommandSearch`; the shortcut is exposed as an accessibility shortcut instead of visible instructional UI.
-5. The notification bell opens account notification rows and role-aware reminders that navigate only after the user selects one.
-6. Future scheduled networking reminders stay visible in the notification list but do not trigger the urgent unread indicator until due.
-7. Account notification rows show whether data came from account sync, notification API fallback, or local browser fallback.
-8. Degraded notification fallback states include visible retry copy, failed notification loads use fixed safe copy with Retry notifications, and failed mark-all persistence restores the visible unread state instead of presenting a false read state.
-9. Scheduled workers can promote due networking reminders and saved-search digests without taking the underlying user action.
-10. Sidebar, slide-over, desktop collapsed nav, and mobile bottom nav mark the active route with `aria-current="page"`.
-11. Wildcard-route recovery shows public auth entry links for visitors and role-filtered app destinations for authenticated users.
-12. Fatal render recovery uses `ErrorBoundary` with safe token-backed copy, service-unavailable wording when applicable, a reload action, and no raw exception-message exposure.
+5. `CommandSearch` exposes a named search landmark, a described destination listbox, route label plus route-registry description option labels, and a named no-result status.
+6. `CommandSearch` visual search, destination, and arrow icons stay decorative while route meaning remains in the accessible search/listbox/option text.
+7. The notification bell opens account notification rows and role-aware reminders that navigate only after the user selects one.
+8. Future scheduled networking reminders stay visible in the notification list but do not trigger the urgent unread indicator until due.
+9. Account notification rows show whether data came from account sync, notification API fallback, or local browser fallback.
+10. Degraded notification fallback states include visible retry copy, failed notification loads use fixed safe copy with Retry notifications, and failed mark-all persistence restores the visible unread state instead of presenting a false read state.
+11. Scheduled workers can promote due networking reminders and saved-search digests without taking the underlying user action.
+12. Sidebar, slide-over, desktop collapsed nav, and mobile bottom nav mark the active route with `aria-current="page"`; collapsed desktop route/footer controls keep explicit accessible names, and the mobile slide-over uses a distinct `Expanded mobile navigation` landmark so it is not confused with the bottom bar.
+13. Wildcard-route recovery shows public auth entry links for visitors and role-filtered app destinations for authenticated users.
+14. Fatal render recovery uses `ErrorBoundary` with safe token-backed copy, service-unavailable wording when applicable, decorative/focusless recovery icons, a reload action, and no raw exception-message exposure.
+15. Transient toast feedback appears in the shared Toast notifications region; persistent failed or degraded states remain inline in the owning screen.
+16. Realtime notification compatibility toasts use the `showToast(type, message)` API, keep click-to-dismiss compatibility, and add keyboard-reachable dismiss controls without changing notification socket handlers.
 
-Browser-level command-search workflow coverage lives in `apps/frontend/tests/command-search-workflow.spec.ts`. It verifies label-ranked utility route discovery, role-filtered command destinations, no-result states, and recruiter command-route navigation across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+Browser-level keyboard coverage in `apps/frontend/tests/keyboard-navigation.spec.ts` verifies command search, notifications, mobile bottom navigation, mobile slide-over navigation, collapsed desktop sidebar naming, shared tabs, shared modals, and auth form submission in Chromium with deterministic local data boundaries.
+
+Browser-level command-search workflow coverage lives in `apps/frontend/tests/command-search-workflow.spec.ts`. It verifies named search/listbox/no-result semantics, label-ranked utility route discovery, role-filtered command destinations, no-result states, and recruiter command-route navigation across Chromium, Firefox, and WebKit with deterministic local data boundaries.
+
+Unit-level command-search coverage lives in `apps/frontend/src/components/layout/CommandSearch.test.tsx`. It verifies named/described search semantics, decorative search/result/arrow icons, label-ranked result navigation, shell close callbacks, and role-filtered no-result behavior without changing route metadata, result ranking, or feature ownership.
 
 Browser-level notification workflow coverage lives in `apps/frontend/tests/notification-workflow.spec.ts`. It verifies account-sync labels, fallback labels and retry recovery, due-aware unread counts, scheduled reminder visibility, explicit mark-all payloads, and read-failure rollback across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
 Unit-level Header notification recovery coverage lives in `apps/frontend/src/components/layout/Header.test.tsx`. It verifies safe notification load/read failure copy, raw provider-error exclusion, unread-state rollback, and retry through the existing Retry notifications and Mark read actions without changing notification ownership.
 
+Unit-level shared toast coverage lives in `apps/frontend/src/components/shared/Toast.test.tsx`. It verifies the named toast stack, toast item/subpart markers with compatibility slot metadata, status/alert labels, notification-specific dismiss controls, assertive error alerts, and auto-dismiss timing without changing page handlers or route workflows.
+
+Unit-level compatibility toast coverage lives in `apps/frontend/src/context/ToastContext.test.tsx`. It verifies the older realtime-notification toast path, named Realtime toast notifications region, status/alert labels, notification-specific dismiss controls, click-to-dismiss compatibility, and 5-second auto-dismiss timing without changing `NotificationContext` socket behavior.
+
+Unit-level shared modal coverage lives in `apps/frontend/src/components/shared/AuraModal.test.tsx`. It verifies modal root/backdrop/dialog/header/body/footer markers with compatibility slot metadata, the shared modal dialog name, scroll containment, prior overflow restoration, Escape close behavior, and opener focus restoration without changing route-owned modal actions.
+
+Unit-level shared button coverage lives in `apps/frontend/src/components/shared/AuraButton.test.tsx`. It verifies shared button and compatibility slot markers, loading disablement, busy/loading metadata, visible loading labels, wrapping-safe long-label sizing, caller prop preservation, variant/size metadata, and stable icon-button dimensions without changing route-owned click handlers, submit behavior, service calls, or analytics.
+
+Unit-level shared page-header coverage lives in `apps/frontend/src/components/shared/PageHeader.test.tsx`. It verifies header/copy/title/action markers with compatibility slot metadata, title and description relationships, badge preservation, named page-action groups, and caller-owned action controls without changing route-owned page titles, action placement, navigation, service calls, or analytics.
+
+Unit-level shared card coverage lives in `apps/frontend/src/components/shared/GlassCard.test.tsx`. It verifies caller-owned card semantics, containment metadata, max-width/min-width constraints, wrapping-safe titles/descriptions, min-width-safe content, wrapping footers, and legacy `AuraCard` compatibility exports without changing route-owned card content, roles, actions, service calls, analytics, or import paths.
+
+Unit-level shared barrel coverage lives in `apps/frontend/src/components/shared/index.test.tsx`. It verifies the public `components/shared` entrypoint exports the documented primitive set, typography helpers, compatibility `PageTemplate`, and compatibility aliases from their source modules without adding alternate implementations, route behavior, service calls, or analytics.
+
+Unit-level shared image coverage lives in `apps/frontend/src/components/shared/AuraImage.test.tsx`. It verifies image/media/loading/fallback markers with compatibility slot metadata, lazy/async image defaults, caller load/error handler preservation, named failed-image fallbacks, decorative failed-image hiding, and failed-state reset for source changes without changing route-owned image choices, image copy, service calls, or analytics.
+
+Unit-level shared tabs coverage lives in `apps/frontend/src/components/shared/Tabs.test.tsx`. It verifies tablist/trigger/icon markers with compatibility slot metadata, labeled horizontal tablists, stable tab/panel relationships, decorative icon hiding, click selection, and Arrow/Home/End roving focus alignment without changing route-owned tab labels, tab state, service calls, or analytics.
+
+Unit-level legacy helper coverage lives in `apps/frontend/src/components/molecules/LegacyHelpers.test.tsx`. It verifies named stat metric groups with auditable stat-card root/subpart markers plus compatibility slot metadata, connected descriptions, named post article surfaces with auditable post-card root/subpart markers plus compatibility slot metadata, decorative avatar initials, named status bars rendered through auditable shared `StatusBarSurface` markers plus compatibility slot metadata, decorative status icons, and preserved Sync/System status defaults without changing helper props, visible copy, buttons, service calls, or analytics.
+
+Unit-level typography coverage lives in `apps/frontend/src/components/atoms/Typography.test.tsx`. It verifies native heading/body/metadata semantics, caller prop passthrough, wrapping-safe defaults, and caller class preservation without changing visible text or helper exports.
+
+Unit-level page-template coverage lives in `apps/frontend/src/components/templates/PageTemplate.test.tsx`. It verifies shared page-template shell/content markers, shared header rendering, named content landmarks, caller action preservation, class hooks, and header-hidden utility layouts without changing route-owned controls, routes, service calls, or analytics.
+
+Unit-level authenticated shell coverage lives in `apps/frontend/src/components/shared/ResponsiveLayout.test.tsx`. It verifies userless passthrough, the named Application content landmark, shell root/skip-link/main/page markers with compatibility slot metadata, responsive sidebar offsets, header sidebar toggle wiring, and logout through the existing auth service and `/login` route without changing navigation ownership or route behavior.
+
+Unit-level legacy navbar coverage lives in `apps/frontend/src/components/shared/AuraNavbar.test.tsx`. It verifies named legacy navigation landmarks, public auth links, active-route current state, decorative icons, controlled mobile-menu relationships, profile/search/notification controls, and logout through the existing auth service and `/login` route without changing route destinations or feature ownership.
+
+Unit-level shared theme provider coverage lives in `apps/frontend/src/components/shared/AuraThemeProvider.test.tsx`. It verifies stored theme priority, system preference fallback, root `light`/`dark` class synchronization, `aura-theme` persistence, and current-session toggle behavior when browser storage is unavailable without changing shell theme controls or route behavior.
+
+Unit-level legacy mobile menu coverage lives in `apps/frontend/src/components/layout/MobileMenu.test.tsx`. It verifies named shortcut and expanded navigation landmarks, limited shortcut-route placement, active-route current state, decorative icon treatment, expanded-menu description relationships, and unchanged close/theme/logout callbacks without changing link destinations or feature ownership.
+
+Unit-level active sidebar coverage lives in `apps/frontend/src/components/layout/Sidebar.test.tsx`. It verifies collapsed brand/home naming, primary and expanded mobile navigation landmarks, active-route current state, decorative shell icons/dividers, mobile overlay hiding, and unchanged close/theme/sign-out/collapse callbacks without changing route filtering, link destinations, or feature ownership.
+
+Unit-level active header coverage lives in `apps/frontend/src/components/layout/Header.test.tsx`. It verifies named mobile-navigation and notification trigger controls, explicit button types, controlled relationships, decorative shell icons/unread dots/avatar initials, safe notification recovery, and unchanged menu-toggle/notification retry behavior without changing command search, service calls, or route ownership.
+
+Unit-level shared input coverage lives in `apps/frontend/src/components/shared/AuraInput.test.tsx`. It verifies shared input-field/input root markers, label/control/icon/helper/error subpart markers with compatibility slot metadata, visible-label binding, helper/error descriptions, invalid-state semantics, caller-provided description preservation, decorative icon hiding, and unchanged field behavior without changing route-owned validation copy, form submission, or service calls.
+
+Unit-level shared skeleton coverage lives in `apps/frontend/src/components/shared/Skeleton.test.tsx`. It verifies shared skeleton root/compatibility markers, decorative default semantics, preserved caller-provided loading status labels, caller-provided layout dimensions, and reduced-motion-aware pulse styling without changing route loading states.
+
+Unit-level shared badge coverage lives in `apps/frontend/src/components/shared/Badge.test.tsx`. It verifies shared badge root/compatibility markers, compact visible labels, optional accessible descriptions, variant metadata, overflow-safe sizing, caller role/data passthrough, and absence of implicit live-region behavior without changing route-owned badge copy or status behavior.
+
+Unit-level shared empty-state coverage lives in `apps/frontend/src/components/shared/EmptyState.test.tsx`. It verifies root/icon/title/description/action markers with compatibility slot metadata, named empty-state sections, connected descriptions, decorative icon treatment, and preserved recovery-action callbacks without changing route-owned empty-state copy or actions.
+
+Unit-level shared toggle coverage lives in `apps/frontend/src/components/shared/Toggle.test.tsx`. It verifies shared toggle root/switch markers, compatibility slot metadata, switch labels, descriptions, checked-state semantics, disabled behavior, non-submit form behavior, and unchanged `onChange` payloads without changing route-owned preference behavior.
+
 Browser-level Not Found recovery coverage lives in `apps/frontend/tests/not-found-recovery.spec.ts`. It verifies public auth recovery links, authenticated dashboard recovery, role-filtered app destinations, and preservation of route-registry role filtering across Chromium, Firefox, and WebKit with deterministic local data boundaries.
 
-Public Not Found recovery remains the wildcard catch-all route. It is documented as its own public-route owner in `featureOwnership.ts`, uses the same token-backed recovery surface as the rest of the redesign, and is included in the visual-layout and accessibility-semantics route audits at desktop and mobile widths.
+Unit-level Not Found presentation coverage lives in `apps/frontend/src/pages/error/NotFound.test.tsx`. It verifies public auth recovery, authenticated role-filtered recovery destinations, navigation targets, and decorative/focusless treatment for recovery badge, action, public auth, and route-destination icons.
 
-Global runtime recovery coverage lives in `apps/frontend/src/components/error/ErrorBoundary.test.tsx`. It verifies safe generic recovery copy, service-unavailable recovery copy, custom fallback passthrough, and reload recovery without exposing raw exception messages.
+Public Not Found recovery remains the wildcard catch-all route. It is documented as its own public-route owner in `featureOwnership.ts`, uses the same token-backed recovery surface as the rest of the redesign, keeps icon meaning in visible copy and route-registry labels/descriptions, and is included in the visual-layout and accessibility-semantics route audits at desktop and mobile widths.
+
+Global runtime recovery coverage lives in `apps/frontend/src/components/error/ErrorBoundary.test.tsx`. It verifies safe generic recovery copy, service-unavailable recovery copy, custom fallback passthrough, decorative/focusless fatal-state icons, and reload recovery without exposing raw exception messages.
 
 ### Product Analytics
 
@@ -198,6 +273,7 @@ Dashboard contents:
 | Recent Opportunities | Up to 5 latest published jobs | Job title, company, location, match score |
 | Quick Actions | Profile, LMS, challenges shortcuts | Buttons to `/profile`, `/lms`, `/challenges` |
 | Active Challenges | Up to 3 challenges | Title, participant count, difficulty |
+| Decorative visuals | Status, retry, metric, checklist, header-action, opportunity, and application icons | Visual affordances only; hidden from assistive technologies and removed from the focus order |
 
 Workflow:
 
@@ -208,10 +284,11 @@ Workflow:
 5. Applications are counted from `job_applications`.
 6. Messages count is derived from unread incoming messages in user conversations and excludes messages sent by the current user.
 7. Fetch results are labeled with metadata for last refresh time and partial failures.
-8. Jobs and challenges are displayed as dashboard widgets.
+8. Jobs and challenges are displayed as summary sections inside the dashboard route.
 9. Stat cards are buttons that route to the related workflow.
 10. Empty job and challenge sections include Browse Jobs or Explore Challenges actions.
-11. Dashboard operational analytics records load, degraded-state, refresh/retry, header, checklist, stat-card, quick-action, and panel handoff decisions without recording raw issue text or user email.
+11. Decorative icons are hidden and focusless because headings, list labels, row labels, button text, and status copy carry the dashboard meaning.
+12. Dashboard operational analytics records load, degraded-state, refresh/retry, header, checklist, stat-card, quick-action, and panel handoff decisions without recording raw issue text or user email.
 
 Output data shape:
 
@@ -244,11 +321,13 @@ Empty/error states:
 - Partial query failures list affected sections such as XP and level, application count, opportunities, challenges, or unread messages without exposing raw provider error strings.
 - Top-level dashboard load failures keep the summary launchpad visible, show safe Dashboard data recovery copy, and reuse the same refresh action.
 - Empty sections show "No recent jobs found" or "No active challenges" with direct next-action buttons.
+- Metrics, onboarding tasks, quick actions, recent opportunities, and active challenge summaries expose named list/listitem semantics while keeping detailed work in the owning routes.
+- Status, retry, metric, checklist, header-action, opportunity, and recent-application icons are decorative and focusless.
 
 Browser validation:
 
 - `apps/frontend/tests/dashboard-workflow.spec.ts` verifies talent summary metrics, recent opportunities, active challenge summaries, partial-data status and retry intent, header/stat-card/quick-action handoffs, and dashboard workflow analytics across Chromium, Firefox, and WebKit fixtures without relying on live dashboard API or Supabase services.
-- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe status-strip issue copy, raw provider-error exclusion, and retry through the existing dashboard refresh workflow.
+- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe status-strip issue copy, dashboard summary list semantics, decorative Dashboard icon treatment, raw provider-error exclusion, and retry through the existing dashboard refresh workflow.
 
 ### 4.2 Recruiter Dashboard
 
@@ -281,6 +360,7 @@ Dashboard contents:
 | Stat cards | Active Jobs, Total Applicants, New Today, Offers | Numeric recruiting funnel snapshot plus direct navigation to jobs or candidates |
 | Recent Applications | Latest 5 candidate applications | Candidate name, job title, status badge |
 | Quick Actions | Create job, review applications, message candidates | Buttons to `/jobs/post`, `/candidates`, `/messaging` |
+| Decorative visuals | Status, retry, metric, checklist, header-action, and recent-application icons | Visual affordances only; hidden from assistive technologies and removed from the focus order |
 
 Workflow:
 
@@ -292,7 +372,8 @@ Workflow:
 6. Recruiter stat cards are buttons that route to jobs or candidate review.
 7. Dashboard Status shows whether both recruiter sections refreshed or only one refreshed.
 8. Empty recent applications includes a Post a Job action.
-9. Dashboard operational analytics records load, degraded-state, refresh/retry, header, checklist, stat-card, quick-action, and panel handoff decisions without recording raw issue text or user email.
+9. Decorative icons are hidden and focusless because headings, list labels, row labels, button text, and status copy carry the recruiter dashboard meaning.
+10. Dashboard operational analytics records load, degraded-state, refresh/retry, header, checklist, stat-card, quick-action, and panel handoff decisions without recording raw issue text or user email.
 
 Output data shape:
 
@@ -309,9 +390,11 @@ Implementation note:
 
 - Recruiter-owned jobs are read from `jobs.posted_by`, matching the Supabase schema.
 - Recruiter dashboard job counts include current recruiter postings in `DRAFT` or `PUBLISHED` status.
+- Recruiter metrics, setup tasks, quick actions, and recent applications expose named list/listitem semantics while keeping candidate review and job posting in their owning routes.
+- Recruiter dashboard status, retry, metric, checklist, header-action, and recent-application icons are decorative and focusless.
 - Dashboard analytics is append-only and non-blocking; it never navigates, retries, creates jobs, changes applications, sends messages, or mutates recruiter data by itself.
 - `apps/frontend/tests/dashboard-workflow.spec.ts` verifies recruiter summary metrics, recent application rows, Post Job primary handoff, candidate stat-card handoff, messaging quick-action handoff, and dashboard workflow analytics across Chromium, Firefox, and WebKit fixtures.
-- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe Dashboard status issue copy, raw provider-error exclusion, and retry through the existing refresh workflow.
+- `apps/frontend/src/pages/dashboard/DashboardPage.test.tsx` verifies safe Dashboard status issue copy, dashboard summary list semantics, decorative Dashboard icon treatment, raw provider-error exclusion, and retry through the existing refresh workflow.
 
 ### 4.3 Admin Dashboard
 
@@ -357,7 +440,18 @@ Dashboard contents:
 | Audit Log panel | Recent audit event time, action, entity, actor, request context, loaded/total count, Load more | Cursor-backed operational activity without loading the full audit table |
 | Admin operational analytics | Read-only event recording | Visibility into refresh, degraded state, investigation, scheduled automation status review, audit retry, and audit pagination decisions |
 
-Browser-level admin operational coverage lives in `apps/frontend/tests/admin-operations.spec.ts`. It verifies the Admin Console, Product Analytics Insights, Scheduled Automations, Service Health, Audit Log, source labels, expected scheduler jobs, no provider-run-history claims when no provider is configured, audit pagination, isolated audit retry recovery, service investigation handoffs, scheduled automation status refresh, and sanitized Admin operational analytics across Chromium, Firefox, and WebKit with deterministic local data boundaries. `apps/frontend/src/pages/admin/AdminDashboard.test.tsx` verifies safe top-level failed-load copy, raw error-message exclusion, and retry through the existing refresh workflow.
+Admin refresh, failed-load, degraded-state, metric, analytics, scheduler, service-health, observability-link, and audit-log icons are decorative. Operational meaning remains in headings, regions, table/list labels, row labels, visible status text, and explicit button/link text.
+
+Browser-level admin operational coverage lives in `apps/frontend/tests/admin-operations.spec.ts`. It verifies the Admin Console, Product Analytics Insights, Scheduled Automations, Service Health, Audit Log, source labels, expected scheduler jobs, no provider-run-history claims when no provider is configured, audit pagination, isolated audit retry recovery, service investigation handoffs, scheduled automation status refresh, and sanitized Admin operational analytics across Chromium, Firefox, and WebKit with deterministic local data boundaries. `apps/frontend/src/pages/admin/AdminDashboard.test.tsx` verifies safe top-level failed-load copy, raw error-message exclusion, retry through the existing refresh workflow, semantic structure for Admin metrics, analytics insights, scheduled automations, service health, audit rows, and decorative Admin icon treatment.
+
+Admin operational accessibility structure:
+
+- Summary metrics are exposed as a named list with metric, status, and source labels.
+- Product Analytics Insights is a named region with named summary, top-area, friction-signal, and opportunity lists.
+- Scheduled Automations is a named region with named summary and scheduler job lists.
+- Service Health and Audit Log are named regions with named tables and contextual row labels.
+- Visual icons are hidden from assistive technologies because the operational regions, lists, tables, rows, links, and buttons already expose their meaning.
+- This structure preserves Admin as the only operational console and does not duplicate user, recruiter, or shell dashboard workflows.
 
 Output data shape:
 
@@ -520,17 +614,22 @@ Inputs:
 
 Page contents:
 
-- Navigation with platform section links, Sign In, and Get Started.
-- Hero copy with role-specific CTAs:
+- Named public navigation with platform section links, Sign In, and Get Started.
+- Hero copy with the named Public role entry points CTA group:
   - Join as Talent: routes to `/register?role=talent`.
   - Hire Talent: routes to `/register?role=recruiter`.
-- Public feature/pillar cards.
+- Named Career command center preview region with domain-owned preview rows.
+- Public feature/pillar cards grouped as the Platform pillars list.
+- Information architecture section grouped as the Feature ownership decisions list.
+- Workflow control principles grouped as a list.
 - Public stats bar with:
   - Loading skeletons while public stats are being fetched.
   - Active users, opportunities, match rate, and system status.
+  - Named Public platform stats list semantics.
   - Live or fallback source label.
   - Last-updated time.
 - Footer branding.
+- Decorative brand, reviewed-workflow, CTA, preview-row, platform-pillar, IA-decision, and footer icons are hidden from assistive technologies and removed from the focus order; visible text and named list items carry the meaning.
 
 How it works:
 
@@ -539,12 +638,16 @@ How it works:
 3. Successful stats load updates counters and marks stats as live.
 4. Stats fetch errors keep fallback estimates visible and mark stats as fallback.
 5. Role-specific CTA links pass `role=talent` or `role=recruiter` into the registration route.
+6. Browser coverage verifies landing role-entry destinations, named semantic structure, public stats visibility, and no horizontal overflow at a 390px mobile viewport.
+7. Unit coverage verifies public-entry semantics, live stats lookup, and decorative/focusless icon treatment without changing stats queries, fallback stats, auth links, role-selection destinations, or section anchors.
 
 Outputs:
 
 - Public counters such as active users, opportunities, match rate, and system status.
 - Public stats source/freshness label.
 - Navigation to role-preselected registration, sign-in, or platform sections.
+- Named public navigation, CTA, preview, platform pillar, IA decision, workflow principle, and stats semantics.
+- Quiet decorative visuals that do not duplicate the public-entry labels or stat/source copy for assistive technologies.
 
 Backend support:
 
@@ -566,8 +669,10 @@ Frontend service: `authService`
 Shared UI:
 
 - Login and Register use `AuthShell` for the public auth frame, home link, heading, card surface, and footer link.
+- AuthShell exposes an H1-named main landmark, named authentication panel, and named alternate-entry navigation.
 - Public login exposes configured email/password auth only. Social OAuth and public reset-password controls are not shown because no validated LoginPage handler is wired for those controls in the current source.
 - Login/Register provider failures use safe public copy and do not expose raw provider errors or token-like values.
+- AuthShell brand, Login/Register field, Register account-type, and submit-arrow icons are decorative and focusless; visible form labels, account-type descriptions, next-step status, alternate-entry links, and button text carry the meaning.
 
 Purpose:
 
@@ -589,12 +694,14 @@ Inputs:
 
 Register page contents:
 
+- Named Account registration form.
 - Account type selector with:
   - Talent option: explains that the account can browse jobs, build a profile, learn skills, solve challenges, and apply.
   - Recruiter option: explains that the account can post jobs, review candidates, manage applications, and coordinate hiring.
 - Role-specific next-step panel:
   - Talent: dashboard checklist.
   - Recruiter: company setup before the first role draft.
+- Named registration next-step status linked from the account-type controls.
 - Full name input.
 - Email input.
 - Password input with minimum-length helper text.
@@ -603,6 +710,7 @@ Register page contents:
 
 Login page contents:
 
+- Named Email sign-in form.
 - Email input.
 - Password input.
 - Sign in submit button.
@@ -624,11 +732,13 @@ How it works:
 10. Recruiter registration routes to `/jobs/post?companySetup=1`.
 11. Login calls `supabase.auth.signInWithPassword`.
 12. Login/Register map provider failures to safe public copy while preserving invalid-credential and weak-password guidance.
-13. `App.tsx` listens to Supabase auth state and stores user/session in Redux.
-14. Logout calls `supabase.auth.signOut`, clears Redux auth state, and routes to `/login`.
+13. Login/Register expose named shell, form, alternate-entry, account-type, and next-step semantics for assistive traversal.
+14. Login/Register visual icons are decorative and focusless while auth meaning stays in labels, descriptions, status copy, links, and action text.
+15. `App.tsx` listens to Supabase auth state and stores user/session in Redux.
+16. Logout calls `supabase.auth.signOut`, clears Redux auth state, and routes to `/login`.
 
-Browser-level auth-entry workflow coverage lives in `apps/frontend/tests/auth-entry-workflow.spec.ts`. It verifies configured email login, accessible invalid-credential errors, inactive provider-control removal, and registration role-intent selection across Chromium, Firefox, and WebKit.
-Unit-level auth provider recovery coverage lives in `apps/frontend/src/pages/auth/AuthEntry.test.tsx`. It verifies safe Login/Register provider-failure copy, raw provider-error exclusion, preserved invalid-credential copy, weak-password guidance, and registration role-intent context.
+Browser-level auth-entry workflow coverage lives in `apps/frontend/tests/auth-entry-workflow.spec.ts`. It verifies configured email login, named auth-entry structure, accessible invalid-credential errors, inactive provider-control removal, and registration role-intent selection across Chromium, Firefox, and WebKit.
+Unit-level auth provider and semantic coverage lives in `apps/frontend/src/pages/auth/AuthEntry.test.tsx`. It verifies named Login/Register shell/form/account-type/next-step semantics, decorative auth icon treatment, safe provider-failure copy, raw provider-error exclusion, preserved invalid-credential copy, weak-password guidance, and registration role-intent context.
 
 Outputs:
 
@@ -713,6 +823,7 @@ Page contents:
 - Profile failed-load state with safe copy and Retry profile when profile details cannot load.
 - Profile counters: connections, applications, badges.
 - Skill chips with edit and remove controls on the user's own profile when a skill row ID is available.
+- Named semantic structure for the profile summary, skill chips, summary metrics, completion checklist, local suggestions, tabpanels, experience rows, education rows, achievement cards, and completion progress.
 - Tabs:
   - Overview: About text and profile completion.
   - Experience: Work history list with own-profile add, edit, and remove controls.
@@ -772,6 +883,8 @@ How it works:
 19. If file upload succeeds but avatar persistence fails, the page attempts to delete the uploaded file before showing safe failure feedback.
 20. Profile photo remove action opens a confirmation modal; confirmed removal clears `profiles.avatar_url` with `profileService.updateAvatar(userId, null)`, refreshes local state to initials, and attempts file-service cleanup after persistence succeeds; failed removal keeps the review open with fixed safe copy and retry remains the existing Remove Photo action.
 21. Profile workflow analytics records load, tab, edit, local suggestion, AI draft, completion task, row delete, validation, failure, and photo upload/removal decisions without storing profile text, row labels, names, descriptions, image URLs, file names, or raw error messages.
+22. Profile sections expose named regions, lists, tabpanels, row labels, and completion progress semantics for assistive navigation without changing the existing tab state, row action handlers, modal handlers, service calls, or analytics events.
+23. Profile alert, retry, form, avatar, metadata, skill, completion, row-action, experience, education, and achievement icons are decorative and focusless; location, website, joined year, profile sections, rows, modals, status copy, and action text carry the meaning.
 
 Outputs:
 
@@ -789,6 +902,8 @@ Outputs:
 | Update education | Updated `educations` row |
 | Delete education | Empty success |
 | Recover profile action failure | Safe basic-save, completion-row save, row-delete, avatar-upload, and avatar-removal failure copy plus retry through the existing Profile action buttons |
+| Profile section accessibility | Named summary, skill, metric, completion, suggestion, tabpanel, experience, education, achievement, and progress semantics |
+| Profile presentation accessibility | Decorative/focusless Profile icons plus explicit location, website, and joined metadata labels |
 | Apply profile suggestion | Prefilled modal draft only |
 | Profile photo upload | Updated `profiles.avatar_url` plus refreshed local cropped avatar display |
 | Profile photo removal | Cleared `profiles.avatar_url` plus refreshed local initials display |
@@ -798,7 +913,7 @@ Implementation note:
 
 - Profile photo upload uses explicit crop preview confirmation, image validation, local square crop generation, and file-service upload; photo removal uses explicit confirmation and clears the persisted avatar before provider cleanup; provider retention proof remains a follow-up.
 - Browser-level Profile workflow coverage verifies AI profile draft save/discard, reviewed profile field saves, profile suggestion application, skill edit/delete, experience edit/delete, education add/edit/delete, tab switching, and avatar upload/crop/remove payloads across Chromium, Firefox, and WebKit.
-- `apps/frontend/src/pages/profile/ProfilePage.test.tsx` verifies safe Profile failed-load copy, safe basic-save/completion-row/row-delete/avatar action-failure copy, raw provider-error exclusion, and retry through the existing profile load and action workflows.
+- `apps/frontend/src/pages/profile/ProfilePage.test.tsx` verifies safe Profile failed-load copy, safe basic-save/completion-row/row-delete/avatar action-failure copy, raw provider-error exclusion, Profile section/list/tabpanel semantics, metadata labels, decorative Profile icon treatment across the main workspace and review modals, and retry through the existing profile load and action workflows.
 - Unit coverage verifies the reviewed avatar crop exporter can fall back from unresolved canvas `toBlob` calls to data URL export before file-service upload.
 - Profile workflow analytics is append-only and non-blocking; it does not edit profile fields, insert suggestions without a click, save AI drafts automatically, create profile rows, delete rows, upload or remove photos by itself, send messages, create notifications, or mutate profile data by itself.
 
@@ -860,14 +975,16 @@ Inputs:
 
 Page contents:
 
-- Header with "Import Text", "Download PDF", "Upload PDF", "Download HTML", "Print PDF", and "Save Changes" buttons.
+- Header with "Import Text", "Download PDF", "Upload PDF", "Download HTML", "Print PDF", and "Save Changes" buttons grouped as the named Resume actions toolbar.
 - Profile-data failed-load alert with safe copy and Retry resume data.
 - Import Text modal:
   - Accepts pasted resume text.
   - Accepts `.txt`, `.md`, `.markdown`, `.docx`, and searchable `.pdf` resume files by reading extractable text locally into the import textarea.
+  - Groups file import as Resume file import and draft review as Resume import review or AI resume draft review.
   - Shows explicit unsupported-file feedback for unavailable file formats and unreadable/scanned image-only PDFs.
   - Generates a local draft for supported fields: headline, phone, location, website, summary, skills, dated work experience, and education.
   - Shows detected fields for review with current/proposed values and the source labeled as pasted resume text.
+  - Exposes detected fields, detected skills, and detected profile rows as named review lists.
   - Shows detected skills that are not already on the profile, selected by default.
   - Save Skills explicitly adds only selected detected skills to Profile with intermediate proficiency.
   - Shows detected work experience and education rows that are not already on the profile, selected by default.
@@ -877,9 +994,10 @@ Page contents:
   - Selects detected fields by default and lets the user deselect individual fields before applying.
   - Apply Selected updates only the selected editor draft fields.
 - Tabs:
-  - Editor.
-  - Preview.
+  - Editor in the Resume sections tablist.
+  - Preview in the Resume sections tablist.
 - Export Activity:
+  - Exposes uploaded PDF artifacts, deleted PDF receipts, and export history as named lists inside the Resume export activity region.
   - Shows the latest provider-PDF, native-PDF, browser-print, and HTML-download export attempts from account-synced records plus local fallback records.
   - Labels each attempt as Uploaded PDF, Downloaded PDF, Print ready, Downloaded, or Blocked.
   - Labels each attempt as Account synced or Local only.
@@ -891,17 +1009,17 @@ Page contents:
   - Merges account-synced active artifact metadata with local artifact links and suppresses locally deleted links until account sync catches up.
   - Shows recent deleted PDF receipts after confirmed provider deletion without displaying deleted artifact URLs.
 - Editor sections:
-  - Personal Information.
-  - Professional Summary.
-  - Work Experience.
+  - Personal Information as the named personal information editor region with editor fields exposed as a list.
+  - Professional Summary as the named professional summary editor region.
+  - Work Experience as the named resume work experience editor region with experience rows exposed as a list.
   - Education.
-  - Skills.
+  - Skills as the named resume skills editor region with skill rows exposed as a list.
 - Preview sections:
   - Header with name/headline/contact.
-  - Summary.
-  - Experience.
-  - Education.
-  - Skills.
+  - Summary as a named preview region when available.
+  - Experience as a named preview list.
+  - Education as a named preview list.
+  - Skills as a named preview list.
 
 Outputs:
 
@@ -948,8 +1066,9 @@ Implementation note:
 - Resume-imported profile rows require usable date ranges, are saved only through the reviewed Save Rows action, and remain editable/removable from Profile.
 - Native PDF export is generated locally from the current reviewed editor/profile data after an explicit click; Upload PDF uses the same reviewed data and a separate explicit provider-upload click.
 - Uploaded PDF links are retained in a small account-synced/local-fallback current-user library and can be explicitly opened, copied, or deleted; deletion uses the shared app modal with dialog semantics and focus containment before provider cleanup, recent local delete receipts show confirmed provider deletion without exposing deleted artifact URLs, and formal provider retention policy plus backend lifecycle audit remain follow-up work.
+- Resume toolbar, retry, import-save, artifact open/copy/delete, export activity, delete-review, and editor row-drag icons are decorative and focusless; named toolbar/actions, import review regions/lists, artifact labels, export history labels, delete modal headings, and explicit action text carry the meaning.
 - Browser-level Resume workflow coverage verifies import text review, selected field application, imported skill/experience/education save payloads, editor save payloads, Preview tab rendering, native PDF and HTML download file names, provider PDF upload payloads, export-event sync payloads, uploaded artifact metadata payloads, Copy Link clipboard behavior, reviewed uploaded-PDF delete cancel/confirm, provider delete payloads, deleted metadata payloads, AI resume draft apply/save, and AI resume draft discard across Chromium, Firefox, and WebKit.
-- `apps/frontend/src/pages/profile/ResumeBuilder.test.tsx` verifies safe profile-data failed-load copy, safe Save Changes/Upload PDF/Delete PDF/Save Skills/Save Rows failure copy, raw provider-error exclusion, and retry through the existing load and Resume action workflows.
+- `apps/frontend/src/pages/profile/ResumeBuilder.test.tsx` verifies safe profile-data failed-load copy, safe Save Changes/Upload PDF/Delete PDF/Save Skills/Save Rows failure copy, raw provider-error exclusion, named editor/import/export/preview semantics, decorative Resume icon treatment across loaded editor, import review, export activity, and delete review states, and retry through the existing load and Resume action workflows.
 - Export sync records only status metadata for explicit user-triggered export actions. Generated PDF/HTML files remain local unless the user explicitly chooses Upload PDF.
 - Resume workflow analytics is append-only and non-blocking; it records source labels, field keys/counts, skill counts, detected/selected/saved/failed profile row counts, export method/status, persistence target, artifact counts, artifact delete review/cancel decisions, input length band, normalized file type including PDF, and error category, not resume text, extracted PDF text, contact details, file names, skill names, row titles, company names, institution names, descriptions, generated files, upload URLs, artifact URLs, clipboard contents, or raw errors.
 
@@ -1024,8 +1143,8 @@ Jobs page contents:
   - Explore: available jobs.
   - Applied: user's submitted applications.
   - My Posts: recruiter-owned draft and published jobs.
-- Search input with applied-tab application search support.
-- Explore filters for location, job type, minimum salary, and maximum salary.
+- Search input with applied-tab application search support inside a named Jobs search surface with helper text explaining active-tab search behavior.
+- Explore filters for location, job type, minimum salary, and maximum salary inside a named Explore job filters group with helper text.
 - Safe Explore catalog failed-load state with Retry jobs when published job rows cannot load.
 - Clear filters button and matching/visible-result count.
 - Explore pagination controls with page size, query-backed result range, total count when available, cursor-backed next-page loading, and previous/next actions.
@@ -1049,6 +1168,7 @@ Jobs page contents:
 - Applied cards show:
   - Application status badge.
   - Details button.
+- Explore job cards, Applied cards, and My Posts cards are grouped into named result lists with card labels that summarize the job, application status, or recruiter posting checklist state.
 - Applied-tab load failures show a safe Applications unavailable state with Retry applications instead of an empty applications list, and raw provider errors are not shown.
 - My Posts load failures show a safe Recruiter postings unavailable state with Retry postings instead of an empty recruiter postings list, and raw provider errors are not shown.
 - Application-submit and recruiter publish failures show safe modal-scoped retry copy instead of raw provider errors, while keeping the draft or posting unchanged.
@@ -1060,6 +1180,7 @@ Jobs page contents:
   - Checklist warning count for incomplete drafts.
   - Edit Draft and Review Publish actions for drafts.
   - View Checklist action for published jobs.
+- Saved searches are grouped as a named list with per-search tracking-state labels.
 - Publish checklist modal:
   - Posting summary.
   - Missing title, description, location, company context, or requirement warnings.
@@ -1086,13 +1207,16 @@ Jobs page contents:
 - Application details modal:
   - Status badge.
   - Applied date.
-  - Timeline for Submitted, Reviewed, Interview, and Offer stages.
-  - Rejected state when applicable.
+  - Named application status timeline region.
+  - Recorded status-event list when account status history is available.
+  - Inferred Submitted, Reviewed, Interview, and Offer timeline list when event history is unavailable.
+  - Rejected fallback list item when applicable.
   - Submitted resume link and cover letter when available.
 - Browser-level Jobs workflow coverage lives in `apps/frontend/tests/job-application.spec.ts`; it verifies Explore job rendering, Review Application draft editing, application submit payload, success receipt, Application Details content, the Applied tab entry, saved-search create/apply/review-cancel/delete payloads, and hidden Explore hide/restore payloads across Chromium, Firefox, and WebKit with deterministic local data boundaries.
-- `apps/frontend/src/pages/jobs/JobsPage.test.tsx` verifies safe Explore catalog failed-load copy, safe Applied-tab application history failed-load copy, safe My Posts recruiter postings failed-load copy, safe application-submit failure copy, safe recruiter publish failure copy, saved-search sync fallback copy, hidden Explore sync fallback copy, saved-search browser-storage failure copy, hidden Explore browser-storage failure copy, application draft browser-storage, draft-history storage, and account-sync failure copy, all-hidden Explore empty-state copy, publish-readiness policy sanitization, raw provider-error exclusion, and retry through the existing jobs catalog/application history/recruiter job load, Review Application, publish checklist, saved-search, hidden-preference, and application draft workflows.
+- `apps/frontend/src/pages/jobs/JobsPage.test.tsx` verifies safe Explore catalog failed-load copy, safe Applied-tab application history failed-load copy, safe My Posts recruiter postings failed-load copy, safe application-submit failure copy, safe recruiter publish failure copy, saved-search sync fallback copy, hidden Explore sync fallback copy, saved-search browser-storage failure copy, hidden Explore browser-storage failure copy, application draft browser-storage, draft-history storage, and account-sync failure copy, all-hidden Explore empty-state copy, publish-readiness policy sanitization, named Jobs search surface/helper semantics, named Explore filter group/helper semantics, Explore/Applied/My Posts/saved-search list semantics, explicit location/job-type/salary metadata labels, decorative Jobs icon treatment, Applied application status timeline semantics, raw provider-error exclusion, and retry through the existing jobs catalog/application history/recruiter job load, Review Application, publish checklist, saved-search, hidden-preference, and application draft workflows.
 - Full post job page:
   - Company setup onboarding panel when opened with `companySetup=1`, including Dashboard and Continue to Role Draft controls.
+  - Named workspace/form/region/group/list semantics for template controls/actions, draft history, company context, company profile details, editable draft fields, review metadata, requirement preview, duplicate/change review lists, and final draft actions.
   - Job template selector.
   - Use Template action that inserts the selected template into editable fields.
   - Save Current action that stores the current form as a recruiter-scoped account template when sync is available, with local fallback.
@@ -1119,7 +1243,7 @@ Jobs page contents:
   - Advisory duplicate warning when an active recruiter job already matches title, location, and job type.
   - Back to Edit and Save Draft or Save Changes actions.
 - Browser-level Post Job workflow coverage lives in `apps/frontend/tests/post-job-workflow.spec.ts`; it verifies company context create/attach payloads, template save/apply/delete review, draft-history restore, duplicate warning review, reviewed draft save payloads, and return to Jobs postings across Chromium, Firefox, and WebKit with deterministic local data boundaries.
-- `apps/frontend/src/pages/jobs/PostJobPage.test.tsx` verifies safe edit-draft context failed-load copy, safe company-context failed-load copy, safe company create/update and draft save/update failure copy, accurate template save/delete and draft-history browser-storage failure copy, raw provider/quota-error exclusion, preserved form/review state, and retry or preserved state through the existing recruiter jobs, company lookup/action, draft save, template, and draft-history workflows.
+- `apps/frontend/src/pages/jobs/PostJobPage.test.tsx` verifies safe edit-draft context failed-load copy, safe company-context failed-load copy, safe company create/update and draft save/update failure copy, accurate template save/delete and draft-history browser-storage failure copy, raw provider/quota-error exclusion, Post Job section semantics, decorative Post Job icon treatment, preserved form/review state, and retry or preserved state through the existing recruiter jobs, company lookup/action, draft save, template, and draft-history workflows.
 
 How it works:
 
@@ -1175,7 +1299,7 @@ How it works:
 50. If application persistence fails, no mock or local application is created; the review modal keeps the editable draft visible, shows safe retry copy, hides raw provider errors, and preserves retry through Submit Application.
 51. Existing applications are loaded for duplicate awareness; previously applied jobs show View Application.
 52. The Applied tab calls `applicationService.getUserApplications(user.id)` and receives normalized `JobApplication` objects with nested job data; if loading fails, the tab shows the safe `Application history did not respond...` recovery copy with Retry applications instead of treating the result as zero applications or showing raw provider errors.
-53. Details opens an application timeline modal.
+53. Details opens an application timeline modal with a named status timeline region plus recorded-event, rejected-fallback, or inferred-step list semantics.
 54. Recruiter Post a Job action navigates to `/jobs/post`; it does not create a job from the Jobs page.
 55. Full post page loads recruiter-scoped job-post templates from browser storage first, then merges account-synced `job_post_templates` when available.
 56. Full post page loads the recruiter's company profile and defaults Attach Company on when a profile is available; if the lookup fails, the company panel keeps safe retry copy and Retry company context reruns `companyService.getCompanyByUser(user.id)`.
@@ -1366,10 +1490,10 @@ Inputs:
 Candidate page contents:
 
 - Header with Refresh and Filter buttons.
-- Search input.
+- Named Candidate search surface with helper text for candidate-name and applied-job-title search.
 - Safe candidate-list failed-load state with Retry candidates when application rows cannot load.
 - Safe status action-failure states inside single-status and bulk-status confirmation modals, including accurate all-failed bulk copy when no status changes were saved.
-- Result range with high-signal count, focus control, advisory/current sort control, page-size, previous-page, and cursor-backed next-page controls during normal browsing.
+- Named Candidate review controls group with helper text, result range, high-signal count, focus control, advisory/current sort control, page-size, previous-page, and cursor-backed next-page controls during normal browsing.
 - Current-page scorecard analytics for coverage, average rubric, evidence gaps, and synced/local scorecards, with direct Review gaps, Review high signal, and Show all focus actions.
 - Review first visible/in focus action, page-scoped Select visible control, selected count, target eligibility counts, Clear action, Review Interview Move action, Review Offer Move action, and Review Rejection action.
 - Candidate cards show:
@@ -1402,6 +1526,7 @@ Candidate page contents:
   - Use in Notes action for interview-plan drafts.
   - Save Note action.
   - Open Profile, Interview, Offer, and Reject actions.
+  - Named region/list semantics for the details container, queue navigation, identity summary, application metadata, advisory signal, submitted materials, review guidance, interview plan, scorecard dimensions, and recruiter notes.
 - Bulk status review modal shows:
   - Selected, Will Update, and Skipped counts.
   - Eligible application list with current status and target status.
@@ -1528,9 +1653,13 @@ Implementation note:
 - Candidate Details opens in-page and can also open `/profile/{candidate.userId}` in read-only mode for non-owners.
 - Interview planning is draft-only: it does not create video sessions, messages, notifications, or status changes until the recruiter explicitly saves notes or confirms a status update.
 - If the application list cannot load, Candidates keeps the route heading and search/refresh context visible, hides raw provider errors, and retries through the same `recruiterService.getApplicationsPage(user.id, { limit, offset, search, cursor })` workflow.
+- Candidate search and review controls expose named search/group semantics with helper text so assistive-technology users can understand which controls narrow the current application page versus change the visible review queue.
+- Candidate review metrics and application rows expose named list semantics so assistive-technology users can traverse scorecard coverage, evidence gaps, sync state, candidate identity, job context, status, and email without relying on visual card position.
+- Candidate Details exposes named regions and lists so assistive-technology users can traverse queue navigation, candidate identity, application metadata, advisory signal factors/safeguards, submitted materials, review guidance, interview-plan slots, scorecard dimensions, and recruiter notes without relying on visual modal position.
+- Candidates search/filter, pagination, metric, bulk-action, row metadata, details, review queue, scorecard, notes, and status-confirmation icons are decorative and focusless; meaning stays in visible labels, accessible row names, named regions/lists, status copy, modal headings, and explicit action text.
 - Candidate scorecards are private recruiter aids; they sync through `candidate_scorecards` when available and stay browser-local when server sync is unavailable.
 - Browser-level coverage in `apps/frontend/tests/candidate-review.spec.ts` verifies deterministic candidate rendering, Candidate Details review, scorecard upsert payload, scorecard local fallback and retry, private note upsert/delete payloads, status confirmation, application status update payload, failed status handling, status-event audit payload, first-candidate queue handoff, Previous/Next queue navigation, keyboard pagination/search/details/queue navigation, Select visible, bulk Interview/Offer/Rejection eligibility and skipped review, bulk partial-failure handling, unsaved note guard, Keep Changes, Reset Drafts, no-save reset behavior, application pagination, profile-backed search, and review-focus filtering across Chromium, Firefox, and WebKit.
-- `apps/frontend/src/pages/candidates/CandidatesPage.test.tsx` verifies safe application-list failed-load copy, safe single-status and all-failed bulk status failure copy, raw provider-error exclusion, accurate all-failed bulk messaging, and retry through the existing page load and confirmation workflows.
+- `apps/frontend/src/pages/candidates/CandidatesPage.test.tsx` verifies safe application-list failed-load copy, safe single-status and all-failed bulk status failure copy, raw provider-error exclusion, accurate all-failed bulk messaging, candidate search/control semantics, candidate review metric/application-row list semantics, Candidate Details section semantics, decorative Candidates icon treatment across the main workspace and status-review modals, and retry through the existing page load and confirmation workflows.
 - Advisory signals are private recruiter aids; they only affect displayed priority order and never change candidate status or contact candidates automatically.
 - Candidate review focus filters are display-only current-page controls; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
 - Candidate analytics focus actions only change display focus; they do not select candidates, create scorecards, change statuses, or contact candidates automatically.
@@ -1607,20 +1736,21 @@ Page contents:
   - All Courses.
   - In Progress.
   - Completed.
-- Search input.
+- Named Learning catalog search surface with helper text for title, description, category, and provider search.
 - Course-catalog failure state with safe copy and Retry Courses when the course catalog fetch rejects.
-- Course pagination controls:
+- Named Learning catalog controls group with helper text:
   - Loaded range and total when available.
   - Matching result range for search when total metadata is available.
   - Query-backed result range, total count when available, and matching progress label when progress tabs are active.
   - Courses-per-page selector.
   - Previous and next page icon buttons.
+- Decorative AI/search/progress/retry/pagination/card/curriculum/player/action icons are hidden from assistive technologies and removed from the focus order.
 - Course cards show:
   - Category.
   - Difficulty.
   - Title.
   - Description.
-  - Duration.
+  - Duration with an explicit duration label.
   - Lesson count.
   - XP reward.
   - Provider.
@@ -1628,9 +1758,10 @@ Page contents:
   - Start/Continue/Review button.
 - Course detail modal shows:
   - Category.
-  - Duration.
+  - Duration with an explicit duration label.
   - Description.
   - Enrollment-aware course progress.
+  - Contextual progressbar semantics for visible progress tracks.
   - Curriculum lesson list with active and completed lesson states.
   - Lesson player with lesson title, duration, content, and optional video placeholder.
   - Mark Complete or Enroll and Complete action for the active lesson.
@@ -1665,14 +1796,15 @@ How it works:
 23. After persisted completion, the page updates local enrollment/course state and advances to the next incomplete lesson.
 24. If enrollment persistence fails, the course review stays available, safe toast copy hides raw provider errors, and retry remains on the existing Enroll Now action.
 25. If lesson-completion persistence fails, the lesson remains incomplete, progress stays unchanged, safe toast copy hides raw provider errors, and retry remains on the existing Mark Complete action.
-26. LMS workflow analytics records catalog load/failure, tab selection, search submission, page navigation, page-size changes, AI learning-plan review/apply/dismiss, course opening, enrollment outcomes, lesson selection, and lesson completion outcomes.
-27. LMS workflow analytics stores only bounded metadata: tab ID, course ID, lesson ID, entry point, category, difficulty, progress band, lesson/page counts, total/next-page flags, search presence and length band, progress filter, suggestion count/label/index, enrollment flags, completion status, and error category.
-28. Raw search terms, course titles, lesson titles, provider names, recommendation text, suggestion text, and raw error messages are not recorded.
+26. Decorative AI/search/progress/retry/pagination/card/curriculum/player/action icons are hidden and focusless because headings, labels, progressbars, button text, and duration metadata carry the meaning.
+27. LMS workflow analytics records catalog load/failure, tab selection, search submission, page navigation, page-size changes, AI learning-plan review/apply/dismiss, course opening, enrollment outcomes, lesson selection, and lesson completion outcomes.
+28. LMS workflow analytics stores only bounded metadata: tab ID, course ID, lesson ID, entry point, category, difficulty, progress band, lesson/page counts, total/next-page flags, search presence and length band, progress filter, suggestion count/label/index, enrollment flags, completion status, and error category.
+29. Raw search terms, course titles, lesson titles, provider names, recommendation text, suggestion text, and raw error messages are not recorded.
 
 Browser validation:
 
 - `apps/frontend/tests/lms-workflow.spec.ts` verifies the AI Assistant to Learning handoff, consumed route-state draft cleanup after search application, explicit AI catalog-search application, course search and pagination controls, enrollment payloads, failed enrollment recovery, lesson-completion payloads, failed progress-persistence recovery, local progress updates, keyboard lesson selection/completion, and In Progress filtering across Chromium, Firefox, and WebKit fixtures without relying on live LMS API or Supabase services. LMS progress persistence now treats Supabase fallback read/write errors as failed saves instead of presenting unsaved lesson progress as complete.
-- `apps/frontend/src/pages/lms/LMSPage.test.tsx` verifies safe Learning course-catalog/enrolled-progress failed-load copy, enrollment/lesson-completion action-failure copy, raw provider-error exclusion, unchanged progress state, and retry through the existing course catalog, enrollment progress load, Enroll Now, and Mark Complete workflows.
+- `apps/frontend/src/pages/lms/LMSPage.test.tsx` verifies safe Learning course-catalog/enrolled-progress failed-load copy, enrollment/lesson-completion action-failure copy, Learning catalog search/control semantics, Continue Learning/catalog-card/course-detail progressbar semantics, decorative LMS icon treatment, duration metadata labels, raw provider-error exclusion, unchanged progress state, and retry through the existing course catalog, enrollment progress load, Enroll Now, and Mark Complete workflows.
 
 Output data shape:
 
@@ -1772,34 +1904,36 @@ Inputs:
 Page contents:
 
 - Header: "Challenges".
-- Category filter buttons based on available challenge categories.
+- Category filter buttons based on available challenge categories, exposed as a named `Challenge category filters` group with helper text and pressed state.
+- Challenge catalog list semantics with challenge-specific card labels.
 - Challenge cards show:
-  - Trophy icon.
+  - Trophy icon as a decorative visual.
   - Difficulty badge.
   - Title.
   - Description.
-  - Participant count.
-  - Duration/time limit.
+  - Participant count with an explicit metadata label.
+  - Duration/time limit with an explicit metadata label.
   - Solve Now button.
 - Challenge workspace modal shows:
   - Challenge difficulty, category, and XP.
-  - Prompt.
+  - Named Prompt region.
   - Language selector.
-  - Starter-code-backed solution editor.
+  - Named Solution region with starter-code-backed solution editor and hidden challenge/language description.
   - Reviewed Reset button with Keep Code and Reset Code controls when edited code would be overwritten.
-  - Sample test cases when available.
-  - Local check results for visible sample cases when the user runs a local check.
-  - Latest submission status, score, and feedback when available.
-  - Retry History panel with prior attempts, status, language, score, timestamp, and feedback preview.
+  - Named Sample Cases region with list semantics when samples are available.
+  - Local check results list for visible sample cases when the user runs a local check.
+  - Named latest Submission region with status, score, and feedback when available.
+  - Named Retry History region with prior attempts, status, language, score, timestamp, and feedback preview.
   - Refresh submission history action.
   - Safe submission failure notification when persistence is unavailable.
   - Close, Run Local Check, and Submit Solution buttons.
+- Decorative catalog, workspace, status, reset, history, and action icons are hidden from assistive technologies and removed from the focus order.
 
 How it works:
 
 1. Page dispatches `fetchChallenges()` when challenge slice status is idle.
 2. Page derives category tabs from loaded challenge data, with default fallback tabs before data is available.
-3. Page filters challenge list by selected category.
+3. Page filters the challenge list by selected category; category filters change only the visible catalog and keep the solving workspace unchanged.
 4. Solve Now opens the in-page challenge workspace and pre-fills starter code when provided.
 5. Users choose a language and edit the solution manually.
 6. Reset clears local sample-check results immediately when code already matches the starter code, or opens an inline review panel when edited solution code would be overwritten.
@@ -1818,8 +1952,10 @@ How it works:
 19. If submission persistence fails, the workspace stays open, safe toast copy hides raw provider errors, retry history remains unchanged, and retry remains on the existing Submit Solution action.
 20. Challenge workflow analytics records explicit filter, workspace, language, reset review/cancel/confirm, local-check, retry-history, and submission decisions without storing code, starter code, prompt text, sample values, feedback text, or raw error messages.
 21. Top-level catalog load failures show safe retry copy and do not expose raw service error strings.
-22. Browser workflow coverage in `apps/frontend/tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit fixtures without relying on live challenge API or Supabase services. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
-23. Unit coverage in `apps/frontend/src/pages/challenges/ChallengesPage.test.tsx` verifies safe catalog failed-load copy, safe submission action-failure copy, raw provider-error exclusion, unchanged retry history after failed persistence, and retry through the existing fetch and Submit Solution workflows.
+22. Category filters expose a named helper-backed group and stable audit marker, and catalog cards, prompt/solution/sample/submission/history panels, sample cases, local-check results, and retry-history attempts expose semantic labels without changing category, editor, local-check, submission, or retry-history behavior.
+23. Decorative catalog, workspace, status, reset, history, and action icons are hidden and focusless because card labels, metadata labels, region/list labels, button text, and visible status copy carry the meaning.
+24. Browser workflow coverage in `apps/frontend/tests/challenges-workflow.spec.ts` verifies category filtering, workspace open, local sample-check result handling, unsupported-language and hidden-sample no-submit safeguards, reviewed starter-code reset, submission payloads, failed-submission recovery, latest result rendering, and retry-history refresh across Chromium, Firefox, and WebKit fixtures without relying on live challenge API or Supabase services. WebKit currently verifies the graceful local-check timeout state because the Blob worker runner does not complete in that runtime.
+25. Unit coverage in `apps/frontend/src/pages/challenges/ChallengesPage.test.tsx` verifies safe catalog failed-load copy, safe submission action-failure copy, challenge category-filter semantics, challenge catalog/workspace semantics, decorative Challenges icon treatment, participant/duration metadata labels, raw provider-error exclusion, unchanged retry history after failed persistence, and retry through the existing fetch and Submit Solution workflows.
 
 Outputs:
 
@@ -1934,10 +2070,11 @@ AI Assistant page contents:
 - Header with "Beta" badge.
 - Saved-chat status badge showing Browser local, Saved locally, Syncing account, or Account synced persistence plus last saved time on wider screens.
 - Clear chat button with inline review before history reset.
+- Badge, review-queue, recommendation, conversation-avatar, draft-prompt, and composer icons are decorative; user-facing meaning remains in text, article labels, and explicit control labels.
 - Clear chat review panel with Keep Chat and Clear Chat controls.
-- Chat history.
+- Chat history as a named live conversation log with per-message article labels.
 - Initial assistant message.
-- Suggestion buttons:
+- Prompt suggestions as a named list:
   - Review my resume.
   - Prepare for interviews.
   - Suggest career paths.
@@ -1946,13 +2083,14 @@ AI Assistant page contents:
   - Draft application note.
 - Draft prompt preview after selecting a suggestion.
 - Send to AI confirmation for draft prompts.
-- Text input and send button.
+- Text input and send button inside a named AI assistant prompt composer form with review-first helper text attached to the input.
 - Assistant responses are marked as draft responses.
 - Assistant draft responses show source and control disclosure.
 - Assistant draft responses can be saved or dismissed as account-synced review records with local fallback.
 - Safe provider-failure draft response that does not expose raw AI provider errors.
 - AI Review Queue with:
   - Draft, saved, and dismissed counts.
+  - Draft recommendations as a named list with source-labeled item labels.
   - Save all and Dismiss all actions for pending recommendations.
   - Per-recommendation Save, Dismiss, and Open workflow actions.
   - Workflow labels for resume, career path, learning, jobs/applications, profile, candidate review, or general AI guidance.
@@ -1967,13 +2105,16 @@ Career Path page contents:
 - Header with Generated Guidance or Needs data badge.
 - Retryable unavailable/incomplete-data state when career-path generation fails or returns no usable path.
 - Safe provider-unavailable copy with Retry career path when the AI provider does not respond.
+- Unavailable-state, retry, AI handoff, generated-path, milestone-state, Learning handoff, and review-boundary icons are decorative.
+- Named Career path workspace and generated career path region semantics.
 - Career path cards showing:
   - Recommended path title.
   - Review-first advisory badge.
   - Estimated timeline.
-  - Required skills.
-  - Milestones.
+  - Required skills as a named list.
+  - Milestones as a named list with completed/pending labels.
   - Explore Path button linking to LMS.
+- Review boundaries as a named region and list.
 
 How it works:
 
@@ -1981,7 +2122,7 @@ How it works:
 2. If no saved chat exists, the page starts with the initial assistant message.
 3. Chat messages are saved back to local storage after changes; the header status shows whether history is browser-local, saved locally after account sync failure, syncing to the account, or account-synced.
 4. Suggestion buttons create a visible draft prompt and pre-fill the input.
-5. Draft prompts are only sent after the user clicks Send to AI or sends from the input.
+5. Draft prompts are only sent after the user clicks Send to AI or sends from the named prompt composer input, which is described by review-first helper text.
 6. Clear opens an inline chat-clear review when conversation history exists.
 7. Keep Chat closes the review without changing local or account chat history.
 8. Clear Chat starts a fresh local conversation, clears the draft prompt/input, and best-effort deletes the previous account AI session when signed in.
@@ -2006,7 +2147,9 @@ How it works:
 27. If generation fails or returns no path title, Career Path shows an explicit unavailable/incomplete state with Retry career path instead of a hard-coded default recommendation.
 28. Provider-unavailable failures use fixed safe copy and do not expose raw AI provider error strings.
 29. Career Path does not show a fabricated match percentage; generated guidance is labeled as review-first before users open LMS.
-30. `analyzeResume` calls backend AI API `POST /api/v1/ai/analyze-resume`; if it fails, it extracts common skills client-side and estimates years from text.
+30. Generated career guidance exposes named region/list/listitem semantics for the path, required skills, milestones, and review boundaries without changing the generated data or handoff behavior.
+31. Career Path visual icons are hidden from assistive technologies because headings, region/list names, listitem labels, and button text already carry generated guidance, retry, handoff, and review-boundary meaning.
+32. `analyzeResume` calls backend AI API `POST /api/v1/ai/analyze-resume`; if it fails, it extracts common skills client-side and estimates years from text.
 
 Outputs:
 
@@ -2042,13 +2185,16 @@ Implementation note:
 
 - Frontend AI chat, match-score, and career-path generation now call the backend AI API contract instead of repo-external Supabase Edge Functions.
 - AI recommendation review uses `automation_suggestions` when available and keeps a local chat-state fallback; review and handoff controls never apply product changes automatically.
+- AI recommendation review draft cards, the chat history, and empty-state prompt suggestions expose named list/log/article semantics for assistive technologies while preserving the same visible controls and handlers.
+- The AI prompt composer exposes a named form and describes the prompt input with review-first helper text while preserving the same input value, Enter key, send button, and chat response workflow.
+- AI badge, review-queue, recommendation-card, conversation-avatar, draft-prompt, and composer icons are hidden from assistive technologies because the surrounding text, message articles, and controls already expose the route meaning.
 - AI recommendation review audit uses `automation_suggestion_audit_events` when available and keeps a bounded local fallback; audit failures never block Save, Dismiss, Save all, or Dismiss all.
 - AI chat-clear review restores only a fresh local chat session after explicit confirmation; it does not change profile, resume, applications, learning progress, settings, saved review decisions, messages, notifications, or destination workflow data automatically.
 - AI review queue and chat-clear analytics use `product_analytics_events` when available and keep a bounded local fallback; analytics failures never block recommendation review, chat clearing, or workflow navigation. Chat-clear analytics stores bounded message/review counts and pending-prompt state, not message content, prompts, generated responses, recommendation text, resume text, job descriptions, or raw errors.
 - `apps/frontend/tests/ai-assistant-workflow.spec.ts` verifies long-running generation state, provider failure and retry, save/dismiss review sync, audit and analytics payloads, explicit clear-chat review/cancel/delete sync, and AI Review Queue handoffs into Profile, Resume, Jobs, and Learning across Chromium, Firefox, and WebKit fixtures without relying on live AI provider, Supabase, or backend runtime services.
-- `apps/frontend/src/pages/ai/AIAssistant.test.tsx` verifies safe AI Assistant chat provider-failure copy, raw provider-error exclusion, and retry through the existing chat response workflow.
-- `apps/frontend/tests/career-path-workflow.spec.ts` verifies generated career guidance rendering, review boundaries, Learning and AI Assistant handoffs, malformed generated data as retryable, retry success, and provider-unavailable state across Chromium, Firefox, and WebKit fixtures without relying on live AI provider, Supabase, or backend runtime services.
-- `apps/frontend/src/pages/ai/AICareerPath.test.tsx` verifies safe Career Path provider-unavailable copy, raw AI/provider-error exclusion, and retry through the existing career-path generation workflow.
+- `apps/frontend/src/pages/ai/AIAssistant.test.tsx` verifies safe AI Assistant chat provider-failure copy, raw provider-error exclusion, retry through the existing chat response workflow, prompt suggestion list semantics, AI conversation log/message article labels, AI draft recommendation list semantics, named prompt-composer semantics, review-first input helper wiring, and decorative badge/review/conversation/draft/composer icon treatment.
+- `apps/frontend/tests/career-path-workflow.spec.ts` verifies generated career guidance rendering, generated guidance semantics, review boundaries, Learning and AI Assistant handoffs, malformed generated data as retryable, retry success, and provider-unavailable state across Chromium, Firefox, and WebKit fixtures without relying on live AI provider, Supabase, or backend runtime services.
+- `apps/frontend/src/pages/ai/AICareerPath.test.tsx` verifies generated Career Path guidance semantics, safe provider-unavailable copy, raw AI/provider-error exclusion, retry through the existing career-path generation workflow, and decorative unavailable/guidance/handoff/review-boundary icon treatment.
 
 ### 5.10 Networking
 
@@ -2096,30 +2242,32 @@ Page contents:
 - Header: "Network".
 - Top-level suggestion-load failure state with safe retry copy and no raw service error details.
 - Card-level Connect, incoming Accept, incoming Decline, and sent-request Withdraw failure states with safe inline copy and no raw provider error details.
-- Search people input.
+- Named Network view controls group with helper text for tabs, hidden-suggestion restore context, status, and active-view search.
+- Named Network search surface with helper text for person name, role, headline, location, and skill search plus decorative search icon.
 - Tabs:
   - Discover.
   - Incoming.
   - Sent.
   - Connections.
+- Suggestion, incoming, sent, and accepted-connection card groups expose list/listitem semantics with person-specific card labels.
 - Profile cards show:
-  - Initials avatar.
+  - Decorative initials avatar.
   - Full name.
   - Current role.
   - Location.
   - Headline when available.
   - Why suggested context from backend graph reasons when available, otherwise mutual counts and available profile fields.
   - Mutual connection count when available.
-  - Profile preview button.
+  - Profile preview button with a person-specific accessible label.
   - Hide suggestion button.
   - Optional note input.
-  - Connect button.
-  - Request Sent state after connection request.
+  - Connect button with a person-specific accessible label.
+  - Request Sent state after connection request with a person-specific accessible label.
 - Incoming request cards show:
   - Requester profile summary.
   - Optional requester message.
   - Received time.
-  - Profile, Accept, and Decline actions.
+  - Profile, Accept, and Decline actions with person-specific accessible labels.
 - Sent request cards show:
   - Recipient profile summary.
   - Optional sent message.
@@ -2127,17 +2275,18 @@ Page contents:
   - Reminder timing selector.
   - Reminder state and due date when set.
   - Sent-tab reminder sync status when reminders exist.
-  - Profile, Remind Me, and Withdraw actions.
+  - Profile, Remind Me, Clear Reminder, and Withdraw actions with person-specific accessible labels.
 - Connection cards show:
   - Connected profile summary.
-- Profile preview action.
+  - Profile preview action with a person-specific accessible label.
 - Profile preview modal shows:
-  - Profile summary.
+  - Profile summary with decorative initials avatar.
   - Fit and mutual-connection context.
   - Location.
   - Recommendation reasons.
   - Shared skills or available skills.
   - Close and Full Profile actions.
+- Networking card and preview icons are decorative; action meaning stays in visible text or person-specific accessible names.
 
 How it works:
 
@@ -2175,8 +2324,8 @@ How it works:
 
 Browser validation:
 
-- `apps/frontend/tests/networking-workflow.spec.ts` verifies deterministic suggestion preview, hidden-suggestion hide/restore preference sync, reviewed connection request payloads, incoming accept/decline payloads, sent reminder set/clear status, withdraw payloads, accepted connection profile preview, keyboard preview activation, and full-profile popup route targets across Chromium, Firefox, and WebKit fixtures without relying on live Supabase or backend services.
-- `apps/frontend/src/pages/networking/NetworkingPage.test.tsx` verifies safe failed-load and action-failure copy, raw error-message exclusion, and retry through the existing suggestion fetch, Connect, Accept, Decline, and Withdraw workflows.
+- `apps/frontend/tests/networking-workflow.spec.ts` verifies deterministic suggestion preview, hidden-suggestion hide/restore preference sync, reviewed connection request payloads, incoming accept/decline payloads, sent reminder set/clear status, withdraw payloads, accepted connection profile preview, keyboard preview activation, and full-profile popup route targets across Chromium, Firefox, and WebKit fixtures without relying on live Supabase or backend services; the focused Chromium workflow also passed after person-specific action labels were added.
+- `apps/frontend/src/pages/networking/NetworkingPage.test.tsx` verifies safe failed-load and action-failure copy, Network view/search control semantics, accessible card-list semantics, person-specific action labels, decorative search/card/preview icons, decorative avatar initials, raw error-message exclusion, and retry through the existing suggestion fetch, Connect, Accept, Decline, and Withdraw workflows.
 
 Outputs:
 
@@ -2273,9 +2422,10 @@ Page contents:
 - Header: "Messages".
 - Conversation list with:
   - Search box.
+  - List semantics plus descriptive Open conversation labels that include participant, unread state, last-message context, and presence status.
   - Loaded/total conversation count when available.
-  - Participant initials from enriched profile names when available.
-  - Online indicator.
+  - Decorative participant initials from enriched profile names when available.
+  - Decorative online indicator with presence status carried by the conversation-row label.
   - Last message preview.
   - Incoming unread badge when a conversation has unread messages from other users.
   - Realtime preview, activity time, and unread badge updates for visible conversations.
@@ -2287,9 +2437,9 @@ Page contents:
   - Selecting a conversation switches to chat.
   - Chat header includes a back button to return to conversations.
 - Chat panel with:
-  - Participant header.
-  - Conversation context with participant status, loaded/total message context, and last activity time.
-  - Visible incoming unread count and explicit mark-read action when unread incoming messages are visible.
+  - Participant header with decorative participant initials.
+  - Conversation context with participant status, decorative realtime status dot, loaded/total message context, and last activity time.
+  - Visible incoming unread count and explicit mark-read action with a descriptive accessible name when unread incoming messages are visible.
   - Phone, video, and more action buttons marked unavailable when provider flows are not configured.
   - Load older messages action when more history is available.
   - Safe Retry message history or Retry older messages state when message history cannot load.
@@ -2297,13 +2447,14 @@ Page contents:
   - Attachment previews with image rendering when the link appears to be an image.
   - Message timestamps with full timestamp on hover.
   - Outgoing message delivery labels for sending, sent, delivered, read, and failed states.
-  - Retry action for failed local sends.
+  - Explicit Retry failed message action for failed local sends.
   - Safe action-failure status copy for failed sends, failed uploads, and failed visible mark-read attempts.
   - Suggested reply drafts when the latest visible message is incoming and the composer is empty.
-  - Explicit attachment panel with URL validation, file upload, upload status, server-side size/folder/blocked-extension guardrails, removable draft state, hidden-draft clearing, labeled text composer, and accessible send button.
+  - Explicit attachment panel with URL validation, file upload, upload status, server-side size/folder/blocked-extension guardrails, removable draft state, hidden-draft clearing, named text composer form with review-before-send helper text, and accessible send button.
+  - Thread and composer icons are decorative; back, call, mark-read, attachment, upload, send, retry, and older-history meaning stays in visible text or explicit accessible names.
 - Empty state when no conversation is selected.
 - Browser-level messaging workflow coverage lives in `apps/frontend/tests/messaging-workflow.spec.ts`; it verifies deterministic conversation rendering, active-thread selection, message-history rendering, text-send payloads, failed-send retry, keyboard attachment-link focus order, uploaded-file and linked attachment send payloads, keyboard visible mark-read update payload/feedback, keyboard older-history loading, sent feedback, and persisted sent-message/attachment display across Chromium, Firefox, and WebKit with deterministic local data boundaries.
-- `apps/frontend/src/pages/messaging/MessagingPage.test.tsx` verifies safe conversation/message-history failed-load copy, send/upload/mark-read action-failure copy, raw provider-error exclusion, failed-message retry, and unread-state preservation through the existing Messaging workflows.
+- `apps/frontend/src/pages/messaging/MessagingPage.test.tsx` verifies safe conversation/message-history failed-load copy, descriptive conversation-row labels with presence status, named text composer semantics, review-before-send helper wiring, decorative conversation-list search/retry/initial/status-dot visuals, decorative thread/composer icons, decorative thread avatar initials and realtime status dots, thread-action labels, send/upload/mark-read action-failure copy, raw provider-error exclusion, failed-message retry, and unread-state preservation through the existing Messaging workflows.
 
 How it works:
 
@@ -2469,6 +2620,9 @@ Purpose:
 - Open the secure billing provider for plan changes and payment-method updates.
 - Show safe provider-unavailable recovery without exposing raw provider errors.
 - Show safe checkout and billing portal action-failure recovery without exposing raw provider errors.
+- Expose plan comparison as a named list with plan-specific comparison, feature-list, and action labels.
+- Expose payment method and transaction history as named regions with transaction list labels.
+- Keep decorative provider, feature, payment, review, and handoff icons hidden from assistive technologies while labels and visible copy carry meaning.
 - Record append-only billing workflow analytics for explicit load, retry, review, checkout, portal, popup-blocked, submitted, and failure outcomes.
 
 Inputs:
@@ -2490,11 +2644,12 @@ Inputs:
 Page contents:
 
 - Billing provider unavailable banner with safe copy and Retry billing data when billing data cannot be loaded.
+- Billing plans list with plan-specific comparison labels.
 - Plan cards with:
   - Name.
   - Price.
-  - Feature list.
-  - Current Plan or Review Plan button.
+  - Feature list with a plan-specific label.
+  - Current Plan or Review Plan button with a plan-specific accessible label.
 - Plan catalog unavailable empty state with Retry Plans when no plans are available.
 - Plan review modal:
   - Selected plan.
@@ -2505,6 +2660,7 @@ Page contents:
   - Safe plan checkout failure alert when the provider handoff fails.
   - Cancel and Continue buttons.
 - Payment method card:
+  - Named payment-method region and group label.
   - Current method when available, or no-method state.
   - Billing provider status copy.
   - Update button.
@@ -2513,10 +2669,12 @@ Page contents:
   - Safe billing portal failure alert when the provider handoff fails.
   - Cancel and Open Billing Portal buttons.
 - Transaction history:
+  - Named transaction-history region and transaction list.
   - Description.
   - Date.
   - Status.
   - Amount.
+- Decorative Billing icons are visible only as visual affordances and are hidden/focusless for assistive technologies.
 
 How it works:
 
@@ -2527,16 +2685,20 @@ How it works:
 5. Current Plan state is derived from active subscription plan ID/name.
 6. If billing data cannot be loaded, the page shows an unavailable banner with fixed safe copy, clears stale billing data, hides raw provider errors, and offers Retry billing data.
 7. If no plans are available after loading, the page shows a plan-catalog empty state with Retry Plans.
-8. Review Plan opens a confirmation modal instead of immediately changing the subscription.
-9. Confirming a plan calls `paymentService.subscribeToPlan(userId, planId)` when a plan ID exists.
-10. If a backend plan has no plan ID, the page falls back to `paymentService.createSession(userId, price, currency, description)`.
-11. Returned `url`, `checkoutUrl`, or `paymentUrl` values open in a new tab for secure checkout.
-12. If checkout handoff fails, the Review Plan modal stays open with fixed safe copy, subscription state is unchanged, raw provider errors stay hidden, and the user retries through Continue.
-13. Update payment method opens a confirmation modal.
-14. Confirming payment method update calls `paymentService.createBillingPortalSession(userId)` and opens the returned provider URL.
-15. If billing portal handoff fails, the Update Payment Method modal stays open with fixed safe copy, payment-method state is unchanged, raw provider errors stay hidden, and the user retries through Open Billing Portal.
-16. No plan or payment-method change is applied on the frontend without explicit confirmation.
-17. Billing workflow analytics records load, retry, plan-review, checkout, payment-method-review, portal, popup-blocked, submitted, and failure outcomes without storing card details, invoice descriptions, provider URLs, exact amounts, plan names, feature text, or raw error messages.
+8. Plan cards expose list/listitem semantics, plan-specific comparison labels, feature-list labels, and plan-specific Current/Review action names.
+9. Payment method exposes a named region and group label for the current method or no-method state.
+10. Transaction history exposes a named region, transaction list, and transaction labels with description, date, status, and signed amount.
+11. Decorative provider, feature, payment, review, and handoff icons are marked hidden and focusless because headings, list labels, group labels, button names, and status copy carry the meaning.
+12. Review Plan opens a confirmation modal instead of immediately changing the subscription.
+13. Confirming a plan calls `paymentService.subscribeToPlan(userId, planId)` when a plan ID exists.
+14. If a backend plan has no plan ID, the page falls back to `paymentService.createSession(userId, price, currency, description)`.
+15. Returned `url`, `checkoutUrl`, or `paymentUrl` values open in a new tab for secure checkout.
+16. If checkout handoff fails, the Review Plan modal stays open with fixed safe copy, subscription state is unchanged, raw provider errors stay hidden, and the user retries through Continue.
+17. Update payment method opens a confirmation modal.
+18. Confirming payment method update calls `paymentService.createBillingPortalSession(userId)` and opens the returned provider URL.
+19. If billing portal handoff fails, the Update Payment Method modal stays open with fixed safe copy, payment-method state is unchanged, raw provider errors stay hidden, and the user retries through Open Billing Portal.
+20. No plan or payment-method change is applied on the frontend without explicit confirmation.
+21. Billing workflow analytics records load, retry, plan-review, checkout, payment-method-review, portal, popup-blocked, submitted, and failure outcomes without storing card details, invoice descriptions, provider URLs, exact amounts, plan names, feature text, or raw error messages.
 
 Outputs:
 
@@ -2581,8 +2743,8 @@ Analytics output:
 Implementation note:
 
 - Billing workflow analytics is append-only and non-blocking; it does not change plans, open provider URLs without a click, retry automatically, edit payment methods, create subscriptions, change invoices, send messages, create notifications, or mutate billing data by itself.
-- Browser-level Billing workflow coverage verifies plan catalog/current-plan rendering, populated transaction history, plan review cancel/checkout handoff payloads, billing portal handoff payloads, provider checkout failure retention and retry, popup-blocked checkout warning, provider-unavailable load state, retry recovery, explicit demo-mode copy, and billing workflow analytics across Chromium, Firefox, and WebKit.
-- `apps/frontend/src/pages/billing/BillingPage.test.tsx` verifies safe provider-unavailable and action-failure copy, raw provider-error exclusion, and retry through the existing billing data load, Review Plan, and Update Payment Method workflows.
+- Browser-level Billing workflow coverage verifies plan catalog/current-plan rendering, populated transaction history, plan review cancel/checkout handoff payloads, billing portal handoff payloads, provider checkout failure retention and retry, popup-blocked checkout warning, provider-unavailable load state, retry recovery, explicit demo-mode copy, and billing workflow analytics across Chromium, Firefox, and WebKit; the focused Chromium workflow also passed after plan-specific action labels were added.
+- `apps/frontend/src/pages/billing/BillingPage.test.tsx` verifies safe provider-unavailable and action-failure copy, accessible plan-comparison semantics, plan-specific action labels, payment-method and transaction-history semantics, decorative Billing icon treatment, raw provider-error exclusion, and retry through the existing billing data load, Review Plan, and Update Payment Method workflows.
 
 ### 5.13 Settings
 
@@ -2614,6 +2776,7 @@ Page contents:
   - Notifications.
   - Security.
   - Billing & Plans.
+  - Semantic `Settings sections` tablist with selected tab state and controlled tabpanels.
 - Profile tab:
   - First name.
   - Last name.
@@ -2623,22 +2786,27 @@ Page contents:
   - Inline safe profile-save action failure alert when provider save fails.
   - Save Changes.
 - Notifications tab:
+  - Notification channels list.
   - Email notifications switch with accessible name, description, and checked state.
   - Push notifications switch with accessible name, description, and checked state.
+  - Notification activity alerts list.
   - Job alerts switch with accessible name, description, and checked state.
   - Message notifications switch with accessible name, description, and checked state.
+  - Notification delivery controls list.
   - Digest frequency select.
   - Quiet hours switch.
   - Quiet hours start and end time fields.
   - Current delivery preference summary.
   - Save Preferences.
 - Security tab:
+  - Security actions list.
   - Update Password button that opens a reset-email confirmation modal.
   - Inline safe password-reset action failure alert inside the reset-email confirmation modal.
-  - 2FA row marked Coming soon with disabled Unavailable action.
+  - 2FA row marked Provider required with disabled Unavailable action.
   - Deactivate Account button that opens a typed-confirmation modal.
   - Inline safe account-deactivation action failure alert inside the typed-confirmation modal.
 - Billing tab:
+  - Billing summary metrics list.
   - Current plan.
   - Subscription status.
   - Next billing date.
@@ -2655,7 +2823,7 @@ How it works:
 5. Notification switches and delivery controls update local notification preference state.
 6. Notification save calls `settingsService.updateNotifications`, which updates an existing row or inserts a new row with digest frequency and quiet-hour fields.
 7. Password reset confirmation calls `authService.resetPassword(user.email)`; if the provider request fails, Settings keeps the review modal open with fixed safe copy and retry remains the existing Send Reset Email action.
-8. 2FA is explicitly disabled until an authentication provider flow exists.
+8. 2FA is explicitly disabled until an authentication provider flow is configured and verified.
 9. Account deactivation requires typing `DEACTIVATE`, with trimmed/case-insensitive matching, then calls `settingsService.deleteAccount(user.id)`; if deactivation fails, Settings keeps the review modal open with fixed safe copy and retry remains the existing Confirm Deactivation action.
 10. Billing tab uses `settingsService.getBilling` for a read-only summary.
 11. Account deactivation service performs soft delete on `profiles`.
@@ -2667,6 +2835,7 @@ How it works:
 17. Billing plan changes, payment method changes, and invoice details are handled by the dedicated `/billing` page.
 18. Settings workflow analytics records explicit tab, profile-save, notification-preference, notification-save, billing-handoff, password-reset review/cancel/outcomes, and account-deactivation review/cancel/outcomes.
 19. Settings workflow analytics stores only IDs, counts, preference keys, booleans, digest frequency, billing presence, invoice count, and error category; it does not store profile field values, email addresses, quiet-hour exact times, or deactivation confirmation text.
+20. Settings section tabs support pointer activation plus arrow/Home/End keyboard movement without changing the existing tab analytics event.
 
 Outputs:
 
@@ -2689,7 +2858,7 @@ Implementation notes:
 
 - Settings workflow analytics is append-only and non-blocking; it does not edit profile values, change notification settings, send reset emails, deactivate accounts, open Billing, change plans, mark notifications read, send messages, create notifications, or mutate settings by itself.
 - Browser-level Settings workflow coverage verifies profile settings save payloads, keyboard-accessible notification switch changes, digest and quiet-hours delivery preference save payloads, Billing summary and handoff, password reset review cancel/send behavior, account deactivation review cancel/confirm behavior, notification save failure retention, retry success, and settings workflow analytics across Chromium, Firefox, and WebKit.
-- `apps/frontend/src/pages/settings/SettingsPage.test.tsx` verifies safe Settings notification/billing failed-load copy, safe profile-save/password-reset/account-deactivation failure copy, raw provider-error exclusion, and retry through the existing settings load and action workflows.
+- `apps/frontend/src/pages/settings/SettingsPage.test.tsx` verifies safe Settings notification/billing failed-load copy, safe profile-save/password-reset/account-deactivation failure copy, raw provider-error exclusion, Settings tab/list semantics, decorative notification/security/billing icon treatment, and retry through the existing settings load and action workflows.
 
 ### 5.14 Companies
 
@@ -2990,6 +3159,7 @@ Outputs:
 
 - Dashboard counters labeled as local tracker records.
 - Safe live status copy for scanning, draft-ready, limited-draft, no-draft, and failed scan states.
+- Safe live storage warning when tracked jobs, scanned drafts, or local diagnostics fail to load/save; latest session-visible changes remain available without exposing raw quota/runtime/storage-key details.
 - Safe diagnostics log lines added to popup state without raw Chrome runtime or page-scan error strings.
 - Tracker tab opens with a reviewable scanned draft when page analysis succeeds.
 - Web-preview messaging reports the unavailable Chrome extension runtime instead of fabricating a scanned draft.
@@ -3074,6 +3244,7 @@ Resume Match Preview outputs:
 - Safe live guidance for missing text, short text, large pasted text, comparing, and ready states.
 - Keyword coverage stays pending while local comparison is running instead of showing a placeholder score.
 - Alignment report with matched keywords, missing job keywords, and local editing suggestions.
+- Built-options runtime smoke verifies empty-field validation and completed report-region semantics in a live Chromium-compatible MV3 runtime.
 - Usage Diagnostics-gated local operational analytics for validation, match request, and completion outcomes using input length bands, keyword-count bands, and score bands without storing pasted text or extracted keywords.
 
 Interview Planner inputs:
@@ -3089,7 +3260,8 @@ Interview Planner outputs:
 - Completion toggle is a native stateful button inside a list/listitem prep-card list.
 - Reviewed Clear All flow for prep cards.
 - Settings handoff that clears only prep cards after reviewed confirmation and exposes its review panel relationship.
-- Safe live storage warning when prep-card load/save fails; latest changes remain visible for the current session without exposing raw quota/runtime details.
+- Safe live storage warning when prep-card load/save fails; latest changes remain visible for the current session without exposing raw quota/runtime details, and removed storage keys reset to the hook initial value instead of crashing mounted views.
+- Built-options runtime smoke verifies empty-topic validation, prep-card creation, pressed-state toggling, Prep Clear All cancel/confirm, Settings reset cancel/confirm, prep/settings storage load warnings, prep/settings quota-pressure save warnings, empty-state restoration, and `ts_prep` persistence through real `chrome.storage.local`; published/prior-version update migration remains a separate release gap.
 - Usage Diagnostics-gated local operational analytics for prep-card validation, add, toggle, clear-review, clear-cancel, confirmed clear, and Settings reset-review/reset-cancel/reset-confirm paths without raw prep topics.
 
 Local Settings inputs:
@@ -3106,7 +3278,7 @@ Local Settings outputs:
   - `ts_settings_analytics`
 - Usage Diagnostics-gated local operational analytics saved only in this browser at `ts_extension_operational_analytics`.
 - Interview Reminder Preference stores a local setting for future reminder workflows; the extension does not schedule browser notifications yet.
-- Safe live storage warning when local preferences cannot load or persist.
+- Safe live storage warning when local preferences cannot load or persist, with removed-key fallback to the declared initial setting value.
 - Cloud sync Review Plan records bounded interest/context without enabling sync or moving records.
 - Reviewed Clear Prep Cards action records prep-card reset review/cancel/confirm outcomes and clears prep data only after explicit confirmation.
 
@@ -3209,19 +3381,20 @@ These notes are based on current code and should be considered when testing or p
 
 | Feature | Main inputs | Main outputs |
 |---|---|---|
+| Public landing | Anonymous visitor, public stat count state, role CTA click, section navigation click | Public product entry, role-preselected registration links, sign-in/get-started navigation, named public semantic sections, public stats source/freshness |
 | Auth | Email, password, full name, role, onboarding analytics action context | User/session/JWT and append-only onboarding analytics events |
 | Dashboard | User ID, user roles, dashboard operational analytics context | Stats, jobs, challenges, applications, append-only dashboard operational analytics |
-| Jobs | Search filters, saved search state, retryable saved-search sync state, retryable saved-search browser-storage state, local fit explanation state, retryable Explore catalog load state, retryable Applied-tab application history load state, retryable My Posts recruiter postings load state, retryable application-submit failure state, retryable recruiter publish failure state, account/local hidden Explore job state, retryable hidden-preference sync state, retryable hidden-preference browser-storage state, current-view hidden-preference refinement state, account/local job-post template state, job-post draft history, company context state, retryable company context load state, company setup/completion state, company setup onboarding analytics context, job-post review state, duplicate warning state, recruiter postings, edit-draft state, retryable edit-draft context load state, edit-change summary, publish checklist state, publish readiness policy state, publish review/outcome analytics context, job data, application data, application draft history, retryable application draft persistence state | Job list, safe Explore catalog load recovery, safe Applied-tab application history recovery, safe My Posts recruiter postings recovery, safe application-submit recovery, safe recruiter publish recovery, saved searches, safe saved-search local/account fallback, safe saved-search browser-storage failure copy, local advisory fit reasons, reversible account-synced/local-fallback hidden Explore preferences, safe hidden-preference browser-storage failure copy, safe all-hidden visibility-preference empty-state copy, explicit current-view preference refinements, account-synced/local-fallback editable job-post templates, restorable recruiter draft versions, reviewed draft jobs, safe edit-draft context load recovery, edited existing drafts, normalized draft-change summaries, company-attached drafts, safe company context load recovery, inline company setup/completion output, append-only onboarding analytics, duplicate warnings, recruiter posting workspace, published status updates, database-enforced publish readiness, append-only publish analytics, applications, restorable application draft versions, safe application draft storage/sync recovery |
+| Jobs | Search filters, saved search state, retryable saved-search sync state, retryable saved-search browser-storage state, local fit explanation state, retryable Explore catalog load state, retryable Applied-tab application history load state, retryable My Posts recruiter postings load state, retryable application-submit failure state, retryable recruiter publish failure state, account/local hidden Explore job state, retryable hidden-preference sync state, retryable hidden-preference browser-storage state, current-view hidden-preference refinement state, account/local job-post template state, job-post draft history, company context state, retryable company context load state, company setup/completion state, company setup onboarding analytics context, job-post review state, duplicate warning state, recruiter postings, edit-draft state, retryable edit-draft context load state, edit-change summary, publish checklist state, publish readiness policy state, publish review/outcome analytics context, job data, application data, application draft history, retryable application draft persistence state | Job list, safe Explore catalog load recovery, safe Applied-tab application history recovery, safe My Posts recruiter postings recovery, safe application-submit recovery, safe recruiter publish recovery, saved searches, safe saved-search local/account fallback, safe saved-search browser-storage failure copy, local advisory fit reasons, reversible account-synced/local-fallback hidden Explore preferences, safe hidden-preference browser-storage failure copy, safe all-hidden visibility-preference empty-state copy, explicit current-view preference refinements, account-synced/local-fallback editable job-post templates, restorable recruiter draft versions, reviewed draft jobs, safe edit-draft context load recovery, edited existing drafts, normalized draft-change summaries, company-attached drafts, safe company context load recovery, inline company setup/completion output, append-only onboarding analytics, duplicate warnings, recruiter posting workspace, published status updates, database-enforced publish readiness, append-only publish analytics, applications, accessible Application Details status timelines, restorable application draft versions, safe application draft storage/sync recovery |
 | Candidates | Recruiter ID, search text, review focus mode, analytics focus action, review queue action, detail queue navigation action, unsaved review draft state, private-review reset-review state, advisory sort mode, selected application IDs, bulk Interview/Offer/Rejection confirmation, status action, optional interview-plan draft, scorecard ratings/evidence, private note text, candidate workflow analytics context | Candidate list, focused candidate rows, advisory signal labels/scores/factors, current-page scorecard analytics, analytics-driven focus changes, first candidate details handoff, previous/next details handoff, unsaved review guard, reviewed private-review reset, target-specific selection summary, interview note draft, synced/local saved scorecards, saved notes, updated single or selected application status, append-only candidate workflow analytics |
-| Profile | User ID, headline/location/bio, skills/experience/education, local/AI suggestion state, profile workflow analytics context | Profile view, updated rows, prefilled drafts, safe action-failure recovery, append-only profile workflow analytics |
-| Resume | Profile data, resume fields, import text/file state, detected field/skill selections, export activity records, resume workflow analytics context | Resume preview, saved supported fields, reviewed import drafts, saved detected skills, print-ready PDF export, local HTML export, account/local export activity, append-only resume workflow analytics |
+| Profile | User ID, headline/location/bio, skills/experience/education, local/AI suggestion state, profile workflow analytics context | Profile view, updated rows, prefilled drafts, safe action-failure recovery, named section/list/tabpanel semantics, append-only profile workflow analytics |
+| Resume | Profile data, resume fields, import text/file state, detected field/skill selections, export activity records, resume workflow analytics context | Resume preview, saved supported fields, reviewed import drafts, saved detected skills, print-ready PDF export, local HTML export, account/local export activity, named editor/import/export/preview semantics, append-only resume workflow analytics |
 | LMS | Course filters, pagination params, course ID, user ID, retryable enrollment/progress-save action state, LMS workflow analytics context | Paginated course list, enrollment, progress, safe enrollment/progress-save recovery, append-only LMS workflow analytics |
 | Challenges | Category filter, challenge ID, language, solution code, reset-review state, retry-history action, local-check action, retryable submission action state, challenge workflow analytics context | Challenge list, local sample-check results, retry history, submissions, safe submission recovery, append-only challenge workflow analytics |
 | AI | Message, resume text, job description, user ID, retryable career-path provider state, recommendation review action, previous/next review status, workflow handoff action, destination prefill decision, chat-clear review state | Chat response, reviewed fresh-chat reset, review queue state, append-only review/prefill audit event, workflow handoff, analysis, safe career-path provider recovery, career path, insight |
 | Product analytics | Event area, event name, source, optional user ID/object/metadata, extension Usage Diagnostics context | Server or local append-only analytics event, including preference update, onboarding, dashboard/admin operations, LMS, Challenges, Billing, Profile, Resume, Networking, application, candidate, messaging, settings workflow, extension operational events, and Admin aggregate insight summaries |
-| Networking | User ID, backend suggestion candidate IDs, recipient ID, search text, optional request note, explicit profile preview action, explicit reminder action and timing, local reminder fallback state, networking workflow analytics context | API-first graph-ranked suggestions with fallback profile hydration, profile preview, request state, safe action-failure recovery for Connect, Accept, Decline, and Withdraw, accepted connections, follow-up reminder notification with due metadata, local-to-account reminder backfill, scheduler promotion metadata, and append-only networking workflow analytics |
+| Networking | User ID, backend suggestion candidate IDs, recipient ID, search text, optional request note, explicit profile preview action, explicit reminder action and timing, local reminder fallback state, networking workflow analytics context | API-first graph-ranked suggestions with fallback profile hydration, accessible card-list semantics, person-specific action labels, profile preview, request state, safe action-failure recovery for Connect, Accept, Decline, and Withdraw, accepted connections, follow-up reminder notification with due metadata, local-to-account reminder backfill, scheduler promotion metadata, and append-only networking workflow analytics |
 | Messaging | Conversation ID, message text, latest visible messages, optional suggested draft, optional reviewed attachment URL or uploaded file, retryable send/upload/mark-read action state, messaging workflow analytics context | Conversation list with unread badges, suggested reply draft, message stream, local send/upload feedback, safe action-failure recovery, sent message/link/file attachment, append-only messaging workflow analytics |
-| Billing | User ID, plan ID, checkout data, billing portal action, retryable checkout/portal action-failure state, billing workflow analytics context | Plans, payments, subscription info, safe checkout/portal action-failure recovery, provider handoffs, append-only billing workflow analytics |
+| Billing | User ID, plan ID, checkout data, billing portal action, retryable checkout/portal action-failure state, billing workflow analytics context | Plans, payments, subscription info, accessible plan comparison, safe checkout/portal action-failure recovery, provider handoffs, append-only billing workflow analytics |
 | Settings | Profile fields, notification toggles, digest frequency, quiet hours, retryable notification/billing load state, password reset confirmation/cancellation, account deactivation confirmation, settings workflow analytics context | Updated settings, notification delivery preferences, safe load-failure recovery, safe action-failure recovery, billing summary, reset email request, account deactivation, append-only settings workflow analytics |
 | Admin | Admin role, service health/status link action, scheduled automation refresh action, audit pagination action, product analytics insight refresh action, admin operational analytics context | Platform stats, scheduled automation rollout/run-history status, service health with investigation links/log queries, product analytics aggregate counts/rates/friction signals, paginated audit events, append-only admin operational analytics |
-| Chrome extension | Local jobs, tracked-job delete review state, diagnostics console clear review state, resume text, job description, prep cards, prep-card clear review state, cloud-sync plan review state, local interview reminder preference, toggles, Usage Diagnostics setting, local operational analytics queue | Local tracker dashboard, reviewed tracked-job removal, diagnostics, reviewed console-log clearing, local keyword-overlap match preview, reviewed prep-card clearing, explicit local-only sync status, local reminder preference without scheduled notifications, bounded local operational analytics queue, and reviewed analytics export/clear controls |
+| Chrome extension | Local jobs, tracked-job delete review state, scanned-draft storage state, popup storage-failure state, install-time storage schema marker, diagnostics console clear review state, resume text, job description, prep cards, prep-card clear review state, cloud-sync plan review state, local interview reminder preference, toggles, Usage Diagnostics setting, local operational analytics queue | Local tracker dashboard, reviewed tracked-job removal, safe popup storage-failure warning with runtime load and quota-pressure save coverage, diagnostics, reviewed console-log clearing, local keyword-overlap match preview, reviewed prep-card clearing, safe options storage-failure warning with runtime load and quota-pressure save coverage, runtime-verified install schema marker, explicit local-only sync status, local reminder preference without scheduled notifications, bounded local operational analytics queue, and reviewed analytics export/clear controls |

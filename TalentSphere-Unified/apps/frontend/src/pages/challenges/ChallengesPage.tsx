@@ -25,6 +25,7 @@ const challengeSectionClassName = 'surface-panel p-4';
 const challengeInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3';
 const challengeCardClassName = 'group flex min-h-56 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
 const challengeCodeFieldClassName = 'min-h-72 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-4 font-mono text-xs leading-5 text-[var(--text-primary)] outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 type LocalCheckStatus = 'passed' | 'failed' | 'error';
 type LocalCheckResult = {
@@ -49,6 +50,13 @@ const getDifficultyVariant = (difficulty?: string) => {
   return 'success';
 };
 
+const getChallengeTitle = (challenge?: Challenge | null) => challenge?.title || 'Challenge';
+const getParticipantCount = (challenge: Challenge) => challenge.participantCount || challenge.participantsCount || 0;
+
+const getChallengeCardLabel = (challenge: Challenge) => (
+  `Challenge ${getChallengeTitle(challenge)}. ${challenge.difficulty || 'Difficulty unavailable'}. ${getParticipantCount(challenge)} participants.`
+);
+
 const getStarterCode = (challenge: Challenge) => {
   return challenge.starterCode || challenge.starter_code || [
     '// Write your solution here',
@@ -68,6 +76,9 @@ const getTestCaseInput = (testCase: ChallengeTestCase) => testCase.input || test
 const getTestCaseExpectedOutput = (testCase: ChallengeTestCase) => testCase.expectedOutput || testCase.expected_output || '';
 const getRunnableSampleCases = (challenge: Challenge) => getTestCases(challenge).filter((testCase) =>
   Boolean(getTestCaseInput(testCase).trim()) && Boolean(getTestCaseExpectedOutput(testCase).trim())
+);
+const getSampleCaseLabel = (testCase: ChallengeTestCase, index: number) => (
+  `Sample case ${index + 1}${testCase.description ? `: ${testCase.description}` : ''}`
 );
 
 const normalizeSampleOutput = (value?: string) => (value || '').replace(/\r\n/g, '\n').trim();
@@ -199,6 +210,16 @@ const getSubmissionStatusVariant = (status?: string) => {
   return 'warning';
 };
 
+const getLocalCheckResultLabel = (result: LocalCheckResult) => {
+  if (result.status === 'passed') return `${result.label}: matched expected output`;
+  if (result.status === 'failed') return `${result.label}: output did not match`;
+  return `${result.label}: could not run`;
+};
+
+const getSubmissionAttemptLabel = (submission: ChallengeSubmission, attemptNumber: number) => (
+  `Attempt ${attemptNumber}: ${submission.status || 'Status pending'}, score ${submission.score ?? 0}`
+);
+
 const getChallengeErrorCategory = (error: unknown) => {
   if (!error) return 'unknown_error';
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
@@ -216,14 +237,14 @@ const getSubmissionScoreBand = (score?: number | null) => {
 
 const SubmissionStatusIcon: React.FC<{ status?: string }> = ({ status }) => {
   if (['PASSED', 'ACCEPTED'].includes(status || '')) {
-    return <CheckCircle2 size={16} className="text-success" />;
+    return <CheckCircle2 {...decorativeIconProps} size={16} className="text-success" />;
   }
 
   if (['FAILED', 'REJECTED'].includes(status || '')) {
-    return <XCircle size={16} className="text-destructive" />;
+    return <XCircle {...decorativeIconProps} size={16} className="text-destructive" />;
   }
 
-  return <Clock size={16} className="text-warning" />;
+  return <Clock {...decorativeIconProps} size={16} className="text-warning" />;
 };
 
 const ChallengesPage: React.FC = () => {
@@ -630,7 +651,7 @@ const ChallengesPage: React.FC = () => {
           description="Solve real-world problems and level up your skills."
         />
         <EmptyState
-          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          icon={<AlertTriangle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
           title="Challenges could not load"
           description="The challenge catalog did not respond. Retry to reload the current list."
           action={{ label: 'Retry challenges', onClick: handleChallengeLoadRetry }}
@@ -648,7 +669,16 @@ const ChallengesPage: React.FC = () => {
 
       <Card className="p-4">
         <div className={challengePanelClassName}>
-          <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Challenge categories">
+          <div
+            className="flex flex-wrap items-center gap-1"
+            role="group"
+            aria-label="Challenge category filters"
+            aria-describedby="challenge-category-filter-help"
+            data-ui="challenge-category-filters"
+          >
+            <p id="challenge-category-filter-help" className="sr-only">
+              Category filters change only the visible challenge catalog and keep the solving workspace unchanged.
+            </p>
             {categoryTabs.map((tab) => (
               <button
                 key={tab}
@@ -683,13 +713,18 @@ const ChallengesPage: React.FC = () => {
       ) : filtered.length === 0 ? (
         <EmptyState title="No challenges found" description="Try a different category." />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Challenge catalog">
           {filtered.map((challenge) => (
-            <Card key={challenge.id} className={challengeCardClassName}>
+            <Card
+              key={challenge.id}
+              className={challengeCardClassName}
+              role="listitem"
+              aria-label={getChallengeCardLabel(challenge)}
+            >
               <div>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="rounded-lg bg-accent/10 p-2.5 text-accent">
-                    <Trophy size={20} />
+                    <Trophy {...decorativeIconProps} size={20} />
                   </div>
                   <Badge variant={getDifficultyVariant(challenge.difficulty)}>
                     {challenge.difficulty}
@@ -705,8 +740,8 @@ const ChallengesPage: React.FC = () => {
 
               <div className="flex items-center justify-between gap-3 border-t border-[var(--border-default)] pt-4">
                 <div className="flex flex-wrap items-center gap-3 text-[10px] text-[var(--text-muted)]">
-                  <span className="flex items-center gap-1"><Users size={12} /> {challenge.participantCount || challenge.participantsCount || 0}</span>
-                  <span className="flex items-center gap-1"><Clock size={12} /> {challenge.duration || challenge.timeLimit || 'N/A'}</span>
+                  <span className="flex items-center gap-1" aria-label={`${getParticipantCount(challenge)} participants`}><Users {...decorativeIconProps} size={12} /> {getParticipantCount(challenge)}</span>
+                  <span className="flex items-center gap-1" aria-label={`Duration ${challenge.duration || challenge.timeLimit || 'N/A'}`}><Clock {...decorativeIconProps} size={12} /> {challenge.duration || challenge.timeLimit || 'N/A'}</span>
                 </div>
                 <Button
                   size="sm"
@@ -714,7 +749,7 @@ const ChallengesPage: React.FC = () => {
                   aria-label={`Solve ${challenge.title}`}
                   onClick={() => handleSolve(challenge)}
                 >
-                  <Play size={12} />
+                  <Play {...decorativeIconProps} size={12} />
                   Solve Now
                 </Button>
               </div>
@@ -741,9 +776,9 @@ const ChallengesPage: React.FC = () => {
                   <Badge variant="outline">{selectedChallenge.xpReward || selectedChallenge.xp_reward || 0} XP</Badge>
                 </div>
 
-                <div className={challengeSectionClassName}>
-                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <FileText size={16} />
+                <div className={challengeSectionClassName} role="region" aria-labelledby="challenge-prompt-heading">
+                  <h4 id="challenge-prompt-heading" className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <FileText {...decorativeIconProps} size={16} />
                     Prompt
                   </h4>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
@@ -751,10 +786,10 @@ const ChallengesPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className={challengeSectionClassName}>
+                <div className={challengeSectionClassName} role="region" aria-labelledby="challenge-solution-heading">
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <h4 className="text-sm font-semibold flex items-center gap-2">
-                      <Code2 size={16} />
+                    <h4 id="challenge-solution-heading" className="text-sm font-semibold flex items-center gap-2">
+                      <Code2 {...decorativeIconProps} size={16} />
                       Solution
                     </h4>
                     <div className="flex items-center gap-2">
@@ -781,7 +816,7 @@ const ChallengesPage: React.FC = () => {
                         ))}
                       </select>
                       <Button type="button" variant="outline" size="sm" onClick={handleResetCode}>
-                        <RotateCcw size={13} />
+                        <RotateCcw {...decorativeIconProps} size={13} />
                         Reset
                       </Button>
                     </div>
@@ -800,7 +835,7 @@ const ChallengesPage: React.FC = () => {
                           Keep Code
                         </Button>
                         <Button type="button" variant="destructive" size="sm" onClick={confirmResetCode}>
-                          <RotateCcw size={13} />
+                          <RotateCcw {...decorativeIconProps} size={13} />
                           Reset Code
                         </Button>
                       </div>
@@ -808,6 +843,7 @@ const ChallengesPage: React.FC = () => {
                   )}
                   <textarea
                     aria-label="Solution code"
+                    aria-describedby="challenge-solution-description"
                     value={solution}
                     onChange={(event) => {
                       setSolution(event.target.value);
@@ -819,16 +855,24 @@ const ChallengesPage: React.FC = () => {
                     spellCheck={false}
                     className={challengeCodeFieldClassName}
                   />
+                  <p id="challenge-solution-description" className="sr-only">
+                    {`Solution editor for ${getChallengeTitle(selectedChallenge)} using ${language}.`}
+                  </p>
                 </div>
               </div>
 
-              <aside className="space-y-4">
-                <div className={challengeSectionClassName}>
-                  <h4 className="text-sm font-semibold mb-3">Sample Cases</h4>
+              <aside className="space-y-4" aria-label="Challenge results and history">
+                <div className={challengeSectionClassName} role="region" aria-labelledby="challenge-sample-cases-heading">
+                  <h4 id="challenge-sample-cases-heading" className="text-sm font-semibold mb-3">Sample Cases</h4>
                   {selectedTestCases.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3" role="list" aria-label="Visible sample cases">
                       {selectedTestCases.slice(0, 4).map((testCase, index) => (
-                        <div key={testCase.id || index} className={challengeInsetClassName}>
+                        <div
+                          key={testCase.id || index}
+                          className={challengeInsetClassName}
+                          role="listitem"
+                          aria-label={getSampleCaseLabel(testCase, index)}
+                        >
                           <p className="text-[10px] font-medium text-[var(--text-muted)] mb-1">Case {index + 1}</p>
                           {testCase.description && (
                             <p className="text-xs text-[var(--text-secondary)] mb-2">{testCase.description}</p>
@@ -858,9 +902,14 @@ const ChallengesPage: React.FC = () => {
                         </p>
                       )}
                       {localCheckResults.length > 0 && (
-                        <div className="mt-3 space-y-2">
+                        <div className="mt-3 space-y-2" role="list" aria-label="Local check results">
                           {localCheckResults.map((result) => (
-                            <div key={result.id} className={challengeInsetClassName}>
+                            <div
+                              key={result.id}
+                              className={challengeInsetClassName}
+                              role="listitem"
+                              aria-label={getLocalCheckResultLabel(result)}
+                            >
                               <div className="mb-2 flex items-center justify-between gap-2">
                                 <span className="text-xs font-medium text-[var(--text-primary)]">{result.label}</span>
                                 <Badge variant={getLocalCheckStatusVariant(result.status)}>
@@ -886,8 +935,8 @@ const ChallengesPage: React.FC = () => {
                 </div>
 
                 {lastSubmission && (
-                  <div className={challengeSectionClassName}>
-                    <h4 className="text-sm font-semibold mb-3">Submission</h4>
+                  <div className={challengeSectionClassName} role="region" aria-labelledby="challenge-latest-submission-heading">
+                    <h4 id="challenge-latest-submission-heading" className="text-sm font-semibold mb-3">Submission</h4>
                     <div className="flex items-center gap-2 mb-2">
                       <SubmissionStatusIcon status={lastSubmission.status} />
                       <span className="text-sm font-medium">{lastSubmission.status}</span>
@@ -901,9 +950,9 @@ const ChallengesPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className={challengeSectionClassName}>
+                <div className={challengeSectionClassName} role="region" aria-labelledby="challenge-retry-history-heading">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-semibold">Retry History</h4>
+                    <h4 id="challenge-retry-history-heading" className="text-sm font-semibold">Retry History</h4>
                     <Button
                       type="button"
                       variant="ghost"
@@ -912,7 +961,7 @@ const ChallengesPage: React.FC = () => {
                       disabled={isLoadingSubmissionHistory || !user?.id}
                       aria-label="Refresh submission history"
                     >
-                      <RefreshCw size={13} className={isLoadingSubmissionHistory ? 'animate-spin' : ''} />
+                      <RefreshCw {...decorativeIconProps} size={13} className={isLoadingSubmissionHistory ? 'animate-spin' : ''} />
                       Refresh
                     </Button>
                   </div>
@@ -927,9 +976,14 @@ const ChallengesPage: React.FC = () => {
                   ) : submissionHistory.length === 0 ? (
                     <p className="text-xs text-[var(--text-muted)]">No attempts yet. Submit when you are ready to start tracking progress.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2" role="list" aria-label="Retry history attempts">
                       {submissionHistory.slice(0, 5).map((submission, index) => (
-                        <div key={submission.id || `${submission.challenge_id}-${index}`} className={challengeInsetClassName}>
+                        <div
+                          key={submission.id || `${submission.challenge_id}-${index}`}
+                          className={challengeInsetClassName}
+                          role="listitem"
+                          aria-label={getSubmissionAttemptLabel(submission, submissionHistory.length - index)}
+                        >
                           <div className="mb-1 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <SubmissionStatusIcon status={submission.status} />
@@ -958,11 +1012,11 @@ const ChallengesPage: React.FC = () => {
                 Close
               </Button>
               <Button variant="outline" onClick={handleRunLocalCheck} isLoading={isRunningLocalCheck} disabled={isSubmitting}>
-                <Play size={14} />
+                <Play {...decorativeIconProps} size={14} />
                 Run Local Check
               </Button>
               <Button onClick={handleSubmit} isLoading={isSubmitting}>
-                <Send size={14} />
+                <Send {...decorativeIconProps} size={14} />
                 Submit Solution
               </Button>
             </div>

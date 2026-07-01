@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { billingMode, Payment, PaymentPlan, paymentService } from '../../services/paymentService';
 import { useAppSelector } from '../../store/hooks';
@@ -45,12 +46,39 @@ const billingSectionTitleClassName = 'text-sm font-semibold';
 const billingLoadFailureMessage = 'Billing provider data did not respond. Retry to reload plans, payment method, subscription status, and transaction history.';
 const billingPlanActionFailureMessage = 'The plan change was not started. No subscription state changed. Review the plan and try again from this confirmation.';
 const billingPortalActionFailureMessage = 'The billing portal could not be opened. No payment method changed. Review the handoff and try again from this confirmation.';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 const getPaymentStatusBadgeVariant = (status: Payment['status']): 'success' | 'warning' | 'destructive' | 'outline' => {
   if (status === 'COMPLETED') return 'success';
   if (status === 'FAILED') return 'destructive';
   if (status === 'REFUNDED') return 'outline';
   return 'warning';
+};
+
+const getPlanName = (plan: PaymentPlan) => plan.name || 'Billing plan';
+
+const getPlanComparisonLabel = (plan: PaymentPlan, isCurrent: boolean) => {
+  const planName = getPlanName(plan);
+  const currency = plan.currency || 'usd';
+  const interval = plan.interval || 'month';
+  const featureCount = plan.features.length;
+  const featureLabel = `${featureCount} ${featureCount === 1 ? 'feature' : 'features'}`;
+  const stateLabel = isCurrent ? 'Current plan' : 'Available plan';
+  return `${stateLabel}: ${planName}. ${formatCurrency(plan.price, currency)} per ${interval}. ${featureLabel}.`;
+};
+
+const getBillingPaymentMethodLabel = (paymentMethod?: string | null) => (
+  `Payment method: ${paymentMethod || 'No payment method on file'}`
+);
+
+const getBillingTransactionLabel = (transaction: Payment) => {
+  const createdAt = transaction.created_at || (transaction as any).createdAt;
+  const dateLabel = createdAt ? new Date(createdAt).toLocaleDateString() : 'Date unavailable';
+  const amountLabel = transaction.amount > 0
+    ? `+${formatCurrency(transaction.amount, transaction.currency)}`
+    : `-${formatCurrency(Math.abs(transaction.amount), transaction.currency)}`;
+
+  return `${transaction.description || 'Service Payment'}. ${dateLabel}. ${transaction.status}. ${amountLabel}`;
 };
 
 const BillingPage: React.FC = () => {
@@ -347,7 +375,7 @@ const BillingPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div role="region" aria-label="Billing workspace" className="space-y-6">
       <PageHeader title="Billing" description="Manage your subscription and billing details." />
 
       {!billingMode.providerBacked && (
@@ -355,7 +383,11 @@ const BillingPage: React.FC = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="warning">{billingMode.label}</Badge>
+                <SourceStatusBadge
+                  status="demo"
+                  label={billingMode.label}
+                  description={billingMode.limitation}
+                />
                 <span className="text-sm font-medium">Provider checkout is not live in this build</span>
               </div>
               <p className={billingDescriptionClassName}>
@@ -370,7 +402,7 @@ const BillingPage: React.FC = () => {
         <Card className="border-warning/30 bg-warning-muted/10 p-4" role="alert">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-3">
-              <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
+              <AlertCircle {...decorativeIconProps} size={18} className="text-warning shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Billing provider unavailable</p>
                 <p className={billingDescriptionClassName}>{billingLoadError} Your current subscription is not changed.</p>
@@ -390,18 +422,34 @@ const BillingPage: React.FC = () => {
             <h2 id="billing-plans-heading" className={billingSectionTitleClassName}>Plans</h2>
             <p className={billingDescriptionClassName}>Compare available plans and review a change before any checkout handoff.</p>
           </div>
-          {!billingMode.providerBacked && <Badge variant="warning">Requests only</Badge>}
+          {!billingMode.providerBacked && (
+            <SourceStatusBadge
+              status="demo"
+              label="Requests only"
+              description="Plan changes remain review requests until provider webhooks own subscription state."
+            />
+          )}
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          role={plans.length > 0 ? 'list' : undefined}
+          aria-label={plans.length > 0 ? 'Billing plans' : undefined}
+        >
           {plans.length > 0 ? plans.map((plan) => {
             const isCurrent = plan.name?.toLowerCase() === currentPlanName?.toLowerCase() ||
               Boolean(plan.id && subscription?.plan_id === plan.id);
             const currency = plan.currency || 'usd';
+            const planName = getPlanName(plan);
             return (
-              <Card key={plan.id || plan.name} className={`flex min-h-[24rem] flex-col p-5 ${isCurrent ? 'border-accent ring-1 ring-accent/20' : ''}`}>
+              <Card
+                key={plan.id || plan.name}
+                role="listitem"
+                aria-label={getPlanComparisonLabel(plan, isCurrent)}
+                className={`flex min-h-[24rem] flex-col p-5 ${isCurrent ? 'border-accent ring-1 ring-accent/20' : ''}`}
+              >
                 <div className="mb-4">
                   <div className="mb-2 flex min-w-0 items-start justify-between gap-3">
-                    <h3 className="min-w-0 break-words text-base font-semibold">{plan.name}</h3>
+                    <h3 className="min-w-0 break-words text-base font-semibold">{planName}</h3>
                     {isCurrent && <Badge>Current</Badge>}
                   </div>
                   <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
@@ -409,16 +457,17 @@ const BillingPage: React.FC = () => {
                     <span className="text-sm text-[var(--text-muted)]">/{plan.interval || 'month'}</span>
                   </div>
                 </div>
-                <ul className="flex-1 space-y-2.5 mb-6">
+                <ul className="flex-1 space-y-2.5 mb-6" aria-label={`Features for ${planName}`}>
                   {plan.features.map((f: string) => (
                     <li key={f} className="flex min-w-0 items-start gap-2 text-sm text-[var(--text-secondary)]">
-                      <CheckCircle2 size={14} className="text-success shrink-0" /> {f}
+                      <CheckCircle2 {...decorativeIconProps} size={14} className="text-success shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
                 <Button
                   variant={isCurrent ? 'secondary' : 'default'}
                   className="w-full"
+                  aria-label={isCurrent ? `Current plan: ${planName}` : `Review ${planName} plan`}
                   onClick={() => handleChoosePlan(plan)}
                   disabled={isCurrent}
                 >
@@ -429,7 +478,7 @@ const BillingPage: React.FC = () => {
           }) : (
             <EmptyState
               className="sm:col-span-2 lg:col-span-3"
-              icon={<CreditCard size={28} />}
+              icon={<CreditCard {...decorativeIconProps} size={28} />}
               title="Plan catalog unavailable"
               description="Plans could not be loaded from the billing provider. Your current subscription is not changed."
               action={{ label: 'Retry Plans', onClick: () => handleRetryBillingData('plan_catalog_empty') }}
@@ -439,18 +488,25 @@ const BillingPage: React.FC = () => {
       </section>
 
       {/* Payment Method */}
-      <Card className="p-6">
+      <Card className="p-6" role="region" aria-label="Billing payment method">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className={billingSectionTitleClassName}>Payment Method</h2>
             <p className={billingDescriptionClassName}>Payment method updates open in a reviewed provider handoff when live mode is available.</p>
           </div>
+          <SourceStatusBadge
+            status={billingMode.providerBacked ? 'provider' : 'demo'}
+            label={billingMode.providerBacked ? 'Provider backed' : 'Demo source'}
+            description={billingMode.providerBacked
+              ? 'Payment method updates are handed off to the configured billing provider.'
+              : 'Payment method updates are visible for review but are not provider-backed yet.'}
+          />
           <Button variant="outline" size="sm" onClick={handleOpenPaymentMethodReview}>
             Update
           </Button>
         </div>
-        <div className={`${billingInsetClassName} flex min-w-0 items-start gap-4 p-4`}>
-          <CreditCard size={24} className="text-[var(--text-muted)]" />
+        <div className={`${billingInsetClassName} flex min-w-0 items-start gap-4 p-4`} role="group" aria-label={getBillingPaymentMethodLabel(paymentMethod)}>
+          <CreditCard {...decorativeIconProps} size={24} className="text-[var(--text-muted)]" />
           <div className="min-w-0">
             <p className="break-words text-sm font-medium">{paymentMethod || 'No payment method on file'}</p>
             <p className={billingMutedClassName}>
@@ -463,16 +519,29 @@ const BillingPage: React.FC = () => {
       </Card>
 
       {/* Transaction History */}
-      <Card className="p-6">
+      <Card className="p-6" role="region" aria-label="Billing transaction history">
         <div className="mb-4">
-          <h2 className={billingSectionTitleClassName}>Transaction History</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={billingSectionTitleClassName}>Transaction History</h2>
+            <SourceStatusBadge
+              status={billingMode.providerBacked ? 'provider' : 'demo'}
+              label={billingMode.providerBacked ? 'Provider history' : 'Demo history'}
+              description={billingMode.providerBacked
+                ? 'Transactions reflect provider-backed billing state.'
+                : 'Transactions may include demo billing records and do not prove provider-settled payment state.'}
+            />
+          </div>
           <p className={billingDescriptionClassName}>History reflects the current billing data source and does not finalize demo checkout requests.</p>
         </div>
-        <div className="divide-y divide-[var(--border-default)]">
+        <div
+          className="divide-y divide-[var(--border-default)]"
+          role={history.length > 0 ? 'list' : undefined}
+          aria-label={history.length > 0 ? 'Billing transactions' : undefined}
+        >
           {history.length > 0 ? history.map((tx, i) => {
             const createdAt = tx.created_at || (tx as any).createdAt;
             return (
-            <div key={tx.id || i} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div key={tx.id || i} role="listitem" aria-label={getBillingTransactionLabel(tx)} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 space-y-1">
                 <p className="break-words text-sm font-medium">{tx.description || 'Service Payment'}</p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -513,7 +582,7 @@ const BillingPage: React.FC = () => {
               <ul className="space-y-2">
                 {selectedPlan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-                    <CheckCircle2 size={14} className="text-success shrink-0" />
+                    <CheckCircle2 {...decorativeIconProps} size={14} className="text-success shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -521,7 +590,7 @@ const BillingPage: React.FC = () => {
             </div>
 
             <div className="flex gap-3 rounded-lg border border-warning/20 bg-warning-muted/20 p-4">
-              <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
+              <AlertCircle {...decorativeIconProps} size={18} className="text-warning shrink-0 mt-0.5" />
               <p className={billingDescriptionClassName}>
                 {billingMode.providerBacked
                   ? 'You will be redirected to the secure billing provider when checkout is available. No plan change is applied until you confirm it there.'
@@ -538,7 +607,7 @@ const BillingPage: React.FC = () => {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variant="outline" onClick={handleClosePlanReview} disabled={isProcessing}>Cancel</Button>
               <Button onClick={handleConfirmPlan} isLoading={isProcessing}>
-                <ArrowUpRight size={14} />
+                <ArrowUpRight {...decorativeIconProps} size={14} />
                 Continue
               </Button>
             </div>
@@ -566,7 +635,7 @@ const BillingPage: React.FC = () => {
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={handleClosePaymentMethodReview} disabled={isProcessing}>Cancel</Button>
             <Button onClick={handleUpdatePaymentMethod} isLoading={isProcessing}>
-              <ArrowUpRight size={14} />
+              <ArrowUpRight {...decorativeIconProps} size={14} />
               Open Billing Portal
             </Button>
           </div>

@@ -57,11 +57,25 @@ const publicCopy = JSON.stringify([
 assert.equal(/receiving end|service_role_token|QuotaExceededError|No active tab is available to scan|Chrome extension runtime/i.test(publicCopy), false);
 
 const popupSource = fs.readFileSync(path.join(extensionRoot, 'src/popup/PopupApp.tsx'), 'utf8');
+const localOnlyStatusSource = fs.readFileSync(path.join(extensionRoot, 'src/components/LocalOnlyStatus.tsx'), 'utf8');
 assert.match(popupSource, /setPageScanStatus\(pageScanStartedStatus\)/);
 assert.match(popupSource, /getPageScanDraftStatus\(response\.draft\.confidence\)/);
 assert.match(popupSource, /getPageScanFailureStatus\(errorCategory\)/);
+assert.match(popupSource, /jobsStorageIssue/);
+assert.match(popupSource, /draftStorageIssue/);
+assert.match(popupSource, /operationalEventsStorageIssue/);
+assert.match(popupSource, /activeStorageIssue = jobsStorageIssue \?\? draftStorageIssue \?\? operationalEventsStorageIssue/);
+assert.match(popupSource, /id="popup-storage-status"/);
+assert.match(popupSource, /Local popup data could not load/);
+assert.match(popupSource, /Local popup data may not persist/);
+assert.match(popupSource, /Local storage needs attention/);
+assert.match(popupSource, /id="popup-local-only-status"/);
+assert.match(popupSource, /Local only - no cloud sync/);
+assert.match(localOnlyStatusSource, /data-ui="extension-local-only-status"/);
+assert.match(localOnlyStatusSource, /Cloud sync is not connected/);
 assert.equal(/addLog\(`Page scan did not return a draft:/.test(popupSource), false);
 assert.equal(/addLog\(`Page scan failed:/.test(popupSource), false);
+assert.equal(/QuotaExceededError|chrome\.runtime\.lastError|service_role_token|activeStorageIssue\.key|jobsStorageIssue\.key|draftStorageIssue\.key|operationalEventsStorageIssue\.key/i.test(popupSource + localOnlyStatusSource), false);
 
 const dashboardSource = fs.readFileSync(path.join(extensionRoot, 'src/popup/views/DashboardView.tsx'), 'utf8');
 assert.match(dashboardSource, /id="page-scan-status"/);

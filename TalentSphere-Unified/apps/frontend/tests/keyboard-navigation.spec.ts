@@ -38,6 +38,26 @@ test.describe('keyboard navigation guardrail', () => {
     await installKeyboardNetworkStubs(page);
   });
 
+  test('authenticated shell exposes a keyboard skip link to application content', async ({ page }) => {
+    await installE2EAuth(page, [USER_ROLES.user]);
+    await page.goto('/dashboard');
+    await expect(page.getByRole('heading', { name: /^Welcome back, E2E User$/ })).toBeVisible();
+
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    });
+
+    const skipLink = page.getByRole('link', { name: 'Skip to application content' });
+    await page.keyboard.press('Tab');
+    await expect(skipLink).toBeFocused();
+    await expect(skipLink).toBeVisible();
+
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('main', { name: 'Dashboard application content' })).toBeFocused();
+  });
+
   test('command search can be focused and submitted from the keyboard', async ({ page }) => {
     await installE2EAuth(page, [USER_ROLES.user]);
     await page.goto('/dashboard');
@@ -91,6 +111,52 @@ test.describe('keyboard navigation guardrail', () => {
     await expect(page.getByRole('heading', { name: /^Jobs$/ })).toBeVisible();
   });
 
+  test('mobile slide-over navigation exposes a named landmark and current route', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await installE2EAuth(page, [USER_ROLES.user]);
+    await page.goto('/dashboard');
+
+    const menuButton = page.getByRole('button', { name: 'Toggle navigation menu' });
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+
+    await menuButton.focus();
+    await page.keyboard.press('Enter');
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+
+    const expandedNavigation = page.getByRole('navigation', { name: 'Expanded mobile navigation' });
+    await expect(expandedNavigation).toBeVisible();
+
+    const dashboardLink = expandedNavigation.getByRole('link', { name: /^Dashboard$/ });
+    await expect(dashboardLink).toHaveAttribute('aria-current', 'page');
+
+    const jobsLink = expandedNavigation.getByRole('link', { name: /^Jobs$/ });
+    await jobsLink.focus();
+    await expect(jobsLink).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/\/jobs$/);
+    await expect(page.getByRole('heading', { name: /^Jobs$/ })).toBeVisible();
+  });
+
+  test('collapsed desktop sidebar keeps route and footer controls named', async ({ page }) => {
+    await installE2EAuth(page, [USER_ROLES.user]);
+    await page.goto('/dashboard');
+    await expect(page.getByRole('heading', { name: /^Welcome back, E2E User$/ })).toBeVisible();
+
+    const primaryNavigation = page.getByRole('navigation', { name: 'Primary navigation' }).first();
+    const collapseButton = page.getByRole('button', { name: 'Collapse sidebar' });
+    await collapseButton.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
+
+    const dashboardLink = primaryNavigation.getByRole('link', { name: /^Dashboard$/ });
+    await expect(dashboardLink).toBeVisible();
+    await expect(dashboardLink).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('button', { name: /^(Dark mode|Light mode)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  });
+
   test('notification reminders are keyboard reachable and activate navigation', async ({ page }) => {
     await installE2EAuth(page, [USER_ROLES.user]);
     await page.goto('/dashboard');
@@ -100,7 +166,7 @@ test.describe('keyboard navigation guardrail', () => {
     await notificationsButton.focus();
     await page.keyboard.press('Enter');
 
-    const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+    const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
     await expect(notificationsRegion).toBeVisible();
 
     await page.keyboard.press('Tab');
@@ -121,7 +187,7 @@ test.describe('keyboard navigation guardrail', () => {
     await notificationsButton.focus();
     await page.keyboard.press('Enter');
 
-    const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+    const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
     await expect(notificationsRegion).toBeVisible();
 
     await page.keyboard.press('Tab');
@@ -149,7 +215,7 @@ test.describe('keyboard navigation guardrail', () => {
     await notificationsButton.focus();
     await page.keyboard.press('Enter');
 
-    const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+    const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
     await expect(notificationsRegion).toBeVisible();
 
     const markReadButton = notificationsRegion.getByRole('button', { name: 'Mark read' });
@@ -178,7 +244,7 @@ test.describe('keyboard navigation guardrail', () => {
     await notificationsButton.focus();
     await page.keyboard.press('Enter');
 
-    const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+    const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
     const accountNotification = notificationsRegion.getByRole('button', { name: /New recruiter message 1/ });
     await accountNotification.focus();
     await expect(accountNotification).toBeFocused();
@@ -201,7 +267,7 @@ test.describe('keyboard navigation guardrail', () => {
     await notificationsButton.focus();
     await page.keyboard.press('Enter');
 
-    const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+    const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
     await expect(notificationsRegion.getByText('8 of 10 loaded')).toBeVisible();
 
     const loadMoreButton = notificationsRegion.getByRole('button', { name: 'Load more notifications' });
@@ -243,8 +309,9 @@ test.describe('keyboard navigation guardrail', () => {
     await installE2EAuth(page, null);
     await page.goto('/login');
 
-    await page.getByLabel(/^Email/).fill('invalid@test.com');
-    const passwordInput = page.getByLabel(/^Password$/);
+    const loginForm = page.getByRole('form', { name: 'Email sign in' });
+    await loginForm.getByLabel(/^Email$/).fill('invalid@test.com');
+    const passwordInput = loginForm.getByLabel(/^Password$/);
     await passwordInput.fill('wrongpassword');
     await passwordInput.press('Enter');
 

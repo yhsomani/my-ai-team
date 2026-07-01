@@ -5,6 +5,11 @@ import { Button } from '../../components/shared/AuraButton';
 import { useAppSelector } from '../../store/hooks';
 import { getSearchDestinations } from '../../navigation/routeRegistry';
 
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
+
 const NotFound: React.FC = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
@@ -18,7 +23,7 @@ const NotFound: React.FC = () => {
       <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-stretch">
         <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
           <div className="mb-5 inline-flex items-center gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-            <Compass className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+            <Compass {...decorativeIconProps} className="h-3.5 w-3.5 text-accent" />
             404 recovery
           </div>
 
@@ -40,7 +45,7 @@ const NotFound: React.FC = () => {
               onClick={() => navigate(-1)}
               className="w-full whitespace-normal sm:w-auto"
             >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <ArrowLeft {...decorativeIconProps} className="h-4 w-4" />
               Go back
             </Button>
             <Button
@@ -48,7 +53,7 @@ const NotFound: React.FC = () => {
               onClick={() => navigate(user ? '/dashboard' : '/')}
               className="w-full whitespace-normal sm:w-auto"
             >
-              <Home className="h-4 w-4" aria-hidden="true" />
+              <Home {...decorativeIconProps} className="h-4 w-4" />
               {user ? 'Dashboard' : 'Home'}
             </Button>
           </div>
@@ -62,7 +67,7 @@ const NotFound: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <div className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                  <Search className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <Search {...decorativeIconProps} className="h-4 w-4 text-accent" />
                   Available destinations
                 </div>
                 <p className="text-sm leading-6 text-[var(--text-secondary)]">
@@ -81,7 +86,7 @@ const NotFound: React.FC = () => {
                       onClick={() => navigate(destination.path)}
                       className="flex w-full items-start gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-3 text-left transition-colors hover:border-accent hover:bg-[var(--bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
                     >
-                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                      <Icon {...decorativeIconProps} className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-[var(--text-primary)]">{destination.label}</span>
                         <span className="mt-1 block text-xs leading-5 text-[var(--text-secondary)]">
@@ -97,7 +102,7 @@ const NotFound: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <div className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                  <LogIn className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <LogIn {...decorativeIconProps} className="h-4 w-4 text-accent" />
                   Continue to TalentSphere
                 </div>
                 <p className="text-sm leading-6 text-[var(--text-secondary)]">
@@ -112,7 +117,7 @@ const NotFound: React.FC = () => {
                   onClick={() => navigate('/login')}
                   className="w-full justify-start whitespace-normal"
                 >
-                  <LogIn className="h-4 w-4" aria-hidden="true" />
+                  <LogIn {...decorativeIconProps} className="h-4 w-4" />
                   Sign in
                 </Button>
                 <Button
@@ -121,7 +126,7 @@ const NotFound: React.FC = () => {
                   onClick={() => navigate('/register?role=talent')}
                   className="w-full justify-start whitespace-normal"
                 >
-                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  <UserPlus {...decorativeIconProps} className="h-4 w-4" />
                   Create talent account
                 </Button>
                 <Button
@@ -130,7 +135,7 @@ const NotFound: React.FC = () => {
                   onClick={() => navigate('/register?role=recruiter')}
                   className="w-full justify-start whitespace-normal"
                 >
-                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  <UserPlus {...decorativeIconProps} className="h-4 w-4" />
                   Create recruiter account
                 </Button>
               </div>

@@ -57,6 +57,19 @@ const normalizeCareerPath = (data: unknown): CareerPathData | null => {
 const careerPathDescriptionClassName = 'text-sm text-[var(--text-secondary)]';
 const careerPathMutedClassName = 'text-xs text-[var(--text-muted)]';
 const careerPathProviderFailureMessage = 'Career-path provider did not respond. Retry career path to reload generated guidance, required skills, milestones, and review-first handoffs.';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
+const getCareerPathRegionLabel = (path: CareerPathData) => (
+  `Generated career path: ${path.recommendedPath}`
+);
+
+const getCareerPathSkillLabel = (skill: string) => (
+  `Required skill: ${skill}`
+);
+
+const getCareerPathMilestoneLabel = (milestone: { label: string; done: boolean }) => (
+  `${milestone.done ? 'Completed' : 'Pending'} milestone: ${milestone.label}`
+);
 
 const AICareerPath: React.FC = () => {
   const navigate = useNavigate();
@@ -118,7 +131,7 @@ const AICareerPath: React.FC = () => {
       ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Career path workspace">
       <PageHeader
         title="Career Paths"
         description="Review generated career-path guidance before choosing any learning or profile action."
@@ -129,7 +142,7 @@ const AICareerPath: React.FC = () => {
         <Card className="border-warning/30 bg-warning-muted p-4" role="alert">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warning" />
+              <AlertTriangle {...decorativeIconProps} size={18} className="mt-0.5 shrink-0 text-warning" />
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">Career path is not ready</p>
                 <p className={careerPathMutedClassName}>{loadError}</p>
@@ -137,12 +150,12 @@ const AICareerPath: React.FC = () => {
             </div>
             <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" size="sm" onClick={fetchPath} isLoading={loading}>
-                <RefreshCw size={14} />
+                <RefreshCw {...decorativeIconProps} size={14} />
                 Retry career path
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate('/ai')}>
                 Ask AI Assistant
-                <ArrowRight size={14} />
+                <ArrowRight {...decorativeIconProps} size={14} />
               </Button>
             </div>
           </div>
@@ -151,11 +164,11 @@ const AICareerPath: React.FC = () => {
 
       {careerPath && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-          <Card className="flex min-w-0 flex-col border-accent p-5 ring-1 ring-accent/20">
+          <Card className="flex min-w-0 flex-col border-accent p-5 ring-1 ring-accent/20" role="region" aria-label={getCareerPathRegionLabel(careerPath)}>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                  <Target size={18} />
+                  <Target {...decorativeIconProps} size={18} />
                 </div>
                 <div className="min-w-0">
                   <h3 className="break-words text-sm font-semibold">{careerPath.recommendedPath}</h3>
@@ -165,10 +178,14 @@ const AICareerPath: React.FC = () => {
               <Badge variant="outline">Review first</Badge>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 mb-4">
+            <div
+              className="flex flex-wrap gap-1.5 mb-4"
+              role={careerPath.requiredSkills.length > 0 ? 'list' : undefined}
+              aria-label={careerPath.requiredSkills.length > 0 ? `Required skills for ${careerPath.recommendedPath}` : undefined}
+            >
               {careerPath.requiredSkills.length > 0 ? (
                 careerPath.requiredSkills.map((skill) => (
-                  <Badge key={skill} variant="outline" className="max-w-full break-words text-[10px]">{skill}</Badge>
+                  <Badge key={skill} role="listitem" aria-label={getCareerPathSkillLabel(skill)} variant="outline" className="max-w-full break-words text-[10px]">{skill}</Badge>
                 ))
               ) : (
                 <span className="text-xs text-[var(--text-muted)]">No skill gaps were returned with this path.</span>
@@ -177,40 +194,42 @@ const AICareerPath: React.FC = () => {
 
             <div className="flex-1 space-y-2 mb-4">
               <p className="text-xs font-medium text-[var(--text-muted)]">Milestones</p>
-              {milestones.map((step, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm">
-                  <CheckCircle2 size={14} className={`${step.done ? 'text-success' : 'text-[var(--text-muted)]'} mt-0.5 shrink-0`} />
-                  <span className={`${step.done ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'} break-words`}>{step.label}</span>
-                </div>
-              ))}
+              <div role="list" aria-label={`Milestones for ${careerPath.recommendedPath}`} className="space-y-2">
+                {milestones.map((step, i) => (
+                  <div key={i} role="listitem" aria-label={getCareerPathMilestoneLabel(step)} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 {...decorativeIconProps} size={14} className={`${step.done ? 'text-success' : 'text-[var(--text-muted)]'} mt-0.5 shrink-0`} />
+                    <span className={`${step.done ? 'text-[var(--text-secondary)] line-through' : 'text-[var(--text-primary)]'} break-words`}>{step.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <Button size="sm" className="w-full" onClick={() => navigate('/lms')}>
-              Explore Path <ArrowRight size={14} className="ml-1" />
+              Explore Path <ArrowRight {...decorativeIconProps} size={14} className="ml-1" />
             </Button>
           </Card>
-          <Card className="p-5">
+          <Card className="p-5" role="region" aria-label="Career path review boundaries">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">Review Boundaries</h3>
             <p className={`${careerPathDescriptionClassName} mt-2`}>
               Generated guidance does not change your profile, skills, applications, or learning progress until you choose an action in the owning workflow.
             </p>
-            <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+            <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]" role="list" aria-label="Career path review boundaries">
+              <div className="flex items-start gap-2" role="listitem" aria-label="Review boundary: Use Learning to choose courses.">
+                <CheckCircle2 {...decorativeIconProps} size={14} className="mt-0.5 shrink-0 text-success" />
                 <span>Use Learning to choose courses.</span>
               </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+              <div className="flex items-start gap-2" role="listitem" aria-label="Review boundary: Use Profile or Resume to edit durable records.">
+                <CheckCircle2 {...decorativeIconProps} size={14} className="mt-0.5 shrink-0 text-success" />
                 <span>Use Profile or Resume to edit durable records.</span>
               </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-success" />
+              <div className="flex items-start gap-2" role="listitem" aria-label="Review boundary: Ask AI Assistant for a more detailed plan before applying changes.">
+                <CheckCircle2 {...decorativeIconProps} size={14} className="mt-0.5 shrink-0 text-success" />
                 <span>Ask AI Assistant for a more detailed plan before applying changes.</span>
               </div>
             </div>
             <Button variant="outline" size="sm" className="mt-5 w-full" onClick={() => navigate('/ai')}>
               Ask AI Assistant
-              <ArrowRight size={14} />
+              <ArrowRight {...decorativeIconProps} size={14} />
             </Button>
           </Card>
         </div>

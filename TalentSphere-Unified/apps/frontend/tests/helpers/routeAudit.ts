@@ -1,4 +1,4 @@
-import { USER_ROLES } from '../../src/navigation/routeRegistry';
+import { getApplicationContentLabel, USER_ROLES } from '../../src/navigation/routeRegistry';
 
 const talentProfileRow: Record<string, unknown> = {
   id: 'profile-e2e-user',
@@ -136,6 +136,7 @@ export type RouteAuditCase = {
   name: string;
   path: string;
   heading: RegExp;
+  mainName: RegExp;
   roles: readonly string[] | null;
   viewports: readonly ViewportCase[];
 };
@@ -144,26 +145,29 @@ const desktop: ViewportCase = { name: 'desktop', width: 1440, height: 1000 };
 const mobile: ViewportCase = { name: 'mobile', width: 390, height: 844 };
 const allViewports = [desktop, mobile] as const;
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const routeMainName = (pathname: string) => new RegExp(`^${escapeRegExp(getApplicationContentLabel(pathname))}$`);
+
 export const routeAuditCases: readonly RouteAuditCase[] = [
-  { name: 'landing', path: '/', heading: /^TalentSphere$/, roles: null, viewports: allViewports },
-  { name: 'login', path: '/login', heading: /^Sign in to TalentSphere$/, roles: null, viewports: allViewports },
-  { name: 'register', path: '/register', heading: /^Create your account$/, roles: null, viewports: allViewports },
-  { name: 'not found recovery', path: '/missing-route-for-audit', heading: /^Page not found$/, roles: null, viewports: allViewports },
-  { name: 'talent dashboard', path: '/dashboard', heading: /^Welcome back, E2E User$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'talent jobs', path: '/jobs', heading: /^Jobs$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'learning', path: '/lms', heading: /^Learning$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'challenges', path: '/challenges', heading: /^Challenges$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'network', path: '/networking', heading: /^Network$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'ai assistant', path: '/ai', heading: /^AI Assistant$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'messages', path: '/messaging', heading: /^Messages$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'billing', path: '/billing', heading: /^Billing$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'settings', path: '/settings', heading: /^Settings$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'own profile', path: '/profile', heading: /^Profile$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'profile detail', path: '/profile/e2e-role_user', heading: /^Profile$/, roles: [USER_ROLES.user], viewports: [desktop] },
-  { name: 'resume builder', path: '/resume', heading: /^Resume Builder$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'career paths', path: '/career-path', heading: /^Career Paths$/, roles: [USER_ROLES.user], viewports: allViewports },
-  { name: 'recruiter dashboard', path: '/dashboard', heading: /^Recruiter Console$/, roles: [USER_ROLES.recruiter], viewports: allViewports },
-  { name: 'recruiter candidates', path: '/candidates', heading: /^Candidates$/, roles: [USER_ROLES.recruiter], viewports: allViewports },
-  { name: 'recruiter post job', path: '/jobs/post', heading: /^(Create Job Draft|Edit Job Draft)$/, roles: [USER_ROLES.recruiter], viewports: allViewports },
-  { name: 'admin console', path: '/admin', heading: /^Admin Console$/, roles: [USER_ROLES.admin], viewports: allViewports },
+  { name: 'landing', path: '/', heading: /^TalentSphere$/, mainName: /^TalentSphere$/, roles: null, viewports: allViewports },
+  { name: 'login', path: '/login', heading: /^Sign in to TalentSphere$/, mainName: /^Sign in to TalentSphere$/, roles: null, viewports: allViewports },
+  { name: 'register', path: '/register', heading: /^Create your account$/, mainName: /^Create your account$/, roles: null, viewports: allViewports },
+  { name: 'not found recovery', path: '/missing-route-for-audit', heading: /^Page not found$/, mainName: /^Page not found$/, roles: null, viewports: allViewports },
+  { name: 'talent dashboard', path: '/dashboard', heading: /^Welcome back, E2E User$/, mainName: routeMainName('/dashboard'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'talent jobs', path: '/jobs', heading: /^Jobs$/, mainName: routeMainName('/jobs'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'learning', path: '/lms', heading: /^Learning$/, mainName: routeMainName('/lms'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'challenges', path: '/challenges', heading: /^Challenges$/, mainName: routeMainName('/challenges'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'network', path: '/networking', heading: /^Network$/, mainName: routeMainName('/networking'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'ai assistant', path: '/ai', heading: /^AI Assistant$/, mainName: routeMainName('/ai'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'messages', path: '/messaging', heading: /^Messages$/, mainName: routeMainName('/messaging'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'billing', path: '/billing', heading: /^Billing$/, mainName: routeMainName('/billing'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'settings', path: '/settings', heading: /^Settings$/, mainName: routeMainName('/settings'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'own profile', path: '/profile', heading: /^Profile$/, mainName: routeMainName('/profile'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'profile detail', path: '/profile/e2e-role_user', heading: /^Profile$/, mainName: routeMainName('/profile/e2e-role_user'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'resume builder', path: '/resume', heading: /^Resume Builder$/, mainName: routeMainName('/resume'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'career paths', path: '/career-path', heading: /^Career Paths$/, mainName: routeMainName('/career-path'), roles: [USER_ROLES.user], viewports: allViewports },
+  { name: 'recruiter dashboard', path: '/dashboard', heading: /^Recruiter Console$/, mainName: routeMainName('/dashboard'), roles: [USER_ROLES.recruiter], viewports: allViewports },
+  { name: 'recruiter candidates', path: '/candidates', heading: /^Candidates$/, mainName: routeMainName('/candidates'), roles: [USER_ROLES.recruiter], viewports: allViewports },
+  { name: 'recruiter post job', path: '/jobs/post', heading: /^(Create Job Draft|Edit Job Draft)$/, mainName: routeMainName('/jobs/post'), roles: [USER_ROLES.recruiter], viewports: allViewports },
+  { name: 'admin console', path: '/admin', heading: /^Admin Console$/, mainName: routeMainName('/admin'), roles: [USER_ROLES.admin], viewports: allViewports },
 ] as const;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle } from 'lucide-react';
 import { applicationService } from '../../services/applicationService';
 import type { ApplicationDraftRecord, ApplicationDraftSource } from '../../services/applicationService';
 import { getJobPublishPolicyErrorMessage, jobService, type SavedJobSearchRecord } from '../../services/jobService';
@@ -78,6 +78,10 @@ const applicationDraftHistoryLimit = 5;
 const maxLocalApplicationDraftHistoryItems = 50;
 const jobCardClassName = 'flex h-full min-h-72 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
 const jobsPanelClassName = 'surface-panel p-3';
+const decorativeIconProps = {
+    'aria-hidden': true,
+    focusable: 'false' as const,
+};
 const jobsCatalogLoadFailureMessage = 'Job catalog did not respond. Retry jobs to reload Explore results, saved search context, and application actions before changing filters.';
 const applicationsLoadFailureMessage = 'Application history did not respond. Retry applications to reload submitted roles, statuses, and details before applying elsewhere.';
 const recruiterPostingsLoadFailureMessage = 'Recruiter postings did not respond. Retry postings to reload owned drafts, published roles, publish checklists, and edit handoffs.';
@@ -327,6 +331,59 @@ const getRecruiterPostingCompanyName = (job: Record<string, any>) => (
 );
 
 const getRecruiterPostingJobType = (job: Record<string, any>) => job.jobType || job.job_type;
+
+const getJobsResultListLabel = (activeTab: JobsTab) => {
+    if (activeTab === 'postings') return 'Recruiter postings';
+    if (activeTab === 'applied') return 'Applied applications';
+    return 'Explore job results';
+};
+
+const getJobResultItemLabel = (job: Record<string, any>, existingApplication?: JobApplication) => {
+    const title = job.title || 'Untitled role';
+    const company = job.companyName || 'Company';
+    const location = job.location || 'Location not listed';
+    const salary = formatSalary(job);
+    const applicationStatus = existingApplication
+        ? ` Application status: ${existingApplication.status || 'Pending'}.`
+        : '';
+
+    return `${title} at ${company}. ${location}. ${getJobTypeLabel(job.jobType)}.${salary ? ` ${salary}.` : ''}${applicationStatus}`;
+};
+
+const getApplicationResultItemLabel = (application: JobApplication, job: Job) => (
+    `Application for ${job.title} at ${job.companyName || 'Company'}. Status: ${application.status || 'Pending'}.`
+);
+
+const formatApplicationStatusToken = (status?: string | null) => (status || 'Pending').replace(/_/g, ' ');
+
+const getApplicationStatusTimelineLabel = (application: JobApplication) => (
+    `Application status timeline for ${application.job?.title || 'application'} at ${application.job?.companyName || 'Company'}`
+);
+
+const getApplicationStatusEventItemLabel = (event: ApplicationStatusEvent) => [
+    `Status ${formatApplicationStatusToken(event.status)}`,
+    event.previousStatus ? `From ${formatApplicationStatusToken(event.previousStatus)} to ${formatApplicationStatusToken(event.status)}` : '',
+    event.reason || 'Application status updated',
+    formatDraftSavedAt(event.createdAt),
+].filter(Boolean).join('. ');
+
+const getInferredApplicationStepLabel = (
+    step: { status: JobApplication['status']; label: string; description: string },
+    isComplete: boolean,
+) => `${step.label}. ${isComplete ? 'Completed or current' : 'Upcoming'}. ${step.description}`;
+
+const getRejectedApplicationTimelineItemLabel = () => (
+    'Rejected. The recruiter closed this application. Event history is not available yet.'
+);
+
+const getRecruiterPostingResultItemLabel = (job: Record<string, any>, publishIssueCount: number) => {
+    const status = job.status || 'Draft';
+    const checklistLabel = publishIssueCount > 0
+        ? `${publishIssueCount} publish checklist ${publishIssueCount === 1 ? 'item' : 'items'} need review.`
+        : 'No publish checklist issues.';
+
+    return `Posting ${job.title || 'Untitled role'} at ${getRecruiterPostingCompanyName(job)}. Status: ${status}. ${checklistLabel}`;
+};
 
 const getRecruiterPostingStatusVariant = (status?: string): BadgeVariant => {
     switch ((status || '').toUpperCase()) {
@@ -2441,11 +2498,20 @@ const JobsPage: React.FC = () => {
                         onTabChange={setActiveTab}
                     />
 
-                    <div className="relative w-full sm:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+                    <div
+                        className="relative w-full sm:w-80"
+                        role="search"
+                        aria-label="Jobs search"
+                        data-ui="jobs-search-surface"
+                    >
+                        <Search {...decorativeIconProps} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+                        <p id="jobs-search-help" className="sr-only">
+                            Search updates the active Jobs tab. Explore filters only affect job discovery results.
+                        </p>
                         <input
                             type="text"
                             aria-label={activeTab === 'explore' ? 'Search jobs' : activeTab === 'postings' ? 'Search my postings' : 'Search applications'}
+                            aria-describedby="jobs-search-help"
                             placeholder={activeTab === 'explore' ? 'Search jobs...' : activeTab === 'postings' ? 'Search my postings...' : 'Search applications...'}
                             className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                             value={searchTerm}
@@ -2475,13 +2541,22 @@ const JobsPage: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem_auto] gap-3 items-end">
+                        <div
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem_auto] gap-3 items-end"
+                            role="group"
+                            aria-label="Explore job filters"
+                            aria-describedby="jobs-filter-help"
+                            data-ui="jobs-filter-group"
+                        >
+                            <p id="jobs-filter-help" className="sr-only">
+                                Filter Explore results by location, job type, and salary range. Clear resets active Explore filters.
+                            </p>
                             <Input
                                 label="Location"
                                 value={jobFilters.location}
                                 onChange={(e) => setJobFilters(prev => ({ ...prev, location: e.target.value }))}
                                 placeholder="Remote, New York"
-                                icon={<MapPin size={14} />}
+                                icon={<MapPin {...decorativeIconProps} size={14} />}
                             />
 
                             <div className="flex flex-col gap-1.5 w-full">
@@ -2506,7 +2581,7 @@ const JobsPage: React.FC = () => {
                                 value={jobFilters.minSalary}
                                 onChange={(e) => setJobFilters(prev => ({ ...prev, minSalary: e.target.value }))}
                                 placeholder="90000"
-                                icon={<DollarSign size={14} />}
+                                icon={<DollarSign {...decorativeIconProps} size={14} />}
                             />
 
                             <Input
@@ -2517,7 +2592,7 @@ const JobsPage: React.FC = () => {
                                 value={jobFilters.maxSalary}
                                 onChange={(e) => setJobFilters(prev => ({ ...prev, maxSalary: e.target.value }))}
                                 placeholder="180000"
-                                icon={<DollarSign size={14} />}
+                                icon={<DollarSign {...decorativeIconProps} size={14} />}
                             />
 
                             <Button
@@ -2533,7 +2608,7 @@ const JobsPage: React.FC = () => {
 
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                                <Filter size={13} />
+                                <Filter {...decorativeIconProps} size={13} />
                                 <span>{jobsFetching ? 'Updating results...' : exploreResultSummary}</span>
                                 {activeFilterCount > 0 && <Badge variant="outline">{activeFilterCount} active</Badge>}
                             </div>
@@ -2545,7 +2620,7 @@ const JobsPage: React.FC = () => {
                                 onClick={openSaveSearchModal}
                                 disabled={savedSearchFilterCount === 0}
                             >
-                                <Bookmark size={14} />
+                                <Bookmark {...decorativeIconProps} size={14} />
                                 Save Search
                             </Button>
                         </div>
@@ -2553,12 +2628,17 @@ const JobsPage: React.FC = () => {
                         {savedSearches.length > 0 && (
                             <div className={jobsPanelClassName}>
                                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
-                                    <BookmarkCheck size={14} className="text-accent" />
+                                    <BookmarkCheck {...decorativeIconProps} size={14} className="text-accent" />
                                     <span>Saved Searches</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2" role="list" aria-label="Saved searches">
                                     {savedSearches.map(savedSearch => (
-                                        <div key={savedSearch.id} className="inline-flex max-w-full overflow-hidden rounded-md border border-[var(--border-default)] bg-[var(--bg-panel)]">
+                                        <div
+                                            key={savedSearch.id}
+                                            role="listitem"
+                                            aria-label={`${savedSearch.name}. ${savedSearch.alertEnabled ? 'New match tracking enabled.' : 'New match tracking disabled.'}`}
+                                            className="inline-flex max-w-full overflow-hidden rounded-md border border-[var(--border-default)] bg-[var(--bg-panel)]"
+                                        >
                                             <button
                                                 type="button"
                                                 onClick={() => applySavedSearch(savedSearch)}
@@ -2580,7 +2660,7 @@ const JobsPage: React.FC = () => {
                                                 aria-pressed={Boolean(savedSearch.alertEnabled)}
                                                 title={savedSearch.alertEnabled ? 'Disable new match tracking' : 'Enable new match tracking'}
                                             >
-                                                {savedSearch.alertEnabled ? <Bell size={13} /> : <BellOff size={13} />}
+                                                {savedSearch.alertEnabled ? <Bell {...decorativeIconProps} size={13} /> : <BellOff {...decorativeIconProps} size={13} />}
                                             </button>
                                             <button
                                                 type="button"
@@ -2588,7 +2668,7 @@ const JobsPage: React.FC = () => {
                                                 className="border-l border-[var(--border-default)] px-2 py-1.5 text-[var(--text-muted)] hover:bg-destructive/10 hover:text-destructive"
                                                 aria-label={`Delete saved search ${savedSearch.name}`}
                                             >
-                                                <Trash2 size={13} />
+                                                <Trash2 {...decorativeIconProps} size={13} />
                                             </button>
                                         </div>
                                     ))}
@@ -2601,7 +2681,7 @@ const JobsPage: React.FC = () => {
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
-                                            <EyeOff size={14} className="text-accent" />
+                                            <EyeOff {...decorativeIconProps} size={14} className="text-accent" />
                                             <span>{hiddenExploreJobs.length} hidden from Explore</span>
                                         </div>
                                         <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
@@ -2615,7 +2695,7 @@ const JobsPage: React.FC = () => {
                                             size="sm"
                                             onClick={restoreLastHiddenExploreJob}
                                         >
-                                            <Undo2 size={14} />
+                                            <Undo2 {...decorativeIconProps} size={14} />
                                             Restore Last
                                         </Button>
                                         <Button
@@ -2633,7 +2713,7 @@ const JobsPage: React.FC = () => {
                                         {excludedExploreJobTypes.length > 0 && (
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
-                                                    <SlidersHorizontal size={13} className="text-accent" />
+                                                    <SlidersHorizontal {...decorativeIconProps} size={13} className="text-accent" />
                                                     Current view
                                                 </span>
                                                 {excludedExploreJobTypes.map(jobType => (
@@ -2645,7 +2725,7 @@ const JobsPage: React.FC = () => {
                                                             className="rounded-full text-accent/80 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
                                                             aria-label={`Clear ${getHiddenExploreJobTypeLabel(jobType)} preference filter`}
                                                         >
-                                                            <XCircle size={12} />
+                                                            <XCircle {...decorativeIconProps} size={12} />
                                                         </button>
                                                     </span>
                                                 ))}
@@ -2662,7 +2742,7 @@ const JobsPage: React.FC = () => {
                                                         onClick={() => applyHiddenPreferenceInsight(insight)}
                                                         title={insight.description}
                                                     >
-                                                        <SlidersHorizontal size={14} />
+                                                        <SlidersHorizontal {...decorativeIconProps} size={14} />
                                                         {insight.actionLabel}
                                                     </Button>
                                                 ))}
@@ -2725,7 +2805,7 @@ const JobsPage: React.FC = () => {
                                 disabled={!canGoToPreviousJobsPage}
                                 aria-label="Previous jobs page"
                             >
-                                <ChevronLeft size={14} />
+                                <ChevronLeft {...decorativeIconProps} size={14} />
                             </Button>
                             <span className="min-w-16 text-center text-xs text-[var(--text-secondary)]">
                                 Page {normalizedJobsPage}{hasExactJobsTotal ? ` of ${jobsTotalPages}` : ''}
@@ -2739,7 +2819,7 @@ const JobsPage: React.FC = () => {
                                 disabled={!canGoToNextJobsPage}
                                 aria-label="Next jobs page"
                             >
-                                <ChevronRight size={14} />
+                                <ChevronRight {...decorativeIconProps} size={14} />
                             </Button>
                         </div>
                     </div>
@@ -2767,7 +2847,7 @@ const JobsPage: React.FC = () => {
             ) : activeTab === 'applied' && applicationsLoadError && applications.length === 0 ? (
                 <div role="alert">
                     <EmptyState
-                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        icon={<AlertCircle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
                         title="Applications unavailable"
                         description={applicationsLoadError}
                         action={user?.id ? { label: 'Retry applications', onClick: () => loadApplications(user.id) } : undefined}
@@ -2776,7 +2856,7 @@ const JobsPage: React.FC = () => {
             ) : activeTab === 'postings' && recruiterJobsLoadError && recruiterJobs.length === 0 ? (
                 <div role="alert">
                     <EmptyState
-                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        icon={<AlertCircle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
                         title="Recruiter postings unavailable"
                         description={recruiterJobsLoadError}
                         action={user?.id ? { label: 'Retry postings', onClick: () => loadRecruiterJobs() } : undefined}
@@ -2785,7 +2865,7 @@ const JobsPage: React.FC = () => {
             ) : jobsCatalogLoadError ? (
                 <div role="alert">
                     <EmptyState
-                        icon={<AlertCircle className="h-12 w-12 text-warning" />}
+                        icon={<AlertCircle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
                         title="Jobs could not load"
                         description={jobsCatalogLoadError}
                         action={{ label: 'Retry jobs', onClick: () => refetchJobs() }}
@@ -2798,7 +2878,7 @@ const JobsPage: React.FC = () => {
                     action={emptyStateAction}
                 />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label={getJobsResultListLabel(activeTab)}>
                     {items.map((item: Record<string, any>) => {
                         if (activeTab === 'postings') {
                             const salaryLabel = formatSalary(item);
@@ -2806,7 +2886,12 @@ const JobsPage: React.FC = () => {
                             const isDraft = (item.status || '').toUpperCase() === 'DRAFT';
 
                             return (
-                                <Card key={item.id} className={jobCardClassName}>
+                                <Card
+                                    key={item.id}
+                                    role="listitem"
+                                    aria-label={getRecruiterPostingResultItemLabel(item, publishIssues.length)}
+                                    className={jobCardClassName}
+                                >
                                     <div className="space-y-4">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
@@ -2820,14 +2905,14 @@ const JobsPage: React.FC = () => {
 
                                         <div className="flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
                                             <span className="flex items-center gap-1">
-                                                <MapPin size={12} /> {item.location || 'Location not set'}
+                                                <MapPin {...decorativeIconProps} size={12} /> {item.location || 'Location not set'}
                                             </span>
                                             <span className="flex items-center gap-1">
-                                                <Briefcase size={12} /> {getJobTypeLabel(getRecruiterPostingJobType(item))}
+                                                <Briefcase {...decorativeIconProps} size={12} /> {getJobTypeLabel(getRecruiterPostingJobType(item))}
                                             </span>
                                             {salaryLabel && (
                                                 <span className="flex items-center gap-1">
-                                                    <DollarSign size={12} /> {salaryLabel}
+                                                    <DollarSign {...decorativeIconProps} size={12} /> {salaryLabel}
                                                 </span>
                                             )}
                                         </div>
@@ -2848,7 +2933,7 @@ const JobsPage: React.FC = () => {
                                                     className="w-full"
                                                     onClick={() => navigate(`/jobs/post?draftId=${encodeURIComponent(item.id)}`)}
                                                 >
-                                                    <Pencil size={14} />
+                                                    <Pencil {...decorativeIconProps} size={14} />
                                                     Edit Draft
                                                 </Button>
                                                 <Button size="sm" className="w-full" onClick={() => openPublishReview(item)}>
@@ -2872,9 +2957,12 @@ const JobsPage: React.FC = () => {
                         const matchExplanation = activeTab === 'explore'
                             ? buildJobMatchExplanation(job, exploreProfile)
                             : null;
+                        const itemLabel = activeTab === 'applied'
+                            ? getApplicationResultItemLabel(item as JobApplication, job)
+                            : getJobResultItemLabel(job, existingApplication);
 
                         return (
-                            <Card key={item.id} className={jobCardClassName}>
+                            <Card key={item.id} role="listitem" aria-label={itemLabel} className={jobCardClassName}>
                                 <div className="space-y-4">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 items-start gap-3">
@@ -2882,7 +2970,7 @@ const JobsPage: React.FC = () => {
                                                 {job.companyLogoUrl ? (
                                                     <img src={job.companyLogoUrl} alt={job.companyName} className="w-full h-full object-cover rounded-lg" />
                                                 ) : (
-                                                    <Building2 size={18} />
+                                                    <Building2 {...decorativeIconProps} size={18} />
                                                 )}
                                             </div>
                                             <div className="min-w-0">
@@ -2903,7 +2991,7 @@ const JobsPage: React.FC = () => {
                                                     onClick={() => hideExploreJob(job)}
                                                     aria-label={`Hide ${job.title} from Explore`}
                                                 >
-                                                    <EyeOff size={13} />
+                                                    <EyeOff {...decorativeIconProps} size={13} />
                                                     Hide
                                                 </Button>
                                             )}
@@ -2912,14 +3000,14 @@ const JobsPage: React.FC = () => {
 
                                     <div className="flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
                                         <span className="flex items-center gap-1">
-                                            <MapPin size={12} /> {job.location}
+                                            <MapPin {...decorativeIconProps} size={12} /> {job.location}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <Briefcase size={12} /> {getJobTypeLabel(job.jobType)}
+                                            <Briefcase {...decorativeIconProps} size={12} /> {getJobTypeLabel(job.jobType)}
                                         </span>
                                         {salaryLabel && (
                                             <span className="flex items-center gap-1">
-                                                <DollarSign size={12} /> {salaryLabel}
+                                                <DollarSign {...decorativeIconProps} size={12} /> {salaryLabel}
                                             </span>
                                         )}
                                     </div>
@@ -2927,7 +3015,7 @@ const JobsPage: React.FC = () => {
                                     {matchExplanation && (
                                         <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/60 p-3">
                                             <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
-                                                <Sparkles size={13} className="text-accent" />
+                                                <Sparkles {...decorativeIconProps} size={13} className="text-accent" />
                                                 <span>{matchExplanation.label}</span>
                                             </div>
                                             {matchExplanation.reasons.length > 0 && (
@@ -3025,7 +3113,7 @@ const JobsPage: React.FC = () => {
                                 <ul className="mt-2 space-y-1 text-sm text-warning">
                                     {pendingPublishIssues.map(issue => (
                                         <li key={issue} className="flex items-center gap-2">
-                                            <Circle size={12} />
+                                            <Circle {...decorativeIconProps} size={12} />
                                             <span>{issue}</span>
                                         </li>
                                     ))}
@@ -3087,7 +3175,7 @@ const JobsPage: React.FC = () => {
                             className="h-4 w-4 rounded border-[var(--border-default)] accent-[var(--accent)]"
                         />
                         <span className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
-                            <Bell size={14} className="text-accent" />
+                            <Bell {...decorativeIconProps} size={14} className="text-accent" />
                             Track new matches
                         </span>
                     </label>
@@ -3120,7 +3208,7 @@ const JobsPage: React.FC = () => {
                     <>
                         <Button variant="ghost" onClick={cancelSavedSearchDeleteReview}>Cancel</Button>
                         <Button variant="destructive" onClick={confirmSavedSearchDelete}>
-                            <Trash2 size={16} />
+                            <Trash2 {...decorativeIconProps} size={16} />
                             Delete Search
                         </Button>
                     </>
@@ -3211,7 +3299,7 @@ const JobsPage: React.FC = () => {
                                             onClick={() => applyProfileApplicationDraft()}
                                             disabled={!applicationDraftProfile || isLoadingApplicationDraft}
                                         >
-                                            <Sparkles size={14} />
+                                            <Sparkles {...decorativeIconProps} size={14} />
                                             Use Profile Draft
                                         </Button>
                                         <Button
@@ -3221,7 +3309,7 @@ const JobsPage: React.FC = () => {
                                             onClick={openApplicationDraftClearReview}
                                             disabled={!canClearApplicationDraft}
                                         >
-                                            <Eraser size={14} />
+                                            <Eraser {...decorativeIconProps} size={14} />
                                             Clear
                                         </Button>
                                     </div>
@@ -3251,7 +3339,7 @@ const JobsPage: React.FC = () => {
                                                 Keep Current
                                             </Button>
                                             <Button type="button" variant="outline" size="sm" onClick={confirmProfileApplicationDraftReplace}>
-                                                <Sparkles size={14} />
+                                                <Sparkles {...decorativeIconProps} size={14} />
                                                 Replace Draft
                                             </Button>
                                         </div>
@@ -3268,7 +3356,7 @@ const JobsPage: React.FC = () => {
                                                 Keep Draft
                                             </Button>
                                             <Button type="button" variant="destructive" size="sm" onClick={clearApplicationDraft}>
-                                                <Eraser size={14} />
+                                                <Eraser {...decorativeIconProps} size={14} />
                                                 Clear Draft
                                             </Button>
                                         </div>
@@ -3285,7 +3373,7 @@ const JobsPage: React.FC = () => {
                             {applicationDraftHistory.length > 0 && (
                                 <div className={jobsPanelClassName}>
                                     <div className="flex items-center gap-2">
-                                        <Clock size={14} className="text-accent" />
+                                        <Clock {...decorativeIconProps} size={14} className="text-accent" />
                                         <p className="text-sm font-medium text-[var(--text-primary)]">Recent draft versions</p>
                                     </div>
                                     <div className="mt-3 space-y-2">
@@ -3364,7 +3452,7 @@ const JobsPage: React.FC = () => {
                                             size="sm"
                                             onClick={applyAiApplicationDraft}
                                         >
-                                            <Sparkles size={14} />
+                                            <Sparkles {...decorativeIconProps} size={14} />
                                             Apply AI Draft
                                         </Button>
                                     </div>
@@ -3421,40 +3509,44 @@ const JobsPage: React.FC = () => {
                             </p>
                         </div>
 
-                        <div className="space-y-3">
+                        <div role="region" aria-label={getApplicationStatusTimelineLabel(selectedApplication)} className="space-y-3">
                             <h5 className="text-sm font-semibold text-[var(--text-primary)]">Status Timeline</h5>
                             <div className="space-y-3">
                                 {isLoadingApplicationStatusEvents ? (
-                                    <p className="text-sm text-[var(--text-muted)]">Loading status history...</p>
+                                    <p role="status" className="text-sm text-[var(--text-muted)]">Loading status history...</p>
                                 ) : selectedApplicationStatusEvents.length > 0 ? (
-                                    selectedApplicationStatusEvents.map((event) => (
-                                        <div key={event.id} className="flex gap-3">
-                                            {event.status === 'REJECTED' ? (
-                                                <XCircle size={18} className="mt-0.5 text-destructive shrink-0" />
-                                            ) : (
-                                                <CheckCircle2 size={18} className="mt-0.5 text-success shrink-0" />
-                                            )}
-                                            <div>
-                                                <p className="text-sm font-medium text-[var(--text-primary)]">{event.status}</p>
-                                                <p className="text-xs text-[var(--text-muted)]">
-                                                    {event.reason || 'Application status updated'} · {formatDraftSavedAt(event.createdAt)}
-                                                </p>
-                                                {event.previousStatus && (
-                                                    <p className="text-xs text-[var(--text-muted)]">
-                                                        From {event.previousStatus} to {event.status}
-                                                    </p>
+                                    <div role="list" aria-label="Recorded application status events" className="space-y-3">
+                                        {selectedApplicationStatusEvents.map((event) => (
+                                            <div key={event.id} role="listitem" aria-label={getApplicationStatusEventItemLabel(event)} className="flex gap-3">
+                                                {event.status === 'REJECTED' ? (
+                                                    <XCircle {...decorativeIconProps} size={18} className="mt-0.5 text-destructive shrink-0" />
+                                                ) : (
+                                                    <CheckCircle2 {...decorativeIconProps} size={18} className="mt-0.5 text-success shrink-0" />
                                                 )}
+                                                <div>
+                                                    <p className="text-sm font-medium text-[var(--text-primary)]">{event.status}</p>
+                                                    <p className="text-xs text-[var(--text-muted)]">
+                                                        {event.reason || 'Application status updated'} · {formatDraftSavedAt(event.createdAt)}
+                                                    </p>
+                                                    {event.previousStatus && (
+                                                        <p className="text-xs text-[var(--text-muted)]">
+                                                            From {event.previousStatus} to {event.status}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        ))}
+                                    </div>
                                 ) : selectedApplication.status === 'REJECTED' ? (
-                                    <div className="flex gap-3">
-                                        <XCircle size={18} className="mt-0.5 text-destructive shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-[var(--text-primary)]">Rejected</p>
-                                            <p className="text-xs text-[var(--text-muted)]">
-                                                The recruiter closed this application. Event history is not available yet.
-                                            </p>
+                                    <div role="list" aria-label="Application status timeline fallback">
+                                        <div role="listitem" aria-label={getRejectedApplicationTimelineItemLabel()} className="flex gap-3">
+                                            <XCircle {...decorativeIconProps} size={18} className="mt-0.5 text-destructive shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-medium text-[var(--text-primary)]">Rejected</p>
+                                                <p className="text-xs text-[var(--text-muted)]">
+                                                    The recruiter closed this application. Event history is not available yet.
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
@@ -3462,25 +3554,32 @@ const JobsPage: React.FC = () => {
                                         <p className="text-xs text-[var(--text-muted)]">
                                             Event history is not available yet, so this timeline is inferred from the current application status.
                                         </p>
-                                        {applicationSteps.map((step) => {
-                                            const currentIndex = applicationSteps.findIndex(item => item.status === selectedApplication.status);
-                                            const stepIndex = applicationSteps.findIndex(item => item.status === step.status);
-                                            const isComplete = stepIndex <= Math.max(currentIndex, 0);
+                                        <div role="list" aria-label="Inferred application status timeline" className="space-y-3">
+                                            {applicationSteps.map((step) => {
+                                                const currentIndex = applicationSteps.findIndex(item => item.status === selectedApplication.status);
+                                                const stepIndex = applicationSteps.findIndex(item => item.status === step.status);
+                                                const isComplete = stepIndex <= Math.max(currentIndex, 0);
 
-                                            return (
-                                                <div key={step.status} className="flex gap-3">
-                                                    {isComplete ? (
-                                                        <CheckCircle2 size={18} className="mt-0.5 text-success shrink-0" />
-                                                    ) : (
-                                                        <Circle size={18} className="mt-0.5 text-[var(--text-muted)] shrink-0" />
-                                                    )}
-                                                    <div>
-                                                        <p className={`text-sm font-medium ${isComplete ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</p>
-                                                        <p className="text-xs text-[var(--text-muted)]">{step.description}</p>
+                                                return (
+                                                    <div
+                                                        key={step.status}
+                                                        role="listitem"
+                                                        aria-label={getInferredApplicationStepLabel(step, isComplete)}
+                                                        className="flex gap-3"
+                                                    >
+                                                        {isComplete ? (
+                                                            <CheckCircle2 {...decorativeIconProps} size={18} className="mt-0.5 text-success shrink-0" />
+                                                        ) : (
+                                                            <Circle {...decorativeIconProps} size={18} className="mt-0.5 text-[var(--text-muted)] shrink-0" />
+                                                        )}
+                                                        <div>
+                                                            <p className={`text-sm font-medium ${isComplete ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</p>
+                                                            <p className="text-xs text-[var(--text-muted)]">{step.description}</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </>
                                 )}
                             </div>

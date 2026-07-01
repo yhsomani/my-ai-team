@@ -3,16 +3,53 @@ from faker import Faker
 import uuid
 import datetime
 import random
+import os
+import sys
 
 fake = Faker()
 
 # Configuration
-DB_HOST = "localhost" 
-DB_USER = "postgres"
-DB_PASS = "postgres"
+DB_HOST = os.environ.get("TALENTSPHERE_SEED_DB_HOST", "localhost")
+DB_PORT = int(os.environ.get("TALENTSPHERE_SEED_DB_PORT", "5432"))
+DB_USER = os.environ.get("TALENTSPHERE_SEED_DB_USER", "postgres")
+DB_PASS = os.environ.get("TALENTSPHERE_SEED_DB_PASSWORD", "postgres")
+
+ALLOWED_SEED_ENVIRONMENTS = {"local", "development", "dev", "test", "testing", "ci"}
+LOCAL_DB_HOSTS = {"localhost", "127.0.0.1", "::1", "postgres", "db", "host.docker.internal"}
+DESTRUCTIVE_SEED_CONFIRMATION = "I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA"
 
 # Standard BCrypt hash for "password123"
 PASSWORD_HASH = "$2a$10$8.UnVuG9HHgffUDAlk8UXuS5k7u7SGs6A/7.iV1.8U0pU.fXF/jCu"
+
+def current_seed_environment():
+    return (
+        os.environ.get("TALENTSPHERE_SEED_ENV")
+        or os.environ.get("APP_ENV")
+        or os.environ.get("ENVIRONMENT")
+        or os.environ.get("NODE_ENV")
+        or ""
+    ).strip().lower()
+
+def validate_seed_environment():
+    seed_env = current_seed_environment()
+    if seed_env not in ALLOWED_SEED_ENVIRONMENTS:
+        sys.exit(
+            "Refusing to run destructive seed data outside local/dev/test/ci. "
+            "Set TALENTSPHERE_SEED_ENV to one of: "
+            + ", ".join(sorted(ALLOWED_SEED_ENVIRONMENTS))
+        )
+
+    if os.environ.get("ALLOW_DESTRUCTIVE_SEED_DATA") != DESTRUCTIVE_SEED_CONFIRMATION:
+        sys.exit(
+            "Refusing to truncate seed tables without explicit confirmation. "
+            f"Set ALLOW_DESTRUCTIVE_SEED_DATA={DESTRUCTIVE_SEED_CONFIRMATION}"
+        )
+
+    if DB_HOST not in LOCAL_DB_HOSTS and os.environ.get("ALLOW_REMOTE_DEV_SEED") != DESTRUCTIVE_SEED_CONFIRMATION:
+        sys.exit(
+            f"Refusing to run destructive seed data against non-local host {DB_HOST!r}. "
+            f"Set ALLOW_REMOTE_DEV_SEED={DESTRUCTIVE_SEED_CONFIRMATION} only for reviewed dev/test databases."
+        )
 
 def get_connection(dbname):
     return psycopg2.connect(
@@ -20,7 +57,7 @@ def get_connection(dbname):
         database=dbname,
         user=DB_USER,
         password=DB_PASS,
-        port=5432
+        port=DB_PORT
     )
 
 def seed_users():
@@ -120,6 +157,7 @@ def seed_applications(candidates, jobs):
 
 if __name__ == "__main__":
     try:
+        validate_seed_environment()
         users = seed_users()
         candidates = [u for u in users if u[1] == "USER"]
         recruiters = [u for u in users if u[1] == "RECRUITER"]

@@ -39,6 +39,8 @@ export interface FeatureOwnershipDefinition {
   owner: FeatureOwner;
   necessity: FeatureNecessity;
   primaryPurpose: string;
+  userJourneyValue: string;
+  mergeEvaluation: string;
   allowedRoles?: readonly UserRole[];
   secondaryEntryPoints: readonly SecondaryFeatureEntryPoint[];
   consolidationDecision: string;
@@ -54,6 +56,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'public-route', routePath: '/' },
     necessity: 'necessary',
     primaryPurpose: 'Introduce TalentSphere and route unauthenticated visitors to the correct auth handoff.',
+    userJourneyValue: 'Gives new visitors one clear product overview and a role-specific next step before any account state exists.',
+    mergeEvaluation: 'Do not merge into the authenticated shell; public discovery has different audience, state, and access needs.',
     secondaryEntryPoints: [],
     consolidationDecision: 'Keep separate from the authenticated shell so public onboarding does not duplicate logged-in workflows.',
     behaviorPreservation: 'Preserve public stats, fallback stats, login/register CTAs, and role-selection destinations.',
@@ -64,6 +68,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'public-route', routePath: '/login' },
     necessity: 'necessary',
     primaryPurpose: 'Authenticate existing users and redirect authenticated users back into the app.',
+    userJourneyValue: 'Lets returning users resume their saved work quickly without scanning registration or public marketing content.',
+    mergeEvaluation: 'Keep separate from Registration until unified-auth validation proves shared errors and redirects stay clearer.',
     secondaryEntryPoints: [
       {
         surface: 'Public landing navigation',
@@ -81,6 +87,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'public-route', routePath: '/register' },
     necessity: 'necessary',
     primaryPurpose: 'Create new user accounts and capture role-specific onboarding intent.',
+    userJourneyValue: 'Starts the correct talent or recruiter journey early so first-run guidance and post-auth routes stay relevant.',
+    mergeEvaluation: 'Keep separate from Login because role-intent capture and first-run handoff are different user tasks.',
     secondaryEntryPoints: [
       {
         surface: 'Public landing role CTAs',
@@ -98,6 +106,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'public-route', routePath: '*' },
     necessity: 'necessary',
     primaryPurpose: 'Recover invalid or unavailable routes with safe public auth links or role-valid app destinations.',
+    userJourneyValue: 'Prevents dead ends by giving visitors and signed-in users safe recovery options matched to their access state.',
+    mergeEvaluation: 'Do not merge into Dashboard or Landing; wildcard recovery must stay a neutral fallback with no domain ownership.',
     secondaryEntryPoints: [],
     consolidationDecision: 'Keep as the wildcard recovery surface rather than merging it into Dashboard or the public landing page.',
     behaviorPreservation: 'Preserve the catch-all route, back navigation, home/dashboard recovery, auth entry links, and role-based destination filtering.',
@@ -108,6 +118,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'dashboard', routePath: '/dashboard' },
     necessity: 'necessary',
     primaryPurpose: 'Provide role-specific status, recovery, and shortcut summaries for authenticated users.',
+    userJourneyValue: 'Reduces daily orientation cost by showing what changed, what needs attention, and where to continue work.',
+    mergeEvaluation: 'Do not merge domain workflows into Dashboard; it remains a summary launchpad with handoffs to owners.',
     secondaryEntryPoints: [
       {
         surface: 'Primary navigation',
@@ -133,6 +145,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'jobs', routePath: '/jobs' },
     necessity: 'necessary',
     primaryPurpose: 'Own job discovery, saved searches, hidden preferences, applications, and recruiter posting lists.',
+    userJourneyValue: 'Keeps job search, application, and posting follow-up in one predictable workspace for both sides of hiring.',
+    mergeEvaluation: 'Keep as the single job-domain owner; Dashboard, Profile, and AI may link or hand off but must not own job actions.',
     allowedRoles: [USER_ROLES.user, USER_ROLES.recruiter],
     secondaryEntryPoints: [
       {
@@ -157,6 +171,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'job-post', routePath: '/jobs/post' },
     necessity: 'necessary',
     primaryPurpose: 'Own recruiter job draft creation, company context setup, template use, and review-before-save.',
+    userJourneyValue: 'Gives recruiters a focused creation path with review controls before a listing affects applicants.',
+    mergeEvaluation: 'Keep as a command route until validated evidence shows the full draft workflow can merge into Jobs without clutter.',
     allowedRoles: [USER_ROLES.recruiter],
     secondaryEntryPoints: [
       {
@@ -190,6 +206,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'candidates', routePath: '/candidates' },
     necessity: 'necessary',
     primaryPurpose: 'Own recruiter application review, private notes, scorecards, queue navigation, and status decisions.',
+    userJourneyValue: 'Concentrates high-risk candidate decisions in one recruiter-only queue with context, notes, and review states.',
+    mergeEvaluation: 'Do not merge into Dashboard or Jobs; candidate notes, scorecards, and status decisions need a dedicated review surface.',
     allowedRoles: [USER_ROLES.recruiter],
     secondaryEntryPoints: [
       {
@@ -214,6 +232,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'learning', routePath: '/lms' },
     necessity: 'necessary',
     primaryPurpose: 'Own course discovery, enrollment, active progress, curriculum review, and lesson completion.',
+    userJourneyValue: 'Helps talent users move from skill gaps to active coursework without mixing training with assessments.',
+    mergeEvaluation: 'Keep separate from Challenges and Dashboard because course enrollment and progress semantics differ from assessments.',
     allowedRoles: [USER_ROLES.user],
     secondaryEntryPoints: [
       {
@@ -240,6 +260,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'challenges', routePath: '/challenges' },
     necessity: 'necessary',
     primaryPurpose: 'Own assessment discovery, coding workspace, sample checks, submissions, reset review, and retry history.',
+    userJourneyValue: 'Provides a dedicated practice and assessment workspace where code execution, resets, and submissions are explicit.',
+    mergeEvaluation: 'Keep separate from Learning because coding execution, reset review, and submission history need a focused workspace.',
     allowedRoles: [USER_ROLES.user],
     secondaryEntryPoints: [
       {
@@ -259,6 +281,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'networking', routePath: '/networking' },
     necessity: 'necessary',
     primaryPurpose: 'Own suggestions, connection requests, accepted connections, hidden preferences, and follow-up reminders.',
+    userJourneyValue: 'Turns relationship discovery into clear request, reminder, and follow-up actions without duplicating message threads.',
+    mergeEvaluation: 'Keep separate from Messaging; relationships and reminders can link to threads but should not merge with conversation work.',
     secondaryEntryPoints: [
       {
         surface: 'Header notification reminders',
@@ -282,6 +306,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'ai', routePath: '/ai' },
     necessity: 'necessary',
     primaryPurpose: 'Own chat prompts, draft guidance, recommendation review queue, persistence, and explicit workflow handoffs.',
+    userJourneyValue: 'Keeps generative help review-first so users can compare drafts before applying them in owning workflows.',
+    mergeEvaluation: 'Keep separate as the AI review hub; destination workflows can receive reviewed drafts but retain final mutation ownership.',
     secondaryEntryPoints: [
       {
         surface: 'Profile, Resume, Jobs, and Learning review flows',
@@ -298,6 +324,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'messaging', routePath: '/messaging' },
     necessity: 'necessary',
     primaryPurpose: 'Own conversation discovery, active thread review, realtime status, attachments, sends, retries, and read state.',
+    userJourneyValue: 'Keeps direct communication, failed-send recovery, attachments, and unread state in one conversation workspace.',
+    mergeEvaluation: 'Keep separate from Networking and Dashboard; message reading, sending, retries, and attachments need one thread owner.',
     secondaryEntryPoints: [
       {
         surface: 'Dashboard unread summaries',
@@ -323,6 +351,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'admin', routePath: '/admin' },
     necessity: 'necessary',
     primaryPurpose: 'Own operational metrics, service health, scheduler status, audit logs, and analytics insights.',
+    userJourneyValue: 'Separates operational risk review from user work so admins can inspect source state and service health directly.',
+    mergeEvaluation: 'Do not merge with user Dashboard; admin-only operational source states and audit risk require a separate console.',
     allowedRoles: [USER_ROLES.admin],
     secondaryEntryPoints: [
       {
@@ -342,6 +372,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'billing', routePath: '/billing' },
     necessity: 'necessary',
     primaryPurpose: 'Own plan comparison, checkout handoff review, payment-method review, history, and demo/provider source labeling.',
+    userJourneyValue: 'Keeps money-adjacent decisions, provider state, and payment history in a single clearly labeled billing surface.',
+    mergeEvaluation: 'Keep separate from Settings; Settings may show a snapshot, but plan management and provider handoffs stay in Billing.',
     secondaryEntryPoints: [
       {
         surface: 'Settings billing tab',
@@ -367,6 +399,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'settings', routePath: '/settings' },
     necessity: 'necessary',
     primaryPurpose: 'Own account preferences, notification preferences, security review actions, and account deactivation review.',
+    userJourneyValue: 'Gives users one predictable place for account-level preferences without duplicating domain workspaces.',
+    mergeEvaluation: 'Keep as preferences-only; do not merge Profile editing, Billing management, or domain CRUD into Settings.',
     secondaryEntryPoints: [
       {
         surface: 'Account navigation',
@@ -385,6 +419,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'profile', routePath: '/profile' },
     necessity: 'necessary',
     primaryPurpose: 'Own durable identity details, avatar, skills, experience, education, achievements, suggestions, and profile AI drafts.',
+    userJourneyValue: 'Keeps durable career identity editing together so profile updates are reviewed apart from document-specific resume work.',
+    mergeEvaluation: 'Keep separate from Resume and Settings because durable public identity CRUD has different review and persistence needs.',
     secondaryEntryPoints: [
       {
         surface: 'Resume Builder imports',
@@ -410,6 +446,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'profile-detail', routePath: '/profile/:userId' },
     necessity: 'necessary',
     primaryPurpose: 'Own authenticated read-only profile review for another user.',
+    userJourneyValue: 'Lets recruiters and network contacts inspect a profile without exposing the full editable owner workspace.',
+    mergeEvaluation: 'Keep as a profile route variant; linked previews should not duplicate or merge full profile-detail behavior elsewhere.',
     secondaryEntryPoints: [
       {
         surface: 'Candidates profile preview',
@@ -435,6 +473,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'resume', routePath: '/resume' },
     necessity: 'necessary',
     primaryPurpose: 'Own resume editor fields, import review, AI draft review, exports, uploaded artifacts, and preview.',
+    userJourneyValue: 'Keeps document import, editing, export, and artifact review together so users can manage resumes end to end.',
+    mergeEvaluation: 'Keep separate from Profile because document artifacts, import review, and export commands are a distinct workflow.',
     secondaryEntryPoints: [
       {
         surface: 'Profile handoff',
@@ -467,6 +507,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'route', routeId: 'career-path', routePath: '/career-path' },
     necessity: 'candidate-for-merge',
     primaryPurpose: 'Own generated career-path guidance, required skills, milestones, provider unavailable state, and retry.',
+    userJourneyValue: 'Provides a focused guidance review path while merge evidence with AI Assistant remains unproven.',
+    mergeEvaluation: 'Candidate for future AI Assistant merge only after route analytics, tab UX, and user-flow validation prove it reduces friction.',
     secondaryEntryPoints: [
       {
         surface: 'AI Assistant navigation',
@@ -499,6 +541,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'shell', surface: 'Header' },
     necessity: 'necessary',
     primaryPurpose: 'Own route discovery, account notifications, reminder visibility, and shell-level navigation affordances.',
+    userJourneyValue: 'Keeps cross-route discovery, notifications, reminders, theme, and sign-out reachable without becoming a workflow owner.',
+    mergeEvaluation: 'Keep as a shell surface; it can discover routes but must not merge or own domain workflows.',
     secondaryEntryPoints: [
       {
         surface: 'Sidebar and mobile nav',
@@ -515,6 +559,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'extension', surface: 'Popup' },
     necessity: 'local-companion',
     primaryPurpose: 'Own local tracked jobs, scanned page drafts, diagnostics review, and sanitized analytics export.',
+    userJourneyValue: 'Gives users a fast local companion for portal-side tracking and diagnostics without requiring account sync.',
+    mergeEvaluation: 'Keep separate from the web app and Options because MV3 popup constraints make it a compact local companion surface.',
     secondaryEntryPoints: [
       {
         surface: 'Extension options',
@@ -531,6 +577,8 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     owner: { kind: 'extension', surface: 'Options' },
     necessity: 'local-companion',
     primaryPurpose: 'Own local resume match preview, interview planner, local settings, and sync-disabled review copy.',
+    userJourneyValue: 'Keeps deeper local extension tools in a stable settings-style surface separate from the quick popup.',
+    mergeEvaluation: 'Keep separate from Popup and web routes because deeper extension settings and local review tools need a stable options surface.',
     secondaryEntryPoints: [
       {
         surface: 'Extension popup',

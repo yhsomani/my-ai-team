@@ -47,11 +47,160 @@ const expectScreenIsUsable = async (page: Page, routeCase: RouteAuditCase, pageE
       ))
       .slice(0, 5);
 
-    return { viewportWidth, documentScrollWidth, offenders };
+    const interactiveTextSelector = [
+      'button',
+      'a[href]',
+      '[role="button"]',
+      '[role="link"]',
+      '[role="tab"]',
+      '[role="menuitem"]',
+    ].join(',');
+
+    const clippedInteractiveText = Array.from(document.querySelectorAll(interactiveTextSelector))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const text = (element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+        const className = typeof (element as HTMLElement).className === 'string'
+          ? (element as HTMLElement).className
+          : '';
+        const visuallyHidden = className.split(/\s+/).includes('sr-only')
+          || (
+            rect.width <= 1
+            && rect.height <= 1
+            && style.overflowX === 'hidden'
+            && style.overflowY === 'hidden'
+          );
+
+        return {
+          tag: element.tagName.toLowerCase(),
+          className,
+          text,
+          visuallyHidden,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          clientWidth: (element as HTMLElement).clientWidth,
+          scrollWidth: (element as HTMLElement).scrollWidth,
+          clientHeight: (element as HTMLElement).clientHeight,
+          scrollHeight: (element as HTMLElement).scrollHeight,
+          display: style.display,
+          visibility: style.visibility,
+          overflowX: style.overflowX,
+          overflowY: style.overflowY,
+        };
+      })
+      .filter((item) => (
+        item.width > 0
+        && item.height > 0
+        && item.display !== 'none'
+        && item.visibility !== 'hidden'
+        && !item.visuallyHidden
+        && /[A-Za-z0-9]/.test(item.text)
+        && (
+          (item.scrollWidth > item.clientWidth + 2 && item.overflowX !== 'visible')
+          || (item.scrollHeight > item.clientHeight + 4 && item.overflowY !== 'visible')
+        )
+      ))
+      .slice(0, 5);
+
+    const namedByText = (element: Element) => {
+      const labelledBy = element.getAttribute('aria-labelledby');
+      if (!labelledBy) return '';
+
+      return labelledBy
+        .split(/\s+/)
+        .map((id) => document.getElementById(id)?.textContent?.trim() || '')
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+    };
+
+    const accessibleName = (element: Element) => (
+      element.getAttribute('aria-label')?.trim()
+      || namedByText(element)
+      || element.getAttribute('title')?.trim()
+      || ''
+    );
+
+    const smallIconOnlyControls = Array.from(document.querySelectorAll(interactiveTextSelector))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+        const name = accessibleName(element);
+        const className = typeof (element as HTMLElement).className === 'string'
+          ? (element as HTMLElement).className
+          : '';
+
+        return {
+          tag: element.tagName.toLowerCase(),
+          className,
+          name,
+          text,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          display: style.display,
+          visibility: style.visibility,
+        };
+      })
+      .filter((item) => (
+        item.width > 0
+        && item.height > 0
+        && item.display !== 'none'
+        && item.visibility !== 'hidden'
+        && item.name.length > 0
+        && !/[A-Za-z0-9]/.test(item.text)
+        && (item.width < 32 || item.height < 32)
+      ))
+      .slice(0, 5);
+
+    const iconOnlyControlsWithoutFocusStyle = Array.from(document.querySelectorAll(interactiveTextSelector))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+        const name = accessibleName(element);
+        const className = typeof (element as HTMLElement).className === 'string'
+          ? (element as HTMLElement).className
+          : '';
+
+        return {
+          tag: element.tagName.toLowerCase(),
+          className,
+          name,
+          text,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          display: style.display,
+          visibility: style.visibility,
+        };
+      })
+      .filter((item) => (
+        item.width > 0
+        && item.height > 0
+        && item.display !== 'none'
+        && item.visibility !== 'hidden'
+        && item.name.length > 0
+        && !/[A-Za-z0-9]/.test(item.text)
+        && !/(^|\s)(focus|focus-visible):/.test(item.className)
+      ))
+      .slice(0, 5);
+
+    return {
+      viewportWidth,
+      documentScrollWidth,
+      offenders,
+      clippedInteractiveText,
+      smallIconOnlyControls,
+      iconOnlyControlsWithoutFocusStyle,
+    };
   });
 
   expect(layout.documentScrollWidth, JSON.stringify(layout.offenders, null, 2))
     .toBeLessThanOrEqual(layout.viewportWidth + 2);
+  expect(layout.clippedInteractiveText).toEqual([]);
+  expect(layout.smallIconOnlyControls).toEqual([]);
+  expect(layout.iconOnlyControlsWithoutFocusStyle).toEqual([]);
 };
 
 test.describe('visual layout audit', () => {

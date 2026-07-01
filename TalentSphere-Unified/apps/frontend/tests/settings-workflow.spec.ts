@@ -73,7 +73,7 @@ const expectAnalyticsAction = async (
 
 const getSettingsNav = (page: Page) => (
   page.locator('nav').filter({
-    has: page.getByRole('button', { name: 'Profile Settings', exact: true }),
+    has: page.getByRole('tab', { name: 'Profile Settings', exact: true }),
   }).first()
 );
 
@@ -190,7 +190,7 @@ test.describe('Settings workflow', () => {
     });
     await expectAnalyticsAction(captures, 'profile_settings_saved');
 
-    await getSettingsNav(page).getByRole('button', { name: 'Notifications', exact: true }).click();
+    await getSettingsNav(page).getByRole('tab', { name: 'Notifications', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Notification Preferences' })).toBeVisible();
 
     await expect(page.getByRole('switch', { name: 'Email Notifications' })).toBeChecked();
@@ -221,7 +221,7 @@ test.describe('Settings workflow', () => {
     expect(captures.notificationInserts).toEqual([]);
     await expectAnalyticsAction(captures, 'notification_settings_saved');
 
-    await getSettingsNav(page).getByRole('button', { name: 'Billing & Plans', exact: true }).click();
+    await getSettingsNav(page).getByRole('tab', { name: 'Billing & Plans', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Billing Summary' })).toBeVisible();
     await expect(page.getByText('Talent Pro')).toBeVisible();
     await expect(page.getByText('Visa ending in 4242')).toBeVisible();
@@ -237,7 +237,7 @@ test.describe('Settings workflow', () => {
     await installSettingsWorkflowStubs(page, captures);
 
     await page.goto('/settings');
-    await getSettingsNav(page).getByRole('button', { name: 'Security', exact: true }).click();
+    await getSettingsNav(page).getByRole('tab', { name: 'Security', exact: true }).click();
 
     await page.getByRole('button', { name: 'Update Password' }).click();
     await expect(page.getByRole('dialog', { name: 'Update Password' })).toBeVisible();
@@ -285,7 +285,7 @@ test.describe('Settings workflow', () => {
     await installSettingsWorkflowStubs(page, captures, { failFirstNotificationUpdate: true });
 
     await page.goto('/settings');
-    await getSettingsNav(page).getByRole('button', { name: 'Notifications', exact: true }).click();
+    await getSettingsNav(page).getByRole('tab', { name: 'Notifications', exact: true }).click();
     await setSwitchChecked(page, 'Messages', false);
     await page.getByLabel('Digest frequency').selectOption('off');
 

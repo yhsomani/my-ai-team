@@ -139,6 +139,8 @@ const storageHookSource = fs.readFileSync(path.join(extensionRoot, 'src/hooks/us
 assert.match(storageHookSource, /export interface ChromeStorageIssue/);
 assert.match(storageHookSource, /operation: ChromeStorageOperation/);
 assert.match(storageHookSource, /setStorageIssue\(\{/);
+assert.match(storageHookSource, /initialValueRef = useRef<T>\(initialValue\)/);
+assert.match(storageHookSource, /newValue === undefined \? initialValueRef\.current : newValue/);
 assert.match(storageHookSource, /return \[storedValue, setValue, loading, storageIssue\]/);
 
 const storageSource = fs.readFileSync(path.join(extensionRoot, 'src/lib/storage.ts'), 'utf8');
@@ -146,11 +148,15 @@ assert.match(storageSource, /localStorage\.setItem\(key, JSON\.stringify\(value\
 assert.match(storageSource, /throw err/);
 
 const optionsSource = fs.readFileSync(path.join(extensionRoot, 'src/options/OptionsApp.tsx'), 'utf8');
+const localOnlyStatusSource = fs.readFileSync(path.join(extensionRoot, 'src/components/LocalOnlyStatus.tsx'), 'utf8');
 assert.match(optionsSource, /job_description_length_band: textLengthBand\(jobDescription\)/);
 assert.match(optionsSource, /resume_length_band: textLengthBand\(resumeText\)/);
 assert.match(optionsSource, /prepStorageIssue/);
 assert.match(optionsSource, /notificationsStorageIssue/);
 assert.match(optionsSource, /analyticsStorageIssue/);
+assert.match(optionsSource, /id="options-local-only-status"/);
+assert.match(localOnlyStatusSource, /Tracked jobs, scanned drafts, prep cards, settings, and diagnostics stay in this browser/);
+assert.match(localOnlyStatusSource, /Cloud sync is not connected/);
 assert.doesNotMatch(optionsSource, /metadata:\s*\{[^}]*jobDescription\s*:/s);
 assert.doesNotMatch(optionsSource, /metadata:\s*\{[^}]*resumeText\s*:/s);
 assert.doesNotMatch(optionsSource, /metadata:\s*\{[^}]*newTopic\s*:/s);

@@ -191,7 +191,7 @@ test.describe('networking workflow', () => {
     await expect(profileCard(page, 'Arya Rao')).toBeVisible();
     await expect(profileCard(page, 'Ben Miles')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Preview Arya Rao' }).click();
+    await page.getByRole('button', { name: 'Preview Arya Rao profile' }).click();
     const previewDialog = page.getByRole('dialog', { name: 'Arya Rao' });
     await expect(previewDialog).toBeVisible();
     await expect(previewDialog.getByText('92% fit')).toBeVisible();
@@ -220,7 +220,7 @@ test.describe('networking workflow', () => {
     await expect(page.getByText(/2 visible suggestions, 0 hidden/)).toBeVisible();
 
     await page.getByLabel('Connection note for Arya Rao').fill(connectionNote);
-    await page.getByRole('button', { name: /^Connect$/ }).first().click();
+    await page.getByRole('button', { name: 'Connect with Arya Rao' }).click();
 
     await expect.poll(() => connectionInserts.length).toBe(1);
     expect(connectionInserts[0]).toMatchObject({
@@ -230,7 +230,7 @@ test.describe('networking workflow', () => {
       message: connectionNote,
     });
     await expect(page.getByRole('heading', { name: 'Request Sent' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Request Sent' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Connection request sent to Arya Rao' })).toBeVisible();
   });
 
   test('reviews incoming, sent, reminder, withdraw, and accepted connection workflows', async ({ page }) => {
@@ -264,7 +264,7 @@ test.describe('networking workflow', () => {
     await expect(profileCard(page, 'Camila Reyes')).toBeVisible();
     await expect(profileCard(page, 'Drew Kim')).toBeVisible();
 
-    await profileCard(page, 'Camila Reyes').getByRole('button', { name: 'Accept' }).click();
+    await profileCard(page, 'Camila Reyes').getByRole('button', { name: 'Accept connection request from Camila Reyes' }).click();
     await expect.poll(() => connectionUpdates.length).toBe(1);
     expect(connectionUpdates[0]).toMatchObject({
       id: 'connection-camila-incoming',
@@ -275,7 +275,7 @@ test.describe('networking workflow', () => {
     await expect(page.getByRole('heading', { name: 'Connection accepted' })).toBeVisible();
     await expect(profileCards(page, 'Camila Reyes')).toHaveCount(0);
 
-    await profileCard(page, 'Drew Kim').getByRole('button', { name: 'Decline' }).click();
+    await profileCard(page, 'Drew Kim').getByRole('button', { name: 'Decline connection request from Drew Kim' }).click();
     await expect.poll(() => connectionUpdates.length).toBe(2);
     expect(connectionUpdates[1]).toMatchObject({
       id: 'connection-drew-incoming',
@@ -289,15 +289,15 @@ test.describe('networking workflow', () => {
     await page.getByRole('tab', { name: /Sent/ }).click();
     await expect(profileCard(page, 'Eli Morgan')).toBeVisible();
     await page.getByLabel('Reminder timing for Eli Morgan').selectOption('tomorrow');
-    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Remind Me' }).click();
-    await expect(profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Clear Reminder' })).toBeVisible();
+    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Set follow-up reminder for Eli Morgan' }).click();
+    await expect(profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Clear follow-up reminder for Eli Morgan' })).toBeVisible();
     await expect(page.getByText(/1 sent requests, 1 follow-up reminders/)).toBeVisible();
 
-    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Clear Reminder' }).click();
-    await expect(profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Remind Me' })).toBeVisible();
+    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Clear follow-up reminder for Eli Morgan' }).click();
+    await expect(profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Set follow-up reminder for Eli Morgan' })).toBeVisible();
     await expect(page.getByText(/1 sent requests, 0 follow-up reminders/)).toBeVisible();
 
-    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Withdraw' }).click();
+    await profileCard(page, 'Eli Morgan').getByRole('button', { name: 'Withdraw connection request to Eli Morgan' }).click();
     await expect.poll(() => connectionUpdates.length).toBe(3);
     expect(connectionUpdates[2]).toMatchObject({
       id: 'connection-eli-sent',
@@ -312,7 +312,7 @@ test.describe('networking workflow', () => {
     await expect(profileCard(page, 'Fay Lin')).toBeVisible();
     await expect(profileCard(page, 'Camila Reyes')).toBeVisible();
 
-    await profileCard(page, 'Fay Lin').getByRole('button', { name: 'Open Profile' }).click();
+    await profileCard(page, 'Fay Lin').getByRole('button', { name: 'Preview Fay Lin profile' }).click();
     const profileDialog = page.getByRole('dialog', { name: 'Fay Lin' });
     await expect(profileDialog).toBeVisible();
     await expect(profileDialog.getByText('Engineering Manager').first()).toBeVisible();
@@ -343,7 +343,7 @@ test.describe('networking workflow', () => {
     await page.keyboard.press('Enter');
     await expect(profileCard(page, 'Fay Lin')).toBeVisible();
 
-    const openProfileButton = profileCard(page, 'Fay Lin').getByRole('button', { name: 'Open Profile' });
+    const openProfileButton = profileCard(page, 'Fay Lin').getByRole('button', { name: 'Preview Fay Lin profile' });
     await openProfileButton.focus();
     await expect(openProfileButton).toBeFocused();
     await page.keyboard.press('Enter');

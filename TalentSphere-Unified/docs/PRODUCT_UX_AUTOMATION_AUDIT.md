@@ -4,7 +4,7 @@
 
 Source reviewed: `docs/FEATURES_AND_DASHBOARDS.md` and current frontend/backend code.
 Date: 2026-06-26
-Implementation status updated after the two-hundred-third implementation batch on 2026-06-28.
+Implementation status updated after the two-hundred-sixty-eighth implementation batch on 2026-06-29.
 
 ## 1. Current State Analysis
 
@@ -20,12 +20,12 @@ Implementation status updated after the two-hundred-third implementation batch o
 | Candidate pipeline | Candidates page, recruiter service | Browse cursor-backed applications, search applications, inspect details in-page, review explainable advisory candidate signals, focus the current page on all visible, needs-scorecard, or high-signal candidates, sort the current page by advisory signal, review current-page scorecard coverage analytics, use analytics cards as direct focus actions, open the first current visible/focused candidate for review, move previous/next through the current review queue inside details, guard unsaved private notes and scorecards before closing or navigating, reset unsaved private review drafts only after inline review, generate interview-plan note drafts, create server-backed/local-fallback structured private scorecards, select visible candidates, review bulk Interview/Offer/Reject moves with skipped-candidate visibility, open profile, move to interview, offer/reject candidates with safe status action-failure recovery, and emit append-only candidate workflow analytics |
 | Profile | Profile page, profile service, file-service | View/edit headline/location/bio, review/crop/upload/remove own-profile photo with safe action-failure recovery, add/edit/remove own-profile skill/experience/education rows with safe save/delete failure recovery, local profile suggestions, AI review-queue profile draft handoff with visible current/proposed diffs, view achievements, and append-only profile workflow analytics |
 | Resume | Resume builder | Render profile data into controlled editor/preview, import pasted, text/markdown, readable DOCX, or searchable PDF resume content into selectable reviewed drafts, review AI resume draft handoffs with current/proposed fields, save supported fields, browser print-to-PDF export and local HTML download with account-synced/local-fallback export activity, safe load/action recovery for profile fields, imports, provider uploads, and artifact deletion, and append-only resume workflow analytics |
-| Learning | LMS page, LMS service | Cursor-backed course listing, search/filter, AI reviewed catalog-search handoff, enrollment, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, lesson player, explicit lesson completion, progress display, and append-only LMS workflow analytics |
+| Learning | LMS page, LMS service | Cursor-backed course listing, search/filter, AI reviewed catalog-search handoff, enrollment, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, lesson player, explicit lesson completion, progress display, decorative LMS icon treatment, and append-only LMS workflow analytics |
 | Challenges | Challenges page, challenge service | Challenge list, dynamic category filter, in-page workspace, starter code, reviewed starter-code reset, sample cases, local sample checks, retry history, solution submission, safe submission action-failure recovery, and append-only challenge workflow analytics |
 | AI | AI Assistant, Career Path, AI service | Career chat with server-backed/local-fallback history, reviewed chat-clear control, draft prompt confirmation, safe chat provider-failure draft recovery, visible review queue, workflow handoff links including profile, resume, application, and learning draft handoffs, saved/dismissed review records, destination workflow prefill used/rejected audit events, append-only automation review audit events, resume analysis, match score, career path with safe provider recovery, platform insights |
-| Networking | Networking page, networking service | API-first graph-ranked suggestions with profile hydration fallback, why-suggested context, optional request notes, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics |
+| Networking | Networking page, networking service | API-first graph-ranked suggestions with profile hydration fallback, why-suggested context, optional request notes, incoming/sent/accepted tabs with accessible card-list semantics, person-specific repeated action labels, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics |
 | Messaging | Messaging page, messaging service, messaging slice | Conversation list, unread badges, real-time message insert subscription, send messages with safe failed-send retry, safe attachment-upload and mark-read failure recovery, draft-only suggested replies, reviewed link attachments with hidden-draft prevention, visible message timing, conversation context, and append-only messaging workflow analytics |
-| Billing | Billing page, payment service | Plans, active subscription state, reviewed plan changes, billing portal action, payment history, checkout/subscription service methods, safe load/action failure recovery, and append-only billing workflow analytics |
+| Billing | Billing page, payment service | Plans with accessible comparison semantics, active subscription state, reviewed plan changes, billing portal action, payment history, checkout/subscription service methods, safe load/action failure recovery, and append-only billing workflow analytics |
 | Settings | Settings page, settings service | Profile settings, notification toggles, digest frequency and quiet-hour delivery controls, safe notification/billing load-failure recovery, safe profile/security action-failure recovery, password reset confirmation/cancellation tracking, explicit 2FA unavailable state, reviewed account deactivation confirmation, billing snapshot, and append-only settings workflow analytics |
 | Admin/Ops | Admin dashboard, feature flags, service health | Platform stats, live/fallback source labels, service health details, product analytics insight summaries, health/status investigation links, log queries, refresh action, audit pagination/retry controls, feature flag backend APIs, and append-only admin operational analytics |
 | Product analytics and automation audit | Product analytics helper, product analytics insight summarizer, dashboard/admin operational analytics helper, LMS workflow analytics helper, challenge workflow analytics helper, billing workflow analytics helper, profile workflow analytics helper, resume workflow analytics helper, networking workflow analytics helper, onboarding analytics helper, saved-search analytics helper, application workflow analytics helper, candidate workflow analytics helper, messaging workflow analytics helper, settings workflow analytics helper, automation suggestion audit helper, extension operational analytics helper, Supabase schema | Event taxonomy for tasks, automation suggestions, workflow handoffs, prefill decisions, preference updates, bulk actions, errors, and degraded states; AI chat clear-review and review queue events, dashboard activation/retry/degraded/handoff events, admin refresh/service-investigation/audit-pagination/product-analytics-insight events, LMS catalog/filter/pagination/AI-search/enrollment/lesson events, Challenges category/workspace/language/reset-review/local-check/retry/submission events, Billing load/retry/plan-review/checkout/payment-method portal events, Profile load/tab/edit/suggestion/completion/delete/photo-upload/photo-removal events, Resume load/tab/import/AI-draft/skill-save/save/export/export-history events, Networking suggestions/tab/preview/connect/accept/decline/withdraw/reminder/suggestion-preference events, destination workflow prefill used/rejected decisions, Jobs application review/submission decisions, recruiter candidate review/status/bulk/private-review-reset decisions, Messaging selection/send/read/retry/draft-aid decisions, Settings profile/notification/security/billing and reviewed security cancellation decisions, Jobs recommendation hide/restore/refinement decisions, Jobs saved-search decisions, registration onboarding decisions, recruiter company setup decisions, and recruiter publish review/outcome events now persist to `product_analytics_events`; Admin can view privacy-bounded analytics counts/rates/friction signals with server and local fallback paths; extension popup/options/tracker/page-scan/resume-match-preview/interview-planner/settings/background decisions persist to a bounded local operational analytics queue when Usage Diagnostics is enabled; Save/Dismiss/Prefill/Preference/Onboarding/Search/Application/Candidate/Profile/Resume/Networking/Messaging/Settings/Dashboard/Admin/LMS/Challenges/Billing/Publish decisions write append-only audit events with local fallback |
@@ -53,11 +53,11 @@ Implementation status updated after the two-hundred-third implementation batch o
 | Recruiter candidate review | Candidates -> search/focus/sort by advisory signal -> select visible candidates -> Review Interview/Offer/Rejection -> Confirm, or Details -> advisory factors -> scorecard/notes -> optional reviewed reset of unsaved private review drafts -> Offer/Reject/Open profile | Append-only candidate workflow analytics now covers review focus, detail/queue opens, draft-only review aids, reviewed private-review reset, scorecard saves, status review, status outcomes, and bulk status outcomes; provider-backed scheduling and backend-owned scoring are still missing |
 | Profile completion | Profile -> completion task, AI profile draft handoff, or Resume -> Import Text detected skills/rows -> targeted modal/save | Local and AI profile drafts, append-only profile workflow analytics, and reviewed resume imports for skills, work experience, and education reduce manual field entry |
 | Resume creation | Resume -> edit supported fields or review AI/import draft fields -> apply selected -> save/export | Append-only resume workflow analytics now covers load, tabs, import, AI draft review/discard, skill saves, profile-field saves, export, and export-history states; safe inline recovery covers failed editor saves, provider uploads, artifact deletes, and reviewed import saves without moving controls; related rows still need full edit/delete management; export uses browser print-to-PDF or local HTML download, with synced/local activity status |
-| Learning | LMS -> optional AI learning search handoff -> review/apply catalog search -> retry progress if enrolled-course state cannot load -> Continue Learning/Recommended Next -> cursor-backed, query-searchable, and enrollment-filtered catalog -> open course -> selected lesson -> enroll/mark complete with safe retry when persistence fails | AI-assisted catalog search, retryable progress-load failures, safe enrollment/progress-save action failure recovery, and append-only LMS workflow analytics reduce copy/paste and reveal catalog/progress friction; resume-based learning paths, richer course content, certificates, and richer media are still missing |
+| Learning | LMS -> optional AI learning search handoff -> review/apply catalog search -> retry progress if enrolled-course state cannot load -> Continue Learning/Recommended Next -> cursor-backed, query-searchable, and enrollment-filtered catalog -> open course -> selected lesson -> enroll/mark complete with safe retry when persistence fails | AI-assisted catalog search, retryable progress-load failures, safe enrollment/progress-save action failure recovery, decorative LMS icons, and append-only LMS workflow analytics reduce copy/paste and reveal catalog/progress friction; resume-based learning paths, richer course content, certificates, and richer media are still missing |
 | Challenges | Challenges -> filter -> Solve Now -> edit solution -> optionally run local sample check -> review retry history -> submit with safe retry when persistence fails | Retry timeline, reviewed starter-code reset, local JS/TS sample checks, safe submission action-failure recovery, and append-only challenge workflow analytics are visible or observable in the workspace; deep-linkable detail route is still missing |
 | AI career help | AI -> draft prompt/type prompt -> send -> receive draft response -> review queue -> save/dismiss or open workflow handoff; optional reviewed clear starts a fresh chat | Backend-synced session/review records, reviewed chat-clear control, and product analytics events now exist; Profile, Resume, Applications, and Learning have structured non-mutating review handoffs |
 | Messaging | Messages -> review unread badges -> select conversation -> optionally insert suggested reply draft -> type, attach reviewed link, or explicitly upload a file -> review caption/attachment -> send/retry -> optionally mark visible incoming messages read | Mobile conversation selection, unread triage, draft-only reply suggestions, link attachments, provider-backed file upload/download handoff, server-side upload size/folder/blocked-extension guardrails, hidden-draft prevention, retry states, and append-only workflow analytics work; backend-owned chat contracts, unread counters, presence, virus scanning, and provider storage hardening are still limited |
-| Billing | Billing -> review plan/payment method -> confirm -> provider checkout/portal | Settings shows a billing summary and hands off plan/payment work to `/billing`; append-only billing workflow analytics now observes load, retry, review, provider handoff, popup-blocked, submitted, and failure outcomes |
+| Billing | Billing -> compare plan -> review plan/payment method -> confirm -> provider checkout/portal | Settings shows a billing summary and hands off plan/payment work to `/billing`; plan comparison, payment method, and transaction history have accessible labels/regions, decorative Billing icons stay hidden from assistive technologies, and append-only billing workflow analytics now observes load, retry, review, provider handoff, popup-blocked, submitted, and failure outcomes |
 | Settings | Settings -> edit profile/notifications/delivery/security or open Billing | Notification/billing load failures and profile-save/password-reset/account-deactivation action failures are visible and retryable without exposing provider errors; password reset and account deactivation require confirmation, cancellation is observable, notification digest/quiet-hour controls are explicit, 2FA is explicitly unavailable, and settings workflow analytics observes explicit save, preference, security, and billing handoff decisions |
 | Admin ops | Admin -> service health -> refresh/audit pagination/investigation links | Fallback data is labeled and operational decisions are analytics-backed; real incident timeline, alert subscriptions, and provider-configured logs/metrics remain incomplete |
 
@@ -84,7 +84,7 @@ Implementation status updated after the two-hundred-third implementation batch o
 | Profile -> Product analytics | Profile loads/failures, tab selections, basic edit/save/cancel, AI draft review/discard, local suggestion prefill, completion task open/cancel/validation/save, row delete review/cancel/complete/failure, and profile-photo upload/removal review/cancel/validation/success/failure actions emit append-only workflow analytics without headline, bio, location, full name, skill names, company names, institution names, descriptions, row labels, image URLs, file names, or raw error messages |
 | Resume -> Product analytics | Resume loads/failures, tab selections, import open/cancel/file/analyze/apply decisions, AI draft review/discard, detected-skill and detected-row saves, profile-field save outcomes, export outcomes, and export-history sync/load states emit append-only workflow analytics without resume text, contact details, file names, skill names, row text, export files, provider URLs, or raw error messages |
 | Networking -> Product analytics | Suggestions loaded/failures, tab selections, profile previews/full-profile handoffs, connect/accept/decline/withdraw outcomes and safe action-recovery states, reminder set/clear/sync/backfill states, and hide/restore suggestion-preference outcomes emit append-only workflow analytics without names, profile text, request notes, skill names, locations, exact reminder timestamps, recommendation reasons, or raw error messages |
-| Chrome extension -> Local operational analytics | Popup/options opens, tab changes, page-scan lifecycle with safe visible scan status copy, scanned-draft save/reviewed-discard, tracker mutations including reviewed tracked-job removal, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, prep-card actions including reviewed clear/reset, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes emit bounded local events in this browser when Store Local Usage Diagnostics is enabled, without raw URLs, company names, role names, resume text, job descriptions, extracted keywords, notes, prep topics, raw page content, raw runtime errors, or raw provider errors; the popup diagnostics panel shows event count/latest event and lets users export or review before clearing local analytics |
+| Chrome extension -> Local operational analytics | Popup/options opens, tab changes, page-scan lifecycle with safe visible scan status copy, scanned-draft save/reviewed-discard, tracker mutations including reviewed tracked-job removal, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, prep-card actions including reviewed clear/reset, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes emit bounded local events in this browser when Store Local Usage Diagnostics is enabled, without raw URLs, company names, role names, resume text, job descriptions, extracted keywords, notes, prep topics, raw page content, raw runtime errors, or raw provider errors; the popup diagnostics panel shows event count/latest event and lets users export or review before clearing local analytics; built MV3 runtime smoke now verifies install-time storage schema marker creation, options Resume Match validation/report behavior, Interview Planner prep-card create/toggle persistence, Prep Clear All cancel/confirm, Settings reset cancel/confirm, popup storage load and quota-pressure save warnings, and options prep/settings storage load and quota-pressure save warnings |
 | Chrome extension -> Web app | Currently local-only; no real sync bridge to web app data |
 
 ### 1.5 Manual Vs Automated Processes
@@ -141,7 +141,7 @@ Implementation status updated after the two-hundred-third implementation batch o
 
 ### 2.4 Dashboards
 
-- Current behavior: Role-based dashboards with stats, shortcuts, clickable stat cards, direct empty-state actions, an applied-jobs deep link from the Applications card, and visible data freshness/degraded-state status for talent and recruiter dashboards.
+- Current behavior: Role-based dashboards with stats, shortcuts, clickable stat cards, direct empty-state actions, an applied-jobs deep link from the Applications card, visible data freshness/degraded-state status for talent and recruiter dashboards, named dashboard summary lists, and decorative dashboard icons hidden from assistive technologies.
 - UX issues: Widget-level retry, richer role-specific onboarding prompts, and deeper admin/talent/recruiter failure recovery are still limited.
 - Performance concerns: Parallel fetches are good, but fallbacks should label partial data.
 - Improvements: Add widget-level retry, richer role-specific onboarding prompts, and deeper recovery guidance for degraded dashboard sections.
@@ -170,14 +170,14 @@ Implementation status updated after the two-hundred-third implementation batch o
 
 ### 2.8 LMS
 
-- Current behavior: Cursor-backed, query-searchable, and enrollment-filtered course list, page-size and previous/next controls, AI review-queue learning handoff that shows suggested Course Search/Skill/Certification catalog searches before applying one, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, Continue Learning panel, Recommended Next catalog row, enrollment, progress-aware cards/tabs, lesson player, selectable curriculum, and explicit lesson completion.
+- Current behavior: Cursor-backed, query-searchable, and enrollment-filtered course list, page-size and previous/next controls, AI review-queue learning handoff that shows suggested Course Search/Skill/Certification catalog searches before applying one, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, Continue Learning panel, Recommended Next catalog row, enrollment, progress-aware cards/tabs, lesson player, selectable curriculum, explicit lesson completion, decorative LMS icons, and labeled duration metadata.
 - UX issues: Resume-based learning paths, certificates, rich media playback, and formal backend-owned LMS cursor/search/progress contracts are still missing.
 - Performance concerns: Catalog browsing now requests bounded pages, sends search with the course query, sends enrollment-aware progress filters, and uses cursor-backed Supabase fallback paging for stable next-page browsing.
 - Improvements: Add resume/profile-based recommended paths, certificates, richer lesson media, and formal Spring LMS search/progress/cursor support when the gateway owns catalog search.
 
 ### 2.9 Challenges
 
-- Current behavior: Filterable challenge cards, dynamic category tabs, in-page challenge workspace, starter code editor, reviewed starter-code reset when edited code would be overwritten, sample cases, local JavaScript/TypeScript sample checks for visible cases, submit flow, latest submission feedback, refreshable retry history, and append-only challenge workflow analytics for explicit challenge decisions.
+- Current behavior: Filterable challenge cards, dynamic category tabs, in-page challenge workspace, starter code editor, reviewed starter-code reset when edited code would be overwritten, sample cases, local JavaScript/TypeScript sample checks for visible cases, submit flow, latest submission feedback, refreshable retry history, decorative Challenges icons, labeled participant/duration metadata, and append-only challenge workflow analytics for explicit challenge decisions.
 - UX issues: Deep-linkable challenge detail route, richer backend execution feedback, attempt-to-attempt diffing, and broader local language runner support are still missing.
 - Improvements: Add challenge detail route, richer backend execution feedback, attempt-to-attempt diffing, and expanded local runner support.
 
@@ -190,13 +190,13 @@ Implementation status updated after the two-hundred-third implementation batch o
 
 ### 2.11 Networking
 
-- Current behavior: Suggested people, why-suggested explanations, privacy-preserving mutual-connection counts when available, optional request notes, account-synced suggestion hiding with local fallback, incoming/sent/accepted tabs, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, Admin scheduled-automation rollout visibility, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics for suggestions, tabs, preview/full-profile handoff, connect, accept, decline, withdraw, reminder, and suggestion-preference decisions.
+- Current behavior: Suggested people, why-suggested explanations, privacy-preserving mutual-connection counts when available, optional request notes, account-synced suggestion hiding with local fallback, incoming/sent/accepted tabs with list/listitem card semantics, person-specific repeated action labels, inline profile preview with full-profile handoff, selectable-timing notification-backed sent-request reminders with local fallback, dry-run-by-default due-reminder delivery runner, Kubernetes reminder CronJob, Admin scheduled-automation rollout visibility, accept/decline/withdraw actions with safe inline action-failure recovery, and append-only networking workflow analytics for suggestions, tabs, preview/full-profile handoff, connect, accept, decline, withdraw, reminder, and suggestion-preference decisions.
 - UX issues: Full profile-service-backed recommendation generation, reminder frequency controls, and backend-owned scheduler status contracts beyond the optional Admin provider run-history API are still limited.
 - Improvements: Add a full profile-service-backed recommendation contract, reminder frequency controls, and production Kubernetes status checks for scheduled reminder delivery.
 
 ### 2.12 Messaging
 
-- Current behavior: Cursor-backed conversation list and chat panel with a bounded visible-conversation Realtime channel, participant profile names/avatars for visible rows, per-conversation unread badges for the visible page, realtime visible-row preview/badge freshness, cursor-backed active-thread history, explicit older-thread and older-history loading, sender alignment by current user ID, mobile conversation picker/back flow, draft-only suggested replies for latest incoming messages, optimistic local sends, failed-send retry, outgoing delivery labels, explicit visible-message read marking, validated link attachments with previews, explicit file upload through file-service upload/download URLs, server-side 10 MB/folder/blocked-extension upload guardrails, hidden-draft prevention, append-only messaging workflow analytics, visible message timestamps, conversation context, polite chat live region, and labeled composer.
+- Current behavior: Cursor-backed conversation list and chat panel with a bounded visible-conversation Realtime channel, participant profile names/avatars for visible rows, descriptive conversation-row accessible labels/current state, per-conversation unread badges for the visible page, realtime visible-row preview/badge freshness, cursor-backed active-thread history, explicit older-thread and older-history loading, sender alignment by current user ID, mobile conversation picker/back flow, draft-only suggested replies for latest incoming messages, optimistic local sends, explicitly labeled failed-send retry, outgoing delivery labels, explicitly labeled visible-message read marking, validated link attachments with previews, explicit file upload through file-service upload/download URLs, server-side 10 MB/folder/blocked-extension upload guardrails, hidden-draft prevention, append-only messaging workflow analytics, visible message timestamps, conversation context, polite chat live region, and labeled composer.
 - UX issues: Formal backend-owned chat cursor/read contracts, backend-owned unread counters, live presence, virus scanning, provider storage hardening, and richer group participant context are still limited.
 - Performance concerns: Active thread history, conversation list, header notifications, Jobs Explore, Candidates, LMS courses, and Admin audit logs now use cursor-backed pages; backend-owned chat APIs still need the same treatment.
 - Accessibility issues: Auto-scroll and focus behavior after incoming messages still needs browser-level verification.
@@ -204,7 +204,7 @@ Implementation status updated after the two-hundred-third implementation batch o
 
 ### 2.13 Billing And Settings
 
-- Current behavior: Billing page loads plans/history/subscription state, shows current plan, requires plan-change confirmation, opens checkout/provider URLs, opens a billing-provider flow for payment method updates, shows retryable provider-unavailable/plan-catalog empty states, and emits append-only billing workflow analytics for load, retry, plan-review, checkout, payment-method review, portal, and failure outcomes. Settings supports profile saves, accessible notification switches with editable first-time defaults, digest frequency and quiet-hour delivery controls with a visible summary, password reset confirmation/cancellation, explicit 2FA unavailable state, reviewed soft-deactivation account action, a read-only billing summary that links to `/billing`, and append-only workflow analytics for tab, save, preference, security, and billing-handoff decisions.
+- Current behavior: Billing page loads plans/history/subscription state, shows current plan, exposes plan comparison as a named list with plan-specific comparison/action labels and labeled feature lists, exposes payment method and transaction history as named regions, keeps decorative Billing provider/status/feature/payment/review/handoff icons hidden and focusless, requires plan-change confirmation, opens checkout/provider URLs, opens a billing-provider flow for payment method updates, shows retryable provider-unavailable/plan-catalog empty states, and emits append-only billing workflow analytics for load, retry, plan-review, checkout, payment-method review, portal, and failure outcomes. Settings supports profile saves, accessible notification switches with editable first-time defaults, digest frequency and quiet-hour delivery controls with a visible summary, password reset confirmation/cancellation, explicit 2FA unavailable state, reviewed soft-deactivation account action, decorative notification/security/billing icons, a read-only billing summary that links to `/billing`, and append-only workflow analytics for tab, save, preference, security, and billing-handoff decisions.
 - UX issues: Payment provider configuration details are still not visible beyond unavailable/retry states; 2FA still needs provider/service-backed setup flows.
 - Accessibility issues: Continue verifying focus order and table semantics as billing/settings are consolidated.
 - Improvements: Add provider-backed 2FA setup, scheduled notification rollout monitoring, and deeper billing-provider status messaging.
@@ -243,7 +243,7 @@ Implementation status updated after the two-hundred-third implementation batch o
 - Continue converting secondary dashboard rows into deeper next-action entry points.
 - Add task-oriented onboarding: complete profile, upload resume, set job preferences, apply to first job.
 - Add progressive disclosure to complex forms: job basics, compensation, requirements, publish review.
-- Replace placeholder buttons with disabled "Coming soon" or wired flows; do not imply completed actions.
+- Replace placeholder buttons with explicit disabled unavailable/provider-required states or wired flows; do not imply completed actions.
 - Add mobile-first messaging: conversation list drawer, selected conversation header back button.
 - Add status indicators for data source: live, cached, fallback, degraded.
 - Add confirmation and undo for critical actions: reject candidate, delete account, withdraw application, publish job.
@@ -676,7 +676,7 @@ Implementation status updated after the two-hundred-third implementation batch o
 
 - Settings Security now passes the signed-in user's ID and email into the security panel.
 - Update Password opens a confirmation modal and calls the existing Supabase password reset email flow.
-- Two-Factor Authentication is shown as Coming soon with a disabled Unavailable action instead of an unwired button.
+- Two-Factor Authentication is shown as provider-required with a disabled Unavailable action instead of an unwired button.
 - Deactivate Account opens a confirmation modal that requires typing `DEACTIVATE`.
 - Confirmed account deactivation calls the existing `settingsService.deleteAccount` soft-delete path.
 - Security actions now show success/error feedback through the shared toast system.
@@ -1401,7 +1401,7 @@ The sixteenth implementation batch focused on replacing placeholder-like securit
 1. Passed authenticated user ID/email into the Settings security panel.
 2. Added an Update Password confirmation modal.
 3. Wired password reset to `authService.resetPassword`.
-4. Marked Two-Factor Authentication as Coming soon with a disabled Unavailable action.
+4. Marked Two-Factor Authentication as provider-required with a disabled Unavailable action.
 5. Added a Deactivate Account confirmation modal requiring `DEACTIVATE`.
 6. Wired confirmed deletion to the existing soft-delete `settingsService.deleteAccount` path.
 7. Added toast feedback for success and failure states.
@@ -6134,3 +6134,2230 @@ Validation:
 - Full extension/source validation passed after documentation updates: root `npm run test:extension-options-ux`, extension messaging, portal fixture, popup UX, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
 
 User effort is reduced because users can see when prep cards or local settings may only exist for the current session. User control is preserved because the change does not alter storage keys, prep-card add/toggle/clear/reset handlers, local settings toggles, diagnostics opt-in, cloud-sync disabled posture, successful persistence behavior, or operational analytics event names.
+
+## 221. Two-Hundred-Fourteenth Implementation Batch
+
+The two-hundred-fourteenth implementation batch focused on extension popup storage-failure recovery:
+
+1. Wired popup tracked-job, scanned-draft, and local operational analytics storage issue state from `useChromeStorage` into `PopupApp`.
+2. Added one safe live popup warning under the tab navigation for tracker, draft, and diagnostics storage load/save failures.
+3. Changed the popup footer to show degraded local-storage status while a popup storage issue is active.
+4. Kept optimistic session UI behavior so visible tracker/draft/diagnostics changes remain available in the current popup session even when persistence fails.
+5. Extended `popup-ux-contract.test.mjs` to guard storage issue wiring, safe warning copy, degraded footer copy, and raw quota/runtime/storage-key exclusion.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:popup-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-popup-ux`, extension options, messaging, portal fixture, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because users can see when local tracker, scanned-draft, or diagnostics changes may only exist for the current popup session. User control is preserved because the change does not alter storage keys, local fallback behavior, page-scan messaging, tracked-job mutations, scanned-draft save/discard behavior, diagnostics export/clear behavior, local-only sync posture, successful persistence behavior, or operational analytics event names.
+
+## 222. Two-Hundred-Fifteenth Implementation Batch
+
+The two-hundred-fifteenth implementation batch focused on extension options runtime-flow coverage:
+
+1. Extended `runtime-smoke.test.mjs` to open the built options page inside the installed MV3 extension.
+2. Added live-runtime checks for Resume Match empty-field validation and completed local report-region semantics.
+3. Added live-runtime checks for Interview Planner empty-topic validation.
+4. Added live-runtime checks for prep-card creation, pressed-state toggling, and `ts_prep` persistence through real `chrome.storage.local`.
+5. Preserved the existing host-mapped portal fixture, popup render, storage round-trip, and background ping smoke coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run build && npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with built popup and options results, including Resume Match validation/report behavior and Interview Planner prep-card create/toggle persistence.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-runtime-smoke`, extension options, popup, messaging, portal fixture, storage migration, contract, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because the highest-risk options interactions are now verified in the built extension runtime rather than only source-level contracts. User control is preserved because the change does not alter keyword extraction, delayed match timing, prep-card add/toggle behavior, storage keys, diagnostics metadata, MV3 permissions, local-only sync posture, or operational analytics event names.
+
+## 223. Two-Hundred-Sixteenth Implementation Batch
+
+The two-hundred-sixteenth implementation batch focused on extension options prep reset runtime coverage:
+
+1. Extended the built-options runtime smoke to open the Interview Planner Clear All review panel.
+2. Verified Keep Cards preserves `ts_prep` and confirmed Clear Cards removes local prep cards.
+3. Verified the empty prep-card state returns after confirmed clearing.
+4. Verified the Settings Clear Prep Cards review panel, including Keep Cards and confirmed Clear Cards behavior.
+5. Verified the Settings reset button is disabled once no prep cards remain.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with Prep Clear All cancel/confirm and Settings reset cancel/confirm evidence.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-runtime-smoke`, extension options, popup, messaging, portal fixture, storage migration, contract, extension production build, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+User effort is reduced because destructive prep-card actions are now verified in the installed extension runtime, including cancel and confirm outcomes. User control is preserved because the change does not alter prep-card add/toggle/clear/reset handlers, storage keys, review copy, diagnostics metadata, cloud-sync disabled posture, or operational analytics event names.
+
+## 224. Two-Hundred-Seventeenth Implementation Batch
+
+The two-hundred-seventeenth implementation batch focused on extension runtime storage-failure coverage:
+
+1. Added CDP storage load and quota-pressure save failure fixtures to the built MV3 runtime smoke.
+2. Verified popup storage load and quota-pressure save warnings, including the degraded footer state.
+3. Verified options Interview Planner storage load and quota-pressure save warnings.
+4. Verified options Local Settings storage load and quota-pressure save warnings.
+5. Updated the shared storage hook so removed keys reset to initial values instead of pushing `undefined` into mounted views.
+6. Extended the options UX contract to guard the removed-key fallback.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Focused runtime validation passed: `EXTENSION_RUNTIME_BROWSER_BIN='/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with popup storage load/quota-pressure save and options prep/settings storage load/quota-pressure save warning evidence.
+
+User effort is reduced because extension users now get verified safe recovery copy when browser-local storage cannot load or save. User control is preserved because the change does not alter storage keys, local fallback behavior, successful persistence behavior, prep/tracker/settings handlers, diagnostics metadata, local-only sync posture, or operational analytics event names.
+
+## 225. Two-Hundred-Eighteenth Implementation Batch
+
+The two-hundred-eighteenth implementation batch focused on extension runtime storage schema marker coverage:
+
+1. Added a built-runtime assertion that polls real `chrome.storage.local` for the install-time `ts_extension_storage_schema` marker.
+2. Verified schema marker version and timestamp shape after the MV3 extension loads.
+3. Kept published/prior-version update migration with seeded old storage as an explicit release gap.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Focused runtime validation passed: `npm run test:extension-runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with install-time storage schema marker evidence plus popup/options storage-warning evidence.
+
+User effort is reduced because install-time local storage versioning now has real browser-runtime evidence. User control is preserved because the change only validates existing migration behavior and does not alter storage keys, sync posture, visible UI copy, or successful persistence behavior.
+
+## 226. Two-Hundred-Nineteenth Implementation Batch
+
+The two-hundred-nineteenth implementation batch focused on Messaging thread-control accessibility:
+
+1. Added conversation-list semantics and descriptive conversation-row accessible names covering participant, unread state, and last-message context.
+2. Added active-row current state for the selected conversation.
+3. Renamed the failed-send retry and visible-unread mark-read controls at the accessibility layer while preserving the same visible controls and handlers.
+4. Extended `MessagingPage.test.tsx` to verify the descriptive conversation row, current state, message composer label, attachment action label, and mark-read label.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/messaging/MessagingPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/messaging-workflow.spec.ts --project=chromium --reporter=line`.
+
+User effort is reduced because screen-reader and keyboard users get clearer thread context before opening or recovering a conversation. User control is preserved because no Messaging route, Redux load, Supabase realtime subscription, pagination, send payload, retry handler, mark-read handler, attachment workflow, suggested-reply behavior, file upload call, or analytics call was changed.
+
+## 227. Two-Hundred-Twentieth Implementation Batch
+
+The two-hundred-twentieth implementation batch focused on Networking card/list accessibility:
+
+1. Added list/listitem semantics for suggested professionals, incoming requests, sent requests, and accepted connections.
+2. Added person-specific card labels so repeated Networking cards announce the relationship context before the controls.
+3. Added person-specific accessible names for Preview, Connect, Request Sent, Accept, Decline, Remind Me, Clear Reminder, Withdraw, and accepted-profile preview controls while preserving the same visible labels and handlers.
+4. Extended `NetworkingPage.test.tsx` to verify card group semantics and repeated action labels.
+5. Updated `networking-workflow.spec.ts` selectors to exercise the same workflows through the new accessible names.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/networking/NetworkingPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/networking-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because screen-reader and keyboard users can distinguish repeated Networking cards and actions without relying on visual position. User control is preserved because no Networking route, Redux suggestion fetch, connection-state load, connect/accept/decline/withdraw command, request-note behavior, hidden-suggestion preference, reminder sync, profile preview, toast behavior, route behavior, or analytics call was changed.
+
+## 228. Two-Hundred-Twenty-First Implementation Batch
+
+The two-hundred-twenty-first implementation batch focused on Billing plan-comparison accessibility:
+
+1. Added named list semantics for the Billing plan comparison grid.
+2. Added plan-specific comparison labels that announce current/available state, plan name, price interval, and feature count.
+3. Added plan-specific feature-list labels.
+4. Added plan-specific Current Plan and Review Plan accessible names while preserving the same visible labels and handlers.
+5. Extended `BillingPage.test.tsx` to verify accessible plan-list semantics and plan-specific action labels.
+6. Updated `billing-workflow.spec.ts` selectors to exercise the same Billing review workflows through the new accessible names.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/billing/BillingPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/billing-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because assistive-technology users can compare plans and identify the current/review actions without relying on visual card position. User control is preserved because no Billing route, payment-service call, Supabase plan/history/subscription load, checkout/session command, billing portal command, review modal behavior, toast behavior, retry behavior, explicit demo-mode behavior, or analytics call was changed.
+
+## 229. Two-Hundred-Twenty-Second Implementation Batch
+
+The two-hundred-twenty-second implementation batch focused on Learning progress accessibility:
+
+1. Added semantic `progressbar` roles to Continue Learning, catalog-card, and course-detail progress tracks.
+2. Added course-specific accessible names that distinguish the progress context before announcing the percent complete value.
+3. Added `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and readable percent text to the existing progress tracks.
+4. Extended `LMSPage.test.tsx` to verify the progressbar labels and values across the continue card, catalog card, and course detail modal.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/lms/LMSPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/lms-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because assistive-technology users can understand course progress without relying on visual bar width or surrounding card position. User control is preserved because no LMS route, Redux query state, cursor behavior, tab behavior, search behavior, enrollment workflow, lesson-completion workflow, progress calculation, modal behavior, toast behavior, or analytics call was changed.
+
+## 230. Two-Hundred-Twenty-Third Implementation Batch
+
+The two-hundred-twenty-third implementation batch focused on Challenges workspace accessibility:
+
+1. Added challenge catalog list semantics and challenge-specific card labels.
+2. Added named Prompt, Solution, Sample Cases, Submission, and Retry History regions or lists inside the challenge workspace.
+3. Added a hidden challenge/language description to the existing solution editor label.
+4. Added sample-case, local-check result, and retry-history attempt listitem labels.
+5. Extended `ChallengesPage.test.tsx` to verify catalog card semantics, workspace regions, editor description, sample-case labels, and retry-history attempt labels.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/challenges/ChallengesPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/challenges-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because assistive-technology users can traverse challenge cards, prompt/editor panels, sample cases, and retry attempts without relying on visual layout. User control is preserved because no Challenges route, Redux fetch behavior, category filter, workspace open/close behavior, language selection, reset review, local sample check behavior, hidden-sample messaging, submission command, retry-history refresh, toast behavior, or analytics call was changed.
+
+## 231. Two-Hundred-Twenty-Fourth Implementation Batch
+
+The two-hundred-twenty-fourth implementation batch focused on Dashboard summary accessibility:
+
+1. Added named list/listitem semantics for talent and recruiter summary metrics.
+2. Added named list semantics for activation/recruiter setup checklist tasks.
+3. Added named list semantics for dashboard quick actions.
+4. Added named listitem labels for recent opportunities, recent applications, and active challenge summaries.
+5. Extended `DashboardPage.test.tsx` to verify summary metrics, checklist tasks, quick actions, opportunities, and active challenge summaries as accessible lists.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/dashboard/DashboardPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/dashboard-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because dashboard summaries are grouped and announced according to their visual purpose. User control is preserved because no dashboard service call, recruiter service call, status/retry workflow, onboarding route handoff, metric handoff, quick-action handoff, panel handoff, role behavior, toast behavior, or analytics call was changed.
+
+## 232. Two-Hundred-Twenty-Fifth Implementation Batch
+
+The two-hundred-twenty-fifth implementation batch focused on Candidates list accessibility:
+
+1. Added named list semantics for the Candidate review metrics grid.
+2. Added metric labels for scorecard coverage, average rubric, evidence gaps, and scorecard sync.
+3. Added named list semantics for Candidate applications.
+4. Added candidate row labels with candidate name, job context, status, and email.
+5. Extended `CandidatesPage.test.tsx` to verify candidate metric and application row semantics alongside the existing safe-copy recovery coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/candidates/CandidatesPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/candidate-review.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because assistive-technology users can traverse Candidates metrics and application rows by purpose instead of relying on visual card layout. User control is preserved because no Candidates route, service call, cursor state, review focus behavior, advisory sort behavior, private note behavior, scorecard behavior, interview-plan draft behavior, review queue behavior, status action, bulk review behavior, toast behavior, or analytics call was changed.
+
+## 233. Two-Hundred-Twenty-Sixth Implementation Batch
+
+The two-hundred-twenty-sixth implementation batch focused on Settings accessibility structure:
+
+1. Converted Settings section navigation into a named tablist with selected tabs and controlled tabpanels.
+2. Added arrow, Home, and End keyboard movement for Settings sections while preserving existing tab analytics.
+3. Added named list semantics for notification channels, activity alerts, and delivery controls.
+4. Added named list semantics for Security actions and Billing summary metrics, plus a named Billing handoff region.
+5. Extended `SettingsPage.test.tsx` to verify Settings tab/list semantics alongside safe load/action recovery, and updated the Settings browser workflow to use tab selectors.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/settings/SettingsPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/settings-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Settings sections and grouped preferences are announced by purpose instead of relying on visual side-nav and card layout. User control is preserved because no Settings route, service call, profile save payload, notification preference save behavior, password reset review, account deactivation confirmation, Billing handoff, toast behavior, or analytics call was changed.
+
+## 234. Two-Hundred-Twenty-Seventh Implementation Batch
+
+The two-hundred-twenty-seventh implementation batch focused on AI Assistant review accessibility:
+
+1. Added named list semantics for AI draft recommendations in the review queue.
+2. Added source-labeled draft recommendation item labels.
+3. Converted chat history into a named live AI conversation log.
+4. Added per-message article labels for welcome, user, draft, saved, and dismissed assistant states.
+5. Added named list/listitem semantics for empty-state prompt suggestions.
+6. Extended `AIAssistant.test.tsx` to verify prompt suggestions, conversation messages, and draft recommendations alongside safe provider recovery.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/ai/AIAssistant.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/ai-assistant-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because AI draft recommendations, chat messages, and prompt suggestions are grouped and announced by purpose instead of relying only on visual placement. User control is preserved because no AI route, prompt selection, chat service call, chat persistence, recommendation persistence, review status update, audit/analytics payload, clear-chat review, workflow handoff, toast behavior, or destination workflow behavior was changed.
+
+## 235. Two-Hundred-Twenty-Eighth Implementation Batch
+
+The two-hundred-twenty-eighth implementation batch focused on Admin Console operational accessibility:
+
+1. Added named list semantics for Admin summary metrics.
+2. Added named operational regions for Product Analytics Insights, Scheduled Automations, Service Health, and Audit Log.
+3. Added named summary, top-area, friction-signal, opportunity, scheduler-summary, and scheduler-job lists.
+4. Added named Service Health and Audit Log tables with contextual row labels.
+5. Extended `AdminDashboard.test.tsx` to verify Admin metric, analytics, scheduler, service, and audit semantics alongside safe load recovery.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/admin/AdminDashboard.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/admin-operations.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Admin operational data is grouped and announced by purpose across metrics, analytics, scheduler, service-health, and audit surfaces. User control is preserved because no Admin route, service call, scheduler-status read, product analytics load, audit pagination behavior, observability link behavior, refresh action, source label, role gate, or admin analytics event was changed.
+
+## 236. Two-Hundred-Twenty-Ninth Implementation Batch
+
+The two-hundred-twenty-ninth implementation batch focused on Jobs result accessibility:
+
+1. Added named list semantics for Explore job results.
+2. Added named list semantics for Applied applications.
+3. Added named list semantics for My Posts recruiter postings.
+4. Added saved-search list semantics with per-search tracking-state labels.
+5. Added contextual result card labels for job, application, and recruiter posting state.
+6. Extended `JobsPage.test.tsx` to verify Explore, Applied, My Posts, and saved-search semantics alongside existing recovery coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/JobsPage.test.tsx`.
+- Focused Jobs browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/job-application.spec.ts --project=chromium --reporter=line`.
+- Focused recruiter browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/post-job-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Jobs results are grouped and announced by tab purpose, saved-search tracking state, and result context. User control is preserved because no Jobs route, tab behavior, filter state, saved-search behavior, hidden Explore preference, application draft, application submission, application detail, recruiter posting, publish review, toast behavior, or analytics call was changed.
+
+## 237. Two-Hundred-Thirtieth Implementation Batch
+
+The two-hundred-thirtieth implementation batch focused on Profile section accessibility:
+
+1. Added named region semantics for the Profile summary.
+2. Added named list/listitem semantics for skill chips and summary metrics.
+3. Added completion checklist list semantics and a semantic completion progressbar.
+4. Wired Profile tabs to controlled tabpanels through the shared Tabs ID prefix.
+5. Added named list/listitem semantics for local suggestions, experience rows, education rows, and achievement cards.
+6. Extended `ProfilePage.test.tsx` to verify summary, completion, suggestions, tabpanels, experience, education, and achievements semantics alongside existing recovery coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/profile/ProfilePage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/profile-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because Profile summary, completion, suggestions, and section rows are grouped and announced by purpose instead of relying only on visual card placement. User control is preserved because no Profile route, profile load/update service call, edit modal behavior, AI draft review, local suggestion behavior, avatar upload/crop/remove behavior, row create/edit/delete behavior, tab behavior, toast behavior, or analytics call was changed.
+
+## 238. Two-Hundred-Thirty-First Implementation Batch
+
+The two-hundred-thirty-first implementation batch focused on Resume Builder editor accessibility:
+
+1. Added a named Resume actions toolbar for import, export, upload, print, and save commands.
+2. Wired Resume tabs to controlled Editor and Preview tabpanels through the shared Tabs ID prefix.
+3. Added named editor-field, work-experience, and skills lists in the Resume editor.
+4. Added named import-review regions/lists for detected fields, skills, experience rows, and education rows.
+5. Added named export-activity, uploaded-artifact, deleted-receipt, and export-history list semantics.
+6. Added named preview section/list semantics for summary, experience, education, and skills.
+7. Extended `ResumeBuilder.test.tsx` to verify editor, import, export, artifact, and preview semantics alongside existing recovery coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/profile/ResumeBuilder.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/resume-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Resume actions, editor fields, import review, export activity, artifact history, and preview sections are grouped and announced by workflow purpose instead of relying only on visual placement. User control is preserved because no Resume route, profile load/update service call, import parser behavior, selected-field application, imported skill/row save behavior, AI handoff review, PDF/HTML/print export behavior, provider upload/delete behavior, artifact copy behavior, local/account sync fallback, toast behavior, or analytics call was changed.
+
+## 239. Two-Hundred-Thirty-Second Implementation Batch
+
+The two-hundred-thirty-second implementation batch focused on Applied application timeline accessibility:
+
+1. Added a named application status timeline region inside the Application Details modal.
+2. Added recorded status-event list/listitem semantics for account-backed status events.
+3. Added rejected fallback list/listitem semantics when event history is unavailable.
+4. Added inferred status-step list/listitem semantics for Submitted, Reviewed, Interview, and Offer steps.
+5. Added contextual timeline item labels that include status, transition, reason, and completion/upcoming state.
+6. Extended `JobsPage.test.tsx` to verify Application Details timeline semantics alongside existing Jobs recovery and result coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/JobsPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/job-application.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because application status history is now grouped and announced by source and state instead of relying on visual icon rows. User control is preserved because no Jobs route, application load, status-event load, Details modal action, submitted details rendering, draft behavior, application submission behavior, saved-search behavior, hidden Explore preference, recruiter posting behavior, toast behavior, or analytics call was changed.
+
+## 240. Two-Hundred-Thirty-Third Implementation Batch
+
+The two-hundred-thirty-third implementation batch focused on Public Landing semantic structure:
+
+1. Added a named Public navigation landmark.
+2. Added a named Public role entry points group for Talent and Recruiter registration CTAs.
+3. Added a named Career command center preview region with preview-row list semantics.
+4. Added named Workflow control principles, Platform pillars, and Feature ownership decisions lists.
+5. Added named Public platform stats list semantics.
+6. Extended `auth.spec.ts` to verify role-entry destinations, named public structure, public stats visibility, and 390px mobile no-overflow rendering.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/auth.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because public visitors can scan the landing page by purpose, role entry point, platform pillar, IA decision, and public stat group instead of relying only on visual card placement. User control is preserved because no public route, typed Supabase stat query, fallback stat behavior, `/login`, `/register`, role preselection link, section anchor, auth handoff, or route behavior was changed.
+
+## 241. Two-Hundred-Thirty-Fourth Implementation Batch
+
+The two-hundred-thirty-fourth implementation batch focused on Candidate Details accessibility:
+
+1. Added named Candidate Details container and review queue navigation regions.
+2. Added named identity summary and application metadata list semantics.
+3. Added named advisory signal, advisory factor, and advisory safeguard semantics.
+4. Added named submitted-materials, review guidance, interview-plan, suggested-slot, scorecard-dimension, and recruiter-notes semantics.
+5. Kept scorecard slider labels unambiguous by avoiding duplicate `aria-label` text on scorecard dimension listitems.
+6. Extended `CandidatesPage.test.tsx` to verify Candidate Details sections alongside existing Candidates recovery and row/list coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/candidates/CandidatesPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/candidate-review.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Candidate Details can now be traversed by review queue, identity, metadata, advisory signal, materials, interview plan, scorecard, and private notes instead of relying only on modal card placement. User control is preserved because no Candidates route, candidate search, cursor paging, review focus, advisory sorting, private notes, scorecards, interview-plan drafts, review queue navigation, status action, bulk review, toast behavior, or analytics call was changed.
+
+## 242. Two-Hundred-Thirty-Fifth Implementation Batch
+
+The two-hundred-thirty-fifth implementation batch focused on Post Job section accessibility:
+
+1. Added a named Post Job workspace and named Post Job draft workflow form.
+2. Added named template controls, template action group, draft-history region/list, company context, and company profile details regions.
+3. Added named editable draft fields and final draft action group semantics.
+4. Added named draft-review region, review metadata list, description region, requirement preview list, duplicate-job list, and edit-change list semantics.
+5. Added draft-history item, review metadata, requirement, duplicate, and change labels that preserve existing form-control labels.
+6. Extended `PostJobPage.test.tsx` to verify edit and review section semantics alongside existing recovery coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/PostJobPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/post-job-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Post Job can now be traversed by template, history, company, draft fields, review metadata, requirements, duplicates, and final actions instead of relying only on visual panel order. User control is preserved because no Post Job route parameter, template sync, draft-history sync, company lookup/create/update behavior, duplicate check, review-before-save behavior, draft save/update behavior, navigation behavior, service call, or onboarding analytics event was changed.
+
+## 243. Two-Hundred-Thirty-Sixth Implementation Batch
+
+The two-hundred-thirty-sixth implementation batch focused on Billing payment and history accessibility:
+
+1. Added named Billing workspace semantics.
+2. Added named payment-method region/group semantics.
+3. Added named transaction-history region and transaction list semantics.
+4. Added transaction labels with description, date, status, and signed amount.
+5. Extended `BillingPage.test.tsx` to verify payment-method and transaction-history semantics alongside existing recovery and plan-comparison coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/billing/BillingPage.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/billing-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Billing payment method and transaction history can now be traversed by workspace, payment method, transaction history, and individual transaction labels instead of relying only on visual card order. User control is preserved because no Billing route, payment-service plan/history/subscription load, checkout/session command, billing portal command, review modal behavior, retry behavior, toast behavior, explicit demo mode, route behavior, or analytics call was changed.
+
+## 244. Two-Hundred-Thirty-Seventh Implementation Batch
+
+The two-hundred-thirty-seventh implementation batch focused on Auth entry semantic structure:
+
+1. Added an H1-named public auth main landmark in `AuthShell`.
+2. Added named authentication panel and alternate-entry navigation semantics to the shared auth shell.
+3. Added named Login and Register form semantics.
+4. Added Account Type group relationship and named registration next-step status semantics.
+5. Extended `AuthEntry.test.tsx` and `auth-entry-workflow.spec.ts` to verify the semantic auth-entry structure alongside existing safe-copy and role-intent coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/auth/AuthEntry.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/auth-entry-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because Login/Register can now be traversed by public auth page, form purpose, account type, next registration step, and alternate entry instead of relying only on visual shell placement. User control is preserved because no Supabase auth call, registration role mapping, onboarding analytics event, route query, post-registration route, auth redirect, inactive provider-control visibility, public reset-password visibility, or provider-failure copy behavior was changed.
+
+## 245. Two-Hundred-Thirty-Eighth Implementation Batch
+
+The two-hundred-thirty-eighth implementation batch focused on Career Path guidance accessibility:
+
+1. Added named Career path workspace semantics.
+2. Added a generated career path region labeled by the returned path.
+3. Added required-skill list/listitem semantics.
+4. Added milestone list/listitem labels with completed and pending state.
+5. Added review-boundary region/list semantics.
+6. Extended `AICareerPath.test.tsx` and `career-path-workflow.spec.ts` to verify generated-guidance semantics alongside existing provider recovery and handoff coverage.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/ai/AICareerPath.test.tsx`.
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/career-path-workflow.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because generated Career Path guidance can now be traversed by workspace, generated path, required skills, milestone state, and review boundaries instead of relying only on visual card placement. User control is preserved because no AI service generation call, response normalization, retry behavior, fallback milestone behavior, Learning navigation, AI Assistant navigation, provider-unavailable behavior, route behavior, or review-only source-record guarantee was changed.
+
+## 246. Two-Hundred-Thirty-Ninth Implementation Batch
+
+The two-hundred-thirty-ninth implementation batch focused on CommandSearch semantic structure:
+
+1. Added a named Command search landmark.
+2. Kept the combobox/listbox relationship described by the live result status.
+3. Added route-label plus route-registry description labels for destination options.
+4. Added a named no-result status.
+5. Scoped the keyboard guardrail login email selector to the named Email sign-in form so auth form semantics and input labels remain unambiguous.
+6. Extended `command-search-workflow.spec.ts` to verify the shell search semantics alongside existing route-discovery behavior.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused browser validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/command-search-workflow.spec.ts --project=chromium --reporter=line`.
+- Focused keyboard validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/keyboard-navigation.spec.ts --project=chromium --reporter=line`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+- Diff hygiene passed: `git diff --check` and the changed-file trailing-whitespace scan found no matches.
+
+User effort is reduced because shell route discovery can now be traversed by search landmark, result list, descriptive destination option, live result status, and no-result status instead of relying only on visual rows. User control is preserved because no route metadata, role filtering, result ranking, result count, shortcut behavior, keyboard navigation, route destination, shell state, page behavior, or feature ownership rule was changed.
+
+## 247. Two-Hundred-Fortieth Implementation Batch
+
+The two-hundred-fortieth implementation batch focused on shell navigation semantic structure:
+
+1. Added explicit accessible names for collapsed desktop sidebar route links, theme, and sign-out controls.
+2. Added a distinct `Expanded mobile navigation` landmark for the mobile slide-over.
+3. Connected the Header mobile navigation trigger to the slide-over with expanded/controlled state.
+4. Added active-route state and named navigation landmarks to the exported legacy `MobileMenu`.
+5. Extended `keyboard-navigation.spec.ts` to verify mobile slide-over navigation and collapsed desktop sidebar naming alongside the existing shell keyboard guardrail.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused keyboard validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/keyboard-navigation.spec.ts --project=chromium --reporter=line`.
+- Route-access validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/route-access.spec.ts --project=chromium --reporter=line`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because shell navigation remains understandable when the desktop sidebar is collapsed and when the mobile slide-over is open alongside the bottom navigation. User control is preserved because no route registry entry, mobile priority, role filtering, link destination, active-route matching, theme toggle behavior, sign-out behavior, sidebar collapse behavior, mobile menu open/close behavior, page behavior, or feature ownership rule was changed.
+
+## 248. Two-Hundred-Forty-First Implementation Batch
+
+The two-hundred-forty-first implementation batch focused on shared toast accessibility:
+
+1. Added a named `Toast notifications` region to the shared toast stack.
+2. Added toast-type-specific status/alert accessible names.
+3. Kept error toasts assertive and atomic.
+4. Hid decorative toast icons from assistive technologies.
+5. Added notification-specific dismiss labels.
+6. Added `Toast.test.tsx` coverage for stack naming, status/alert labeling, dismiss behavior, assertive errors, and auto-dismiss timing.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Toast.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because repeated transient feedback can now be identified by stack, notification type, title, and specific dismiss action instead of relying only on visual position. User control is preserved because no toast API, duration behavior, auto-dismiss timing, stack placement, toast copy, toast type, page handler, route behavior, or feature ownership rule was changed.
+
+## 249. Two-Hundred-Forty-Second Implementation Batch
+
+The two-hundred-forty-second implementation batch focused on legacy realtime toast compatibility accessibility:
+
+1. Added a named `Realtime toast notifications` region to `context/ToastContext`.
+2. Added toast-type-specific status/alert accessible names.
+3. Kept error toasts assertive and atomic.
+4. Added notification-specific keyboard Dismiss controls.
+5. Preserved the existing click-to-dismiss behavior.
+6. Added `ToastContext.test.tsx` coverage for the compatibility `showToast(type, message)` path, status/alert labeling, dismiss behavior, click-to-dismiss compatibility, and 5-second auto-dismiss timing.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/context/ToastContext.test.tsx src/components/shared/Toast.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because older realtime-notification feedback now follows the same identifiable notification pattern as the shared toast provider while keeping a distinct region name. User control is preserved because no `showToast` API, notification socket handler, unread-count update, message payload, auto-dismiss timing, click-to-dismiss behavior, route behavior, or feature ownership rule was changed.
+
+## 250. Two-Hundred-Forty-Third Implementation Batch
+
+The two-hundred-forty-third implementation batch focused on shared modal scroll containment:
+
+1. Added reference-counted body scroll locking to `AuraModal` while a shared modal is open.
+2. Restored the prior body overflow value when the modal closes or unmounts.
+3. Preserved existing dialog naming, focus trap, Escape close, opener focus restoration, content slots, route-owned actions, and modal sizing.
+4. Tightened shell notification-region locators in `keyboard-navigation.spec.ts` to exact matches so the named `Toast notifications` region does not create ambiguous notification-popover assertions.
+5. Added `AuraModal.test.tsx` coverage for dialog naming, scroll lock, prior overflow restoration, Escape close, and opener focus restoration.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraModal.test.tsx`.
+- Focused keyboard validation passed: `npm run test:e2e --workspace talentsphere-web -- tests/keyboard-navigation.spec.ts --project=chromium --reporter=line`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because background content no longer scrolls independently while a review or confirmation dialog owns focus. User control is preserved because no modal title, child content, footer action, close button, backdrop close, Escape close, focus trap, opener focus restoration, route workflow, service call, toast behavior, route behavior, or analytics call was changed.
+
+## 251. Two-Hundred-Forty-Fourth Implementation Batch
+
+The two-hundred-forty-fourth implementation batch focused on shared skeleton accessibility and motion:
+
+1. Made the shared `Skeleton` primitive decorative by default with `aria-hidden` when callers do not provide explicit loading semantics.
+2. Preserved caller-provided `role`, `aria-label`, and `aria-labelledby` semantics for skeletons that intentionally announce a loading state.
+3. Replaced the always-on pulse utility with reduced-motion-aware pulse styling.
+4. Added `Skeleton.test.tsx` coverage for decorative defaults, explicit loading status preservation, and reduced-motion-aware styling.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Skeleton.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because decorative loading placeholders no longer create extra assistive-technology noise, while explicitly labeled loading placeholders still announce progress. User control is preserved because no route loading state, skeleton dimensions supplied by callers, data fetch, service call, retry behavior, route behavior, or analytics call was changed.
+
+## 252. Two-Hundred-Forty-Fifth Implementation Batch
+
+The two-hundred-forty-fifth implementation batch focused on shared empty-state semantics:
+
+1. Converted the shared `EmptyState` wrapper into a named section labeled by the empty-state title.
+2. Connected optional description copy to the empty-state section with `aria-describedby`.
+3. Hid decorative empty-state icons from assistive technologies while preserving visible icons.
+4. Preserved caller-owned recovery actions and callbacks.
+5. Added `EmptyState.test.tsx` coverage for named section semantics, connected descriptions, decorative icon treatment, and preserved recovery action behavior.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/EmptyState.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because shared no-data states can now be traversed by purpose and description instead of relying only on visual grouping. User control is preserved because no route-owned empty-state copy, recovery-action label, recovery callback, service call, route behavior, or analytics call was changed.
+
+## 253. Two-Hundred-Forty-Sixth Implementation Batch
+
+The two-hundred-forty-sixth implementation batch focused on shared toggle semantics:
+
+1. Bound visible `Toggle` labels to the `role="switch"` control with `aria-labelledby`.
+2. Bound optional helper text to the switch with `aria-describedby`.
+3. Added fallback accessible naming for switches without a visible label.
+4. Hid the visual toggle thumb from assistive technologies.
+5. Added `Toggle.test.tsx` coverage for switch naming, description relationships, checked-state semantics, disabled behavior, and unchanged `onChange` payloads.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Toggle.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because binary setting controls can now be reached by their visible setting name and helper copy. User control is preserved because no route-owned preference copy, persistence command, service call, checked-state value, disabled behavior, route behavior, or analytics call was changed.
+
+## 254. Two-Hundred-Forty-Seventh Implementation Batch
+
+The two-hundred-forty-seventh implementation batch focused on shared badge semantics:
+
+1. Added optional accessible descriptions to the shared `Badge` primitive for compact or abbreviated status labels.
+2. Exposed badge variant metadata for source/status audits without changing visible copy.
+3. Tightened badge inline sizing so compact metadata can fit within narrow surfaces.
+4. Preserved caller-owned roles and data attributes without adding implicit status or alert live-region behavior.
+5. Added `Badge.test.tsx` coverage for compact labels, descriptions, variant metadata, overflow-safe sizing, caller passthrough, and live-region absence.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Badge.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because compact metadata badges can now carry clarifying descriptions and are less likely to overflow tight surfaces. User control is preserved because no route-owned badge copy, status meaning, service call, route behavior, or analytics call was changed.
+
+## 255. Two-Hundred-Forty-Eighth Implementation Batch
+
+The two-hundred-forty-eighth implementation batch focused on shared input semantics:
+
+1. Replaced label-derived fallback IDs with collision-safe generated IDs when callers do not pass an explicit input ID.
+2. Connected helper text and error text to the input with `aria-describedby`.
+3. Exposed active error text through `aria-errormessage` and `aria-invalid`.
+4. Preserved caller-provided descriptions while adding shared helper/error relationships.
+5. Hid decorative leading icons from assistive technologies.
+6. Added `AuraInput.test.tsx` coverage for labels, helper/error relationships, invalid-state semantics, caller description preservation, decorative icon treatment, and unchanged field behavior.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraInput.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because shared form fields now expose label, helper, and error context consistently. User control is preserved because no route-owned validation copy, field value, event handler, form submission, service call, route behavior, or analytics call was changed.
+
+## 256. Two-Hundred-Forty-Ninth Implementation Batch
+
+The two-hundred-forty-ninth implementation batch focused on shared button presentation:
+
+1. Replaced fixed-height non-icon button sizing with minimum-height sizing so long labels can wrap inside constrained surfaces.
+2. Added wrapping-safe text alignment and width constraints to shared command buttons.
+3. Preserved fixed dimensions for icon-only buttons.
+4. Kept loading actions disabled, busy-labeled, and visibly named while preserving existing click/submit ownership.
+5. Added variant and size metadata for source audits.
+6. Added `AuraButton.test.tsx` coverage for loading disablement, busy/loading metadata, visible loading labels, wrapping-safe long labels, caller prop preservation, variant/size metadata, and icon-button dimensions.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraButton.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because long action labels are less likely to overflow mobile, modal, or dense tool surfaces. User control is preserved because no route-owned button copy, click handler, submit behavior, service call, route behavior, or analytics call was changed.
+
+## 257. Two-Hundred-Fiftieth Implementation Batch
+
+The two-hundred-fiftieth implementation batch focused on shared page-header semantics:
+
+1. Bound shared `PageHeader` titles to the header wrapper with `aria-labelledby`.
+2. Connected optional supporting descriptions with `aria-describedby`.
+3. Preserved title-adjacent badges without changing route-owned badge content.
+4. Added title-specific action groups for page-level controls.
+5. Added `PageHeader.test.tsx` coverage for title/description relationships, badge preservation, named action groups, and caller-owned controls.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/PageHeader.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because page purpose and page-level actions are now grouped consistently. User control is preserved because no route-owned page title, description, action control, navigation, service call, route behavior, or analytics call was changed.
+
+## 258. Two-Hundred-Fifty-First Implementation Batch
+
+The two-hundred-fifty-first implementation batch focused on shared card containment:
+
+1. Added max-width and min-width containment defaults to shared `Card` shells.
+2. Added card slot metadata for source audits.
+3. Made shared card titles and descriptions wrapping-safe for long labels.
+4. Made shared card content min-width safe inside grid/flex layouts.
+5. Allowed shared card footers to wrap action controls instead of forcing horizontal overflow.
+6. Added `GlassCard.test.tsx` coverage for caller semantics, containment metadata, max-width/min-width constraints, wrapping-safe text, min-width-safe content, and wrapping footers.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/GlassCard.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because repeated cards are less likely to overflow dense dashboards, grids, and review surfaces. User control is preserved because no route-owned card content, role, label, action, service call, route behavior, or analytics call was changed.
+
+## 259. Two-Hundred-Fifty-Second Implementation Batch
+
+The two-hundred-fifty-second implementation batch focused on shared image presentation:
+
+1. Preserved caller-owned `onLoad` and `onError` handlers while keeping the shared loading and failed-image state.
+2. Added lazy loading and async decoding defaults while preserving caller overrides.
+3. Added named failed-image fallback semantics for meaningful images.
+4. Kept decorative image fallbacks hidden from assistive technologies.
+5. Reset failed-image state when callers provide a new image source.
+6. Added `AuraImage.test.tsx` coverage for performance defaults, caller handlers, named fallbacks, decorative fallbacks, and source-change recovery.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraImage.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because image loading, failed-image, and decorative-image states are consistent across future shared-image reuse. User control is preserved because no route-owned image choice, alt copy, service call, route behavior, or analytics call was changed.
+
+## 260. Two-Hundred-Fifty-Third Implementation Batch
+
+The two-hundred-fifty-third implementation batch focused on shared tabs semantics:
+
+1. Added explicit horizontal orientation to the shared tablist.
+2. Added tablist and tab-trigger slot metadata for source audits.
+3. Hid tab icons from assistive technologies so visible tab labels own the accessible names.
+4. Preserved click selection and route-owned tab state.
+5. Preserved stable tab/panel ID relationships when callers provide an `idPrefix`.
+6. Added `Tabs.test.tsx` coverage for labeled horizontal tablists, panel relationships, decorative icons, click selection, and Arrow/Home/End roving focus alignment.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Tabs.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because shared tabbed workspaces expose consistent labels, panel relationships, and keyboard focus behavior. User control is preserved because no route-owned tab labels, active-tab state, service call, route behavior, or analytics call was changed.
+
+## 261. Two-Hundred-Fifty-Fourth Implementation Batch
+
+The two-hundred-fifty-fourth implementation batch focused on exported legacy helper presentation:
+
+1. Added named metric group semantics to `StatCard`.
+2. Connected optional stat descriptions to the metric group.
+3. Hid stat icons from assistive technologies while preserving visible icons.
+4. Added named article semantics to `PostCard` and hid decorative avatar initials.
+5. Added stable names to `SyncStatusBar` and `AuraStatusBar`.
+6. Hid status-bar icons and visual separators from assistive technologies.
+7. Added `LegacyHelpers.test.tsx` coverage for stat, post, and status helper semantics.
+
+Status: completed on 2026-06-28.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because future reuse of exported helper cards and bars is easier to traverse by purpose. User control is preserved because no helper props, visible copy, buttons, route behavior, service call, or analytics call was changed.
+
+## 262. Two-Hundred-Fifty-Fifth Implementation Batch
+
+The two-hundred-fifty-fifth implementation batch focused on exported typography and page-template helpers:
+
+1. Extended exported typography helpers to preserve caller attributes.
+2. Added wrapping-safe defaults to heading, body, and metadata helper text.
+3. Preserved caller class overrides for existing helper consumers.
+4. Added named main content landmarks to `PageTemplate`.
+5. Preserved optional shared `PageHeader` rendering and caller-owned action controls.
+6. Added `Typography.test.tsx` and `PageTemplate.test.tsx` coverage for helper semantics and compatibility behavior.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/atoms/Typography.test.tsx src/components/templates/PageTemplate.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because future helper reuse is less likely to create unlabeled content regions or overflowing text. User control is preserved because no route-owned controls, service call, route behavior, or analytics call was changed.
+
+## 263. Two-Hundred-Fifty-Sixth Implementation Batch
+
+The two-hundred-fifty-sixth implementation batch focused on the authenticated shell layout contract:
+
+1. Added a named Application content landmark to `ResponsiveLayout`.
+2. Added shell/content slot metadata for source audits.
+3. Preserved userless passthrough for public children.
+4. Preserved sidebar/header composition and resize-driven sidebar offsets.
+5. Preserved header sidebar-toggle wiring.
+6. Preserved logout through the existing auth service and `/login` route.
+7. Added `ResponsiveLayout.test.tsx` coverage for authenticated shell semantics, resize/toggle offsets, logout routing, and userless passthrough.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/ResponsiveLayout.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because authenticated screens now have a consistent shell landmark. User control is preserved because no route workflow, navigation owner, logout flow, service call, or analytics call was changed.
+
+## 264. Two-Hundred-Fifty-Seventh Implementation Batch
+
+The two-hundred-fifty-seventh implementation batch focused on the exported legacy navbar contract:
+
+1. Added a named Legacy application navigation landmark to `AuraNavbar`.
+2. Marked active desktop and mobile route links with `aria-current="page"`.
+3. Hid navigation, action, profile, brand, and mobile toggle icons from assistive technologies.
+4. Added explicit mobile-menu `aria-expanded` and `aria-controls` relationships.
+5. Added a named Legacy mobile navigation landmark for the animated mobile menu.
+6. Preserved public auth links, authenticated route destinations, profile/search/notification controls, mobile-menu close behavior, and logout routing.
+7. Added `AuraNavbar.test.tsx` coverage for public/authenticated navigation semantics, mobile-menu relationships, decorative icons, and logout through the existing auth service plus `/login` route.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraNavbar.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because future legacy navbar reuse is easier to traverse by landmark, active state, and mobile menu relationship. User control is preserved because no route destination, auth link, logout flow, feature ownership, service call, or analytics call was changed.
+
+## 265. Two-Hundred-Fifty-Eighth Implementation Batch
+
+The two-hundred-fifty-eighth implementation batch focused on the shared theme provider resilience contract:
+
+1. Preserved the existing `aura-theme` storage key and root `light`/`dark` visual-mode classes.
+2. Kept stored light/dark preferences ahead of system preference fallback.
+3. Added a safe default when `matchMedia` is unavailable.
+4. Kept the current-session visual theme usable when browser storage reads or writes fail.
+5. Preserved the existing `toggleTheme` context API used by shell theme controls.
+6. Added `AuraThemeProvider.test.tsx` coverage for stored-theme priority, system fallback, root class synchronization, persistence, and storage-unavailable toggling.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraThemeProvider.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because visual mode controls remain usable in constrained browser-storage environments. User control is preserved because no route behavior, shell control, service call, analytics event, storage key, or class contract was changed.
+
+## 266. Two-Hundred-Fifty-Ninth Implementation Batch
+
+The two-hundred-fifty-ninth implementation batch focused on the exported legacy mobile menu contract:
+
+1. Kept the shortcut bar as a named Mobile shortcut navigation landmark.
+2. Kept shortcut placement limited to the first four provided route entries.
+3. Converted the expanded sheet into a named Mobile navigation menu landmark with an explicit description relationship.
+4. Marked active shortcut and expanded route links with the existing active-route contract.
+5. Hid route, menu, close, theme, and sign-out icons from assistive technologies.
+6. Preserved controlled open/close behavior, route-link close behavior, theme toggling, and sign-out callbacks.
+7. Added `MobileMenu.test.tsx` coverage for shortcut/expanded navigation semantics, active state, decorative icons, and unchanged callbacks.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/layout/MobileMenu.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because any future legacy mobile-menu reuse is easier to traverse by purpose and active route. User control is preserved because no link destination, feature ownership, callback payload, service call, route behavior, or analytics event was changed.
+
+## 267. Two-Hundred-Sixtieth Implementation Batch
+
+The two-hundred-sixtieth implementation batch focused on the active sidebar shell contract:
+
+1. Added an explicit `TalentSphere home` name to the sidebar brand/home link so it stays named when the desktop sidebar is collapsed.
+2. Hid shell brand, route, close, theme, sign-out, and collapse icons from assistive technologies.
+3. Hid visual separator dividers and the mobile overlay from assistive technologies.
+4. Preserved primary desktop navigation, expanded mobile navigation, bottom mobile navigation, route-registry filtering, active-route state, and link destinations.
+5. Preserved mobile close, theme toggle, sign-out, and collapse callbacks.
+6. Added `Sidebar.test.tsx` coverage for collapsed brand/home naming, primary and expanded mobile navigation landmarks, active state, decorative icon/divider treatment, hidden overlay semantics, and unchanged callbacks.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/layout/Sidebar.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because collapsed desktop and expanded mobile sidebar navigation remain named and quieter for assistive technologies. User control is preserved because no route filtering, link destination, callback payload, logout behavior, service call, route behavior, or analytics event was changed.
+
+## 268. Two-Hundred-Sixty-First Implementation Batch
+
+The two-hundred-sixty-first implementation batch focused on the active header shell contract:
+
+1. Made the mobile navigation trigger and notification trigger explicit `button` controls.
+2. Preserved `aria-expanded` and `aria-controls` relationships for navigation and notification panels.
+3. Hid the mobile-menu and notification-bell icons from assistive technologies.
+4. Hid unread-dot indicators and the visual avatar initial from assistive technologies.
+5. Preserved CommandSearch behavior, notification load/read/retry behavior, notification panel state, route navigation, and service calls.
+6. Extended `Header.test.tsx` coverage for shell trigger naming, button types, controlled relationships, decorative shell visuals, menu toggle callbacks, and existing safe notification recovery paths.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/layout/Header.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because shell controls stay named while decorative header visuals no longer add noise. User control is preserved because no command-search route discovery, notification action, service call, route behavior, callback payload, or analytics event was changed.
+
+## 269. Two-Hundred-Sixty-Second Implementation Batch
+
+The two-hundred-sixty-second implementation batch focused on the focused CommandSearch decorative presentation contract:
+
+1. Hid the visual search icon from assistive technologies.
+2. Hid destination result icons and trailing arrow icons from assistive technologies.
+3. Preserved the named Command search landmark, combobox, listbox, live result status, and no-result status.
+4. Preserved route metadata, role filtering, label-ranked result ordering, shortcut focus, keyboard behavior, click/submit navigation, route destinations, shell close callbacks, page behavior, and feature ownership.
+5. Added `CommandSearch.test.tsx` coverage for named/described search semantics, decorative icon treatment, label-ranked navigation, shell close callbacks, and role-filtered no-result behavior without navigation.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/layout/CommandSearch.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because command-search route meaning stays in names and descriptions while decorative SVGs no longer add duplicate assistive-technology output. User control is preserved because no route metadata, role filtering, result ranking, shortcut behavior, keyboard behavior, route destination, navigation callback, service call, page behavior, or analytics event was changed.
+
+## 270. Two-Hundred-Sixty-Third Implementation Batch
+
+The two-hundred-sixty-third implementation batch focused on the active Messaging conversation-list semantics contract:
+
+1. Added participant presence status to active conversation-row accessible names.
+2. Hid the active conversation-list search icon from assistive technologies.
+3. Hid Retry conversations icons from assistive technologies while preserving the existing retry action.
+4. Hid fallback participant initials and online dots from assistive technologies because the row name now carries participant identity and presence.
+5. Preserved conversation filtering, pagination, active conversation selection, unread badges, message-history loading, send/retry behavior, mark-read behavior, attachment upload/link behavior, suggested-reply behavior, route behavior, service calls, and analytics calls.
+6. Extended `MessagingPage.test.tsx` coverage for presence-bearing row labels, decorative list visuals, active current state, and existing safe load/action recovery paths.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/messaging/MessagingPage.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because conversation rows now expose participant, unread state, last-message context, and presence in one stable accessible name while purely visual list markers stay quiet. User control is preserved because no conversation selection, message fetch, retry, unread, attachment, send, route, service, or analytics behavior was changed.
+
+## 271. Two-Hundred-Sixty-Fourth Implementation Batch
+
+The two-hundred-sixty-fourth implementation batch focused on the active Messaging thread/composer presentation contract:
+
+1. Hid active-thread back, call, mark-read, older-history, attachment, failed-message retry, upload, suggestion, and send icons from assistive technologies.
+2. Hid decorative active-thread avatar initials and realtime status dots from assistive technologies while preserving visible participant and connection status.
+3. Kept back, unavailable call, mark-read, attachment, upload, send, retry, and older-history controls named by visible text or explicit accessible labels.
+4. Preserved active conversation selection, realtime status copy, message-history loading, older-history loading, visible mark-read behavior, send/retry behavior, attachment link/upload behavior, suggested-reply insertion, route behavior, service calls, and analytics calls.
+5. Extended `MessagingPage.test.tsx` coverage for decorative thread/composer visuals plus unchanged send, retry, upload, older-history, and read-state workflows.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/messaging/MessagingPage.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because active Messaging thread and composer controls now expose action meaning once, through labels, while visual icons and status ornaments stay quiet. User control is preserved because no conversation selection, realtime subscription, message fetch, older-history load, send, retry, mark-read, attachment, route, service, or analytics behavior was changed.
+
+## 272. Two-Hundred-Sixty-Fifth Implementation Batch
+
+The two-hundred-sixty-fifth implementation batch focused on the active Networking card/control presentation contract:
+
+1. Hid Networking search, card metadata, status badge, action, and profile-preview modal icons from assistive technologies.
+2. Hid decorative suggestion, request, connection, and preview avatar initials from assistive technologies while preserving visible profile names and person-specific card labels.
+3. Kept Preview, Hide, Connect, Accept, Decline, Remind Me, Clear Reminder, Withdraw, Close, and Full Profile controls named by visible text or person-specific accessible labels.
+4. Preserved Redux suggestion loading, search, tab switching, connection-state loading, Connect/Accept/Decline/Withdraw behavior, reminder set/clear behavior, hidden-suggestion preferences, profile preview/full-profile behavior, route behavior, service calls, toast behavior, and analytics calls.
+5. Extended `NetworkingPage.test.tsx` coverage for decorative search/card/preview visuals, decorative avatar initials, person-specific action names, and unchanged Networking action paths.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/networking/NetworkingPage.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because Networking cards and profile preview controls now expose relationship context once, through names and labels, while decorative icons and initials stay quiet. User control is preserved because no suggestion fetch, search, tab, connection request, reminder, profile preview, full-profile handoff, route, service, toast, or analytics behavior was changed.
+
+## 273. Two-Hundred-Sixty-Sixth Implementation Batch
+
+The two-hundred-sixty-sixth implementation batch focused on the active AI Assistant presentation contract:
+
+1. Hid AI Assistant badge, review-queue, recommendation-card, conversation-avatar, draft-prompt, and composer icons from assistive technologies.
+2. Kept prompt suggestions, chat messages, review recommendations, Save, Dismiss, Save all, Dismiss all, Open workflow, Clear Chat, Send to AI, and composer send controls named by visible text, message article labels, or explicit accessible labels.
+3. Preserved session load/save/delete behavior, chat persistence, prompt selection, backend chat calls, provider retry, draft response creation, automation suggestion persistence, review save/dismiss status, audit payloads, clear-chat review, workflow handoffs, route behavior, service calls, toast behavior, and analytics calls.
+4. Extended `AIAssistant.test.tsx` coverage for decorative AI Assistant visuals across initial prompt suggestions, prompt draft, conversation/review queue, retry state, and unchanged chat/review actions.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/ai/AIAssistant.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because AI Assistant review, chat, and composer controls expose meaning once, through text and labels, while decorative icons stay quiet. User control is preserved because no AI session, chat, review, audit, clear-chat, workflow handoff, route, service, toast, or analytics behavior was changed.
+
+## 274. Two-Hundred-Sixty-Seventh Implementation Batch
+
+The two-hundred-sixty-seventh implementation batch focused on the active Career Path presentation contract:
+
+1. Hid Career Path unavailable-state, retry, AI handoff, generated-path, milestone-state, Learning handoff, and review-boundary icons from assistive technologies.
+2. Kept generated guidance, unavailable-state, retry, Learning handoff, AI handoff, milestone state, and review-boundary meaning in headings, region/list labels, listitem labels, visible copy, and button text.
+3. Preserved AI service generation ownership, response normalization, load/retry behavior, fallback milestones, Learning navigation, AI Assistant navigation, provider-unavailable state, route behavior, source-labeling, service calls, and review-only guarantees.
+4. Extended `AICareerPath.test.tsx` coverage for decorative Career Path visuals across generated guidance, provider-unavailable state, retry/handoff controls, milestones, and review boundaries.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/ai/AICareerPath.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because Career Path generated guidance and review boundaries expose meaning once, through labels and text, while visual icons stay quiet. User control is preserved because no AI generation, retry, Learning handoff, AI Assistant handoff, route, service, or review-only behavior was changed.
+
+## 275. Two-Hundred-Sixty-Eighth Implementation Batch
+
+The two-hundred-sixty-eighth implementation batch focused on the active Admin Console presentation contract:
+
+1. Hid Admin refresh, failed-load, degraded-state, summary metric, product-analytics, scheduler, service-health, observability-link, and audit-log icons from assistive technologies.
+2. Kept operational meaning in headings, named regions, table/list labels, row labels, visible status text, and explicit Refresh, Retry, Status, Runbook, observability-link, and audit controls.
+3. Preserved admin stats calls, audit pagination behavior, product analytics insight loading, scheduler status loading, scheduler status/runbook links, service investigation links, refresh handlers, source labels, role gating, route behavior, service calls, and admin analytics events.
+4. Extended `AdminDashboard.test.tsx` coverage for decorative Admin visuals across failed-load, loaded operational, and retry-success states while retaining safe-copy, semantic structure, and retry assertions.
+
+Status: completed on 2026-06-29.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/admin/AdminDashboard.test.tsx`.
+- Accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web`.
+- Frontend lint passed: `npm run lint --workspace talentsphere-web`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia`.
+
+User effort is reduced because Admin operational surfaces expose meaning once, through labels and text, while visual icons stay quiet. User control is preserved because no Admin refresh, retry, scheduler, observability, audit, route, service, role-gate, or analytics behavior was changed.
+
+## 276. Two-Hundred-Sixty-Ninth Implementation Batch
+
+The two-hundred-sixty-ninth implementation batch focused on the active Billing presentation contract:
+
+1. Hid Billing provider-unavailable, plan-feature, empty-state, payment-method, review-warning, and provider-handoff icons from assistive technologies.
+2. Kept Billing meaning in the named workspace, plan comparison list, plan feature lists, payment-method region/group, transaction-history region/list, modal headings, visible status copy, and explicit Retry/Continue/Open Billing Portal controls.
+3. Preserved payment-service plan/history/subscription loading, checkout/session command behavior, billing portal command behavior, review modal behavior, retry behavior, toast behavior, explicit demo mode, route behavior, and billing analytics calls.
+4. Extended `BillingPage.test.tsx` coverage for decorative Billing visuals across plan comparison, payment method, plan review, and payment-method review surfaces while retaining safe-copy, semantic structure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/billing/BillingPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Billing and documentation files.
+
+User effort is reduced because Billing plan, payment, review, and provider-handoff surfaces expose meaning once, through labels and text, while visual icons stay quiet. User control is preserved because no plan load, history load, subscription load, checkout, billing portal, review modal, retry, route, service, toast, demo-mode, or analytics behavior was changed.
+
+## 277. Two-Hundred-Seventieth Implementation Batch
+
+The two-hundred-seventieth implementation batch focused on the active Dashboard presentation contract:
+
+1. Hid Dashboard status, retry, metric, checklist, header-action, recent-opportunity, and recent-application icons from assistive technologies and removed them from the focus order.
+2. Kept Dashboard meaning in the role-specific page header, data-freshness status copy, named issue rows, metric/list labels, checklist task labels, quick-action labels, recent row labels, and explicit action text.
+3. Preserved dashboard service calls, recruiter service calls, refresh/retry behavior, role branching, onboarding navigation, metric handoffs, quick-action handoffs, panel handoffs, route behavior, toast behavior, and dashboard operational analytics calls.
+4. Extended `DashboardPage.test.tsx` coverage for decorative Dashboard visuals across loaded, partial-refresh, and retry-recovery states while retaining safe-copy, semantic structure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/dashboard/DashboardPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Dashboard and documentation files.
+
+User effort is reduced because Dashboard summary, status, and action surfaces expose meaning once, through labels and text, while visual icons stay quiet. User control is preserved because no dashboard load, recruiter load, refresh, retry, navigation, route, service, toast, role-gate, or analytics behavior was changed.
+
+## 278. Two-Hundred-Seventy-First Implementation Batch
+
+The two-hundred-seventy-first implementation batch focused on the active Learning presentation contract:
+
+1. Hid Learning AI/search/progress/retry/pagination/card/curriculum/player/action icons from assistive technologies and removed them from the focus order.
+2. Added explicit duration metadata labels where the visible clock icon previously supplied visual context.
+3. Kept Learning meaning in page headings, AI review copy, form labels, progressbar names/values, pagination button names, course metadata text, curriculum lesson labels, dialog headings, and explicit action text.
+4. Preserved Redux course query state, enrollment loading, course search, tabs, pagination, AI suggestion review/apply/dismiss behavior, enrollment commands, lesson-completion commands, modal behavior, route behavior, toast behavior, and LMS workflow analytics calls.
+5. Extended `LMSPage.test.tsx` coverage for decorative LMS visuals and duration labels while retaining safe-copy, progressbar, action-failure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/lms/LMSPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Learning and documentation files.
+
+User effort is reduced because Learning catalog, progress, curriculum, and lesson controls expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no course load, enrollment load, search, pagination, AI review, enrollment, lesson completion, modal, route, service, toast, or analytics behavior was changed.
+
+## 279. Two-Hundred-Seventy-Second Implementation Batch
+
+The two-hundred-seventy-second implementation batch focused on the active Challenges presentation contract:
+
+1. Hid Challenges catalog, metadata, prompt, solution, reset, submission-status, history-refresh, local-check, and submit icons from assistive technologies and removed them from the focus order.
+2. Added explicit participant-count and duration metadata labels where visible Users/Clock icons previously supplied visual context.
+3. Kept Challenges meaning in category labels, challenge card labels, participant/duration metadata labels, named workspace regions/lists, solution-editor description, retry-history attempt labels, visible status copy, and explicit action text.
+4. Preserved Redux challenge fetch behavior, category filtering, workspace open/close behavior, language selection, starter-code reset review, local sample-check behavior, submission commands, retry-history refresh behavior, route behavior, toast behavior, and challenge workflow analytics calls.
+5. Extended `ChallengesPage.test.tsx` coverage for decorative Challenges visuals and metadata labels while retaining safe-copy, workspace semantic, action-failure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/challenges/ChallengesPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Challenges and documentation files.
+
+User effort is reduced because Challenges catalog, workspace, submission, and history controls expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no challenge fetch, category filter, workspace, language, reset review, local sample check, submission, retry-history refresh, route, service, toast, or analytics behavior was changed.
+
+## 280. Two-Hundred-Seventy-Third Implementation Batch
+
+The two-hundred-seventy-third implementation batch focused on the user workflow and automation guide requested for setup-to-advanced usage:
+
+1. Expanded `docs/USER_WORKFLOW_AUTOMATION_GUIDE.md` with a feature-variation and use-case matrix covering account entry, Dashboard, Profile, Resume, Jobs, applications, Post Job, Candidates, Learning, Challenges, AI, Career Path, Networking, Messaging, Billing, Settings, Admin, extension, scheduler, and validation workflows.
+2. Kept each feature mapped to its owning route or script so the guide teaches workflow streamlining without introducing duplicate dashboard ownership or duplicate feature placement.
+3. Preserved application behavior, route ownership, service calls, storage behavior, analytics names, scheduler commands, extension local-only behavior, and validation command behavior because the batch changed documentation only.
+4. Updated README, module manifest prose, machine-readable manifest notes, and PLAN tracking so the new guide scope is discoverable and governed by existing documentation validators.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Information architecture validation passed: `npm run test:ia --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:docs-lifecycle`, `npm run validate:module-manifest`, and `npm run validate:ui-design-system`.
+- Diff hygiene passed: `git diff --check` on the changed documentation and manifest files.
+
+User effort is reduced because users can now choose setup modes, feature variations, use cases, automation recipes, validation evidence, and recovery steps from one guide. User control is preserved because the guide reinforces review-first workflows, dry-run-first automation, local-only extension boundaries, source-label verification, and no feature behavior was changed.
+
+## 281. Two-Hundred-Seventy-Fourth Implementation Batch
+
+The two-hundred-seventy-fourth implementation batch focused on the active Jobs presentation contract:
+
+1. Hid Jobs search/filter, saved-search, hidden-preference, pagination, empty-state, result metadata, result action, publish-review, application-draft, saved-search review, application draft-history, AI-draft, and application status timeline icons from assistive technologies and removed them from the focus order.
+2. Added explicit location, job-type, and salary metadata labels where visible MapPin, Briefcase, and DollarSign icons previously supplied visual context.
+3. Kept Jobs meaning in tab labels, search labels, saved-search listitem labels, result list/listitem labels, metadata labels, button text, modal headings, publish checklist copy, application-draft text, and Application Details timeline listitem labels.
+4. Preserved Jobs query parameters, tab behavior, filters, saved searches, hidden Explore preferences, application draft loading/history/persistence, application submission, application details, recruiter postings, publish review, route behavior, service calls, toast behavior, and analytics events.
+5. Extended `JobsPage.test.tsx` coverage for decorative Jobs visuals and metadata labels while retaining safe-copy, result/list semantics, timeline semantics, action-failure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/JobsPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Jobs and documentation files.
+
+User effort is reduced because Jobs result cards, saved-search controls, hidden-preference controls, application draft surfaces, publish review, and status timelines expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no Jobs route, filter, saved-search, hidden-preference, application draft, submission, application detail, recruiter posting, publish review, service, toast, or analytics behavior was changed.
+
+## 282. Two-Hundred-Seventy-Fifth Implementation Batch
+
+The two-hundred-seventy-fifth implementation batch focused on the active Post Job presentation contract:
+
+1. Hid Post Job template, action, status, company, input, draft-history, review, and footer icons from assistive technologies and removed them from the focus order.
+2. Kept Post Job meaning in the named workspace, named form, template controls/actions, draft-history labels, company context and company profile labels, editable draft field labels, review metadata labels, requirement preview labels, duplicate/change labels, final action group, visible status copy, modal headings, and explicit action text.
+3. Preserved route parameters, template local/account sync behavior, draft-history local/account sync behavior, company setup onboarding analytics, company lookup/create/update payloads, duplicate checks, review-before-save behavior, draft save/update behavior, navigation behavior, service calls, toast behavior, and analytics events.
+4. Extended `PostJobPage.test.tsx` coverage for decorative Post Job visuals across edit and review states while retaining safe-copy, section semantic, action-failure, browser-storage, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/PostJobPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Post Job and documentation files.
+
+User effort is reduced because Post Job edit, review, template, company, and footer surfaces expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no Post Job route, template, draft-history, company, duplicate-check, review, save, navigation, service, toast, or analytics behavior was changed.
+
+## 283. Two-Hundred-Seventy-Sixth Implementation Batch
+
+The two-hundred-seventy-sixth implementation batch focused on the active Candidates presentation contract:
+
+1. Hid Candidates search/filter, pagination, metric, bulk-action, row metadata, details, review queue, advisory, submitted-material, interview-plan, scorecard, notes, single-status, and bulk-status icons from assistive technologies and removed them from the focus order.
+2. Kept Candidates meaning in search labels, candidate metric and application row labels, Candidate Details named regions/lists, scorecard slider labels, status copy, modal headings, and explicit action text.
+3. Preserved candidate search, cursor paging, review focus, advisory sorting, private notes, scorecards, interview-plan drafts, review queue navigation, single-status actions, bulk status review, route behavior, service calls, toast behavior, and candidate workflow analytics calls.
+4. Extended `CandidatesPage.test.tsx` coverage for decorative Candidates visuals across the main workspace, Candidate Details, single-status confirmation, and bulk-status confirmation while retaining safe-copy, semantic structure, action-failure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/candidates/CandidatesPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Candidates and documentation files.
+
+User effort is reduced because Candidates row metadata, review controls, detail sections, scorecards, notes, and status confirmations expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no candidate search, cursor, focus, note, scorecard, interview-plan, review-queue, status, bulk-status, route, service, toast, or analytics behavior was changed.
+
+## 284. Two-Hundred-Seventy-Seventh Implementation Batch
+
+The two-hundred-seventy-seventh implementation batch focused on the active Profile presentation contract:
+
+1. Hid Profile alert, retry, form, avatar, metadata, skill, completion, row-action, experience, education, and achievement icons from assistive technologies and removed them from the focus order.
+2. Added explicit location, website, and joined-year metadata labels where visible MapPin, link, and calendar icons previously supplied visual context.
+3. Kept Profile meaning in profile section labels, metadata labels, skill labels, completion task labels, tabpanel labels, row labels, modal headings, status copy, and explicit action text.
+4. Preserved profile loading, route parameters, edit modal behavior, AI draft review/discard/save behavior, local suggestion prefill behavior, avatar upload/crop/remove behavior, skill/experience/education create/edit/delete behavior, tab behavior, service calls, toast behavior, and analytics calls.
+5. Extended `ProfilePage.test.tsx` coverage for decorative Profile visuals across the main workspace and review modals while retaining safe-copy, semantic structure, action-failure, metadata-label, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/profile/ProfilePage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Profile and documentation files.
+
+User effort is reduced because Profile summary metadata, avatar review, skill controls, completion prompts, row actions, experience, education, achievements, and review modals expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no profile load, edit, AI draft, suggestion, avatar, skill, experience, education, tab, route, service, toast, or analytics behavior was changed.
+
+## 285. Two-Hundred-Seventy-Eighth Implementation Batch
+
+The two-hundred-seventy-eighth implementation batch focused on the active Resume presentation contract:
+
+1. Hid Resume toolbar, retry, import-save, uploaded-artifact, export-activity, delete-review, and editor row-drag icons from assistive technologies and removed them from the focus order.
+2. Kept Resume meaning in named toolbar/action labels, import review regions/lists, artifact labels, export history labels, delete modal headings, tabpanel labels, row labels, status copy, and explicit action text.
+3. Preserved profile loading, import parsing, selected-field application, profile saves, skill/row saves, PDF/HTML/print/export/upload/copy/delete commands, artifact sync fallback, route behavior, service calls, toast behavior, and analytics calls.
+4. Extended `ResumeBuilder.test.tsx` coverage for decorative Resume visuals across the loaded editor, import review, export activity, and delete review while retaining safe-copy, semantic structure, action-failure, and retry assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/profile/ResumeBuilder.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Resume and documentation files.
+
+User effort is reduced because Resume toolbar actions, import review controls, uploaded artifact controls, export activity, delete review, and editor row surfaces expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no resume load, import, selected-field application, profile save, export, upload, artifact copy/delete, route, service, toast, or analytics behavior was changed.
+
+## 286. Two-Hundred-Seventy-Ninth Implementation Batch
+
+The two-hundred-seventy-ninth implementation batch focused on the active Auth entry presentation contract:
+
+1. Hid AuthShell brand, Login/Register field, Register account-type, and submit-arrow icons from assistive technologies and removed them from the focus order.
+2. Kept auth meaning in public auth main landmarks, authentication panel labels, form labels, account-type descriptions, next-step status, alternate-entry links, alert copy, and button text.
+3. Preserved Supabase auth calls, registration role mapping, onboarding analytics, route queries, post-registration routes, auth redirects, inactive provider controls, public reset-password visibility, and safe provider-failure copy.
+4. Extended `AuthEntry.test.tsx` coverage for decorative auth visuals across Login and Register while retaining safe-copy, semantic structure, role-intent, invalid-credential, weak-password, and provider-failure assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/auth/AuthEntry.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed auth and documentation files.
+
+User effort is reduced because Login/Register form, role, shell, and submit controls expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no login, registration, role intent, route, service, analytics, safe-copy, or auth provider behavior was changed.
+
+## 287. Two-Hundred-Eightieth Implementation Batch
+
+The two-hundred-eightieth implementation batch focused on the active Public Landing presentation contract:
+
+1. Hid Landing brand, reviewed-workflow badge, role CTA arrow, preview-row, platform-pillar, IA-decision, and footer icons from assistive technologies and removed them from the focus order.
+2. Kept public-entry meaning in public navigation, role-entry links, preview row labels, platform pillar labels, IA decision labels, workflow principle labels, stats labels, source/freshness copy, and footer text.
+3. Preserved typed Supabase public stat count queries, fallback stats, live/fallback source labeling, auth links, role-selection destinations, section anchors, route behavior, and public copy.
+4. Added `LandingPage.test.tsx` coverage for public-entry semantics, live stats lookup, and decorative Landing visuals while retaining the existing browser coverage for role destinations, named structure, stats visibility, and mobile no-overflow rendering.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/LandingPage.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Landing and documentation files.
+
+User effort is reduced because public-entry navigation, CTAs, preview rows, platform pillars, IA decisions, workflow principles, stats, and footer expose meaning through labels and text while decorative icons stay quiet. User control is preserved because no public stat query, fallback, link, role-selection destination, section anchor, route, or public-copy behavior was changed.
+
+## 288. Two-Hundred-Eighty-First Implementation Batch
+
+The two-hundred-eighty-first implementation batch focused on the active Not Found presentation contract:
+
+1. Hid Not Found recovery badge, back/home, public auth-entry, authenticated destination, and recovery-heading icons from assistive technologies and removed them from the focus order.
+2. Kept invalid-route recovery meaning in the not-found heading, recovery explanation, action text, public auth labels, and route-registry destination labels/descriptions.
+3. Preserved wildcard recovery ownership, public visitor auth-entry actions, authenticated Dashboard recovery, role-filtered route-registry destinations, `navigate(-1)` behavior, route navigation targets, and protected-route role gates.
+4. Added `NotFound.test.tsx` coverage for public recovery, authenticated role-filtered recovery, navigation targets, and decorative Not Found visuals while retaining existing browser coverage for public auth recovery and authenticated destination routing.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/error/NotFound.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Not Found and documentation files.
+
+User effort is reduced because invalid-route recovery actions and destinations expose meaning through headings, labels, and route descriptions while decorative icons stay quiet. User control is preserved because no wildcard route, public auth recovery, Dashboard recovery, route-registry filtering, back navigation, route target, protected-route gate, service, or domain workflow behavior was changed.
+
+## 289. Two-Hundred-Eighty-Second Implementation Batch
+
+The two-hundred-eighty-second implementation batch focused on the active Global error presentation contract:
+
+1. Hid ErrorBoundary fatal-state status and reload icons from assistive technologies and removed them from the focus order.
+2. Kept fatal recovery meaning in the recovery eyebrow, H1, recovery description, diagnostics-safe copy, and Reload page button text.
+3. Preserved generic-vs-service failure classification, safe public copy, custom fallback passthrough, `onRetry` callback behavior, default page reload behavior, child rendering before failure, console diagnostics, route behavior, and domain workflows.
+4. Extended `ErrorBoundary.test.tsx` coverage for decorative fatal-state visuals while retaining safe-copy, service-unavailable, custom-fallback, and reload assertions.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/error/ErrorBoundary.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed ErrorBoundary and documentation files.
+
+User effort is reduced because fatal runtime recovery exposes meaning through heading, description, diagnostics-safe copy, and action text while decorative icons stay quiet. User control is preserved because no error classification, fallback, reload, callback, child-rendering, console diagnostic, route, service, or domain workflow behavior was changed.
+
+## 290. Two-Hundred-Eighty-Third Implementation Batch
+
+The two-hundred-eighty-third implementation batch focused on the user workflow and automation guide handoff requested for step-by-step setup through advanced automation:
+
+1. Added a self-service completion checklist to `docs/USER_WORKFLOW_AUTOMATION_GUIDE.md` covering setup mode, owning workflow, execution steps, supported variations, review points, failure handling, validation evidence, and unverified production evidence.
+2. Added an issue investigation template for blockers not already covered by the troubleshooting table, with fields for user goal, surface owner, setup mode, last safe step, visible signal, likely root cause, workaround, and prevention.
+3. Updated README, module manifest prose, machine-readable manifest notes, and PLAN tracking so the guide remains discoverable and lifecycle-governed.
+4. Preserved application behavior, route ownership, service calls, storage behavior, analytics names, scheduler commands, extension local-only behavior, and validation command behavior because the batch changed documentation only.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Documentation and architecture guardrails passed: `npm run validate:docs-lifecycle`, `npm run validate:module-manifest`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed documentation and manifest files.
+
+User effort is reduced because users can now verify whether a workflow is ready to execute without hand-holding and can triage new blockers through the same root-cause, workaround, and prevention model as the known-issues table. User control is preserved because no feature behavior, route, script, provider call, extension workflow, or UI action was changed.
+
+## 291. Two-Hundred-Eighty-Fourth Implementation Batch
+
+The two-hundred-eighty-fourth implementation batch focused on the active status-bar surface consolidation:
+
+1. Extracted shared `StatusBarSurface` markup for status, latency, security, sync label, separators, and decorative/focusless status icons.
+2. Reused that surface from both `AuraStatusBar` and `SyncStatusBar`.
+3. Preserved each component's public props, exported names, role/status labels, default display text, default security casing, sync label behavior, visible copy, and token-backed styling.
+4. Kept `LegacyHelpers.test.tsx` coverage for named status bars and decorative status icons across both status-bar variants.
+5. Updated PLAN, design-system documentation, feature inventory, module manifest prose, and this audit record so the shared status-bar presentation contract is traceable.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx`.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed status-bar and documentation files.
+
+User effort is reduced because status-bar variants now share one consistent presentation surface while preserving the same labels, visible text, and decorative icon treatment. User control is preserved because no helper prop, exported component, route, service, analytics, or workflow behavior was changed.
+
+## 292. Two-Hundred-Eighty-Fifth Implementation Batch
+
+The two-hundred-eighty-fifth implementation batch focused on the shared status-bar audit-marker contract:
+
+1. Added stable `data-ui` markers to `StatusBarSurface` for the status-bar root, state group, active indicator, latency group, security group, sync group, and visual separators.
+2. Kept status icons and separators decorative/focusless while preserving all existing status labels and visible text.
+3. Extended `LegacyHelpers.test.tsx` from 3 to 4 focused tests so the shared status-bar markers and default compatibility text for `SyncStatusBar` and `AuraStatusBar` are covered.
+4. Updated design-system, feature inventory, module manifest prose, PLAN tracking, and this audit record so the status-strip contract is documented as a reusable design-system pattern.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed status-bar, test, and documentation files.
+
+User effort is reduced because compact status strips now have one auditable structure for visual QA, documentation, and future reuse. User control is preserved because no helper prop, default label, visible copy, route, service call, analytics event, or workflow behavior was changed.
+
+## 293. Two-Hundred-Eighty-Sixth Implementation Batch
+
+The two-hundred-eighty-sixth implementation batch focused on the legacy post-card audit-marker contract:
+
+1. Added stable markers to `PostCard` for the post-card root, header, decorative avatar, metadata, content, and action row.
+2. Preserved the named article surface, decorative avatar initials, visible author/role/timestamp/content copy, and existing Like, Comment, and Share button labels.
+3. Extended `LegacyHelpers.test.tsx` assertions so the post-card markers are covered through the existing named article test without changing helper props or action behavior.
+4. Updated design-system, feature inventory, module manifest prose, PLAN tracking, and this audit record so the post-card compatibility surface remains traceable.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed post-card, helper-test, and documentation files.
+
+User effort is reduced because legacy post cards now have one auditable structure for visual QA, future reuse, and documentation. User control is preserved because no helper prop, visible copy, button label, route, service call, analytics event, or workflow behavior was changed.
+
+## 294. Two-Hundred-Eighty-Seventh Implementation Batch
+
+The two-hundred-eighty-seventh implementation batch focused on the legacy stat-card audit-marker contract:
+
+1. Added stable markers to `StatCard` for the stat-card root, header, decorative icon, trend badge, body, label, value, and description.
+2. Preserved named metric group semantics, connected description relationships, decorative icon treatment, trend copy, color variants, visible label/value/description text, and existing helper props.
+3. Extended `LegacyHelpers.test.tsx` assertions so stat-card markers are covered through the existing metric-group test without changing helper props or rendering behavior.
+4. Updated design-system, feature inventory, module manifest prose, PLAN tracking, and this audit record so the stat-card compatibility surface remains traceable.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed stat-card, helper-test, and documentation files.
+
+User effort is reduced because legacy stat cards now have one auditable structure for visual QA, future reuse, and dashboard metric consistency. User control is preserved because no helper prop, visible value, trend copy, route, service call, analytics event, or workflow behavior was changed.
+
+## 295. Two-Hundred-Eighty-Eighth Implementation Batch
+
+The two-hundred-eighty-eighth implementation batch focused on the shared button compatibility slot-marker contract:
+
+1. Added a stable `data-slot="button"` marker to the shared `Button`/`AuraButton` root alongside the existing `data-ui="button"` marker.
+2. Preserved caller-owned button type, disabled/loading behavior, `aria-busy`, variant metadata, size metadata, loading label visibility, decorative loading icon treatment, and all click/submit behavior.
+3. Extended `AuraButton.test.tsx` assertions so loading, long-label, submit, and icon-button variants all verify the compatibility slot marker.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so shared command controls remain traceable for dashboard and route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraButton.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed button, test, and documentation files.
+
+User effort is reduced because shared action controls now have a consistent audit marker pattern with the rest of the normalized design-system primitives. User control is preserved because no button copy, click handler, submit behavior, disabled/loading behavior, route, service call, analytics event, or workflow behavior was changed.
+
+## 296. Two-Hundred-Eighty-Ninth Implementation Batch
+
+The two-hundred-eighty-ninth implementation batch focused on the shared input audit-marker contract:
+
+1. Added stable markers to the shared `Input`/`AuraInput` wrapper, input element, label row, label, required marker, control wrapper, decorative icon, helper text, and error text.
+2. Preserved generated and caller-provided IDs, visible label binding, helper/error description relationships, caller-provided descriptions, `aria-errormessage`, `aria-invalid`, required semantics, input values, event handlers, and form submission behavior.
+3. Extended `AuraInput.test.tsx` assertions so helper, required, icon, and error states all verify the shared root/subpart markers without changing field behavior.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so shared form controls remain traceable for route and dashboard audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraInput.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed input, test, and documentation files.
+
+User effort is reduced because form fields now expose one consistent structure for visual QA, accessibility review, and future form reuse. User control is preserved because no validation copy, input value, event handler, submit behavior, route, service call, analytics event, or workflow behavior was changed.
+
+## 297. Two-Hundred-Ninetieth Implementation Batch
+
+The two-hundred-ninetieth implementation batch focused on the compatibility page-template shell/content marker contract:
+
+1. Added stable `data-ui="page-template"` and `data-ui="page-template-content"` markers alongside the existing compatibility `data-slot` markers.
+2. Preserved optional shared header rendering, caller-provided actions, caller class hooks, caller-owned main labels, named content landmarks, child rendering, route-owned controls, and route behavior.
+3. Extended `PageTemplate.test.tsx` assertions so both the default shared-header layout and header-hidden utility layout verify the shell/content markers.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so compatibility page shells remain traceable for screen audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/templates/PageTemplate.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed page-template, test, and documentation files.
+
+User effort is reduced because compatibility page shells now expose one consistent structure for visual QA, landmark review, and future route audits. User control is preserved because no header action, content rendering, route-owned control, route, service call, analytics event, or workflow behavior was changed.
+
+## 298. Two-Hundred-Ninety-First Implementation Batch
+
+The two-hundred-ninety-first implementation batch focused on the shared skeleton compatibility marker contract:
+
+1. Added a stable `data-slot="skeleton"` marker to the shared `Skeleton` root alongside the existing `data-ui="skeleton"` marker.
+2. Preserved decorative default `aria-hidden` behavior, explicit caller-provided loading role/name semantics, reduced-motion-aware pulse styling, caller-provided sizing classes, and layout-dimension source guard behavior.
+3. Extended `Skeleton.test.tsx` assertions so decorative, explicitly announced, and sized skeleton states all verify the root and compatibility markers.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so loading placeholders remain traceable for performance-aware screen audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Skeleton.test.tsx` with 3 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed skeleton, test, and documentation files.
+
+User effort is reduced because shared loading placeholders now have one consistent audit marker pattern while retaining layout-preserving guidance. User control is preserved because no loading copy, semantics, sizing, route loading state, service call, analytics event, or workflow behavior was changed.
+
+## 299. Two-Hundred-Ninety-Second Implementation Batch
+
+The two-hundred-ninety-second implementation batch focused on the shared badge compatibility marker contract:
+
+1. Added a stable `data-slot="badge"` marker to the shared `Badge` root alongside the existing `data-ui="badge"` marker.
+2. Preserved compact visible labels, optional accessible descriptions, composed caller/generated description relationships, variant metadata, overflow-safe sizing, caller-owned roles/data attributes, and absence of implicit live-region behavior.
+3. Extended `Badge.test.tsx` assertions so described, externally described, and caller-role badge states all verify the root and compatibility markers.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so status/source metadata remains traceable for dashboard and route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Badge.test.tsx` with 3 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed badge, test, and documentation files.
+
+User effort is reduced because compact status and source metadata now have one consistent audit marker pattern across dashboards and major screens. User control is preserved because no badge copy, status meaning, role, description relationship, route, service call, analytics event, or workflow behavior was changed.
+
+## 300. Two-Hundred-Ninety-Third Implementation Batch
+
+The two-hundred-ninety-third implementation batch focused on the shared toggle compatibility marker contract:
+
+1. Added stable compatibility `data-slot` markers to the shared `Toggle` root and `Toggle` switch alongside the existing `data-ui` markers.
+2. Preserved visible label binding, description relationships, fallback aria-label support, checked-state semantics, disabled behavior, non-submit button type, visual thumb hiding, and unchanged `onChange` payloads.
+3. Extended `Toggle.test.tsx` assertions so labeled, disabled/unlabeled, and form-embedded toggle states all verify the root/switch markers and compatibility slot metadata.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so binary preference controls remain traceable for Settings and preference-surface audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Toggle.test.tsx` with 3 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed toggle, test, and documentation files.
+
+User effort is reduced because binary preference controls now have one consistent audit marker pattern across settings and account-preference surfaces. User control is preserved because no label, description, checked state, disabled state, callback payload, form behavior, route, service call, analytics event, or workflow behavior was changed.
+
+## 301. Two-Hundred-Ninety-Fourth Implementation Batch
+
+The two-hundred-ninety-fourth implementation batch focused on making the user workflow and automation guide execution-ready for self-service users:
+
+1. Added a goal-specific workflow automation catalog to `docs/USER_WORKFLOW_AUTOMATION_GUIDE.md` that maps common user, recruiter, operator, extension, and contributor outcomes to setup mode, owner, execution steps, streamlining lever, and first failure check.
+2. Updated quick navigation, first-pass manual guidance, and the self-service checklist so users can choose a goal-specific runbook without scanning every role workflow.
+3. Updated README, module-manifest prose, the machine-readable manifest note, PLAN tracking, and this audit record so the guide remains lifecycle-classified and discoverable.
+4. Preserved the existing rule that dashboards, notifications, command search, and Admin source labels are handoff or evidence surfaces, not duplicate owners for detailed workflows.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:docs-lifecycle`, `npm run validate:module-manifest`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed guide, README, manifest, PLAN, and audit files.
+
+User effort is reduced because a user can now start from a desired outcome and find the exact setup mode, owner, execution path, automation lever, validation scope, and first recovery check. User control is preserved because no route, dashboard, service, script, storage behavior, extension workflow, analytics event, IA owner, or product feature behavior was changed.
+
+## 302. Two-Hundred-Ninety-Fifth Implementation Batch
+
+The two-hundred-ninety-fifth implementation batch focused on the shared status-bar compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared `StatusBarSurface` root and its state, indicator, latency, security, sync, and separator subparts alongside the existing `data-ui` markers.
+2. Preserved `SyncStatusBar` and `AuraStatusBar` public props, role/status labels, default text, default security casing, sync-label behavior, visible copy, decorative/focusless icons, and summary-only status-strip purpose.
+3. Extended `LegacyHelpers.test.tsx` assertions so both Sync and System status bars verify root/subpart marker metadata while still checking preserved defaults and decorative icons.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so compact status strips remain traceable for dashboard and shell audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed status-bar, legacy helper test, and documentation files.
+
+User effort is reduced because compact status strips now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no status text, status labels, helper props, route, service call, analytics event, workflow behavior, or action ownership was changed.
+
+## 303. Two-Hundred-Ninety-Sixth Implementation Batch
+
+The two-hundred-ninety-sixth implementation batch focused on the shared page-header compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared `PageHeader` root, copy block, title row, and action group alongside the existing `data-ui` markers.
+2. Preserved H1 title binding, optional description relationships, title-adjacent badge rendering, title-specific action group naming, caller-owned actions, caller class hooks, route-owned page titles, and route behavior.
+3. Extended `PageHeader.test.tsx` assertions so the title/description and action-group states verify compatibility slot metadata while still checking title relationships, badge preservation, and caller-owned controls.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so page purpose and page-action surfaces remain traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/PageHeader.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed page-header, test, and documentation files.
+
+User effort is reduced because page titles, supporting copy, badges, and page-level actions now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no page title, description, action, route, service call, analytics event, workflow behavior, or action ownership was changed.
+
+## 304. Two-Hundred-Ninety-Seventh Implementation Batch
+
+The two-hundred-ninety-seventh implementation batch focused on the shared modal compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared `AuraModal` root, backdrop, dialog, header, body, and footer alongside the existing `data-ui` markers.
+2. Preserved dialog naming, modal size metadata, non-submit close behavior, decorative close/backdrop treatment, focus containment, Escape close behavior, body scroll locking, opener focus restoration, caller footer rendering, and route-owned modal actions.
+3. Extended `AuraModal.test.tsx` assertions so the structure-marker, scroll-lock, and focus-return states verify compatibility slot metadata while keeping existing behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, UX checklist, PLAN tracking, and this audit record so review and confirmation modals remain traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraModal.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed modal, test, and documentation files.
+
+User effort is reduced because review and confirmation dialogs now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no dialog content, close behavior, focus behavior, scroll behavior, route, service call, analytics event, workflow behavior, or action ownership was changed.
+
+## 305. Two-Hundred-Ninety-Eighth Implementation Batch
+
+The two-hundred-ninety-eighth implementation batch focused on the shared toast compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared toast stack, toast item, icon, content, title, message, and dismiss subparts alongside the existing `data-ui` markers.
+2. Preserved the shared `ToastProvider` API, toast type labels, status/alert semantics, assertive error behavior, atomic announcements, decorative icons, dismiss button type, notification-specific dismiss labels, stack placement, auto-dismiss timing, visible copy, and route-owned feedback triggers.
+3. Extended `Toast.test.tsx` assertions so the stack/item/subpart marker contract verifies compatibility slot metadata while keeping existing status, alert, dismissal, and timing behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so transient feedback remains traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Toast.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed toast, test, manifest, and documentation files.
+
+User effort is reduced because transient feedback now exposes the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no toast API, visible copy, status behavior, alert behavior, dismissal behavior, timing behavior, route, service call, analytics event, workflow behavior, or feedback ownership was changed.
+
+## 306. Two-Hundred-Ninety-Ninth Implementation Batch
+
+The two-hundred-ninety-ninth implementation batch focused on the shared input compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared input label row, label, required marker, control wrapper, decorative icon, helper text, and error text alongside the existing `data-ui` markers.
+2. Preserved generated and caller-provided IDs, visible label binding, required state, helper and error description relationships, `aria-errormessage`, `aria-invalid`, caller-provided descriptions, decorative icon hiding, input values, event handlers, form submission, route-owned validation copy, and service behavior.
+3. Extended `AuraInput.test.tsx` assertions so root/subpart marker coverage verifies compatibility slot metadata while keeping the existing label, helper, error, invalid-state, caller-description, and decorative-icon behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so shared form-field structure remains traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraInput.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed input, test, manifest, and documentation files.
+
+User effort is reduced because shared form fields now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no field value, ID, label, helper, error, validation, submission, route, service call, analytics event, workflow behavior, or form ownership was changed.
+
+## 307. Three-Hundredth Implementation Batch
+
+The three-hundredth implementation batch focused on the shared empty-state compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to the shared `EmptyState` root, decorative icon, title, description, and action area alongside the existing `data-ui` markers.
+2. Preserved generated title/description IDs, named region semantics, connected `aria-describedby` copy, decorative icon hiding, caller-provided recovery action callbacks, non-submit recovery action behavior, route-owned empty-state copy, and service behavior.
+3. Extended `EmptyState.test.tsx` assertions so root/subpart marker coverage verifies compatibility slot metadata while keeping the existing named-region, description, decorative-icon, and action-safety behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so no-data surfaces remain traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/EmptyState.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed empty-state, test, manifest, and documentation files.
+
+User effort is reduced because no-data surfaces now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no title, description, recovery action, ID, region semantics, route, service call, analytics event, workflow behavior, or empty-state ownership was changed.
+
+## 308. Three-Hundred-First Implementation Batch
+
+The three-hundred-first implementation batch focused on the legacy stat/post helper compatibility marker contract:
+
+1. Added compatibility `data-slot` markers to `StatCard` header, decorative icon, trend badge, body, label, value, and description subparts alongside the existing `data-ui` markers.
+2. Added compatibility `data-slot` markers to `PostCard` header, decorative avatar, metadata, content, and action-row subparts alongside the existing `data-ui` markers.
+3. Preserved stat metric group naming, description relationships, trend copy, color variants, post article naming, avatar initials, visible author/role/timestamp/content copy, Like/Comment/Share buttons, helper props, route behavior, service calls, and analytics.
+4. Extended `LegacyHelpers.test.tsx` assertions so stat-card and post-card root/subpart marker coverage verifies compatibility slot metadata while keeping existing status-bar, decorative-icon, visible-copy, and action-label checks.
+5. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so legacy compatibility helper structure remains traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/molecules/LegacyHelpers.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed legacy helper, test, manifest, and documentation files.
+
+User effort is reduced because legacy stat and post helper cards now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no metric value, description, trend, article copy, avatar, button label, button behavior, route, service call, analytics event, workflow behavior, or helper ownership was changed.
+
+## 309. Three-Hundred-Second Implementation Batch
+
+The three-hundred-second implementation batch focused on the shared image loading-state compatibility marker contract:
+
+1. Added compatibility `data-slot="aura-image-skeleton"` metadata to the delayed loading overlay alongside the existing `data-ui="aura-image-skeleton"` marker.
+2. Preserved the shared image container, media, and fallback marker contract, caller-owned alt text, caller load/error handlers, lazy loading and async decoding defaults, delayed skeleton timing, decorative loading overlay semantics, meaningful failed-image fallback labels, hidden decorative fallbacks, fallback icon hiding, and failed-state reset behavior.
+3. Extended `AuraImage.test.tsx` assertions so the container/media/loading/fallback marker coverage verifies compatibility slot metadata while keeping existing performance default, handler, fallback, and source-change behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so shared image loading and failure states remain traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/AuraImage.test.tsx` with 5 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed image, test, manifest, and documentation files.
+
+User effort is reduced because shared image loading and failure states now expose the same root/state audit marker pattern as the rest of the shared presentation system. User control is preserved because no image source, alt text, loading behavior, error behavior, fallback behavior, route, service call, analytics event, workflow behavior, or media ownership was changed.
+
+## 310. Three-Hundred-Third Implementation Batch
+
+The three-hundred-third implementation batch focused on the shared tabs icon compatibility marker contract:
+
+1. Added compatibility `data-slot="tabs-icon"` metadata to the shared `Tabs` decorative icon wrapper alongside the existing `data-ui="tabs-icon"` marker.
+2. Preserved the shared tablist and trigger marker contract, tab labels, selected-state metadata, horizontal orientation, decorative icon hiding, click selection, optional tab/panel ID relationships, Arrow/Home/End keyboard behavior, DOM focus restoration after keyboard selection, route-owned tab state, and analytics behavior.
+3. Extended `Tabs.test.tsx` assertions so the tablist/trigger/icon marker coverage verifies compatibility slot metadata while keeping existing ARIA, click, panel relationship, and roving-focus behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so shared tabbed workspaces remain traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/Tabs.test.tsx` with 2 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed tabs, test, manifest, and documentation files.
+
+User effort is reduced because shared tabbed workspaces now expose the same root/trigger/icon audit marker pattern as the rest of the shared presentation system. User control is preserved because no tab label, tab state, click behavior, keyboard behavior, focus behavior, route, service call, analytics event, workflow behavior, or tab ownership was changed.
+
+## 311. Three-Hundred-Fourth Implementation Batch
+
+The three-hundred-fourth implementation batch focused on the authenticated shell layout marker contract:
+
+1. Added `data-ui` markers to the `ResponsiveLayout` root, skip link, main application content landmark, and page wrapper alongside the existing compatibility `data-slot` metadata.
+2. Preserved userless passthrough, skip-link target, named Application content `main` landmark, sidebar/header composition, resize-driven sidebar offsets, header sidebar toggle wiring, logout through the existing auth service, `/login` routing, route-owned workflows, service calls, and analytics behavior.
+3. Extended `ResponsiveLayout.test.tsx` assertions so root/skip-link/main/page marker coverage verifies compatibility slot metadata while keeping existing userless, skip-link, offset, header-toggle, and logout behavior checks.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so authenticated shell structure remains traceable for route audits.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/ResponsiveLayout.test.tsx` with 4 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed ResponsiveLayout, test, manifest, and documentation files.
+
+User effort is reduced because authenticated shell landmarks and page wrappers now expose the same root/subpart audit marker pattern as the rest of the shared presentation system. User control is preserved because no passthrough, skip-link, sidebar, header, logout, route, service call, analytics event, workflow behavior, or shell ownership was changed.
+
+## 312. Three-Hundred-Fifth Implementation Batch
+
+The three-hundred-fifth implementation batch focused on the shared card compatibility export contract:
+
+1. Clarified `AuraCard.tsx` as a compatibility barrel for legacy `AuraCard` and `AuraBadge` imports rather than a separate card implementation.
+2. Extended `GlassCard.test.tsx` coverage so legacy `AuraCard` imports are asserted to resolve to the shared card primitives and still expose the same card root/header/title/description/content/footer markers with compatibility slot metadata.
+3. Preserved shared `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, and `CardFooter` behavior, caller-owned roles, labels, content, actions, classes, route workflows, service calls, analytics, and existing import paths.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, historical frontend documentation, PLAN tracking, and this audit record so future UI work does not fork card primitives.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/GlassCard.test.tsx` with 3 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed card, test, manifest, and documentation files.
+
+User effort is reduced because legacy card imports now stay visibly aligned with the shared containment-safe card primitives instead of implying a duplicate card system. User control is preserved because no card content, role, label, action, route, service call, analytics event, workflow behavior, or import path was changed.
+
+## 313. Three-Hundred-Sixth Implementation Batch
+
+The three-hundred-sixth implementation batch focused on the shared design-system barrel contract:
+
+1. Reworked `components/shared/index.ts` into an explicit public export surface for canonical shared primitives and compatibility aliases.
+2. Added `index.test.tsx` coverage that asserts the barrel exports buttons, badges, cards, images, inputs, modals, legacy nav/status helpers, the theme provider, empty states, page headers, responsive layout, skeletons, tabs, toast provider/hook, and toggles from their source modules.
+3. Preserved existing direct component imports, route behavior, service calls, analytics, route-owned workflows, compatibility aliases, and rendered UI.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so future shared UI reuse has one documented entrypoint without introducing duplicate primitives.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/index.test.tsx` with 1 test.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed shared barrel, test, manifest, and documentation files.
+
+User effort is reduced because new shared UI work can discover the documented primitive set from one entrypoint instead of guessing across compatibility files. User control is preserved because no route import, rendered component behavior, route, service call, analytics event, workflow behavior, or compatibility alias was changed.
+
+## 314. Three-Hundred-Seventh Implementation Batch
+
+The three-hundred-seventh implementation batch focused on the shared typography barrel contract:
+
+1. Exported `DisplayLG`, `HeadlineMD`, `BodyMD`, and `LabelSM` through `components/shared/index.ts` so typography helpers are reachable from the documented shared design-system entrypoint.
+2. Extended `index.test.tsx` coverage so the shared barrel verifies typography helper exports alongside the canonical primitives and compatibility aliases.
+3. Preserved the existing typography helper implementations, direct typography imports, route behavior, service calls, analytics, route-owned workflows, compatibility aliases, and rendered UI.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so future UI work can reuse typography helpers through the same shared primitive entrypoint.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/index.test.tsx` with 1 test.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed shared barrel, test, manifest, and documentation files.
+
+User effort is reduced because typography helpers now follow the same documented shared entrypoint as other reusable primitives. User control is preserved because no text helper implementation, visible copy, route import, rendered component behavior, route, service call, analytics event, workflow behavior, or compatibility alias was changed.
+
+## 315. Three-Hundred-Eighth Implementation Batch
+
+The three-hundred-eighth implementation batch focused on the shared PageTemplate barrel contract:
+
+1. Exported `PageTemplate` through `components/shared/index.ts` so the compatibility page-shell helper is reachable from the documented shared design-system entrypoint.
+2. Extended `index.test.tsx` coverage so the shared barrel verifies the `PageTemplate` export alongside canonical primitives, typography helpers, and compatibility aliases.
+3. Preserved the existing `PageTemplate` implementation, direct page-template imports, shared `PageHeader` rendering, named content landmarks, class hooks, caller actions, route behavior, service calls, analytics, route-owned workflows, and rendered UI.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so future layout helper reuse follows the same shared primitive entrypoint.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/components/shared/index.test.tsx` with 1 test.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed shared barrel, test, manifest, and documentation files.
+
+User effort is reduced because the compatibility page shell is now discoverable from the same shared entrypoint as other reusable layout and presentation primitives. User control is preserved because no page-template implementation, header behavior, landmark naming, route import, rendered component behavior, route, service call, analytics event, workflow behavior, or compatibility alias was changed.
+
+## 316. Three-Hundred-Ninth Implementation Batch
+
+The three-hundred-ninth implementation batch focused on the user workflow guide's end-to-end automation examples:
+
+1. Added a new end-to-end examples section to `docs/USER_WORKFLOW_AUTOMATION_GUIDE.md` covering talent job-search digests, recruiter repeatable hiring, extension-assisted application preparation, and contributor documentation/UI review workflows.
+2. Each example now ties setup mode, owning surface, execution steps, streamlining or automation lever, validation path, and first recovery checks together so users can move from initial setup to confident execution without jumping between unrelated sections.
+3. Preserved all application behavior, route ownership, service calls, scheduler commands, extension local-only storage behavior, analytics behavior, validation commands, and feature placement because the batch changed documentation and manifest references only.
+4. Updated README documentation discovery, module manifest prose, machine-readable manifest notes, and PLAN tracking so the expanded guide scope remains visible and governed by existing lifecycle validators.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Documentation lifecycle validation passed: `npm run validate:docs-lifecycle`.
+- Module manifest validation passed: `npm run validate:module-manifest`.
+- UI design-system validation passed: `npm run validate:ui-design-system`.
+- IA ownership validation passed: `npm run test:ia --workspace talentsphere-web` with 2 files and 17 tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed guide, README, manifest, PLAN, and audit files.
+
+User effort is reduced because complete workflow recipes now show the first safe setup, the owner screen or script, the automation path, and recovery checks in one place. User control is preserved because no route, mutation, review step, scheduler commit requirement, extension storage boundary, validation command, service call, analytics event, or feature behavior was changed.
+
+## 317. Three-Hundred-Tenth Implementation Batch
+
+The three-hundred-tenth implementation batch focused on the AI Assistant prompt composer accessibility contract:
+
+1. Added a named `AI assistant prompt composer` form region around the existing AI prompt input and send button.
+2. Added hidden review-first helper text and attached it to the existing prompt input with `aria-describedby` so assistive technologies receive the same draft-only context already enforced by the workflow.
+3. Extended `AIAssistant.test.tsx` coverage to verify the named composer, labeled prompt input, and helper relationship alongside the existing prompt suggestion, conversation, review queue, provider-recovery, and decorative icon assertions.
+4. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so the AI composer remains governed as a prompt-entry surface, not a direct mutation workflow.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/ai/AIAssistant.test.tsx` with 2 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed AI Assistant, test, manifest, and documentation files.
+
+User effort is reduced because the AI prompt entry surface is now announced as a coherent composer with draft-only context instead of a standalone visual input row. User control is preserved because no input value handling, Enter key behavior, send button behavior, disabled state, chat response call, provider retry, review queue behavior, workflow handoff, route behavior, service call, analytics event, or destination mutation behavior was changed.
+
+## 318. Three-Hundred-Eleventh Implementation Batch
+
+The three-hundred-eleventh implementation batch focused on the Messaging composer accessibility contract:
+
+1. Added a named `Message composer` form region around the existing message text input, attachment toggle, and send button.
+2. Added hidden review-before-send helper text and attached it to the existing message text input with `aria-describedby` alongside the existing send-status live region.
+3. Added a stable `data-ui="messaging-composer-form"` marker for route and design-system audits.
+4. Extended `MessagingPage.test.tsx` coverage to verify the named composer, marker, message input containment, and helper relationship while preserving the existing conversation, thread, send/retry, upload, mark-read, and decorative icon assertions.
+5. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so Messages remains the single owner for direct-conversation composition.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/messaging/MessagingPage.test.tsx` with 7 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Messaging, test, manifest, and documentation files.
+
+User effort is reduced because message text, attachment toggling, and send actions are now announced as one coherent composer with review context. User control is preserved because no message text state, attachment toggle, suggested reply insertion, file upload, submit behavior, disabled state, send/retry/read workflow, route behavior, service call, analytics event, or feature ownership was changed.
+
+## 319. Three-Hundred-Twelfth Implementation Batch
+
+The three-hundred-twelfth implementation batch focused on the Jobs search/filter accessibility contract:
+
+1. Added a named `Jobs search` search surface around the existing active-tab search input.
+2. Added hidden helper text to explain that the search input updates the active Jobs tab while Explore filters only affect job discovery results.
+3. Added a named `Explore job filters` group with helper text for location, job type, and salary filters.
+4. Added stable `data-ui` markers for the Jobs search surface and Explore filter group to support route/design-system audits.
+5. Extended `JobsPage.test.tsx` coverage to verify the named search surface, helper relationship, named filter group, filter helper relationship, existing result-list semantics, metadata labels, and decorative icon treatment.
+6. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so Jobs remains the single owner for search, saved searches, hidden Explore preferences, applications, and recruiter postings.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/jobs/JobsPage.test.tsx` with 17 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed: `git diff --check` on the changed Jobs, test, manifest, and documentation files.
+
+User effort is reduced because the Jobs search and Explore-only filters are now announced as coherent, described surfaces rather than relying on visual placement. User control is preserved because no search state, filter state, tab behavior, saved-search behavior, hidden Explore preference, application flow, recruiter posting flow, route behavior, service call, analytics event, or dashboard ownership rule was changed.
+
+## 320. Three-Hundred-Thirteenth Implementation Batch
+
+The three-hundred-thirteenth implementation batch focused on the Candidates search/control accessibility contract:
+
+1. Added a named `Candidate search` search surface around the existing candidate search input.
+2. Added hidden helper text explaining that candidate search narrows the current application page by candidate name or applied job title.
+3. Added a named `Candidate review controls` group around the existing focus, sort, page-size, and pagination controls.
+4. Added hidden helper text explaining that those controls only change the visible candidate review queue.
+5. Added stable `data-ui` markers for the Candidate search surface and review controls group to support route/design-system audits.
+6. Extended `CandidatesPage.test.tsx` coverage to verify the named search surface, helper relationship, named review-control group, helper relationship, focus/sort/page-size containment, existing metric/list semantics, Candidate Details semantics, and decorative icon treatment.
+7. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so Candidates remains the single recruiter-owned workspace for application review.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/candidates/CandidatesPage.test.tsx` with 6 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed on the changed Candidates, test, manifest, and documentation files.
+
+User effort is reduced because Candidates search and display-only review controls are now announced as coherent, described surfaces rather than relying on visual placement. User control is preserved because no search state, cursor paging, review focus behavior, advisory sorting, page-size behavior, pagination behavior, private note workflow, scorecard workflow, interview-plan draft behavior, status update flow, bulk review flow, route behavior, service call, toast behavior, analytics event, or dashboard ownership rule was changed.
+
+## 321. Three-Hundred-Fourteenth Implementation Batch
+
+The three-hundred-fourteenth implementation batch focused on the Learning catalog search/control accessibility contract:
+
+1. Added a named `Learning catalog search` search surface around the existing course search input.
+2. Added hidden helper text explaining that course search narrows the visible catalog by title, description, category, or provider.
+3. Added a named `Learning catalog controls` group around the existing result count, page-size, and pagination controls.
+4. Added hidden helper text explaining that those controls only change the visible catalog view.
+5. Added stable `data-ui` markers for the Learning search surface and catalog controls group to support route/design-system audits.
+6. Extended `LMSPage.test.tsx` coverage to verify the named search surface, helper relationship, named catalog controls group, helper relationship, page-size/pagination containment, existing progressbar semantics, duration labels, and decorative icon treatment.
+7. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so Learning remains the single owner for course discovery, enrollment, curriculum review, and progress.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/lms/LMSPage.test.tsx` with 7 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed on the changed Learning, test, manifest, and documentation files.
+
+User effort is reduced because course search, result counts, page-size selection, and pagination are now announced as coherent, described catalog surfaces rather than relying on visual placement. User control is preserved because no Redux query state, cursor state, tab behavior, search behavior, page-size behavior, pagination behavior, AI suggestion review/apply/dismiss behavior, enrollment command, lesson-completion command, modal behavior, route behavior, toast behavior, analytics event, or dashboard ownership rule was changed.
+
+## 322. Three-Hundred-Fifteenth Implementation Batch
+
+The three-hundred-fifteenth implementation batch focused on the Networking view/search accessibility contract:
+
+1. Added a named `Network view controls` group around the existing Networking tabs, hidden-suggestion restore context, active-view search, and status copy.
+2. Added hidden helper text explaining that Network tabs, hidden suggestions, and search controls only change the visible relationship view.
+3. Added a named `Network search` search surface around the existing active-view people search input.
+4. Added hidden helper text explaining that search narrows the active Network view by person name, role, headline, location, or skill.
+5. Added stable `data-ui` markers for the Network view controls group and search surface to support route/design-system audits.
+6. Extended `NetworkingPage.test.tsx` coverage to verify the named view controls group, helper relationship, tab containment, named search surface, search helper relationship, existing card/list semantics, person-specific action names, and decorative icon treatment.
+7. Updated design-system, feature inventory, module manifest prose, machine-readable manifest note, UX checklist, PLAN tracking, and this audit record so Network remains the single owner for relationship discovery, requests, accepted connections, hidden suggestions, reminders, and profile preview.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/networking/NetworkingPage.test.tsx` with 7 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed on the changed Networking, test, manifest, and documentation files.
+
+User effort is reduced because Network tabs, counts, status, hidden-suggestion context, and active-view search are now announced as coherent, described relationship-view controls rather than relying on visual placement. User control is preserved because no Redux suggestion fetch behavior, search state, tab switching, hidden-suggestion preference behavior, connection-state loading, Connect/Accept/Decline/Withdraw behavior, reminder set/clear behavior, profile preview/full-profile behavior, route behavior, service call, toast behavior, analytics event, or dashboard ownership rule was changed.
+
+## 323. Three-Hundred-Sixteenth Implementation Batch
+
+The three-hundred-sixteenth implementation batch focused on the Challenges category filter accessibility contract:
+
+1. Added a named `Challenge category filters` group around the existing Challenges category buttons.
+2. Added hidden helper text explaining that category filters change only the visible challenge catalog and keep the solving workspace unchanged.
+3. Added a stable `data-ui="challenge-category-filters"` marker to support route, visual, and design-system audits.
+4. Extended `ChallengesPage.test.tsx` coverage to verify the named group, helper relationship, stable audit marker, and pressed-state category buttons while preserving the existing catalog/workspace semantic assertions.
+5. Updated the user workflow guide, design-system notes, feature inventory, UX checklist, module manifest prose, machine-readable manifest note, PLAN tracking, and this audit record so Challenges remains the single owner for assessment discovery, solving, sample checks, submissions, and retry history.
+
+Status: completed on 2026-06-30.
+
+Validation:
+
+- Focused unit validation passed: `npm run test:unit --workspace talentsphere-web -- --run src/pages/challenges/ChallengesPage.test.tsx` with 4 tests.
+- Route accessibility semantics validation passed: `npm run test:a11y --workspace talentsphere-web` with 41 Chromium tests.
+- Frontend production build passed: `npm run build --workspace talentsphere-web`.
+- Documentation and architecture guardrails passed: `npm run validate:module-manifest`, `npm run validate:docs-lifecycle`, `npm run validate:ui-design-system`, and `npm run test:ia --workspace talentsphere-web`.
+- Diff hygiene passed on the changed Challenges, test, guide, manifest, and documentation files.
+
+User effort is reduced because Challenge category filters are announced as a coherent, described catalog-only control instead of relying only on visual placement. User control is preserved because no Redux challenge fetch behavior, category filtering result logic, workspace open/close behavior, language selection, starter-code reset review, local sample-check behavior, hidden-sample messaging, submission command, retry-history refresh behavior, route behavior, toast behavior, analytics event, or dashboard ownership rule was changed.

@@ -4,6 +4,14 @@ import { Send, Bot, User, Sparkles, Loader2, Trash2, CheckCircle2, X, ClipboardL
 import { PageHeader } from '../../components/shared/PageHeader';
 import { aiService } from '../../services/aiService';
 import type { AIChatMessageRecord, AIReviewStatus } from '../../services/aiService';
+import {
+  aiHeuristicProvenance,
+  aiUnavailableProvenance,
+  getAIProvenanceSourceStatus,
+  normalizeAIProvenance,
+  type AIProvenanceInput,
+  type AIProvenanceMode,
+} from '../../lib/aiProvenance';
 import { buildAISuggestionReviewQueue } from '../../lib/aiSuggestionReviewQueue';
 import type { AISuggestionReviewQueueItem } from '../../lib/aiSuggestionReviewQueue';
 import { automationSuggestionAudit } from '../../lib/automationSuggestionAudit';
@@ -13,6 +21,7 @@ import { recordAIAssistantWorkflowAnalytics } from '../../lib/aiAssistantWorkflo
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { useAppSelector } from '../../store/hooks';
 import { useToast } from '../../components/shared/Toast';
 
@@ -23,6 +32,7 @@ interface Message extends AIChatMessageRecord {
   createdAt?: string;
   sourceLabel?: string;
   sourceDetail?: string;
+  provenanceMode?: AIProvenanceMode;
   controlNote?: string;
   reviewStatus?: AIReviewStatus;
   reviewedAt?: string;
@@ -41,6 +51,7 @@ interface PromptSuggestion {
 
 type ReviewedAIStatus = Exclude<AIReviewStatus, 'draft'>;
 type ChatPersistenceState = 'local' | 'syncing' | 'account';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 const createMessageId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -56,16 +67,21 @@ const createWelcomeMessage = (): Message => ({
   createdAt: new Date().toISOString(),
 });
 
-const createAssistantDraftMessage = (content: string, sourceLabel = 'TalentSphere AI assistant'): Message => ({
-  id: createMessageId(),
-  role: 'assistant',
-  content,
-  createdAt: new Date().toISOString(),
-  sourceLabel,
-  sourceDetail: 'Generated from your prompt through the chat-assistant service.',
-  controlNote: 'This is guidance only. It does not change your profile, resume, applications, or settings.',
-  reviewStatus: 'draft',
-});
+const createAssistantDraftMessage = (content: string, provenanceInput: AIProvenanceInput = aiHeuristicProvenance): Message => {
+  const provenance = normalizeAIProvenance(provenanceInput);
+
+  return {
+    id: createMessageId(),
+    role: 'assistant',
+    content,
+    createdAt: new Date().toISOString(),
+    sourceLabel: provenance.sourceLabel,
+    sourceDetail: provenance.sourceDetail,
+    provenanceMode: provenance.provenanceMode,
+    controlNote: provenance.controlNote,
+    reviewStatus: 'draft',
+  };
+};
 
 const getStoredChat = (storageKey: string): StoredChat | null => {
   if (typeof window === 'undefined') return null;
@@ -112,6 +128,22 @@ const formatReviewedTime = (value?: string) => {
   if (!value) return null;
   return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
+
+const getAIMessageLabel = (message: Message, index: number) => {
+  if (message.role === 'user') return `You message ${index + 1}.`;
+  if (message.id === 'welcome') return `AI assistant message ${index + 1}. Welcome message.`;
+
+  const status = message.reviewStatus === 'saved'
+    ? 'Saved recommendation'
+    : message.reviewStatus === 'dismissed'
+      ? 'Dismissed recommendation'
+      : 'Draft recommendation';
+  return `AI assistant message ${index + 1}. ${status}.`;
+};
+
+const getAIReviewQueueItemLabel = (item: AISuggestionReviewQueueItem) => (
+  `Draft AI recommendation for ${item.label}. Source: ${item.sourceLabel}.`
+);
 
 const AIAssistant: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -274,7 +306,7 @@ const AIAssistant: React.FC = () => {
       metadata: {
         sessionId,
         reviewStatus: message.reviewStatus || 'draft',
-        sourceLabel: message.sourceLabel || 'TalentSphere AI assistant',
+        sourceLabel: message.sourceLabel || aiHeuristicProvenance.sourceLabel,
         ...metadata,
       },
     });
@@ -340,7 +372,10 @@ const AIAssistant: React.FC = () => {
 
     try {
       const response = await aiService.getChatResponse(messageText);
-      const aiMsg = createAssistantDraftMessage(response.message || "I'm sorry, I couldn't process that request.");
+      const aiMsg = createAssistantDraftMessage(
+        response.message || "I'm sorry, I couldn't process that request.",
+        response
+      );
       setMessages(prev => [...prev, aiMsg]);
       void syncAutomationSuggestion(aiMsg, messageText);
       trackAISuggestionEvent('automation_suggestion_generated', aiMsg, {
@@ -351,7 +386,7 @@ const AIAssistant: React.FC = () => {
       console.error("AI chat error:", error);
       const errorMsg = createAssistantDraftMessage(
         "Sorry, I'm having trouble connecting to the AI service right now.",
-        'AI service connection'
+        aiUnavailableProvenance
       );
       setMessages(prev => [...prev, errorMsg]);
       void syncAutomationSuggestion(errorMsg, messageText);
@@ -448,7 +483,8 @@ const AIAssistant: React.FC = () => {
           sessionId,
           bulk: isBulkReview,
           reviewedCount: messagesToReview.length,
-          sourceLabel: messageToReview.sourceLabel || 'TalentSphere AI assistant',
+          sourceLabel: messageToReview.sourceLabel || aiHeuristicProvenance.sourceLabel,
+          provenanceMode: messageToReview.provenanceMode || 'heuristic',
         },
       });
       trackAISuggestionEvent(
@@ -569,9 +605,14 @@ const AIAssistant: React.FC = () => {
       <PageHeader
         title="AI Assistant"
         description="Get personalized career guidance powered by AI."
-        badge={<Badge variant="default"><Sparkles size={12} className="mr-1" /> Beta</Badge>}
+        badge={<Badge variant="default"><Sparkles {...decorativeIconProps} size={12} className="mr-1" /> Beta</Badge>}
         actions={
           <>
+            <SourceStatusBadge
+              status={getAIProvenanceSourceStatus(aiHeuristicProvenance.provenanceMode)}
+              label={aiHeuristicProvenance.sourceLabel}
+              description={aiHeuristicProvenance.sourceDetail}
+            />
             <Badge
               variant="outline"
               role="status"
@@ -584,7 +625,7 @@ const AIAssistant: React.FC = () => {
               </span>
             </Badge>
             <Button variant="outline" size="sm" onClick={openClearChatReview} disabled={isTyping || messages.length <= 1}>
-              <Trash2 size={14} />
+              <Trash2 {...decorativeIconProps} size={14} />
               Clear
             </Button>
           </>
@@ -611,7 +652,7 @@ const AIAssistant: React.FC = () => {
                 Keep Chat
               </Button>
               <Button type="button" variant="destructive" size="sm" onClick={confirmClearChat}>
-                <Trash2 size={14} />
+                <Trash2 {...decorativeIconProps} size={14} />
                 Clear Chat
               </Button>
             </div>
@@ -626,7 +667,7 @@ const AIAssistant: React.FC = () => {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <h2 id="ai-review-queue-title" className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-              <ClipboardList size={16} className="text-accent" />
+              <ClipboardList {...decorativeIconProps} size={16} className="text-accent" />
               AI Review Queue
             </h2>
             <p role="status" aria-live="polite" className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -649,7 +690,7 @@ const AIAssistant: React.FC = () => {
                   size="sm"
                   onClick={() => handleReviewStatus(suggestionReviewQueue.draftItems.map(item => item.id), 'saved')}
                 >
-                  <CheckCircle2 size={13} />
+                  <CheckCircle2 {...decorativeIconProps} size={13} />
                   Save all
                 </Button>
                 <Button
@@ -658,7 +699,7 @@ const AIAssistant: React.FC = () => {
                   size="sm"
                   onClick={() => handleReviewStatus(suggestionReviewQueue.draftItems.map(item => item.id), 'dismissed')}
                 >
-                  <X size={13} />
+                  <X {...decorativeIconProps} size={13} />
                   Dismiss all
                 </Button>
               </>
@@ -667,9 +708,14 @@ const AIAssistant: React.FC = () => {
         </div>
 
         {suggestionReviewQueue.draftCount > 0 ? (
-          <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2" role="list" aria-label="AI draft recommendations">
             {suggestionReviewQueue.draftItems.map(item => (
-              <div key={item.id} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3">
+              <div
+                key={item.id}
+                role="listitem"
+                aria-label={getAIReviewQueueItemLabel(item)}
+                className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] p-3"
+              >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-accent">{item.label}</p>
@@ -689,7 +735,7 @@ const AIAssistant: React.FC = () => {
                     size="sm"
                     onClick={() => handleReviewStatus(item.id, 'saved')}
                   >
-                    <CheckCircle2 size={13} />
+                    <CheckCircle2 {...decorativeIconProps} size={13} />
                     Save
                   </Button>
                   <Button
@@ -698,7 +744,7 @@ const AIAssistant: React.FC = () => {
                     size="sm"
                     onClick={() => handleReviewStatus(item.id, 'dismissed')}
                   >
-                    <X size={13} />
+                    <X {...decorativeIconProps} size={13} />
                     Dismiss
                   </Button>
                   {item.path !== '/ai' && (
@@ -709,7 +755,7 @@ const AIAssistant: React.FC = () => {
                       onClick={() => openSuggestionWorkflowHandoff(item)}
                       aria-label={`${item.actionLabel} for this AI recommendation`}
                     >
-                      <ArrowRight size={13} />
+                      <ArrowRight {...decorativeIconProps} size={13} />
                       {item.actionLabel}
                     </Button>
                   )}
@@ -725,13 +771,27 @@ const AIAssistant: React.FC = () => {
       </section>
 
       <Card className="min-h-0 flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex min-w-0 gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+        <div
+          className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+          role="log"
+          aria-label="AI conversation"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
+          {messages.map((msg, index) => {
+            const messageProvenance = normalizeAIProvenance(msg);
+
+            return (
+              <div
+                key={msg.id}
+                role="article"
+                aria-label={getAIMessageLabel(msg, index)}
+                className={`flex min-w-0 gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+              >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                 msg.role === 'assistant' ? 'bg-accent/10 text-accent' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
               }`}>
-                {msg.role === 'assistant' ? <Bot size={16} /> : <User size={16} />}
+                {msg.role === 'assistant' ? <Bot {...decorativeIconProps} size={16} /> : <User {...decorativeIconProps} size={16} />}
               </div>
               <div className={`max-w-[85%] break-words rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[70%] ${
                 msg.role === 'user'
@@ -743,16 +803,21 @@ const AIAssistant: React.FC = () => {
                   <div className="mt-3 space-y-2 border-t border-[var(--border-default)] pt-2">
                     <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-muted)]">
                       <span className="inline-flex items-center gap-1">
-                        <CheckCircle2 size={11} />
+                        <CheckCircle2 {...decorativeIconProps} size={11} />
                         Draft response
                       </span>
-                      <span>Source: {msg.sourceLabel || 'TalentSphere AI assistant'}</span>
+                      <SourceStatusBadge
+                        status={getAIProvenanceSourceStatus(messageProvenance.provenanceMode)}
+                        label={messageProvenance.sourceLabel}
+                        description={messageProvenance.sourceDetail}
+                        className="max-w-full"
+                      />
                     </div>
                     <p className="text-[10px] leading-relaxed text-[var(--text-muted)]">
-                      {msg.sourceDetail || 'Generated from your prompt through the chat-assistant service.'}
+                      {messageProvenance.sourceDetail}
                     </p>
                     <p className="text-[10px] leading-relaxed text-[var(--text-muted)]">
-                      {msg.controlNote || 'This is guidance only. It does not change your profile, resume, applications, or settings.'}
+                      {messageProvenance.controlNote}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
@@ -762,7 +827,7 @@ const AIAssistant: React.FC = () => {
                         onClick={() => handleReviewStatus(msg.id, 'saved')}
                         disabled={msg.reviewStatus === 'saved'}
                       >
-                        <CheckCircle2 size={13} />
+                        <CheckCircle2 {...decorativeIconProps} size={13} />
                         {msg.reviewStatus === 'saved' ? 'Saved' : 'Save'}
                       </Button>
                       <Button
@@ -772,7 +837,7 @@ const AIAssistant: React.FC = () => {
                         onClick={() => handleReviewStatus(msg.id, 'dismissed')}
                         disabled={msg.reviewStatus === 'dismissed'}
                       >
-                        <X size={13} />
+                        <X {...decorativeIconProps} size={13} />
                         {msg.reviewStatus === 'dismissed' ? 'Dismissed' : 'Dismiss'}
                       </Button>
                       {msg.reviewStatus && msg.reviewStatus !== 'draft' && (
@@ -784,15 +849,16 @@ const AIAssistant: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
           {isTyping && (
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-accent/10 text-accent flex items-center justify-center">
-                <Bot size={16} />
+                <Bot {...decorativeIconProps} size={16} />
               </div>
               <div className="rounded-lg rounded-tl-sm border border-[var(--border-default)] bg-[var(--bg-primary)] px-4 py-3">
-                <Loader2 size={16} className="animate-spin text-[var(--text-muted)]" />
+                <Loader2 {...decorativeIconProps} size={16} className="animate-spin text-[var(--text-muted)]" />
               </div>
             </div>
           )}
@@ -801,15 +867,16 @@ const AIAssistant: React.FC = () => {
 
         {messages.length <= 1 && (
           <div className="px-4 pb-3 space-y-3">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="list" aria-label="Prompt suggestions">
               {suggestions.map(s => (
-                <button
-                  key={s.label}
-                  onClick={() => handleSuggestionClick(s)}
-                  className="rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
-                >
-                  {s.label}
-                </button>
+                <div key={s.label} role="listitem" aria-label={s.label}>
+                  <button
+                    onClick={() => handleSuggestionClick(s)}
+                    className="rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
+                  >
+                    {s.label}
+                  </button>
+                </div>
               ))}
             </div>
             {pendingSuggestion && (
@@ -830,12 +897,12 @@ const AIAssistant: React.FC = () => {
                       setInput('');
                     }}
                   >
-                    <X size={14} />
+                    <X {...decorativeIconProps} size={14} />
                   </Button>
                 </div>
                 <div className="mt-3 flex justify-end">
                   <Button size="sm" onClick={() => handleSend(pendingSuggestion.prompt)} disabled={isTyping}>
-                    <Send size={13} />
+                    <Send {...decorativeIconProps} size={13} />
                     Send to AI
                   </Button>
                 </div>
@@ -845,12 +912,21 @@ const AIAssistant: React.FC = () => {
         )}
 
         <div className="p-4 border-t border-[var(--border-default)]">
-          <div className="flex gap-2">
+          <div
+            className="flex gap-2"
+            role="form"
+            aria-label="AI assistant prompt composer"
+            data-ui="ai-assistant-prompt-composer"
+          >
             <label htmlFor="ai-assistant-input" className="sr-only">Ask AI assistant</label>
+            <p id="ai-assistant-input-help" className="sr-only">
+              AI responses are draft guidance only. Review suggestions before applying them in destination workflows.
+            </p>
             <input
               id="ai-assistant-input"
               type="text"
               value={input}
+              aria-describedby="ai-assistant-input-help"
               onChange={(e) => {
                 setIsClearChatReviewOpen(false);
                 setInput(e.target.value);
@@ -860,7 +936,7 @@ const AIAssistant: React.FC = () => {
               className="flex-1 h-10 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
             />
             <Button size="icon" aria-label="Send message" onClick={() => handleSend()} disabled={!input.trim() || isTyping}>
-              <Send size={16} />
+              <Send {...decorativeIconProps} size={16} />
             </Button>
           </div>
         </div>

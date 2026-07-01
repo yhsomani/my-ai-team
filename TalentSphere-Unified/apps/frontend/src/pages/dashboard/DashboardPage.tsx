@@ -50,6 +50,8 @@ const defaultRecruiterOnboarding: RecruiterOnboardingSignals = {
   hasRecentApplications: false
 };
 
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
 type OnboardingTask = {
   id: string;
   label: string;
@@ -82,6 +84,16 @@ const formatDashboardUpdatedAt = (date: string | null) => {
 };
 
 const getDashboardMetricKey = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const getMetricSummaryLabel = (metric: DashboardMetric) => `${metric.label} summary: ${String(metric.value)}. ${metric.action}`;
+const getDashboardJobSummaryLabel = (job: Job) => (
+  `Recent opportunity ${job.title} at ${job.companyName || 'Company'}, ${job.location || 'Location unavailable'}, ${job.matchScore || 85}% match`
+);
+const getDashboardChallengeSummaryLabel = (challenge: Record<string, any>) => (
+  `Active challenge ${challenge.title || 'Untitled challenge'}, ${challenge.participantCount || 0} participants, ${challenge.difficulty || 'Medium'} difficulty`
+);
+const getRecentApplicationSummaryLabel = (application: Record<string, any>) => (
+  `Recent application ${application.user?.fullName || 'Anonymous'}, applied for ${application.job?.title || 'role unavailable'}, ${application.status || 'status unavailable'}`
+);
 
 interface DashboardSectionHeaderProps {
   title: string;
@@ -136,17 +148,18 @@ const QuickActionPanel: React.FC<QuickActionPanelProps> = ({ title, description,
       <h3 className="text-sm font-semibold">{title}</h3>
       <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
     </div>
-    <div className="space-y-2">
+    <div className="space-y-2" role="list" aria-label={`${title} actions`}>
       {actions.map((action) => (
-        <Button
-          key={action.entryPoint}
-          variant="outline"
-          size="sm"
-          className="w-full justify-start text-left"
-          onClick={() => onOpen(action)}
-        >
-          {action.label}
-        </Button>
+        <div key={action.entryPoint} role="listitem" aria-label={action.label}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start text-left"
+            onClick={() => onOpen(action)}
+          >
+            {action.label}
+          </Button>
+        </div>
       ))}
     </div>
   </Card>
@@ -177,7 +190,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
         {nextTask && (
           <Button size="sm" onClick={() => onNavigate(nextTask, 'checklist_primary')}>
             {nextTask.action}
-            <ArrowUpRight size={13} className="ml-1" />
+            <ArrowUpRight {...decorativeIconProps} size={13} className="ml-1" />
           </Button>
         )}
       </div>
@@ -191,25 +204,26 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
       >
         <div className="h-full rounded-md bg-accent transition-all" style={{ width: `${progress}%` }} />
       </div>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2" role="list" aria-label={`${title} tasks`}>
         {tasks.map(task => (
-          <button
-            key={task.id}
-            type="button"
-            onClick={() => onNavigate(task, 'checklist_item')}
-            className="interactive-row flex min-h-20 items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-left focus:outline-none focus:ring-2 focus:ring-accent/20"
-            aria-label={`${task.label}. ${task.complete ? 'Completed' : 'Not completed'}. ${task.action}`}
-          >
-            {task.complete ? (
-              <CheckCircle size={16} className="mt-0.5 shrink-0 text-success" />
-            ) : (
-              <Circle size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
-            )}
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-[var(--text-primary)]">{task.label}</span>
-              <span className="mt-1 block text-xs text-[var(--text-muted)]">{task.description}</span>
-            </span>
-          </button>
+          <div key={task.id} role="listitem" aria-label={`${task.label}. ${task.complete ? 'Completed' : 'Not completed'}. ${task.action}`}>
+            <button
+              type="button"
+              onClick={() => onNavigate(task, 'checklist_item')}
+              className="interactive-row flex min-h-20 w-full items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-left focus:outline-none focus:ring-2 focus:ring-accent/20"
+              aria-label={`${task.label}. ${task.complete ? 'Completed' : 'Not completed'}. ${task.action}`}
+            >
+              {task.complete ? (
+                <CheckCircle {...decorativeIconProps} size={16} className="mt-0.5 shrink-0 text-success" />
+              ) : (
+                <Circle {...decorativeIconProps} size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+              )}
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[var(--text-primary)]">{task.label}</span>
+                <span className="mt-1 block text-xs text-[var(--text-muted)]">{task.description}</span>
+              </span>
+            </button>
+          </div>
         ))}
       </div>
     </Card>
@@ -299,7 +313,7 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
     >
       <div className="flex min-w-0 gap-3">
         <span className={`mt-0.5 ${isHealthy ? 'text-success' : status.source === 'partial' ? 'text-warning' : 'text-destructive'}`}>
-          {isHealthy ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+          {isHealthy ? <CheckCircle {...decorativeIconProps} size={16} /> : <AlertTriangle {...decorativeIconProps} size={16} />}
         </span>
         <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--text-primary)]">{status.message}</p>
@@ -322,7 +336,7 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
                       className="inline-flex w-fit items-center gap-1 rounded-md border border-[var(--border-default)] px-2 py-1 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-primary)] disabled:pointer-events-none disabled:opacity-50"
                       aria-label={issue.retryLabel}
                     >
-                      <RefreshCw size={11} className={isRefreshing ? 'animate-spin' : ''} />
+                      <RefreshCw {...decorativeIconProps} size={11} className={isRefreshing ? 'animate-spin' : ''} />
                       Retry
                     </button>
                   )}
@@ -340,7 +354,7 @@ const DashboardStatusStrip: React.FC<DashboardStatusStripProps> = ({ status, isR
             onClick={() => onRetry()}
             isLoading={isRefreshing}
           >
-            {!isRefreshing && <RefreshCw size={13} className="mr-1" />}
+            {!isRefreshing && <RefreshCw {...decorativeIconProps} size={13} className="mr-1" />}
             {status.issues.length > 0 ? 'Retry affected' : 'Refresh'}
           </Button>
         )}
@@ -685,10 +699,10 @@ const DashboardPage: React.FC = () => {
 
   if (isRecruiter) {
     const statCards: DashboardMetric[] = [
-      { label: 'Active Jobs', value: recruiterStats.activeJobs, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs', action: 'Open recruiter jobs' },
-      { label: 'Total Applicants', value: recruiterStats.totalApplications, icon: <Users size={16} />, color: 'text-blue-500', route: '/candidates', action: 'Review all applicants' },
-      { label: 'New Today', value: recruiterStats.newApplications, icon: <Clock size={16} />, color: 'text-amber-500', route: '/candidates', action: 'Review new applications' },
-      { label: 'Offers', value: recruiterStats.hiredCount, icon: <CheckCircle size={16} />, color: 'text-success', route: '/candidates', action: 'Review offer-stage candidates' },
+      { label: 'Active Jobs', value: recruiterStats.activeJobs, icon: <Briefcase {...decorativeIconProps} size={16} />, color: 'text-accent', route: '/jobs', action: 'Open recruiter jobs' },
+      { label: 'Total Applicants', value: recruiterStats.totalApplications, icon: <Users {...decorativeIconProps} size={16} />, color: 'text-blue-500', route: '/candidates', action: 'Review all applicants' },
+      { label: 'New Today', value: recruiterStats.newApplications, icon: <Clock {...decorativeIconProps} size={16} />, color: 'text-amber-500', route: '/candidates', action: 'Review new applications' },
+      { label: 'Offers', value: recruiterStats.hiredCount, icon: <CheckCircle {...decorativeIconProps} size={16} />, color: 'text-success', route: '/candidates', action: 'Review offer-stage candidates' },
     ];
     const quickActions: DashboardQuickAction[] = [
       { label: 'Create new job listing', route: '/jobs/post', entryPoint: 'quick_action_create_job' },
@@ -708,7 +722,7 @@ const DashboardPage: React.FC = () => {
                 entryPoint: 'header_post_job',
               })}
             >
-              Post a Job <Plus size={14} className="ml-1" />
+              Post a Job <Plus {...decorativeIconProps} size={14} className="ml-1" />
             </Button>
           }
         />
@@ -722,14 +736,15 @@ const DashboardPage: React.FC = () => {
           onNavigate={(task, entryPoint) => handleOnboardingNavigate(task, entryPoint, recruiterOnboardingTasks)}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Recruiter summary metrics">
           {statCards.map((stat) => (
-            <DashboardMetricCard
-              key={stat.label}
-              metric={stat}
-              entryPoint="recruiter_stat_card"
-              onOpen={handleDashboardMetricOpen}
-            />
+            <div key={stat.label} role="listitem" aria-label={getMetricSummaryLabel(stat)}>
+              <DashboardMetricCard
+                metric={stat}
+                entryPoint="recruiter_stat_card"
+                onOpen={handleDashboardMetricOpen}
+              />
+            </div>
           ))}
         </div>
 
@@ -751,12 +766,17 @@ const DashboardPage: React.FC = () => {
                 </Button>
               )}
             />
-            <div className="divide-y divide-[var(--border-default)]">
+            <div className="divide-y divide-[var(--border-default)]" role="list" aria-label="Recent applications">
               {recentApplications.length > 0 ? recentApplications.slice(0, 5).map((app: Record<string, any>, i: number) => (
-                <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+                <div
+                  key={i}
+                  className="interactive-row flex items-center justify-between gap-4 p-4"
+                  role="listitem"
+                  aria-label={getRecentApplicationSummaryLabel(app)}
+                >
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                      <Users size={16} />
+                      <Users {...decorativeIconProps} size={16} />
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{app.user?.fullName || 'Anonymous'}</p>
@@ -796,10 +816,10 @@ const DashboardPage: React.FC = () => {
 
   // Standard User Dashboard
   const userStatCards: DashboardMetric[] = [
-    { label: 'Applications', value: stats.applications, icon: <Briefcase size={16} />, color: 'text-accent', route: '/jobs?tab=applied', action: 'View applications' },
-    { label: 'Messages', value: stats.messages, icon: <MessageSquare size={16} />, color: 'text-blue-500', route: '/messaging', action: 'Open messages' },
-    { label: 'XP Earned', value: stats.xp.toLocaleString(), icon: <TrendingUp size={16} />, color: 'text-success', route: '/challenges', action: 'Earn more XP' },
-    { label: 'Level', value: stats.level, icon: <Award size={16} />, color: 'text-amber-500', route: '/profile', action: 'View profile progress' },
+    { label: 'Applications', value: stats.applications, icon: <Briefcase {...decorativeIconProps} size={16} />, color: 'text-accent', route: '/jobs?tab=applied', action: 'View applications' },
+    { label: 'Messages', value: stats.messages, icon: <MessageSquare {...decorativeIconProps} size={16} />, color: 'text-blue-500', route: '/messaging', action: 'Open messages' },
+    { label: 'XP Earned', value: stats.xp.toLocaleString(), icon: <TrendingUp {...decorativeIconProps} size={16} />, color: 'text-success', route: '/challenges', action: 'Earn more XP' },
+    { label: 'Level', value: stats.level, icon: <Award {...decorativeIconProps} size={16} />, color: 'text-amber-500', route: '/profile', action: 'View profile progress' },
   ];
   const quickActions: DashboardQuickAction[] = [
     { label: 'Complete your profile', route: '/profile', entryPoint: 'quick_action_complete_profile' },
@@ -819,7 +839,7 @@ const DashboardPage: React.FC = () => {
               entryPoint: 'header_browse_jobs',
             })}
           >
-            Browse Jobs <ArrowUpRight size={14} className="ml-1" />
+            Browse Jobs <ArrowUpRight {...decorativeIconProps} size={14} className="ml-1" />
           </Button>
         }
       />
@@ -833,14 +853,15 @@ const DashboardPage: React.FC = () => {
         onNavigate={(task, entryPoint) => handleOnboardingNavigate(task, entryPoint, talentOnboardingTasks)}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Talent summary metrics">
         {userStatCards.map((stat) => (
-          <DashboardMetricCard
-            key={stat.label}
-            metric={stat}
-            entryPoint="talent_stat_card"
-            onOpen={handleDashboardMetricOpen}
-          />
+          <div key={stat.label} role="listitem" aria-label={getMetricSummaryLabel(stat)}>
+            <DashboardMetricCard
+              metric={stat}
+              entryPoint="talent_stat_card"
+              onOpen={handleDashboardMetricOpen}
+            />
+          </div>
         ))}
       </div>
 
@@ -862,12 +883,17 @@ const DashboardPage: React.FC = () => {
               </Button>
             )}
           />
-          <div className="divide-y divide-[var(--border-default)]">
+          <div className="divide-y divide-[var(--border-default)]" role="list" aria-label="Recent opportunities">
             {jobs.length > 0 ? jobs.slice(0, 5).map((job: Job, i: number) => (
-              <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+              <div
+                key={i}
+                className="interactive-row flex items-center justify-between gap-4 p-4"
+                role="listitem"
+                aria-label={getDashboardJobSummaryLabel(job)}
+              >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                    <Briefcase size={16} />
+                    <Briefcase {...decorativeIconProps} size={16} />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{job.title}</p>
@@ -907,9 +933,14 @@ const DashboardPage: React.FC = () => {
               title="Active Challenges"
               description="Current challenge summaries from the challenges workflow."
             />
-            <div className="divide-y divide-[var(--border-default)]">
+            <div className="divide-y divide-[var(--border-default)]" role="list" aria-label="Active challenge summaries">
               {challenges.length > 0 ? challenges.slice(0, 3).map((c: Record<string, any>, i: number) => (
-                <div key={i} className="interactive-row flex items-center justify-between gap-4 p-4">
+                <div
+                  key={i}
+                  className="interactive-row flex items-center justify-between gap-4 p-4"
+                  role="listitem"
+                  aria-label={getDashboardChallengeSummaryLabel(c)}
+                >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{c.title}</p>
                     <p className="text-xs text-[var(--text-muted)]">{c.participantCount || 0} participants</p>

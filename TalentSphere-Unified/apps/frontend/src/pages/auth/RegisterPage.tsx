@@ -15,6 +15,11 @@ import {
 import { recordOnboardingAnalytics } from '../../lib/onboardingAnalytics';
 import { getSafeRegistrationErrorMessage } from './authErrorCopy';
 
+const decorativeIconProps = {
+    'aria-hidden': true,
+    focusable: 'false' as const,
+};
+
 const RegisterPage: React.FC = () => {
     const [searchParams] = useSearchParams();
     const initialUserType = getRegistrationAccountTypeFromRoleParam(searchParams.get('role'));
@@ -114,9 +119,10 @@ const RegisterPage: React.FC = () => {
                 onSubmit={handleRegister}
                 className="space-y-4"
                 data-testid="register-form"
+                aria-label="Account registration"
                 aria-describedby={error ? 'registration-error' : undefined}
             >
-                <fieldset className="space-y-2">
+                <fieldset className="space-y-2" aria-describedby="registration-next-step">
                     <legend className="text-sm font-medium text-[var(--text-primary)]">Account Type</legend>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <button
@@ -128,10 +134,11 @@ const RegisterPage: React.FC = () => {
                                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                             }`}
                             aria-pressed={userType === 'TALENT'}
+                            aria-controls="registration-next-step"
                             aria-describedby="talent-account-type-description"
                         >
                             <span className="flex items-center gap-2 text-sm font-medium">
-                                <User size={16} /> Talent
+                                <User {...decorativeIconProps} size={16} /> Talent
                             </span>
                             <span id="talent-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
                                 Browse jobs, build a profile, learn skills, solve challenges, and apply.
@@ -146,10 +153,11 @@ const RegisterPage: React.FC = () => {
                                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                             }`}
                             aria-pressed={userType === 'RECRUITER'}
+                            aria-controls="registration-next-step"
                             aria-describedby="recruiter-account-type-description"
                         >
                             <span className="flex items-center gap-2 text-sm font-medium">
-                                <Briefcase size={16} /> Recruiter
+                                <Briefcase {...decorativeIconProps} size={16} /> Recruiter
                             </span>
                             <span id="recruiter-account-type-description" className="text-xs leading-relaxed text-[var(--text-muted)]">
                                 Post jobs, review candidates, manage applications, and coordinate hiring.
@@ -158,14 +166,19 @@ const RegisterPage: React.FC = () => {
                     </div>
                 </fieldset>
 
-                <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2">
+                <div
+                    id="registration-next-step"
+                    role="status"
+                    aria-label="Registration next step"
+                    className="rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-3 py-2"
+                >
                     <p className="text-sm font-medium text-[var(--text-primary)]">{nextStep.title}</p>
                     <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{nextStep.description}</p>
                 </div>
 
                 <Input
                     label="Full Name"
-                    icon={<User size={16} />}
+                    icon={<User {...decorativeIconProps} size={16} />}
                     type="text"
                     required
                     value={fullName}
@@ -176,7 +189,7 @@ const RegisterPage: React.FC = () => {
 
                 <Input
                     label="Email"
-                    icon={<Mail size={16} />}
+                    icon={<Mail {...decorativeIconProps} size={16} />}
                     type="email"
                     required
                     value={email}
@@ -187,7 +200,7 @@ const RegisterPage: React.FC = () => {
 
                 <Input
                     label="Password"
-                    icon={<Lock size={16} />}
+                    icon={<Lock {...decorativeIconProps} size={16} />}
                     type="password"
                     required
                     value={password}
@@ -203,7 +216,7 @@ const RegisterPage: React.FC = () => {
                     isLoading={loading}
                 >
                     Create Account
-                    {!loading && <ArrowRight size={16} className="ml-1.5" />}
+                    {!loading && <ArrowRight {...decorativeIconProps} size={16} className="ml-1.5" />}
                 </Button>
             </form>
         </AuthShell>

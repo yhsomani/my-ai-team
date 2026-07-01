@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../components/shared/Toast';
@@ -176,7 +176,12 @@ describe('MessagingPage', () => {
     });
 
     expect(screen.getAllByText(/conversation data did not respond/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('button', { name: 'Retry conversations' }).length).toBeGreaterThan(0);
+    const retryButtons = screen.getAllByRole('button', { name: 'Retry conversations' });
+    expect(retryButtons.length).toBeGreaterThan(0);
+    retryButtons.forEach((button) => {
+      expect(button.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+      expect(button.querySelector('svg')?.getAttribute('focusable')).toBe('false');
+    });
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/PostgREST messages query failed/i)).toBeNull();
   });
@@ -239,6 +244,60 @@ describe('MessagingPage', () => {
     });
   });
 
+  it('exposes conversation rows and thread actions with descriptive accessible names', async () => {
+    vi.mocked(messagingService.getConversationsPage).mockResolvedValue(conversationPage);
+    vi.mocked(messagingService.getMessagesPage).mockResolvedValue(messagePage);
+
+    renderMessagingPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('list', { name: 'Conversations' }).length).toBeGreaterThan(0);
+    });
+
+    const sourceStatus = screen.getByRole('group', { name: 'Messaging source status' });
+    expect(within(sourceStatus).getByText('Account messages').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('account');
+    expect(within(sourceStatus).getByText('Calls unavailable').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('unavailable');
+
+    const conversationButtons = screen.getAllByRole('button', {
+      name: /Open conversation with Lena Ortiz\. 1 unread message\. Last message: Can you share the latest portfolio link\?\. Status: Online\./,
+    });
+    expect(conversationButtons.length).toBeGreaterThan(0);
+
+    screen.getAllByLabelText('Search conversations').forEach((input) => {
+      const icon = input.closest('div')?.querySelector('svg');
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
+      expect(icon?.getAttribute('focusable')).toBe('false');
+    });
+    conversationButtons.forEach((button) => {
+      expect(button.querySelector('[aria-hidden="true"]')?.textContent).toBe('LO');
+      expect(button.querySelector('.bg-success')?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    fireEvent.click(conversationButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('log', { name: 'Messages with Lena Ortiz' })).toBeTruthy();
+    });
+    expect(conversationButtons[0].getAttribute('aria-current')).toBe('true');
+    const backButton = screen.getByRole('button', { name: 'Back to conversations' });
+    const markReadButton = screen.getByRole('button', { name: 'Mark 1 visible unread message as read' });
+    expect(backButton.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText('Realtime connected').querySelector('[aria-hidden="true"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText('1 of 1 loaded').querySelector('svg')?.getAttribute('focusable')).toBe('false');
+    expect(markReadButton.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Voice calls unavailable' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Video calls unavailable' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More messaging actions unavailable' })).toBeNull();
+    const composer = screen.getByRole('form', { name: 'Message composer' });
+    expect(composer.getAttribute('data-ui')).toBe('messaging-composer-form');
+    const composerInput = screen.getByLabelText('Message text');
+    expect(composerInput).toBeTruthy();
+    expect(composer.contains(composerInput)).toBe(true);
+    expect(composerInput.getAttribute('aria-describedby')).toBe('message-composer-help message-send-status');
+    expect(screen.getByText(/Review message text, reply suggestions, and attachment drafts before sending/i).id).toBe('message-composer-help');
+    expect(screen.getByRole('button', { name: 'Add attachment link' }).querySelector('svg')?.getAttribute('focusable')).toBe('false');
+  });
+
   it('shows safe failed-send copy and retries the existing message send workflow', async () => {
     const reply = 'I can send the portfolio link now.';
     vi.mocked(messagingService.getConversationsPage).mockResolvedValue(conversationPage);
@@ -275,11 +334,14 @@ describe('MessagingPage', () => {
 
     expect(screen.getByText(reply)).toBeTruthy();
     expect(screen.getByText('Failed to send')).toBeTruthy();
+    expect(screen.getByText('Failed to send').parentElement?.querySelector('.text-destructive')?.getAttribute('aria-hidden')).toBe('true');
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/Message insert failed/i)).toBeNull();
     expect(messagingService.sendMessage).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    const retryButton = screen.getByRole('button', { name: 'Retry failed message' });
+    expect(retryButton.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    fireEvent.click(retryButton);
 
     await waitFor(() => {
       expect(messagingService.sendMessage).toHaveBeenCalledTimes(2);
@@ -309,6 +371,12 @@ describe('MessagingPage', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add attachment link' }));
+
+    expect(screen.getByRole('button', { name: 'Hide attachment link field' }).querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText('Attachment link').parentElement?.querySelector('svg')?.getAttribute('focusable')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Remove attachment link' }).querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Upload file' }).querySelector('svg')?.getAttribute('focusable')).toBe('false');
+
     fireEvent.change(screen.getByLabelText('Upload message attachment'), {
       target: {
         files: [new File(['portfolio fixture'], 'portfolio.pdf', { type: 'application/pdf' })],
@@ -339,9 +407,9 @@ describe('MessagingPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Lena Ortiz/ })[0]);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '1 unread' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Mark 1 visible unread message as read' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 unread' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark 1 visible unread message as read' }));
 
     await waitFor(() => {
       expect(screen.getByText('Visible messages could not be marked read. Retry available.')).toBeTruthy();

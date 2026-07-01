@@ -7,6 +7,11 @@ import { Input } from '../../components/shared/AuraInput';
 import { AuthShell } from './components/AuthShell';
 import { getSafeLoginErrorMessage } from './authErrorCopy';
 
+const decorativeIconProps = {
+    'aria-hidden': true,
+    focusable: 'false' as const,
+};
+
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -59,11 +64,12 @@ const LoginPage: React.FC = () => {
                 onSubmit={handleLogin}
                 className="space-y-4"
                 data-testid="login-form"
+                aria-label="Email sign in"
                 aria-describedby={error ? 'login-error' : undefined}
             >
                 <Input
                     label="Email"
-                    icon={<Mail size={16} />}
+                    icon={<Mail {...decorativeIconProps} size={16} />}
                     type="email"
                     required
                     value={email}
@@ -76,7 +82,7 @@ const LoginPage: React.FC = () => {
                 <Input
                     id="login-password"
                     label="Password"
-                    icon={<Lock size={16} />}
+                    icon={<Lock {...decorativeIconProps} size={16} />}
                     type="password"
                     required
                     value={password}
@@ -93,7 +99,7 @@ const LoginPage: React.FC = () => {
                     data-testid="login-submit"
                 >
                     Sign in
-                    {!loading && <ArrowRight size={16} className="ml-1.5" />}
+                    {!loading && <ArrowRight {...decorativeIconProps} size={16} className="ml-1.5" />}
                 </Button>
             </form>
         </AuthShell>

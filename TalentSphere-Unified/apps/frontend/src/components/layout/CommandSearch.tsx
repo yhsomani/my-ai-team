@@ -15,6 +15,10 @@ const getSearchResultId = (path: string) => {
   return `app-shell-search-result-${normalizedPath}`;
 };
 
+const getSearchResultLabel = (destination: SearchDestination) => (
+  `${destination.label}. ${destination.description}`
+);
+
 const getDestinationRank = (destination: SearchDestination, normalizedSearch: string) => {
   const label = destination.label.toLowerCase();
   const description = destination.description.toLowerCase();
@@ -130,8 +134,13 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
   };
 
   return (
-    <form ref={containerRef} className="relative" onSubmit={handleSubmit}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+    <form ref={containerRef} className="relative" role="search" aria-label="Command search" onSubmit={handleSubmit}>
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+        size={16}
+        aria-hidden="true"
+        focusable="false"
+      />
       <input
         ref={inputRef}
         type="text"
@@ -171,6 +180,7 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
           id="app-shell-search-results"
           role="listbox"
           aria-label="Search destinations"
+          aria-describedby="app-shell-search-status"
           className="surface-card absolute left-0 right-0 top-11 z-50 overflow-hidden"
         >
           {searchResults.length > 0 ? (
@@ -185,6 +195,7 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
                     id={getSearchResultId(result.path)}
                     type="button"
                     role="option"
+                    aria-label={getSearchResultLabel(result)}
                     aria-selected={isActiveResult}
                     onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setActiveResultIndex(index)}
@@ -194,20 +205,23 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
                       isActiveResult ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'
                     }`}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
-                      <Icon size={15} />
+                    <span
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent"
+                      aria-hidden="true"
+                    >
+                      <Icon size={15} aria-hidden="true" focusable="false" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-[var(--text-primary)]">{result.label}</span>
                       <span className="block truncate text-xs text-[var(--text-muted)]">{result.description}</span>
                     </span>
-                    <ArrowRight size={14} className="text-[var(--text-muted)]" />
+                    <ArrowRight size={14} className="text-[var(--text-muted)]" aria-hidden="true" focusable="false" />
                   </button>
                 );
               })}
             </div>
           ) : (
-            <div role="status" className="px-3 py-4 text-sm text-[var(--text-muted)]">
+            <div role="status" aria-label="Command search no results" className="px-3 py-4 text-sm text-[var(--text-muted)]">
               No matching destinations
             </div>
           )}

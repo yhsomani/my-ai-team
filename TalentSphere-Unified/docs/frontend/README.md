@@ -11,7 +11,7 @@ This documentation is auto-generated using **TypeDoc** for the React/TypeScript 
 ### Components
 - **`ResponsiveLayout`** - Main layout with sidebar/topbar
 - **`AuraButton`** - Custom button with glow effect
-- **`AuraCard`** - Custom card component
+- **`AuraCard`** - Legacy compatibility export for shared `Card` / `GlassCard` primitives
 - **`AuraInput`** - Custom input with validation
 - **`ProtectedRoute`** - Auth-protected route wrapper
 - **`ErrorBoundary`** - Global error handler

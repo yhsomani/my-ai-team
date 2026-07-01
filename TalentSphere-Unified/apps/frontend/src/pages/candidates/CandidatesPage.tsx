@@ -138,8 +138,46 @@ const candidateReviewSectionClassName = 'surface-panel p-4';
 const candidateInsetClassName = 'rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 px-3 py-2';
 const candidateOfferButtonClassName = 'border-0 bg-success text-[var(--text-inverse)] hover:bg-success/90';
 const candidateDangerButtonClassName = 'border-destructive text-destructive hover:bg-destructive/10';
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
 const candidateLoadFailureMessage = 'Candidate applications did not respond. Retry to reload application rows, review controls, private notes, and scorecards before changing statuses.';
 const candidateStatusFailureMessage = 'The application status could not be updated. No change was saved. Review the candidate and try again from this confirmation.';
+
+const getCandidateName = (candidate: Application) => candidate.user?.fullName || 'Anonymous Candidate';
+
+const getCandidateRoleTitle = (candidate: Application) => candidate.job?.title || `Job #${candidate.jobId}`;
+
+const getCandidateEmail = (candidate: Application) => candidate.user?.email || 'Email unavailable';
+
+const getCandidateCardLabel = (candidate: Application) => (
+  `Candidate ${getCandidateName(candidate)} for ${getCandidateRoleTitle(candidate)}. ${candidate.status || 'PENDING'}. ${getCandidateEmail(candidate)}`
+);
+
+const getCandidateMetricLabel = (label: string, value: string | number, detail: string) => (
+  `${label}: ${value}. ${detail}`
+);
+
+const getCandidateDetailsLabel = (candidate: Application) => (
+  `Candidate details for ${getCandidateName(candidate)}`
+);
+
+const getCandidateSummaryLabel = (candidate: Application) => (
+  `${getCandidateName(candidate)}. ${candidate.status || 'PENDING'}. ${getCandidateEmail(candidate)}. ${getCandidateRoleTitle(candidate)}. Applied ${formatCandidateDate(candidate.appliedAt)}`
+);
+
+const getCandidateMetadataLabel = (label: string, value?: string | null) => (
+  `${label}: ${value || 'N/A'}`
+);
+
+const getCandidateAdvisoryFactorLabel = (type: 'Factor' | 'Safeguard', value: string) => `${type}: ${value}`;
+
+const getCandidateSubmittedMaterialLabel = (candidate: Application, type: 'Resume' | 'Cover letter') => (
+  `${type} submitted by ${getCandidateName(candidate)}`
+);
+
+const getCandidateInterviewSlotLabel = (slot: { label: string }) => `Suggested interview slot: ${slot.label}`;
 
 const getCandidateBulkStatusFailureMessage = (failedCount: number, succeededCount: number, targetStatus: CandidateBulkStatusTarget) => (
   succeededCount > 0
@@ -1146,21 +1184,30 @@ const CandidatesPage: React.FC = () => {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => fetchCandidates()}>
-              <RefreshCw size={14} className="mr-2" /> Refresh
+              <RefreshCw {...decorativeIconProps} size={14} className="mr-2" /> Refresh
             </Button>
             <Button size="sm">
-              <Filter size={14} className="mr-2" /> Filter
+              <Filter {...decorativeIconProps} size={14} className="mr-2" /> Filter
             </Button>
           </div>
         }
       />
 
       <Card className="space-y-4 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+        <div
+          className="relative"
+          role="search"
+          aria-label="Candidate search"
+          data-ui="candidate-search-surface"
+        >
+          <Search {...decorativeIconProps} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+          <p id="candidate-search-help" className="sr-only">
+            Search narrows the current candidate application page by candidate name or applied job title.
+          </p>
           <input
             type="text"
             aria-label="Search candidates"
+            aria-describedby="candidate-search-help"
             placeholder="Search candidates by name or position..."
             className="h-11 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] pl-10 pr-4 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             value={searchTerm}
@@ -1172,7 +1219,16 @@ const CandidatesPage: React.FC = () => {
         </div>
 
         {shouldShowCandidateControls && (
-          <div className={`${candidatePanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+          <div
+            className={`${candidatePanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}
+            role="group"
+            aria-label="Candidate review controls"
+            aria-describedby="candidate-control-help"
+            data-ui="candidate-review-controls"
+          >
+            <p id="candidate-control-help" className="sr-only">
+              Focus, sort, page-size, and page controls change only the visible candidate review queue.
+            </p>
             <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
               Showing <span className="font-medium text-[var(--text-primary)]">{firstCandidateIndex}-{lastCandidateIndex}</span>
               {hasExactCandidateTotal ? (
@@ -1238,7 +1294,7 @@ const CandidatesPage: React.FC = () => {
                   disabled={!canGoToPreviousCandidatePage}
                   aria-label="Previous candidates page"
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft {...decorativeIconProps} size={14} />
                 </Button>
                 <span className="min-w-16 text-center text-xs text-[var(--text-secondary)]">
                   Page {normalizedCandidatePage}{hasExactCandidateTotal ? ` of ${candidateTotalPages}` : ''}
@@ -1252,7 +1308,7 @@ const CandidatesPage: React.FC = () => {
                   disabled={!canGoToNextCandidatePage}
                   aria-label="Next candidates page"
                 >
-                  <ChevronRight size={14} />
+                  <ChevronRight {...decorativeIconProps} size={14} />
                 </Button>
               </div>
             </div>
@@ -1261,8 +1317,16 @@ const CandidatesPage: React.FC = () => {
       </Card>
 
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className={candidateMetricCardClassName}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="list" aria-label="Candidate review metrics">
+          <div
+            className={candidateMetricCardClassName}
+            role="listitem"
+            aria-label={getCandidateMetricLabel(
+              'Scorecard Coverage',
+              `${visibleScorecardAnalytics.scoredCount}/${visibleScorecardAnalytics.totalCount}`,
+              `${visibleScorecardAnalytics.coveragePercent}% reviewed`
+            )}
+          >
             <div>
               <p className="text-xs font-medium text-[var(--text-muted)]">Scorecard Coverage</p>
               <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
@@ -1282,12 +1346,20 @@ const CandidatesPage: React.FC = () => {
                 disabled={reviewGapsFocusAction?.disabled}
                 aria-label={`Review ${reviewGapsFocusAction?.count || 0} candidates without scorecards`}
               >
-                <ClipboardCheck size={14} />
+                <ClipboardCheck {...decorativeIconProps} size={14} />
                 {reviewGapsFocusAction?.label || 'Review gaps'}
               </Button>
             )}
           </div>
-          <div className={candidateMetricCardClassName}>
+          <div
+            className={candidateMetricCardClassName}
+            role="listitem"
+            aria-label={getCandidateMetricLabel(
+              'Average Rubric',
+              visibleScorecardAnalytics.averageScore === null ? 'N/A' : `${visibleScorecardAnalytics.averageScore}/5`,
+              `${visibleScorecardAnalytics.strongSignalCount} strong signal`
+            )}
+          >
             <div>
               <p className="text-xs font-medium text-[var(--text-muted)]">Average Rubric</p>
               <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
@@ -1307,12 +1379,20 @@ const CandidatesPage: React.FC = () => {
                 disabled={reviewHighSignalFocusAction?.disabled}
                 aria-label={`Review ${reviewHighSignalFocusAction?.count || 0} high-signal candidates`}
               >
-                <TrendingUp size={14} />
+                <TrendingUp {...decorativeIconProps} size={14} />
                 {reviewHighSignalFocusAction?.label || 'Review high signal'}
               </Button>
             )}
           </div>
-          <div className={candidateMetricCardClassName}>
+          <div
+            className={candidateMetricCardClassName}
+            role="listitem"
+            aria-label={getCandidateMetricLabel(
+              'Evidence Gaps',
+              visibleScorecardAnalytics.needsEvidenceCount,
+              `${visibleScorecardAnalytics.unscoredCount} without scorecards`
+            )}
+          >
             <div>
               <p className="text-xs font-medium text-[var(--text-muted)]">Evidence Gaps</p>
               <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
@@ -1323,7 +1403,15 @@ const CandidatesPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className={candidateMetricCardClassName}>
+          <div
+            className={candidateMetricCardClassName}
+            role="listitem"
+            aria-label={getCandidateMetricLabel(
+              'Scorecard Sync',
+              `${visibleScorecardAnalytics.syncedCount} synced`,
+              `${visibleScorecardAnalytics.localCount} local`
+            )}
+          >
             <div>
               <p className="text-xs font-medium text-[var(--text-muted)]">Scorecard Sync</p>
               <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
@@ -1343,7 +1431,7 @@ const CandidatesPage: React.FC = () => {
                 disabled={showAllFocusAction?.disabled}
                 aria-label="Show all candidates on the current page"
               >
-                <Filter size={14} />
+                <Filter {...decorativeIconProps} size={14} />
                 {showAllFocusAction?.label || 'Show all'}
               </Button>
             )}
@@ -1363,7 +1451,7 @@ const CandidatesPage: React.FC = () => {
               aria-label={candidateReviewQueueAction.description}
               title={candidateReviewQueueAction.description}
             >
-              <Eye size={14} />
+              <Eye {...decorativeIconProps} size={14} />
               {candidateReviewQueueAction.label}
             </Button>
             <label htmlFor="select-visible-candidates" className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
@@ -1402,7 +1490,7 @@ const CandidatesPage: React.FC = () => {
               onClick={() => requestBulkStatusChange('INTERVIEW')}
               disabled={bulkInterviewSummary.eligible.length === 0 || bulkUpdating}
             >
-              <CheckSquare size={14} className="mr-1.5" />
+              <CheckSquare {...decorativeIconProps} size={14} className="mr-1.5" />
               Review Interview Move
             </Button>
             <Button
@@ -1412,7 +1500,7 @@ const CandidatesPage: React.FC = () => {
               onClick={() => requestBulkStatusChange('OFFER')}
               disabled={bulkOfferSummary.eligible.length === 0 || bulkUpdating}
             >
-              <CheckCircle size={14} className="mr-1.5" />
+              <CheckCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               Review Offer Move
             </Button>
             <Button
@@ -1423,7 +1511,7 @@ const CandidatesPage: React.FC = () => {
               onClick={() => requestBulkStatusChange('REJECTED')}
               disabled={bulkRejectSummary.eligible.length === 0 || bulkUpdating}
             >
-              <XCircle size={14} className="mr-1.5" />
+              <XCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               Review Rejection
             </Button>
           </div>
@@ -1437,7 +1525,7 @@ const CandidatesPage: React.FC = () => {
       ) : candidateLoadError ? (
         <div role="alert">
           <EmptyState
-            icon={<AlertTriangle className="h-12 w-12 text-warning" />}
+            icon={<AlertTriangle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
             title="Candidates could not load"
             description={candidateLoadError}
             action={{ label: 'Retry candidates', onClick: () => fetchCandidates() }}
@@ -1456,129 +1544,134 @@ const CandidatesPage: React.FC = () => {
             : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4" role="list" aria-label="Candidate applications">
           {filtered.map((candidate) => {
             const advisorySignal = candidateAdvisorySignals[candidate.id];
 
             return (
-            <Card key={candidate.id} className={candidateRecordCardClassName}>
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <label className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]">
-                  <span className="sr-only">Select {candidate.user?.fullName || 'candidate'} for bulk action</span>
-                  <input
-                    type="checkbox"
-                    checked={selectedCandidateSet.has(candidate.id)}
-                    onChange={(event) => toggleCandidateSelection(candidate.id, event.target.checked)}
-                    className="h-4 w-4 rounded border-[var(--border-default)] bg-[var(--bg-primary)] text-accent focus:ring-accent"
-                    aria-label={`Select ${candidate.user?.fullName || 'candidate'} for bulk action`}
-                  />
-                </label>
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
-                  <User size={24} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <h3 className="truncate font-semibold text-[var(--text-primary)] transition-colors group-hover:text-accent">
-                      {candidate.user?.fullName || 'Anonymous Candidate'}
-                    </h3>
-                    <Badge variant={statusVariant(candidate.status) as any}>
-                      {candidate.status || 'PENDING'}
-                    </Badge>
+              <Card
+                key={candidate.id}
+                className={candidateRecordCardClassName}
+                role="listitem"
+                aria-label={getCandidateCardLabel(candidate)}
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <label className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]">
+                    <span className="sr-only">Select {candidate.user?.fullName || 'candidate'} for bulk action</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedCandidateSet.has(candidate.id)}
+                      onChange={(event) => toggleCandidateSelection(candidate.id, event.target.checked)}
+                      className="h-4 w-4 rounded border-[var(--border-default)] bg-[var(--bg-primary)] text-accent focus:ring-accent"
+                      aria-label={`Select ${candidate.user?.fullName || 'candidate'} for bulk action`}
+                    />
+                  </label>
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+                    <User {...decorativeIconProps} size={24} />
                   </div>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {candidate.job?.title || `Job #${candidate.jobId}`} ·{' '}
-                    {candidate.appliedAt
-                      ? new Date(candidate.appliedAt).toLocaleDateString()
-                      : 'N/A'}
-                  </p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-[var(--text-muted)] flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Mail size={12} /> {candidate.user?.email || 'N/A'}
-                    </span>
-                    {candidate.resumeUrl && (
-                      <a
-                        href={candidate.resumeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-accent hover:underline"
-                      >
-                        <Download size={12} /> Resume
-                      </a>
-                    )}
-                    {candidateNotes[candidate.id]?.note && (
-                      <span className="flex items-center gap-1 text-warning">
-                        <StickyNote size={12} /> Note saved
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <h3 className="truncate font-semibold text-[var(--text-primary)] transition-colors group-hover:text-accent">
+                        {candidate.user?.fullName || 'Anonymous Candidate'}
+                      </h3>
+                      <Badge variant={statusVariant(candidate.status) as any}>
+                        {candidate.status || 'PENDING'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {candidate.job?.title || `Job #${candidate.jobId}`} ·{' '}
+                      {candidate.appliedAt
+                        ? new Date(candidate.appliedAt).toLocaleDateString()
+                        : 'N/A'}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-[var(--text-muted)] flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Mail {...decorativeIconProps} size={12} /> {candidate.user?.email || 'N/A'}
                       </span>
-                    )}
-                    {candidateScorecards[candidate.id] && (
-                      <span className="flex items-center gap-1 text-success">
-                        <ClipboardCheck size={12} /> Scorecard saved
-                      </span>
-                    )}
-                    {advisorySignal && (
-                      <span className="flex items-center gap-1 text-accent">
-                        <TrendingUp size={12} /> {advisorySignal.label} · {advisorySignal.score}
-                      </span>
-                    )}
+                      {candidate.resumeUrl && (
+                        <a
+                          href={candidate.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-accent hover:underline"
+                        >
+                          <Download {...decorativeIconProps} size={12} /> Resume
+                        </a>
+                      )}
+                      {candidateNotes[candidate.id]?.note && (
+                        <span className="flex items-center gap-1 text-warning">
+                          <StickyNote {...decorativeIconProps} size={12} /> Note saved
+                        </span>
+                      )}
+                      {candidateScorecards[candidate.id] && (
+                        <span className="flex items-center gap-1 text-success">
+                          <ClipboardCheck {...decorativeIconProps} size={12} /> Scorecard saved
+                        </span>
+                      )}
+                      {advisorySignal && (
+                        <span className="flex items-center gap-1 text-accent">
+                          <TrendingUp {...decorativeIconProps} size={12} /> {advisorySignal.label} · {advisorySignal.score}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto flex-shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-1 md:flex-none"
-                  onClick={() => {
-                    recordCandidateAnalyticsForApplication('candidate_details_opened', candidate, {
-                      entryPoint: 'row',
-                      reviewFocus: candidateReviewFocus,
-                    });
-                    setSelectedCandidate(candidate);
-                  }}
-                >
-                  <Eye size={14} className="mr-1.5" /> Details
-                </Button>
-
-                {canMoveCandidateToInterview(candidate.status) && (
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto flex-shrink-0">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     className="flex-1 md:flex-none"
-                    disabled={bulkUpdating || updatingId === candidate.id}
-                    onClick={() => requestStatusChange(candidate, 'INTERVIEW')}
+                    onClick={() => {
+                      recordCandidateAnalyticsForApplication('candidate_details_opened', candidate, {
+                        entryPoint: 'row',
+                        reviewFocus: candidateReviewFocus,
+                      });
+                      setSelectedCandidate(candidate);
+                    }}
                   >
-                    <Calendar size={14} className="mr-1.5" />
-                    {updatingId === candidate.id ? '...' : 'Interview'}
+                    <Eye {...decorativeIconProps} size={14} className="mr-1.5" /> Details
                   </Button>
-                )}
 
-                {candidate.status !== 'OFFER' && (
-                  <Button
-                    size="sm"
-                    className={`${candidateOfferButtonClassName} flex-1 md:flex-none`}
-                    disabled={bulkUpdating || updatingId === candidate.id}
-                    onClick={() => requestStatusChange(candidate, 'OFFER')}
-                  >
-                    <CheckCircle size={14} className="mr-1.5" />
-                    {updatingId === candidate.id ? '...' : 'Offer'}
-                  </Button>
-                )}
+                  {canMoveCandidateToInterview(candidate.status) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 md:flex-none"
+                      disabled={bulkUpdating || updatingId === candidate.id}
+                      onClick={() => requestStatusChange(candidate, 'INTERVIEW')}
+                    >
+                      <Calendar {...decorativeIconProps} size={14} className="mr-1.5" />
+                      {updatingId === candidate.id ? '...' : 'Interview'}
+                    </Button>
+                  )}
 
-                {candidate.status !== 'REJECTED' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`${candidateDangerButtonClassName} flex-1 md:flex-none`}
-                    disabled={bulkUpdating || updatingId === candidate.id}
-                    onClick={() => requestStatusChange(candidate, 'REJECTED')}
-                  >
-                    <XCircle size={14} className="mr-1.5" />
-                    {updatingId === candidate.id ? '...' : 'Reject'}
-                  </Button>
-                )}
-              </div>
-            </Card>
+                  {candidate.status !== 'OFFER' && (
+                    <Button
+                      size="sm"
+                      className={`${candidateOfferButtonClassName} flex-1 md:flex-none`}
+                      disabled={bulkUpdating || updatingId === candidate.id}
+                      onClick={() => requestStatusChange(candidate, 'OFFER')}
+                    >
+                      <CheckCircle {...decorativeIconProps} size={14} className="mr-1.5" />
+                      {updatingId === candidate.id ? '...' : 'Offer'}
+                    </Button>
+                  )}
+
+                  {candidate.status !== 'REJECTED' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`${candidateDangerButtonClassName} flex-1 md:flex-none`}
+                      disabled={bulkUpdating || updatingId === candidate.id}
+                      onClick={() => requestStatusChange(candidate, 'REJECTED')}
+                    >
+                      <XCircle {...decorativeIconProps} size={14} className="mr-1.5" />
+                      {updatingId === candidate.id ? '...' : 'Reject'}
+                    </Button>
+                  )}
+                </div>
+              </Card>
             );
           })}
         </div>
@@ -1597,7 +1690,7 @@ const CandidatesPage: React.FC = () => {
                   variant="outline"
                   onClick={() => window.open(`/profile/${selectedCandidate.userId}`, '_blank')}
                 >
-                  <ExternalLink size={14} className="mr-1.5" /> Open Profile
+                  <ExternalLink {...decorativeIconProps} size={14} className="mr-1.5" /> Open Profile
                 </Button>
                 {canMoveCandidateToInterview(selectedCandidate.status) && (
                   <Button
@@ -1605,7 +1698,7 @@ const CandidatesPage: React.FC = () => {
                     disabled={bulkUpdating || updatingId === selectedCandidate.id}
                     onClick={() => requestStatusChange(selectedCandidate, 'INTERVIEW')}
                   >
-                    <Calendar size={14} className="mr-1.5" />
+                    <Calendar {...decorativeIconProps} size={14} className="mr-1.5" />
                     Interview
                   </Button>
                 )}
@@ -1615,7 +1708,7 @@ const CandidatesPage: React.FC = () => {
                     disabled={bulkUpdating || updatingId === selectedCandidate.id}
                     onClick={() => requestStatusChange(selectedCandidate, 'OFFER')}
                   >
-                    <CheckCircle size={14} className="mr-1.5" />
+                    <CheckCircle {...decorativeIconProps} size={14} className="mr-1.5" />
                     Offer
                   </Button>
                 )}
@@ -1626,7 +1719,7 @@ const CandidatesPage: React.FC = () => {
                     disabled={bulkUpdating || updatingId === selectedCandidate.id}
                     onClick={() => requestStatusChange(selectedCandidate, 'REJECTED')}
                   >
-                    <XCircle size={14} className="mr-1.5" />
+                    <XCircle {...decorativeIconProps} size={14} className="mr-1.5" />
                     Reject
                   </Button>
                 )}
@@ -1636,8 +1729,8 @@ const CandidatesPage: React.FC = () => {
         }
       >
         {selectedCandidate && (
-          <div className="space-y-6">
-            <div className={`${candidatePanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+          <div role="region" aria-label={getCandidateDetailsLabel(selectedCandidate)} className="space-y-6">
+            <div role="region" aria-label="Candidate review queue navigation" className={`${candidatePanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
               <p className="text-xs font-medium text-[var(--text-secondary)]">
                 {selectedCandidateReviewNavigation.label}
               </p>
@@ -1652,7 +1745,7 @@ const CandidatesPage: React.FC = () => {
                     ? 'Save or reset review changes before moving to the previous candidate'
                     : 'Review previous candidate in current queue'}
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft {...decorativeIconProps} size={14} />
                   Previous
                 </Button>
                 <Button
@@ -1666,7 +1759,7 @@ const CandidatesPage: React.FC = () => {
                     : 'Review next candidate in current queue'}
                 >
                   Next
-                  <ChevronRight size={14} />
+                  <ChevronRight {...decorativeIconProps} size={14} />
                 </Button>
               </div>
             </div>
@@ -1674,7 +1767,7 @@ const CandidatesPage: React.FC = () => {
               <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-3">
-                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warning" />
+                    <AlertTriangle {...decorativeIconProps} size={18} className="mt-0.5 shrink-0 text-warning" />
                     <div>
                       <p className="text-sm font-medium text-[var(--text-primary)]">{selectedCandidateReviewDraftState.summary}</p>
                       <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -1691,7 +1784,7 @@ const CandidatesPage: React.FC = () => {
                         onClick={handleSaveNote}
                         isLoading={savingNoteId === selectedCandidate.id}
                       >
-                        <Save size={14} />
+                        <Save {...decorativeIconProps} size={14} />
                         Save Note
                       </Button>
                     )}
@@ -1703,7 +1796,7 @@ const CandidatesPage: React.FC = () => {
                         onClick={saveCandidateScorecard}
                         isLoading={savingScorecardId === selectedCandidate.id}
                       >
-                        <ClipboardCheck size={14} />
+                        <ClipboardCheck {...decorativeIconProps} size={14} />
                         Save Scorecard
                       </Button>
                     )}
@@ -1713,7 +1806,7 @@ const CandidatesPage: React.FC = () => {
                       size="sm"
                       onClick={openCandidateReviewResetReview}
                     >
-                      <RefreshCw size={14} />
+                      <RefreshCw {...decorativeIconProps} size={14} />
                       Reset Changes
                     </Button>
                   </div>
@@ -1729,7 +1822,7 @@ const CandidatesPage: React.FC = () => {
                         Keep Changes
                       </Button>
                       <Button type="button" variant="destructive" size="sm" onClick={confirmCandidateReviewReset}>
-                        <RefreshCw size={14} />
+                        <RefreshCw {...decorativeIconProps} size={14} />
                         Reset Drafts
                       </Button>
                     </div>
@@ -1737,9 +1830,9 @@ const CandidatesPage: React.FC = () => {
                 )}
               </div>
             )}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div role="region" aria-label={getCandidateSummaryLabel(selectedCandidate)} className="flex flex-col sm:flex-row sm:items-start gap-4">
               <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                <User size={26} />
+                <User {...decorativeIconProps} size={26} />
               </div>
               <div className="space-y-2 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1752,39 +1845,39 @@ const CandidatesPage: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap gap-3 text-sm text-[var(--text-secondary)]">
                   <span className="flex items-center gap-1">
-                    <Mail size={14} /> {selectedCandidate.user?.email || 'N/A'}
+                    <Mail {...decorativeIconProps} size={14} /> {selectedCandidate.user?.email || 'N/A'}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Briefcase size={14} /> {selectedCandidate.job?.title || `Job #${selectedCandidate.jobId}`}
+                    <Briefcase {...decorativeIconProps} size={14} /> {selectedCandidate.job?.title || `Job #${selectedCandidate.jobId}`}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Calendar size={14} /> Applied {formatCandidateDate(selectedCandidate.appliedAt)}
+                    <Calendar {...decorativeIconProps} size={14} /> Applied {formatCandidateDate(selectedCandidate.appliedAt)}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className={candidateReviewSectionClassName}>
+            <div role="list" aria-label="Candidate application metadata" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div role="listitem" aria-label={getCandidateMetadataLabel('Application ID', selectedCandidate.id)} className={candidateReviewSectionClassName}>
                 <p className="text-xs text-[var(--text-muted)]">Application ID</p>
                 <p className="text-sm font-medium break-all">{selectedCandidate.id}</p>
               </div>
-              <div className={candidateReviewSectionClassName}>
+              <div role="listitem" aria-label={getCandidateMetadataLabel('Job ID', selectedCandidate.jobId)} className={candidateReviewSectionClassName}>
                 <p className="text-xs text-[var(--text-muted)]">Job ID</p>
                 <p className="text-sm font-medium break-all">{selectedCandidate.jobId}</p>
               </div>
-              <div className={candidateReviewSectionClassName}>
+              <div role="listitem" aria-label={getCandidateMetadataLabel('Last Updated', formatCandidateDate(selectedCandidate.updatedAt || selectedCandidate.appliedAt))} className={candidateReviewSectionClassName}>
                 <p className="text-xs text-[var(--text-muted)]">Last Updated</p>
                 <p className="text-sm font-medium">{formatCandidateDate(selectedCandidate.updatedAt || selectedCandidate.appliedAt)}</p>
               </div>
             </div>
 
             {selectedCandidateAdvisorySignal && (
-              <div className={`${candidateReviewSectionClassName} space-y-3`}>
+              <div role="region" aria-label="Candidate advisory signal" className={`${candidateReviewSectionClassName} space-y-3`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                      <TrendingUp size={15} className="text-accent" />
+                      <TrendingUp {...decorativeIconProps} size={15} className="text-accent" />
                       Advisory Signal
                     </h4>
                     <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -1801,9 +1894,9 @@ const CandidatesPage: React.FC = () => {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-medium text-[var(--text-muted)]">Factors</p>
-                    <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
+                    <ul aria-label="Candidate advisory factors" className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
                       {selectedCandidateAdvisorySignal.factors.map(factor => (
-                        <li key={factor} className="flex gap-2">
+                        <li key={factor} aria-label={getCandidateAdvisoryFactorLabel('Factor', factor)} className="flex gap-2">
                           <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                           <span>{factor}</span>
                         </li>
@@ -1812,9 +1905,9 @@ const CandidatesPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-[var(--text-muted)]">Safeguards</p>
-                    <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
+                    <ul aria-label="Candidate advisory safeguards" className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
                       {selectedCandidateAdvisorySignal.safeguards.map(safeguard => (
-                        <li key={safeguard} className="flex gap-2">
+                        <li key={safeguard} aria-label={getCandidateAdvisoryFactorLabel('Safeguard', safeguard)} className="flex gap-2">
                           <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
                           <span>{safeguard}</span>
                         </li>
@@ -1825,22 +1918,23 @@ const CandidatesPage: React.FC = () => {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div role="region" aria-label="Candidate submitted materials" className="space-y-3">
               <h4 className="text-sm font-semibold text-[var(--text-primary)]">Submitted Materials</h4>
               {selectedCandidate.resumeUrl ? (
                 <a
                   href={selectedCandidate.resumeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={getCandidateSubmittedMaterialLabel(selectedCandidate, 'Resume')}
                   className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
                 >
-                  <Download size={14} /> Resume
+                  <Download {...decorativeIconProps} size={14} /> Resume
                 </a>
               ) : (
                 <p className="text-sm text-[var(--text-muted)]">No resume link was submitted.</p>
               )}
               {selectedCandidate.coverLetter ? (
-                <div className={candidateReviewSectionClassName}>
+                <div role="region" aria-label={getCandidateSubmittedMaterialLabel(selectedCandidate, 'Cover letter')} className={candidateReviewSectionClassName}>
                   <p className="text-xs font-medium text-[var(--text-muted)] mb-2">Cover Letter</p>
                   <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{selectedCandidate.coverLetter}</p>
                 </div>
@@ -1849,7 +1943,7 @@ const CandidatesPage: React.FC = () => {
               )}
             </div>
 
-            <div className={`${candidateReviewSectionClassName} space-y-2`}>
+            <div role="region" aria-label="Candidate review guidance" className={`${candidateReviewSectionClassName} space-y-2`}>
               <h4 className="text-sm font-semibold text-[var(--text-primary)]">Review Guidance</h4>
               <p className="text-sm text-[var(--text-secondary)]">
                 Review submitted materials and profile context before changing status. Status changes are visible in the candidate's application timeline.
@@ -1857,11 +1951,11 @@ const CandidatesPage: React.FC = () => {
             </div>
 
             {selectedInterviewPlan && canDraftCandidateInterviewPlan(selectedCandidate.status) && (
-              <div className={`${candidateReviewSectionClassName} space-y-3`}>
+              <div role="region" aria-label="Candidate interview plan draft" className={`${candidateReviewSectionClassName} space-y-3`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                      <Calendar size={15} className="text-accent" />
+                      <Calendar {...decorativeIconProps} size={15} className="text-accent" />
                       Interview Plan
                     </h4>
                     <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -1869,13 +1963,13 @@ const CandidatesPage: React.FC = () => {
                     </p>
                   </div>
                   <Button type="button" size="sm" variant="outline" onClick={insertInterviewPlanIntoNotes}>
-                    <StickyNote size={14} className="mr-1.5" />
+                    <StickyNote {...decorativeIconProps} size={14} className="mr-1.5" />
                     Use in Notes
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div role="list" aria-label="Suggested interview slots" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {selectedInterviewPlan.suggestedSlots.map(slot => (
-                    <div key={slot.id} className={candidateInsetClassName}>
+                    <div key={slot.id} role="listitem" aria-label={getCandidateInterviewSlotLabel(slot)} className={candidateInsetClassName}>
                       <p className="text-xs text-[var(--text-muted)]">Suggested slot</p>
                       <p className="text-sm font-medium text-[var(--text-primary)]">{slot.label}</p>
                     </div>
@@ -1888,11 +1982,11 @@ const CandidatesPage: React.FC = () => {
             )}
 
             {selectedScorecardSummary && (
-              <div className={`${candidateReviewSectionClassName} space-y-4`}>
+              <div role="region" aria-label="Candidate scorecard review" className={`${candidateReviewSectionClassName} space-y-4`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                      <ClipboardCheck size={15} className="text-success" />
+                      <ClipboardCheck {...decorativeIconProps} size={15} className="text-success" />
                       Candidate Scorecard
                     </h4>
                     <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -1907,9 +2001,13 @@ const CandidatesPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div role="list" aria-label="Candidate scorecard dimensions" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {candidateScorecardDimensions.map(dimension => (
-                    <div key={dimension.key} className={candidateInsetClassName}>
+                    <div
+                      key={dimension.key}
+                      role="listitem"
+                      className={candidateInsetClassName}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <label htmlFor={`scorecard-${dimension.key}`} className="text-sm font-medium text-[var(--text-primary)]">
@@ -1960,7 +2058,7 @@ const CandidatesPage: React.FC = () => {
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button type="button" size="sm" variant="outline" onClick={insertScorecardIntoNotes}>
-                      <StickyNote size={14} className="mr-1.5" />
+                      <StickyNote {...decorativeIconProps} size={14} className="mr-1.5" />
                       Use in Notes
                     </Button>
                     <Button
@@ -1969,7 +2067,7 @@ const CandidatesPage: React.FC = () => {
                       onClick={saveCandidateScorecard}
                       isLoading={savingScorecardId === selectedCandidate.id}
                     >
-                      <Save size={14} className="mr-1.5" />
+                      <Save {...decorativeIconProps} size={14} className="mr-1.5" />
                       Save Scorecard
                     </Button>
                   </div>
@@ -1981,10 +2079,10 @@ const CandidatesPage: React.FC = () => {
               </div>
             )}
 
-            <div className={`${candidateReviewSectionClassName} space-y-3`}>
+            <div role="region" aria-label="Candidate recruiter notes" className={`${candidateReviewSectionClassName} space-y-3`}>
               <div className="flex items-center justify-between gap-3">
                 <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                  <StickyNote size={15} className="text-warning" />
+                  <StickyNote {...decorativeIconProps} size={15} className="text-warning" />
                   Recruiter Notes
                 </h4>
                 {candidateNotes[selectedCandidate.id]?.updatedAt && (
@@ -2010,7 +2108,7 @@ const CandidatesPage: React.FC = () => {
                   onClick={handleSaveNote}
                   isLoading={savingNoteId === selectedCandidate.id}
                 >
-                  <Save size={14} className="mr-1.5" />
+                  <Save {...decorativeIconProps} size={14} className="mr-1.5" />
                   Save Note
                 </Button>
               </div>
@@ -2047,11 +2145,11 @@ const CandidatesPage: React.FC = () => {
               disabled={bulkUpdating}
             >
               {pendingStatusChange?.status === 'OFFER' ? (
-                <CheckCircle size={14} className="mr-1.5" />
+                <CheckCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               ) : pendingStatusChange?.status === 'INTERVIEW' ? (
-                <Calendar size={14} className="mr-1.5" />
+                <Calendar {...decorativeIconProps} size={14} className="mr-1.5" />
               ) : (
-                <XCircle size={14} className="mr-1.5" />
+                <XCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               )}
               {pendingStatusCopy.confirmLabel}
             </Button>
@@ -2062,11 +2160,11 @@ const CandidatesPage: React.FC = () => {
           <div className="space-y-4">
             <div className={`${candidateReviewSectionClassName} flex items-start gap-3`}>
               {pendingStatusChange.status === 'OFFER' ? (
-                <CheckCircle size={18} className="mt-0.5 text-success" />
+                <CheckCircle {...decorativeIconProps} size={18} className="mt-0.5 text-success" />
               ) : pendingStatusChange.status === 'INTERVIEW' ? (
-                <Calendar size={18} className="mt-0.5 text-accent" />
+                <Calendar {...decorativeIconProps} size={18} className="mt-0.5 text-accent" />
               ) : (
-                <AlertTriangle size={18} className="mt-0.5 text-destructive" />
+                <AlertTriangle {...decorativeIconProps} size={18} className="mt-0.5 text-destructive" />
               )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[var(--text-primary)]">
@@ -2149,11 +2247,11 @@ const CandidatesPage: React.FC = () => {
               disabled={activeBulkStatusCandidates.length === 0}
             >
               {bulkStatusTarget === 'OFFER' ? (
-                <CheckCircle size={14} className="mr-1.5" />
+                <CheckCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               ) : bulkStatusTarget === 'REJECTED' ? (
-                <XCircle size={14} className="mr-1.5" />
+                <XCircle {...decorativeIconProps} size={14} className="mr-1.5" />
               ) : (
-                <Calendar size={14} className="mr-1.5" />
+                <Calendar {...decorativeIconProps} size={14} className="mr-1.5" />
               )}
               {activeBulkStatusCopy.confirmLabel} ({activeBulkStatusCandidates.length})
             </Button>
@@ -2163,11 +2261,11 @@ const CandidatesPage: React.FC = () => {
         <div className="space-y-4">
           <div className={`${candidateReviewSectionClassName} flex items-start gap-3`}>
             {bulkStatusTarget === 'OFFER' ? (
-              <CheckCircle size={18} className="mt-0.5 text-success" />
+              <CheckCircle {...decorativeIconProps} size={18} className="mt-0.5 text-success" />
             ) : bulkStatusTarget === 'REJECTED' ? (
-              <AlertTriangle size={18} className="mt-0.5 text-destructive" />
+              <AlertTriangle {...decorativeIconProps} size={18} className="mt-0.5 text-destructive" />
             ) : (
-              <Calendar size={18} className="mt-0.5 text-accent" />
+              <Calendar {...decorativeIconProps} size={18} className="mt-0.5 text-accent" />
             )}
             <div className="min-w-0">
               <p className="text-sm font-medium text-[var(--text-primary)]">

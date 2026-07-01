@@ -76,6 +76,64 @@ const getExperienceEndDate = (experience: Record<string, any>) => experience.end
 const getEducationStartDate = (education: Record<string, any>) => education.startDate || education.start_date;
 const getEducationEndDate = (education: Record<string, any>) => education.endDate || education.end_date;
 const formatDateInput = (date?: string) => date ? String(date).slice(0, 10) : '';
+const formatProfileTextToken = (value?: string | number | null) => String(value ?? '').trim();
+const formatSkillProficiency = (proficiency: string) => {
+  const normalized = proficiency.toLowerCase().replace(/_/g, ' ');
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+const getProfileSkillExperienceLabel = (years: unknown) => {
+  if (years === undefined || years === null || years === '') return '';
+  const parsedYears = typeof years === 'number' ? years : Number.parseFloat(String(years));
+  if (!Number.isFinite(parsedYears)) return '';
+  return `${parsedYears} ${parsedYears === 1 ? 'year' : 'years'} experience`;
+};
+const getProfileSkillLabel = (skill: Record<string, any> | string) => {
+  const skillName = formatProfileTextToken(getSkillName(skill)) || 'Skill';
+  const proficiency = `${formatSkillProficiency(getSkillProficiency(skill))} proficiency`;
+  const years = getProfileSkillExperienceLabel(getSkillYears(skill));
+  return [`${skillName} skill`, proficiency, years].filter(Boolean).join('. ');
+};
+const getProfileMetricLabel = (label: string, value: number) => `${value} ${label}`;
+const getProfileCompletionTaskLabel = (task: { label: string; description: string; complete: boolean }) => (
+  `${task.label} ${task.complete ? 'complete' : 'incomplete'}. ${task.description}.`
+);
+const getProfileSuggestionLabel = (suggestion: ProfileSuggestion) => (
+  `${suggestion.label} from ${suggestion.source}. ${suggestion.value}.`
+);
+const getProfileExperienceLabel = (experience: Record<string, any>) => {
+  const title = formatProfileTextToken(experience.title) || 'Experience row';
+  const company = formatProfileTextToken(experience.company);
+  const location = formatProfileTextToken(experience.location);
+  const startDate = formatProfileDate(getExperienceStartDate(experience));
+  const endDate = experience.current ? 'Present' : formatProfileDate(getExperienceEndDate(experience)) || 'Present';
+  const dateRange = startDate ? `${startDate} to ${endDate}` : '';
+  const description = formatProfileTextToken(experience.description);
+
+  return [
+    company ? `${title} at ${company}` : title,
+    location,
+    dateRange,
+    description,
+  ].filter(Boolean).join('. ');
+};
+const getProfileEducationLabel = (educationRow: Record<string, any>) => {
+  const fieldOfStudy = formatProfileTextToken(educationRow.fieldOfStudy || educationRow.field_of_study);
+  const title = formatProfileTextToken(educationRow.degree) || fieldOfStudy || 'Education';
+  const institution = formatProfileTextToken(educationRow.institution);
+  const completedDate = formatProfileDate(getEducationEndDate(educationRow) || getEducationStartDate(educationRow));
+  const year = formatProfileTextToken(completedDate || educationRow.year);
+
+  return [
+    institution ? `${title} at ${institution}` : title,
+    fieldOfStudy && fieldOfStudy !== title ? fieldOfStudy : '',
+    year,
+  ].filter(Boolean).join('. ');
+};
+const getProfileAchievementLabel = (achievement: Record<string, any>) => (
+  [formatProfileTextToken(achievement.title) || 'Achievement', formatProfileTextToken(achievement.description)]
+    .filter(Boolean)
+    .join('. ')
+);
 const getProfileBasicFormData = (profile: Record<string, any> | null) => ({
   headline: profile?.headline || '',
   location: profile?.location || '',
@@ -94,6 +152,10 @@ const profileCompletionSaveFailureMessage = 'Profile item was not saved. Review 
 const profileAvatarUploadFailureMessage = 'Profile photo was not uploaded. Review the image and try Upload Photo again.';
 const profileAvatarRemoveFailureMessage = 'Profile photo was not removed. Try Remove Photo again from this review.';
 const profileRowDeleteFailureMessage = 'Profile item was not removed. Try Remove again from this review.';
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
 const isSupportedProfileAvatarFile = (file: File) => (
   file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name)
 );
@@ -140,7 +202,7 @@ const ProfileActionFailureAlert: React.FC<{ message: string }> = ({ message }) =
     className="rounded-md border border-destructive/20 bg-destructive-muted p-3"
   >
     <div className="flex items-start gap-2">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+      <AlertTriangle {...decorativeIconProps} className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
       <p className="text-sm text-destructive">{message}</p>
     </div>
   </div>
@@ -1198,7 +1260,7 @@ const ProfilePage: React.FC = () => {
           <p className="text-base font-semibold text-[var(--text-primary)]">Profile could not load</p>
           <p className="max-w-xl leading-6">{error}</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void loadProfile('profile_load_retry')}>
-            <RotateCcw size={13} className="mr-1" />
+            <RotateCcw {...decorativeIconProps} size={13} className="mr-1" />
             Retry profile
           </Button>
         </Card>
@@ -1270,7 +1332,7 @@ const ProfilePage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title={isOwnProfile ? 'Profile' : `${userName}'s Profile`}
-        actions={isOwnProfile ? <Button variant="outline" size="sm" onClick={() => openBasicEditModal('page_header')}><Edit2 size={14} className="mr-1" /> Edit Profile</Button> : undefined}
+        actions={isOwnProfile ? <Button variant="outline" size="sm" onClick={() => openBasicEditModal('page_header')}><Edit2 {...decorativeIconProps} size={14} className="mr-1" /> Edit Profile</Button> : undefined}
       />
 
       <AuraModal
@@ -1326,7 +1388,7 @@ const ProfilePage: React.FC = () => {
             value={editFormData.location}
             onChange={(e) => updateBasicEditFormData({ location: e.target.value })}
             placeholder="e.g. Remote, or New York, NY"
-            icon={<MapPin size={16} />}
+            icon={<MapPin {...decorativeIconProps} size={16} />}
           />
           <div>
              <label className="block text-sm font-medium mb-1.5 text-[var(--text-primary)]">Bio</label>
@@ -1340,7 +1402,7 @@ const ProfilePage: React.FC = () => {
         </div>
         <div className="flex justify-end gap-3 mt-6 border-t border-[var(--border-default)] pt-4">
           <Button variant="outline" onClick={closeBasicEditModal}>Cancel</Button>
-          <Button onClick={handleSaveProfile}><Save size={16} className="mr-1.5" /> Save Changes</Button>
+          <Button onClick={handleSaveProfile}><Save {...decorativeIconProps} size={16} className="mr-1.5" /> Save Changes</Button>
         </div>
       </AuraModal>
 
@@ -1352,7 +1414,7 @@ const ProfilePage: React.FC = () => {
           <>
             <Button variant="ghost" onClick={() => closeCompletionTaskModal()}>Cancel</Button>
             <Button onClick={handleSaveCompletionTask} isLoading={isSavingCompletionTask}>
-              <Save size={16} className="mr-1.5" /> {editingProfileRow ? 'Save Changes' : 'Save'}
+              <Save {...decorativeIconProps} size={16} className="mr-1.5" /> {editingProfileRow ? 'Save Changes' : 'Save'}
             </Button>
           </>
         }
@@ -1421,7 +1483,7 @@ const ProfilePage: React.FC = () => {
               value={experienceForm.location}
               onChange={(e) => updateExperienceForm({ location: e.target.value })}
               placeholder="Remote, or New York, NY"
-              icon={<MapPin size={16} />}
+              icon={<MapPin {...decorativeIconProps} size={16} />}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
@@ -1530,7 +1592,7 @@ const ProfilePage: React.FC = () => {
               isLoading={isUploadingAvatar}
               disabled={!pendingAvatarFile}
             >
-              <Upload size={16} className="mr-1.5" /> Upload Photo
+              <Upload {...decorativeIconProps} size={16} className="mr-1.5" /> Upload Photo
             </Button>
           </>
         }
@@ -1635,7 +1697,7 @@ const ProfilePage: React.FC = () => {
               onClick={handleConfirmProfilePhotoRemove}
               isLoading={isRemovingAvatar}
             >
-              <Trash2 size={16} className="mr-1.5" /> Remove Photo
+              <Trash2 {...decorativeIconProps} size={16} className="mr-1.5" /> Remove Photo
             </Button>
           </>
         }
@@ -1678,7 +1740,7 @@ const ProfilePage: React.FC = () => {
               onClick={handleConfirmProfileDelete}
               isLoading={isDeletingPendingProfileRow}
             >
-              <Trash2 size={16} className="mr-1.5" /> Remove
+              <Trash2 {...decorativeIconProps} size={16} className="mr-1.5" /> Remove
             </Button>
           </>
         }
@@ -1695,7 +1757,7 @@ const ProfilePage: React.FC = () => {
       </AuraModal>
 
       {/* Profile Header */}
-      <Card className="p-6">
+      <Card role="region" aria-label={`${userName} profile summary`} className="p-6">
         <div className="flex flex-col sm:flex-row items-start gap-5">
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center text-accent text-2xl font-semibold overflow-hidden">
@@ -1720,9 +1782,9 @@ const ProfilePage: React.FC = () => {
                   title="Update profile photo"
                   onClick={handleOpenProfilePhotoUpload}
                   disabled={isUploadingAvatar || isRemovingAvatar}
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isUploadingAvatar ? <Upload size={12} /> : <Camera size={12} />}
+                  {isUploadingAvatar ? <Upload {...decorativeIconProps} size={14} /> : <Camera {...decorativeIconProps} size={14} />}
                 </button>
                 {avatarUrl && (
                   <button
@@ -1731,9 +1793,9 @@ const ProfilePage: React.FC = () => {
                     title="Remove profile photo"
                     onClick={handleOpenProfilePhotoRemove}
                     disabled={isUploadingAvatar || isRemovingAvatar}
-                    className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-destructive disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+                    className="absolute -bottom-1 -left-1 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-panel)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <Trash2 size={12} />
+                    <Trash2 {...decorativeIconProps} size={14} />
                   </button>
                 )}
               </>
@@ -1746,11 +1808,21 @@ const ProfilePage: React.FC = () => {
             </div>
             <p className="text-sm text-[var(--text-secondary)]">{profile?.headline || 'Member'}</p>
             <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[var(--text-muted)]">
-              {profile?.location && <span className="flex items-center gap-1"><MapPin size={12} /> {profile.location}</span>}
-              {profile?.website && <span className="flex items-center gap-1"><LinkIcon size={12} /> {profile.website}</span>}
-              <span className="flex items-center gap-1"><Calendar size={12} /> Joined {profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}</span>
+              {profile?.location && (
+                <span aria-label={`Location: ${profile.location}`} className="flex items-center gap-1">
+                  <MapPin {...decorativeIconProps} size={12} /> {profile.location}
+                </span>
+              )}
+              {profile?.website && (
+                <span aria-label={`Website: ${profile.website}`} className="flex items-center gap-1">
+                  <LinkIcon {...decorativeIconProps} size={12} /> {profile.website}
+                </span>
+              )}
+              <span aria-label={`Joined: ${profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}`} className="flex items-center gap-1">
+                <Calendar {...decorativeIconProps} size={12} /> Joined {profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}
+              </span>
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
+            <div role="list" aria-label="Profile skills" className="flex flex-wrap gap-1.5 mt-3">
               {skills.map((s: Record<string, any> | string, i: number) => {
                 const skillName = getSkillName(s) || 'Skill';
                 const skillId = getSkillId(s);
@@ -1758,8 +1830,13 @@ const ProfilePage: React.FC = () => {
                 const isDeleting = Boolean(skillId && deletingSkillIds.has(skillId));
 
                 return (
-                  <span key={`${skillName}-${i}`} className="inline-flex items-center rounded-md border border-[var(--border-default)] bg-transparent text-[10px] font-medium text-[var(--text-secondary)]">
-                    <span className="px-2 py-0.5">{skillName}</span>
+                  <span
+                    key={`${skillName}-${i}`}
+                    role="listitem"
+                    aria-label={getProfileSkillLabel(s)}
+                    className="inline-flex items-center rounded-md border border-[var(--border-default)] bg-transparent text-[10px] font-medium text-[var(--text-secondary)]"
+                  >
+                    <span className="flex min-h-8 items-center px-2 py-0.5">{skillName}</span>
                     {canManageSkill && (
                       <>
                         <button
@@ -1768,9 +1845,9 @@ const ProfilePage: React.FC = () => {
                           title={`Edit ${skillName}`}
                           onClick={() => handleEditSkill(s)}
                           disabled={isDeleting}
-                          className="border-l border-[var(--border-default)] px-1.5 py-0.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-50"
+                          className="inline-flex h-8 w-8 items-center justify-center border-l border-[var(--border-default)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50"
                         >
-                          <Edit2 size={10} />
+                          <Edit2 {...decorativeIconProps} size={10} />
                         </button>
                         <button
                           type="button"
@@ -1778,9 +1855,9 @@ const ProfilePage: React.FC = () => {
                           title={`Remove ${skillName}`}
                           onClick={() => handleDeleteSkill(s)}
                           disabled={isDeleting}
-                          className="border-l border-[var(--border-default)] px-1.5 py-0.5 text-[var(--text-muted)] transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                          className="inline-flex h-8 w-8 items-center justify-center border-l border-[var(--border-default)] text-[var(--text-muted)] transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50"
                         >
-                          <Trash2 size={10} />
+                          <Trash2 {...decorativeIconProps} size={10} />
                         </button>
                       </>
                     )}
@@ -1789,15 +1866,26 @@ const ProfilePage: React.FC = () => {
               })}
             </div>
           </div>
-          <div className="flex gap-6 text-center shrink-0">
-            <div><p className="text-2xl font-semibold">{profile?.connectionCount || 0}</p><p className="text-xs text-[var(--text-muted)]">Connections</p></div>
-            <div><p className="text-2xl font-semibold">{profile?.applicationCount || 0}</p><p className="text-xs text-[var(--text-muted)]">Applications</p></div>
-            <div><p className="text-2xl font-semibold">{achievements.length}</p><p className="text-xs text-[var(--text-muted)]">Badges</p></div>
+          <div role="list" aria-label="Profile summary metrics" className="flex gap-6 text-center shrink-0">
+            <div role="listitem" aria-label={getProfileMetricLabel('Connections', profile?.connectionCount || 0)}>
+              <p className="text-2xl font-semibold">{profile?.connectionCount || 0}</p>
+              <p className="text-xs text-[var(--text-muted)]">Connections</p>
+            </div>
+            <div role="listitem" aria-label={getProfileMetricLabel('Applications', profile?.applicationCount || 0)}>
+              <p className="text-2xl font-semibold">{profile?.applicationCount || 0}</p>
+              <p className="text-xs text-[var(--text-muted)]">Applications</p>
+            </div>
+            <div role="listitem" aria-label={getProfileMetricLabel('Badges', achievements.length)}>
+              <p className="text-2xl font-semibold">{achievements.length}</p>
+              <p className="text-xs text-[var(--text-muted)]">Badges</p>
+            </div>
           </div>
         </div>
       </Card>
 
       <Tabs
+        ariaLabel="Profile sections"
+        idPrefix="profile-sections"
         tabs={[
           { id: 'overview', label: 'Overview' },
           { id: 'experience', label: 'Experience' },
@@ -1809,14 +1897,19 @@ const ProfilePage: React.FC = () => {
       />
 
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="p-5 space-y-4">
+        <div
+          id="profile-sections-panel-overview"
+          role="tabpanel"
+          aria-labelledby="profile-sections-tab-overview"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+        >
+          <Card role="region" aria-label={`About ${userName}`} className="p-5 space-y-4">
             <h3 className="text-sm font-semibold">About</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               {profile?.bio || 'No bio provided yet.'}
             </p>
           </Card>
-          <Card className="p-5 space-y-4">
+          <Card role="region" aria-label="Profile completion" className="p-5 space-y-4">
             <h3 className="text-sm font-semibold">Profile Completion</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
@@ -1825,18 +1918,28 @@ const ProfilePage: React.FC = () => {
               </div>
               <div className="w-full h-2 rounded-full bg-[var(--border-default)]">
                 <div
+                  role="progressbar"
+                  aria-label="Profile completion progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={completionPercentage}
                   className="h-full rounded-full bg-accent transition-all duration-500"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
-              <div className="space-y-3">
+              <div role="list" aria-label="Profile completion checklist" className="space-y-3">
                 {completionTasks.map((task) => (
-                  <div key={task.id} className="flex items-start justify-between gap-3 rounded-lg border border-[var(--border-default)] p-3">
+                  <div
+                    key={task.id}
+                    role="listitem"
+                    aria-label={getProfileCompletionTaskLabel(task)}
+                    className="flex items-start justify-between gap-3 rounded-lg border border-[var(--border-default)] p-3"
+                  >
                     <div className="flex items-start gap-3 min-w-0">
                       {task.complete ? (
-                        <CheckCircle2 size={16} className="mt-0.5 text-success shrink-0" />
+                        <CheckCircle2 {...decorativeIconProps} size={16} className="mt-0.5 text-success shrink-0" />
                       ) : (
-                        <Circle size={16} className="mt-0.5 text-[var(--text-muted)] shrink-0" />
+                        <Circle {...decorativeIconProps} size={16} className="mt-0.5 text-[var(--text-muted)] shrink-0" />
                       )}
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{task.label}</p>
@@ -1845,7 +1948,7 @@ const ProfilePage: React.FC = () => {
                     </div>
                     {isOwnProfile && !task.complete && (
                       <Button variant="outline" size="sm" onClick={task.onClick}>
-                        <Plus size={13} className="mr-1" /> {task.actionLabel}
+                        <Plus {...decorativeIconProps} size={13} className="mr-1" /> {task.actionLabel}
                       </Button>
                     )}
                   </div>
@@ -1854,11 +1957,16 @@ const ProfilePage: React.FC = () => {
             </div>
           </Card>
           {profileSuggestions.length > 0 && (
-            <Card className="p-5 space-y-4">
+            <Card role="region" aria-label="Profile suggestion review" className="p-5 space-y-4">
               <h3 className="text-sm font-semibold">Profile Suggestions</h3>
-              <div className="space-y-3">
+              <div role="list" aria-label="Profile suggestions" className="space-y-3">
                 {profileSuggestions.map((suggestion) => (
-                  <div key={suggestion.id} className="rounded-lg border border-[var(--border-default)] p-3">
+                  <div
+                    key={suggestion.id}
+                    role="listitem"
+                    aria-label={getProfileSuggestionLabel(suggestion)}
+                    className="rounded-lg border border-[var(--border-default)] p-3"
+                  >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{suggestion.label}</p>
@@ -1878,134 +1986,170 @@ const ProfilePage: React.FC = () => {
       )}
 
       {activeTab === 'experience' && (
-        <Card className="p-5 space-y-6">
+        <Card
+          id="profile-sections-panel-experience"
+          role="tabpanel"
+          aria-labelledby="profile-sections-tab-experience"
+          className="p-5 space-y-6"
+        >
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Work Experience</h3>
             {isOwnProfile && (
               <Button variant="outline" size="sm" onClick={() => openAddCompletionTask('experience')}>
-                <Plus size={13} className="mr-1" /> Add role
+                <Plus {...decorativeIconProps} size={13} className="mr-1" /> Add role
               </Button>
             )}
           </div>
-          {experiences.length > 0 ? experiences.map((exp: Record<string, any>, i: number) => {
-            const experienceId = getProfileRowId(exp);
-            const isDeleting = Boolean(experienceId && deletingExperienceIds.has(experienceId));
+          {experiences.length > 0 ? (
+            <div role="list" aria-label="Work experience rows" className="space-y-6">
+              {experiences.map((exp: Record<string, any>, i: number) => {
+                const experienceId = getProfileRowId(exp);
+                const isDeleting = Boolean(experienceId && deletingExperienceIds.has(experienceId));
 
-            return (
-              <div key={experienceId || i} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                  <Briefcase size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{exp.title}</p>
-                  <p className="text-xs text-accent">{exp.company}</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    {formatProfileDate(getExperienceStartDate(exp))} - {exp.current ? 'Present' : formatProfileDate(getExperienceEndDate(exp)) || 'Present'}
-                  </p>
-                  <p className="text-sm text-[var(--text-secondary)] mt-2">{exp.description}</p>
-                </div>
-                {isOwnProfile && experienceId && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Edit experience ${exp.title || 'row'}`}
-                      title={`Edit ${exp.title || 'experience'}`}
-                      onClick={() => handleEditExperience(exp)}
-                      disabled={isDeleting}
-                    >
-                      <Edit2 size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Remove experience ${exp.title || 'row'}`}
-                      title={`Remove ${exp.title || 'experience'}`}
-                      onClick={() => handleDeleteExperience(exp)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
+                return (
+                  <div
+                    key={experienceId || i}
+                    role="listitem"
+                    aria-label={getProfileExperienceLabel(exp)}
+                    className="flex items-start gap-4"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                      <Briefcase {...decorativeIconProps} size={16} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{exp.title}</p>
+                      <p className="text-xs text-accent">{exp.company}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        {formatProfileDate(getExperienceStartDate(exp))} - {exp.current ? 'Present' : formatProfileDate(getExperienceEndDate(exp)) || 'Present'}
+                      </p>
+                      <p className="text-sm text-[var(--text-secondary)] mt-2">{exp.description}</p>
+                    </div>
+                    {isOwnProfile && experienceId && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit experience ${exp.title || 'row'}`}
+                          title={`Edit ${exp.title || 'experience'}`}
+                          onClick={() => handleEditExperience(exp)}
+                          disabled={isDeleting}
+                        >
+                          <Edit2 {...decorativeIconProps} size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Remove experience ${exp.title || 'row'}`}
+                          title={`Remove ${exp.title || 'experience'}`}
+                          onClick={() => handleDeleteExperience(exp)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 {...decorativeIconProps} size={14} />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          }) : (
+                );
+              })}
+            </div>
+          ) : (
             <div className="p-8 text-center text-sm text-[var(--text-muted)]">No work experience added yet.</div>
           )}
         </Card>
       )}
 
       {activeTab === 'education' && (
-        <Card className="p-5 space-y-6">
+        <Card
+          id="profile-sections-panel-education"
+          role="tabpanel"
+          aria-labelledby="profile-sections-tab-education"
+          className="p-5 space-y-6"
+        >
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Education</h3>
             {isOwnProfile && (
               <Button variant="outline" size="sm" onClick={() => openAddCompletionTask('education')}>
-                <Plus size={13} className="mr-1" /> Add education
+                <Plus {...decorativeIconProps} size={13} className="mr-1" /> Add education
               </Button>
             )}
           </div>
-          {education.length > 0 ? education.map((edu: Record<string, any>, i: number) => {
-            const educationId = getProfileRowId(edu);
-            const educationTitle = edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education';
-            const isDeleting = Boolean(educationId && deletingEducationIds.has(educationId));
+          {education.length > 0 ? (
+            <div role="list" aria-label="Education rows" className="space-y-6">
+              {education.map((edu: Record<string, any>, i: number) => {
+                const educationId = getProfileRowId(edu);
+                const educationTitle = edu.degree || edu.fieldOfStudy || edu.field_of_study || 'Education';
+                const isDeleting = Boolean(educationId && deletingEducationIds.has(educationId));
 
-            return (
-              <div key={educationId || i} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                  <GraduationCap size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{educationTitle}</p>
-                  <p className="text-xs text-accent">{edu.institution}</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    {formatProfileDate(getEducationEndDate(edu) || getEducationStartDate(edu)) || edu.year}
-                  </p>
-                </div>
-                {isOwnProfile && educationId && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Edit education ${edu.institution || educationTitle}`}
-                      title={`Edit ${edu.institution || educationTitle}`}
-                      onClick={() => handleEditEducation(edu)}
-                      disabled={isDeleting}
-                    >
-                      <Edit2 size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Remove education ${edu.institution || educationTitle}`}
-                      title={`Remove ${edu.institution || educationTitle}`}
-                      onClick={() => handleDeleteEducation(edu)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
+                return (
+                  <div
+                    key={educationId || i}
+                    role="listitem"
+                    aria-label={getProfileEducationLabel(edu)}
+                    className="flex items-start gap-4"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                      <GraduationCap {...decorativeIconProps} size={16} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{educationTitle}</p>
+                      <p className="text-xs text-accent">{edu.institution}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        {formatProfileDate(getEducationEndDate(edu) || getEducationStartDate(edu)) || edu.year}
+                      </p>
+                    </div>
+                    {isOwnProfile && educationId && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit education ${edu.institution || educationTitle}`}
+                          title={`Edit ${edu.institution || educationTitle}`}
+                          onClick={() => handleEditEducation(edu)}
+                          disabled={isDeleting}
+                        >
+                          <Edit2 {...decorativeIconProps} size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Remove education ${edu.institution || educationTitle}`}
+                          title={`Remove ${edu.institution || educationTitle}`}
+                          onClick={() => handleDeleteEducation(edu)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 {...decorativeIconProps} size={14} />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          }) : (
+                );
+              })}
+            </div>
+          ) : (
             <div className="p-8 text-center text-sm text-[var(--text-muted)]">No education history added yet.</div>
           )}
         </Card>
       )}
 
       {activeTab === 'achievements' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {achievements.length > 0 ? achievements.map((badge: Record<string, any>, i: number) => (
-            <Card key={i} className="p-5 text-center">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-3">
-                <Award size={16} />
-              </div>
-              <p className="text-sm font-semibold">{badge.title}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{badge.description}</p>
-            </Card>
-          )) : (
+        <div
+          id="profile-sections-panel-achievements"
+          role="tabpanel"
+          aria-labelledby="profile-sections-tab-achievements"
+        >
+          {achievements.length > 0 ? (
+            <div role="list" aria-label="Achievement badges" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {achievements.map((badge: Record<string, any>, i: number) => (
+                <Card key={i} role="listitem" aria-label={getProfileAchievementLabel(badge)} className="p-5 text-center">
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-3">
+                    <Award {...decorativeIconProps} size={16} />
+                  </div>
+                  <p className="text-sm font-semibold">{badge.title}</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">{badge.description}</p>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <div className="col-span-full p-12 text-center text-sm text-[var(--text-muted)]">No achievements or badges earned yet.</div>
           )}
         </div>

@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -53,23 +54,17 @@ class MessagingServiceTest {
     }
 
     @Test
-    void sendMessageFallback_ShouldReturnTemporaryMessage_WhenServiceFails() {
+    void sendMessageFallback_ShouldFail_WhenMessageWasNotPersisted() {
         // Arrange
         String senderId = "user1";
         String receiverId = "user2";
         String content = "Test message";
         Throwable error = new RuntimeException("Database unavailable");
 
-        // Act
-        Message result = messagingService.sendMessageFallback(senderId, receiverId, content, error);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).startsWith("TEMP_");
-        assertThat(result.getSenderId()).isEqualTo(senderId);
-        assertThat(result.getReceiverId()).isEqualTo(receiverId);
-        assertThat(result.getContent()).isEqualTo(content);
-        assertThat(result.getIsRead()).isFalse();
+        // Act & Assert
+        assertThatThrownBy(() -> messagingService.sendMessageFallback(senderId, receiverId, content, error))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be persisted");
     }
 
     @Test
@@ -159,14 +154,16 @@ class MessagingServiceTest {
     }
 
     @Test
-    void markAsReadFallback_ShouldLogWarning_WhenServiceFails() {
+    void markAsReadFallback_ShouldFail_WhenReadStateWasNotPersisted() {
         // Arrange
         String user1 = "user1";
         String user2 = "user2";
         Throwable error = new RuntimeException("Service unavailable");
 
-        // Act & Assert - should not throw exception
-        messagingService.markAsReadFallback(user1, user2, error);
+        // Act & Assert
+        assertThatThrownBy(() -> messagingService.markAsReadFallback(user1, user2, error))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be persisted");
     }
 
     @Test

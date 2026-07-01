@@ -35,6 +35,13 @@ const learningInsetClassName = 'rounded-md border border-[var(--border-default)]
 const learningCourseCardClassName = 'flex h-full min-h-64 flex-col justify-between p-5 transition-colors hover:border-[var(--border-strong)]';
 const learningCompactCardClassName = 'flex h-full flex-col justify-between gap-4 p-4';
 const learningProgressTrackClassName = 'h-1.5 rounded-full bg-[var(--border-default)]';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
+const getCourseTitle = (course?: Course | null) => course?.title || 'Course';
+
+const getLearningProgressLabel = (course: Course, progress: number, context: 'Continue Learning' | 'Course card' | 'Course detail') => (
+  `${context} progress for ${getCourseTitle(course)}: ${progress}% complete`
+);
 
 type LMSRouteState = {
   aiLearningDraft?: LearningAiDraftSource;
@@ -605,7 +612,7 @@ const LMSPage: React.FC = () => {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="default">
-                  <Sparkles size={12} className="mr-1" />
+                  <Sparkles {...decorativeIconProps} size={12} className="mr-1" />
                   AI learning plan
                 </Badge>
                 <Badge variant="outline">Review before enrolling</Badge>
@@ -620,7 +627,7 @@ const LMSPage: React.FC = () => {
               </div>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={handleDismissAiLearningDraft}>
-              <X size={14} className="mr-1" />
+              <X {...decorativeIconProps} size={14} className="mr-1" />
               Dismiss
             </Button>
           </div>
@@ -646,7 +653,7 @@ const LMSPage: React.FC = () => {
                     onClick={() => handleApplyAiLearningSearch(suggestion.searchTerm)}
                     aria-label={`Apply learning search ${suggestion.searchTerm}`}
                   >
-                    <Search size={14} className="mr-1" />
+                    <Search {...decorativeIconProps} size={14} className="mr-1" />
                     Apply Search
                   </Button>
                 </div>
@@ -665,7 +672,7 @@ const LMSPage: React.FC = () => {
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 gap-3">
-              <AlertCircle size={18} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+              <AlertCircle {...decorativeIconProps} size={18} className="mt-0.5 shrink-0 text-warning" />
               <div className="space-y-1">
                 <h2 id="learning-progress-unavailable-title" className="text-sm font-semibold text-[var(--text-primary)]">
                   Learning progress unavailable
@@ -678,7 +685,7 @@ const LMSPage: React.FC = () => {
               </div>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={loadEnrollments} className="w-full sm:w-auto">
-              <RefreshCw size={14} className="mr-1" />
+              <RefreshCw {...decorativeIconProps} size={14} className="mr-1" />
               Retry Progress
             </Button>
           </div>
@@ -717,13 +724,21 @@ const LMSPage: React.FC = () => {
                           <p className="truncate text-xs text-[var(--text-secondary)]">
                             {nextLessonInfo.lesson?.title || 'Course review'}
                           </p>
-                          <div className={learningProgressTrackClassName}>
+                          <div
+                            className={learningProgressTrackClassName}
+                            role="progressbar"
+                            aria-label={getLearningProgressLabel(course, progress, 'Continue Learning')}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={progress}
+                            aria-valuetext={`${progress}% complete`}
+                          >
                             <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progress}%` }} />
                           </div>
                         </div>
                       </div>
                       <Button size="sm" className="w-full" onClick={() => handleCourseClick(course, 'continue_learning')}>
-                        <Play size={14} className="mr-1" />
+                        <Play {...decorativeIconProps} size={14} className="mr-1" />
                         Resume
                       </Button>
                     </Card>
@@ -782,11 +797,20 @@ const LMSPage: React.FC = () => {
               setCoursePage(1);
             }}
           />
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+          <div
+            className="relative w-full sm:w-72"
+            role="search"
+            aria-label="Learning catalog search"
+            data-ui="learning-search-surface"
+          >
+            <Search {...decorativeIconProps} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+            <p id="learning-search-help" className="sr-only">
+              Search narrows the visible course catalog by course title, description, category, or provider.
+            </p>
             <input
               type="text"
               aria-label="Search courses"
+              aria-describedby="learning-search-help"
               placeholder="Search courses..."
               className="h-10 w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] pl-9 pr-3 text-sm transition-colors placeholder:text-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               value={searchTerm}
@@ -806,7 +830,16 @@ const LMSPage: React.FC = () => {
         </div>
 
         {status !== 'loading' && filtered.length > 0 && (
-          <div className={`${learningPanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+          <div
+            className={`${learningPanelClassName} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}
+            role="group"
+            aria-label="Learning catalog controls"
+            aria-describedby="learning-control-help"
+            data-ui="learning-catalog-controls"
+          >
+            <p id="learning-control-help" className="sr-only">
+              Course tabs, page size, and pagination controls change only the visible catalog view.
+            </p>
             <p role="status" aria-live="polite" className="text-xs text-[var(--text-secondary)]">
               Showing <span className="font-medium text-[var(--text-primary)]">{firstCourseIndex}-{lastCourseIndex}</span>
               {hasExactCourseTotal ? (
@@ -863,7 +896,7 @@ const LMSPage: React.FC = () => {
                   disabled={!canGoToPreviousCoursePage}
                   aria-label="Previous course page"
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft {...decorativeIconProps} size={14} />
                 </Button>
                 <span className="min-w-16 text-center text-xs text-[var(--text-secondary)]">
                   Page {normalizedCoursePage}{hasExactCourseTotal ? ` of ${courseTotalPages}` : ''}
@@ -889,7 +922,7 @@ const LMSPage: React.FC = () => {
                   disabled={!canGoToNextCoursePage}
                   aria-label="Next course page"
                 >
-                  <ChevronRight size={14} />
+                  <ChevronRight {...decorativeIconProps} size={14} />
                 </Button>
               </div>
             </div>
@@ -916,7 +949,7 @@ const LMSPage: React.FC = () => {
         </div>
       ) : status === 'failed' ? (
         <EmptyState
-          icon={<AlertCircle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          icon={<AlertCircle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
           title="Unable to load courses"
           description={courseCatalogLoadFailureMessage}
           action={{ label: 'Retry Courses', onClick: handleRetryCourseCatalog }}
@@ -939,8 +972,8 @@ const LMSPage: React.FC = () => {
                     <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">{course.title}</h3>
                     <p className="text-xs text-[var(--text-muted)] mb-2 line-clamp-2">{course.description}</p>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)]">
-                      <span className="flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
-                      <span className="flex items-center gap-1"><BookOpen size={12} /> {lessonCount} lessons</span>
+                      <span className="flex items-center gap-1" aria-label={`Duration ${course.duration}`}><Clock {...decorativeIconProps} size={12} /> {course.duration}</span>
+                      <span className="flex items-center gap-1"><BookOpen {...decorativeIconProps} size={12} /> {lessonCount} lessons</span>
                       {course.xp && <span className="flex items-center gap-1 text-accent font-medium">+{course.xp} XP</span>}
                     </div>
                     {course.provider && (
@@ -953,7 +986,15 @@ const LMSPage: React.FC = () => {
                         <span className="text-[var(--text-muted)]">Progress</span>
                         <span className="font-medium">{progress}%</span>
                       </div>
-                      <div className={learningProgressTrackClassName}>
+                      <div
+                        className={learningProgressTrackClassName}
+                        role="progressbar"
+                        aria-label={getLearningProgressLabel(course, progress, 'Course card')}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progress}
+                        aria-valuetext={`${progress}% complete`}
+                      >
                         <div
                           className={`h-full rounded-full transition-all ${progress === 100 ? 'bg-success' : 'bg-accent'}`}
                           style={{ width: `${progress}%` }}
@@ -970,11 +1011,11 @@ const LMSPage: React.FC = () => {
                     onClick={() => handleCourseClick(course, 'catalog_card')}
                   >
                     {progress === 100 ? (
-                      <><CheckCircle2 size={14} className="mr-1" /> Review</>
+                      <><CheckCircle2 {...decorativeIconProps} size={14} className="mr-1" /> Review</>
                     ) : progress > 0 ? (
-                      <><Play size={14} className="mr-1" /> Continue</>
+                      <><Play {...decorativeIconProps} size={14} className="mr-1" /> Continue</>
                     ) : (
-                      <><Play size={14} className="mr-1" /> Start Course</>
+                      <><Play {...decorativeIconProps} size={14} className="mr-1" /> Start Course</>
                     )}
                   </Button>
                 </div>
@@ -997,8 +1038,8 @@ const LMSPage: React.FC = () => {
                 <Badge variant="outline">{selectedCourse.category || 'Course'}</Badge>
                 <Badge variant="outline">{selectedCourse.difficulty || 'Normal'}</Badge>
               </div>
-              <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                <Clock size={12} /> {selectedCourse.duration}
+              <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]" aria-label={`Duration ${selectedCourse.duration}`}>
+                <Clock {...decorativeIconProps} size={12} /> {selectedCourse.duration}
               </div>
             </div>
 
@@ -1014,7 +1055,15 @@ const LMSPage: React.FC = () => {
                 <span className="text-[var(--text-muted)]">Course Progress</span>
                 <span className="font-medium">{selectedCourseProgress}%</span>
               </div>
-              <div className={learningProgressTrackClassName}>
+              <div
+                className={learningProgressTrackClassName}
+                role="progressbar"
+                aria-label={getLearningProgressLabel(selectedCourse, selectedCourseProgress, 'Course detail')}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={selectedCourseProgress}
+                aria-valuetext={`${selectedCourseProgress}% complete`}
+              >
                 <div
                   className={`h-full rounded-full transition-all ${selectedCourseProgress === 100 ? 'bg-success' : 'bg-accent'}`}
                   style={{ width: `${selectedCourseProgress}%` }}
@@ -1059,9 +1108,9 @@ const LMSPage: React.FC = () => {
                           </div>
                         </div>
                         {isCompleted ? (
-                          <CheckCircle2 size={16} className="text-success shrink-0" />
+                          <CheckCircle2 {...decorativeIconProps} size={16} className="text-success shrink-0" />
                         ) : (
-                          <Circle size={16} className="text-[var(--text-muted)] shrink-0" />
+                          <Circle {...decorativeIconProps} size={16} className="text-[var(--text-muted)] shrink-0" />
                         )}
                       </button>
                     );
@@ -1091,7 +1140,7 @@ const LMSPage: React.FC = () => {
                     ) : (
                       <div className={`${learningInsetClassName} p-5`}>
                         <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-3">
-                          <PlayCircle size={20} />
+                          <PlayCircle {...decorativeIconProps} size={20} />
                         </div>
                         <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
                           {activeLesson.content || 'Lesson content is not available yet. Review the course material from your provider, then mark this lesson complete when finished.'}
@@ -1105,7 +1154,7 @@ const LMSPage: React.FC = () => {
                         disabled={isActiveLessonCompleted || isCompletingLesson}
                         isLoading={isCompletingLesson}
                       >
-                        <CheckCircle2 size={14} className="mr-1.5" />
+                        <CheckCircle2 {...decorativeIconProps} size={14} className="mr-1.5" />
                         {isActiveLessonCompleted ? 'Lesson Complete' : selectedEnrollment ? 'Mark Complete' : 'Enroll and Complete'}
                       </Button>
                     </div>
@@ -1114,7 +1163,7 @@ const LMSPage: React.FC = () => {
                   <EmptyState
                     title="No lesson selected"
                     description="Select a lesson from the curriculum to begin."
-                    icon={<BookOpen size={24} />}
+                    icon={<BookOpen {...decorativeIconProps} size={24} />}
                   />
                 )}
               </div>

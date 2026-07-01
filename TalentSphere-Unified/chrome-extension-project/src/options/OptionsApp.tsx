@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Sparkles, Calendar, Settings2, Cpu, HardDrive } from 'lucide-react';
+import { Sparkles, Calendar, Settings2, Cpu } from 'lucide-react';
 import { useChromeStorage } from '../hooks/useChromeStorage';
 import {
   countBand,
@@ -11,6 +11,7 @@ import {
 import { AIView, type ResumeMatchReport } from './views/AIView';
 import { PrepView } from './views/PrepView';
 import { SettingsView } from './views/SettingsView';
+import { LocalOnlyStatus } from '../components/LocalOnlyStatus';
 
 interface PrepItem {
   id: string;
@@ -429,13 +430,7 @@ export function OptionsApp() {
           </nav>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-[var(--ext-border)] bg-[var(--ext-surface-muted)] p-3.5">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[var(--ext-success)]"></span>
-            <span className="text-[10px] text-[var(--ext-text-secondary)]">Local storage active</span>
-          </div>
-          <HardDrive className="h-3 w-3 text-[var(--ext-text-muted)]" />
-        </div>
+        <LocalOnlyStatus id="options-local-only-status" />
       </aside>
 
       <main className="flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { authService } from '../../services/authService';
@@ -25,10 +25,62 @@ const renderWithRouter = (children: React.ReactNode, initialEntry = '/login') =>
   );
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach(icon => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('Auth entry error copy', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  it('exposes the login entry with named shell, form, and alternate entry semantics', () => {
+    renderWithRouter(<LoginPage />);
+
+    expect(screen.getByRole('main', { name: 'Sign in to TalentSphere' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Sign in to TalentSphere authentication panel' })).toBeTruthy();
+
+    const form = screen.getByRole('form', { name: 'Email sign in' });
+    expect(within(form).getByLabelText('Email')).toBeTruthy();
+    expect(within(form).getByLabelText('Password')).toBeTruthy();
+    expect(within(form).getByRole('button', { name: /sign in/i })).toBeTruthy();
+
+    const alternateEntry = screen.getByRole('navigation', { name: 'Authentication alternate entry' });
+    expect(within(alternateEntry).getByRole('link', { name: 'Sign up' })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+  });
+
+  it('exposes the registration entry with named shell, form, account type, and next-step semantics', () => {
+    renderWithRouter(<RegisterPage />, '/register?role=recruiter');
+
+    expect(screen.getByRole('main', { name: 'Create your account' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Create your account authentication panel' })).toBeTruthy();
+
+    const form = screen.getByRole('form', { name: 'Account registration' });
+    const accountType = within(form).getByRole('group', { name: 'Account Type' });
+    const recruiterOption = within(accountType).getByRole('button', { name: /Recruiter/ });
+    const talentOption = within(accountType).getByRole('button', { name: /Talent/ });
+    const nextStep = within(form).getByRole('status', { name: 'Registration next step' });
+
+    expect(recruiterOption.getAttribute('aria-pressed')).toBe('true');
+    expect(recruiterOption.getAttribute('aria-controls')).toBe('registration-next-step');
+    expect(nextStep.textContent).toContain('Next: company setup');
+
+    fireEvent.click(talentOption);
+
+    expect(talentOption.getAttribute('aria-pressed')).toBe('true');
+    expect(nextStep.textContent).toContain('Next: dashboard checklist');
+
+    const alternateEntry = screen.getByRole('navigation', { name: 'Authentication alternate entry' });
+    expect(within(alternateEntry).getByRole('link', { name: 'Sign in' })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
   });
 
   it('keeps login provider failures safe without exposing raw provider details', async () => {

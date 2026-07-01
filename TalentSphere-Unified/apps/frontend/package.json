@@ -15,6 +15,8 @@
     "generate-docs": "typedoc \"src/**/*.ts\" \"src/**/*.tsx\" --out ../docs/frontend/html --excludePrivate --name \"TalentSphere Frontend\"",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/accessibility-semantics.spec.ts --project=chromium --reporter=line",
+    "test:contrast": "playwright test tests/color-contrast.spec.ts --project=chromium --reporter=line",
+    "test:contrast:all": "playwright test tests/color-contrast.spec.ts --reporter=line",
     "test:keyboard": "playwright test tests/keyboard-navigation.spec.ts --project=chromium --reporter=line",
     "test:e2e:chromium": "playwright test --project=chromium --reporter=line"
   },

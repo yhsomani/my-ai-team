@@ -1,5 +1,6 @@
 import { apiClient } from '../api/axios';
 import { typedSupabase, type Database, type Json } from '../lib/supabaseClient';
+import { normalizeAIProvenance, type AIProvenance, type AIProvenanceMode } from '../lib/aiProvenance';
 
 type AISessionRow = Database['public']['Tables']['ai_sessions']['Row'];
 type AISessionInsert = Database['public']['Tables']['ai_sessions']['Insert'];
@@ -26,6 +27,7 @@ export interface AIChatMessageRecord {
     createdAt?: string;
     sourceLabel?: string;
     sourceDetail?: string;
+    provenanceMode?: AIProvenanceMode;
     controlNote?: string;
     reviewStatus?: AIReviewStatus;
     reviewedAt?: string;
@@ -57,7 +59,7 @@ export interface AutomationSuggestionRecord {
 }
 
 type AIObjectResponse = Record<string, unknown>;
-type AIChatResponse = { message?: string } & AIObjectResponse;
+type AIChatResponse = { message?: string } & Partial<AIProvenance> & AIObjectResponse;
 
 const normalizeMessages = (messages: unknown): AIChatMessageRecord[] => (
     Array.isArray(messages)
@@ -326,12 +328,16 @@ export const aiService = {
         );
         const payload = unwrapApiResponseData(response.data);
 
-        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-            return payload as AIChatResponse;
-        }
+        const responsePayload = payload && typeof payload === 'object' && !Array.isArray(payload)
+            ? payload as AIChatResponse
+            : {
+                message: typeof payload === 'string' ? payload : '',
+            };
+        const provenance = normalizeAIProvenance(responsePayload);
 
         return {
-            message: typeof payload === 'string' ? payload : '',
+            ...responsePayload,
+            ...provenance,
         };
     },
 

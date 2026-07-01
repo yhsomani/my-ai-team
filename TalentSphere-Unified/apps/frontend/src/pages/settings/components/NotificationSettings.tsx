@@ -29,18 +29,20 @@ interface NotificationPreference {
   icon?: React.ReactNode;
 }
 
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
 const channelPreferences: NotificationPreference[] = [
   {
     key: 'email_notifications',
     title: 'Email Notifications',
     description: 'Receive updates via email',
-    icon: <Mail className="h-5 w-5 text-[var(--text-secondary)]" />
+    icon: <Mail {...decorativeIconProps} className="h-5 w-5 text-[var(--text-secondary)]" />
   },
   {
     key: 'push_notifications',
     title: 'Push Notifications',
     description: 'Receive push notifications in browser',
-    icon: <Smartphone className="h-5 w-5 text-[var(--text-secondary)]" />
+    icon: <Smartphone {...decorativeIconProps} className="h-5 w-5 text-[var(--text-secondary)]" />
   }
 ];
 
@@ -90,7 +92,12 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     const descriptionId = `${preference.key}-description`;
 
     return (
-      <div key={preference.key} className="flex items-center justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+      <div
+        key={preference.key}
+        role="listitem"
+        aria-label={`${preference.title}. ${preference.description}. ${checked ? 'On' : 'Off'}`}
+        className="flex items-center justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+      >
         <div className="flex min-w-0 items-center gap-3">
           {preference.icon}
           <div>
@@ -128,7 +135,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           {/* Communication Channels */}
           <div>
             <h4 className="mb-4 text-sm font-semibold uppercase text-[var(--text-secondary)]">Channels</h4>
-            <div className="space-y-4">
+            <div className="space-y-4" role="list" aria-label="Notification channels">
               {channelPreferences.map(renderPreference)}
             </div>
           </div>
@@ -136,17 +143,21 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           {/* Activity Alerts */}
           <div>
             <h4 className="mb-4 mt-8 text-sm font-semibold uppercase text-[var(--text-secondary)]">Activity Alerts</h4>
-            <div className="space-y-4">
+            <div className="space-y-4" role="list" aria-label="Notification activity alerts">
               {activityPreferences.map(renderPreference)}
             </div>
           </div>
 
           <div>
             <h4 className="mb-4 mt-8 text-sm font-semibold uppercase text-[var(--text-secondary)]">Delivery Controls</h4>
-            <div className="space-y-4">
-              <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
+            <div className="space-y-4" role="list" aria-label="Notification delivery controls">
+              <div
+                role="listitem"
+                aria-label={`Delivery preference: ${deliverySummary.summary}`}
+                className="rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4"
+              >
                 <div className="flex items-start gap-3">
-                  <Clock className="mt-0.5 h-5 w-5 text-[var(--text-secondary)]" />
+                  <Clock {...decorativeIconProps} className="mt-0.5 h-5 w-5 text-[var(--text-secondary)]" />
                   <div className="min-w-0 flex-1 space-y-4">
                     <div>
                       <label htmlFor="notification-digest-frequency" className="block font-medium text-[var(--text-primary)]">

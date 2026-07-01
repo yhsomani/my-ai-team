@@ -4,7 +4,9 @@
 
 ## Overview
 
-This guide explains how to use the `seed-data.sql` script to populate your Supabase database with realistic test data covering all user types, workflows, edge cases, and failure scenarios.
+This guide explains how to use the `seed-data.sql` script to populate a local, development, test, or CI Supabase/Postgres database with realistic test data covering all user types, workflows, edge cases, and failure scenarios.
+
+The seed scripts are destructive. They truncate application tables before inserting deterministic demo records. They are guarded by `npm run validate:seed-data-safety` and must not be run against production or a shared customer database.
 
 ---
 
@@ -74,21 +76,30 @@ The seed script creates comprehensive data for:
 
 ## 🚀 How to Run
 
-### Option 1: Via Supabase Dashboard (Recommended)
+### Option 1: Via Supabase Dashboard
 
 1. **Open SQL Editor**
-   - Go to: https://app.supabase.com/project/tvulrziizvakwzxfvdwv/sql/new
+   - Open the SQL editor for a reviewed local, development, test, or CI project.
+   - Confirm that the target project is not production.
 
-2. **Copy Script**
+2. **Declare the seed scope**
+   - Run these statements in the same SQL editor session:
+     ```sql
+     SET app.seed_environment = 'development';
+     SET app.allow_destructive_seed_data = 'I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA';
+     ```
+   - Use `local`, `development`, `dev`, `test`, `testing`, or `ci` for `app.seed_environment`.
+
+3. **Copy Script**
    - Open `/workspace/TalentSphere-Unified/seed-data.sql`
    - Copy entire contents (Ctrl+A, Ctrl+C)
 
-3. **Execute**
+4. **Execute**
    - Paste into SQL Editor
    - Click **Run** (or Ctrl+Enter)
    - Wait for completion (~5-10 seconds)
 
-4. **Verify**
+5. **Verify**
    - You should see output:
      ```
      NOTICE: ========================================
@@ -100,44 +111,30 @@ The seed script creates comprehensive data for:
 ### Option 2: Via Supabase CLI
 
 ```bash
-# Connect to your project
-supabase link --project-ref tvulrziizvakwzxfvdwv
+# Connect to a reviewed non-production project
+supabase link --project-ref <non-production-project-ref>
 
-# Run the seed script
-psql "postgresql://postgres:[TalentSphere-Unified]@db.tvulrziizvakwzxfvdwv.supabase.co:5432/postgres" -f seed-data.sql
+# Run the seed script with explicit non-production scope and destructive confirmation
+psql "$NON_PRODUCTION_DATABASE_URL" \
+  -v ON_ERROR_STOP=1 \
+  -c "SET app.seed_environment = 'development'; SET app.allow_destructive_seed_data = 'I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA';" \
+  -f seed-data.sql
 ```
 
-### Option 3: Programmatically (Node.js)
+### Option 3: Local Python Seed Runner
 
-Create a file `seed-runner.js`:
+The legacy Python seed runner targets local service databases and is also destructive. It refuses to run until environment scope and confirmation are present:
 
-```javascript
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-
-const supabase = createClient(
-  'https://tvulrziizvakwzxfvdwv.supabase.co',
-  'YOUR_SERVICE_ROLE_KEY' // Note: Use service role for seeding
-);
-
-async function runSeed() {
-  const sql = fs.readFileSync('./seed-data.sql', 'utf-8');
-  
-  // Split by semicolons and execute each statement
-  const statements = sql.split(';').filter(s => s.trim());
-  
-  for (const stmt of statements) {
-    if (!stmt.includes('--')) { // Skip comments
-      const { error } = await supabase.rpc('exec_sql', { sql: stmt });
-      if (error) console.error('Error:', error);
-    }
-  }
-  
-  console.log('Seeding complete!');
-}
-
-runSeed();
+```bash
+TALENTSPHERE_SEED_ENV=development \
+ALLOW_DESTRUCTIVE_SEED_DATA=I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA \
+TALENTSPHERE_SEED_DB_HOST=localhost \
+TALENTSPHERE_SEED_DB_USER=postgres \
+TALENTSPHERE_SEED_DB_PASSWORD=postgres \
+python scripts/seed_data.py
 ```
+
+Remote development or test databases require an additional `ALLOW_REMOTE_DEV_SEED=I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA` override. Do not use that override for production.
 
 ---
 
@@ -162,14 +159,26 @@ NOTICE: Could not insert into auth.users directly
 4. Mark them as **Email Confirmed**
 5. Re-run the seed script (it will now find the users and populate profiles)
 
-### 2. **Idempotency**
+### 2. **Idempotency and Environment Scope**
 The script includes `TRUNCATE ... CASCADE` at the beginning, which **deletes all existing data**. 
 
-- ✅ Safe to run multiple times in dev/test
-- ❌ **DO NOT run in production**
+- Safe to run multiple times only in reviewed local, development, test, or CI databases.
+- **DO NOT run in production**.
+- `seed-data.sql` refuses to proceed unless the current SQL session defines `app.seed_environment` and `app.allow_destructive_seed_data`.
+- `scripts/seed_data.py` refuses to proceed unless `TALENTSPHERE_SEED_ENV` is local/dev/test/CI and `ALLOW_DESTRUCTIVE_SEED_DATA` matches the confirmation phrase.
 
 ### 3. **RLS Policies**
 The script runs as `postgres` (superuser), bypassing Row Level Security. This is necessary for seeding. RLS remains enabled for normal app users.
+
+### 4. **Safety Validation**
+
+Run the seed safety validator after changing seed scripts, this guide, CI, or the manifest:
+
+```bash
+npm run validate:seed-data-safety
+```
+
+The validator fails when destructive truncation is not guarded, when Python seeding lacks environment confirmation, or when this guide reintroduces production-unsafe copy-paste instructions.
 
 ---
 

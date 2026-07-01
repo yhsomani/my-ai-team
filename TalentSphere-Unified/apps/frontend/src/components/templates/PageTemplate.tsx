@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { PageHeader } from '../shared/PageHeader';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface PageTemplateProps {
   title: string;
@@ -7,6 +13,9 @@ interface PageTemplateProps {
   children: ReactNode;
   actions?: ReactNode;
   showHeader?: boolean;
+  className?: string;
+  contentClassName?: string;
+  mainAriaLabel?: string;
 }
 
 export function PageTemplate({
@@ -15,9 +24,16 @@ export function PageTemplate({
   children,
   actions,
   showHeader = true,
+  className,
+  contentClassName,
+  mainAriaLabel,
 }: PageTemplateProps) {
   return (
-    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+    <div
+      className={cn('min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]', className)}
+      data-ui="page-template"
+      data-slot="page-template"
+    >
       {showHeader && (
         <PageHeader
           title={title}
@@ -25,7 +41,12 @@ export function PageTemplate({
           actions={actions}
         />
       )}
-      <main className="min-w-0">
+      <main
+        aria-label={mainAriaLabel ?? `${title} content`}
+        className={cn('min-w-0', contentClassName)}
+        data-ui="page-template-content"
+        data-slot="page-template-content"
+      >
         {children}
       </main>
     </div>

@@ -28,15 +28,7 @@ public class MessagingService {
 
     public Message sendMessageFallback(String senderId, String receiverId, String content, Throwable t) {
         log.error("Message persistence failed for sender {} to receiver {}: {}", senderId, receiverId, t.getMessage());
-        // Return a message with temporary status to indicate it needs retry
-        Message message = Message.builder()
-                .senderId(senderId)
-                .receiverId(receiverId)
-                .content(content)
-                .isRead(false)
-                .build();
-        message.setId("TEMP_" + System.currentTimeMillis());
-        return message;
+        throw new IllegalStateException("Message could not be persisted. Please retry.", t);
     }
 
     @CircuitBreaker(name = "conversationHistory", fallbackMethod = "getConversationFallback")
@@ -73,5 +65,6 @@ public class MessagingService {
 
     public void markAsReadFallback(String user1, String user2, Throwable t) {
         log.warn("Failed to mark messages as read for users {} and {}: {}", user1, user2, t.getMessage());
+        throw new IllegalStateException("Message read state could not be persisted. Please retry.", t);
     }
 }

@@ -7,6 +7,16 @@ const ThrowingChild = ({ message }: { message: string }) => {
   throw new Error(message);
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('ErrorBoundary', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
@@ -20,7 +30,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders safe application recovery copy without exposing raw error messages', () => {
-    render(
+    const { container } = render(
       <ErrorBoundary>
         <ThrowingChild message="Database password leaked in stack trace" />
       </ErrorBoundary>,
@@ -30,10 +40,11 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Application recovery')).toBeTruthy();
     expect(screen.getByText(/Internal error messages are not shown here/)).toBeTruthy();
     expect(screen.queryByText(/Database password leaked/i)).toBeNull();
+    expectDecorativeSvgIcons(container);
   });
 
   it('uses service-unavailable recovery copy for network and service failures', () => {
-    render(
+    const { container } = render(
       <ErrorBoundary>
         <ThrowingChild message="Network error: failed to fetch profile data" />
       </ErrorBoundary>,
@@ -42,6 +53,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('heading', { name: 'Service unavailable' })).toBeTruthy();
     expect(screen.getByText(/A required service did not respond/)).toBeTruthy();
     expect(screen.queryByText(/failed to fetch profile data/i)).toBeNull();
+    expectDecorativeSvgIcons(container);
   });
 
   it('preserves custom fallback rendering', () => {

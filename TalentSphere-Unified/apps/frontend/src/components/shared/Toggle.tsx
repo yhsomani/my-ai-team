@@ -11,23 +11,36 @@ interface ToggleProps {
   onChange: (checked: boolean) => void;
   label?: string;
   description?: string;
+  ariaLabel?: string;
   disabled?: boolean;
   className?: string;
 }
 
-export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, description, disabled, className }) => {
+export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, description, ariaLabel, disabled, className }) => {
+  const labelId = React.useId();
+  const descriptionId = React.useId();
+
   return (
-    <label className={cn('flex items-center justify-between gap-4 cursor-pointer group', disabled && 'opacity-50 cursor-not-allowed', className)}>
+    <label
+      data-ui="toggle"
+      data-slot="toggle"
+      className={cn('flex items-center justify-between gap-4 cursor-pointer group', disabled && 'opacity-50 cursor-not-allowed', className)}
+    >
       {(label || description) && (
         <div className="flex flex-col gap-0.5">
-          {label && <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>}
-          {description && <span className="text-xs text-[var(--text-muted)]">{description}</span>}
+          {label && <span id={labelId} className="text-sm font-medium text-[var(--text-primary)]">{label}</span>}
+          {description && <span id={descriptionId} className="text-xs text-[var(--text-muted)]">{description}</span>}
         </div>
       )}
       <button
+        data-ui="toggle-switch"
+        data-slot="toggle-switch"
         role="switch"
         type="button"
         aria-checked={checked}
+        aria-label={label ? undefined : (ariaLabel ?? 'Toggle setting')}
+        aria-labelledby={label ? labelId : undefined}
+        aria-describedby={description ? descriptionId : undefined}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
@@ -37,6 +50,7 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, descri
         )}
       >
         <span
+          aria-hidden="true"
           className={cn(
             'pointer-events-none inline-block h-4 w-4 rounded-full bg-[var(--bg-primary)] shadow-sm transition-transform duration-200',
             checked ? 'translate-x-4' : 'translate-x-0.5'

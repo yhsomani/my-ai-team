@@ -55,6 +55,8 @@ describe('featureOwnership', () => {
   it('documents secondary entry points as non-owner links, summaries, searches, or reviewed handoffs', () => {
     for (const feature of featureOwnershipRegistry) {
       expect(feature.primaryPurpose.trim().length).toBeGreaterThan(20);
+      expect(feature.userJourneyValue.trim().length).toBeGreaterThan(20);
+      expect(feature.mergeEvaluation.trim().length).toBeGreaterThan(20);
       expect(feature.consolidationDecision.trim().length).toBeGreaterThan(20);
       expect(feature.behaviorPreservation.trim().length).toBeGreaterThan(20);
 
@@ -73,6 +75,28 @@ describe('featureOwnership', () => {
             expect(`${entry.routeId}:${entry.mode}`).not.toBe(`${feature.owner.routeId}:summary`);
           }
         }
+      }
+    }
+  });
+
+  it('records user-journey value separately from implementation preservation', () => {
+    for (const feature of featureOwnershipRegistry) {
+      expect(feature.userJourneyValue).not.toBe(feature.primaryPurpose);
+      expect(feature.userJourneyValue).not.toBe(feature.behaviorPreservation);
+      expect(feature.userJourneyValue).not.toMatch(/^Preserve\b/);
+    }
+  });
+
+  it('records explicit merge evaluation for every major route or surface', () => {
+    for (const feature of featureOwnershipRegistry) {
+      expect(feature.mergeEvaluation).not.toBe(feature.consolidationDecision);
+      expect(feature.mergeEvaluation).toMatch(/merge|separate|single|candidate|shell surface|route variant/i);
+
+      if (feature.necessity === 'candidate-for-merge') {
+        expect(feature.mergeEvaluation).toMatch(/candidate/i);
+        expect(feature.mergeEvaluation).toMatch(/validation|analytics|user-flow/i);
+      } else {
+        expect(feature.mergeEvaluation).not.toMatch(/^Candidate for future/i);
       }
     }
   });
@@ -97,5 +121,32 @@ describe('featureOwnership', () => {
       'challenges',
       'messaging',
     ]));
+  });
+
+  it('keeps dashboard-hosted domain placements summary-only or explicit handoff links', () => {
+    const allowedDashboardDomainEntries = new Map([
+      ['jobs-workspace', 'summary'],
+      ['job-posting', 'link'],
+      ['candidate-review', 'summary'],
+      ['learning', 'summary'],
+      ['challenges', 'summary'],
+      ['messaging', 'summary'],
+    ]);
+    const dashboardDomainEntryPoints = getSecondaryFeatureEntryPointsForRoute('dashboard')
+      .filter(({ feature }) => feature.id !== 'dashboard-launchpad');
+
+    expect(
+      dashboardDomainEntryPoints.map(({ feature }) => feature.id).sort()
+    ).toEqual([...allowedDashboardDomainEntries.keys()].sort());
+
+    for (const { feature, entry } of dashboardDomainEntryPoints) {
+      expect(entry.routePath).toBe('/dashboard');
+      expect(entry.mode).toBe(allowedDashboardDomainEntries.get(feature.id));
+      expect(entry.mode).not.toBe('review-handoff');
+      expect(entry.mode).not.toBe('preference-snapshot');
+      expect(entry.mode).not.toBe('search-destination');
+      expect(feature.consolidationDecision).toMatch(/keep|separate|single owner|command route/i);
+      expect(feature.behaviorPreservation).toMatch(/Preserve/i);
+    }
   });
 });

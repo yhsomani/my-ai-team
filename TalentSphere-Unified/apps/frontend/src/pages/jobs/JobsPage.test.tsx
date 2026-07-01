@@ -12,7 +12,7 @@ import { recruiterService } from '../../services/recruiterService';
 import { settingsService } from '../../services/settingsService';
 import { useGetJobsPageQuery, useGetJobsQuery } from '../../store/slices/jobSlice';
 import authReducer from '../../store/slices/authSlice';
-import type { Job, JobApplication } from '../../types/job';
+import type { ApplicationStatusEvent, Job, JobApplication } from '../../types/job';
 import JobsPage from './JobsPage';
 
 vi.mock('../../store/slices/jobSlice', () => ({
@@ -126,6 +126,15 @@ const applicationFixture: JobApplication = {
   job: jobFixture,
 };
 
+const applicationStatusEventFixture: ApplicationStatusEvent = {
+  id: 'application-status-001',
+  applicationId: applicationFixture.id,
+  previousStatus: 'PENDING',
+  status: 'REVIEWED',
+  reason: 'Recruiter reviewed profile',
+  createdAt: '2026-06-28T11:00:00.000Z',
+};
+
 const recruiterPostingFixture: Record<string, any> = {
   id: 'posting-draft-001',
   title: 'Design Systems Lead',
@@ -173,6 +182,15 @@ const renderJobsPage = (initialEntry = '/jobs', roles = ['ROLE_USER']) => {
       </ToastProvider>
     </Provider>,
   );
+};
+
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
 };
 
 describe('JobsPage', () => {
@@ -361,6 +379,125 @@ describe('JobsPage', () => {
     expect(screen.queryByText(/application history did not respond/i)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry applications' })).toBeNull();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
+  });
+
+  it('exposes Explore, Applied, My Posts, and saved searches with semantic result structure', async () => {
+    jobsPageQueryResponse = {
+      data: {
+        jobs: [jobFixture],
+        total: 1,
+        limit: 12,
+        offset: 0,
+        hasNext: false,
+        nextCursor: null,
+      },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      refetch: refetchJobsMock,
+    };
+    vi.mocked(jobService.getSavedSearches).mockResolvedValue([
+      {
+        id: 'saved-search-001',
+        userId: 'jobs-user',
+        name: 'Remote frontend roles',
+        searchTerm: 'Frontend',
+        filters: {
+          jobType: '',
+          location: 'Remote',
+          minSalary: '',
+          maxSalary: '',
+        },
+        alertEnabled: true,
+        lastMatchCount: 0,
+        createdAt: '2026-06-28T10:00:00.000Z',
+        updatedAt: '2026-06-28T10:00:00.000Z',
+      },
+    ] as any);
+
+    renderJobsPage('/jobs', ['ROLE_USER', 'ROLE_RECRUITER']);
+
+    await waitFor(() => {
+      expect(screen.getByRole('list', { name: 'Explore job results' })).toBeTruthy();
+    });
+
+    const jobsSearch = screen.getByRole('search', { name: 'Jobs search' });
+    expect(jobsSearch.getAttribute('data-ui')).toBe('jobs-search-surface');
+    const searchInput = screen.getByLabelText('Search jobs');
+    expect(jobsSearch.contains(searchInput)).toBe(true);
+    expect(searchInput.getAttribute('aria-describedby')).toBe('jobs-search-help');
+    expect(screen.getByText(/Search updates the active Jobs tab/i).id).toBe('jobs-search-help');
+    const filterGroup = screen.getByRole('group', { name: 'Explore job filters' });
+    expect(filterGroup.getAttribute('data-ui')).toBe('jobs-filter-group');
+    expect(filterGroup.getAttribute('aria-describedby')).toBe('jobs-filter-help');
+    expect(screen.getByText(/Filter Explore results by location/i).id).toBe('jobs-filter-help');
+
+    const exploreJobCard = within(screen.getByRole('list', { name: 'Explore job results' })).getByRole('listitem', {
+      name: 'Frontend Platform Engineer at Northstar Labs. Remote. Full-time. $140,000 - $175,000.',
+    });
+    expect(exploreJobCard).toBeTruthy();
+    expect(within(exploreJobCard).getByText('Remote')).toBeTruthy();
+    expect(within(exploreJobCard).getByText('Full-time')).toBeTruthy();
+    expect(within(exploreJobCard).getByText('$140,000 - $175,000')).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Saved searches' })).getByRole('listitem', {
+      name: 'Remote frontend roles. New match tracking enabled.',
+    })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+
+    cleanup();
+    vi.mocked(applicationService.getUserApplications).mockResolvedValue([applicationFixture]);
+
+    renderJobsPage('/jobs?tab=applied', ['ROLE_USER', 'ROLE_RECRUITER']);
+
+    await waitFor(() => {
+      expect(screen.getByRole('list', { name: 'Applied applications' })).toBeTruthy();
+    });
+    const appliedJobCard = within(screen.getByRole('list', { name: 'Applied applications' })).getByRole('listitem', {
+      name: 'Application for Frontend Platform Engineer at Northstar Labs. Status: PENDING.',
+    });
+    expect(appliedJobCard).toBeTruthy();
+    expect(within(appliedJobCard).getByText('Remote')).toBeTruthy();
+    expect(within(appliedJobCard).getByText('Full-time')).toBeTruthy();
+    expect(within(appliedJobCard).getByText('$140,000 - $175,000')).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+
+    cleanup();
+    vi.mocked(recruiterService.getRecruiterJobs).mockResolvedValue([recruiterPostingFixture] as any);
+
+    renderJobsPage('/jobs?tab=postings', ['ROLE_USER', 'ROLE_RECRUITER']);
+
+    await waitFor(() => {
+      expect(screen.getByRole('list', { name: 'Recruiter postings' })).toBeTruthy();
+    });
+    const recruiterPostingCard = within(screen.getByRole('list', { name: 'Recruiter postings' })).getByRole('listitem', {
+      name: 'Posting Design Systems Lead at Northstar Labs. Status: DRAFT. No publish checklist issues.',
+    });
+    expect(recruiterPostingCard).toBeTruthy();
+    expect(within(recruiterPostingCard).getByText('Remote')).toBeTruthy();
+    expect(within(recruiterPostingCard).getByText('Full-time')).toBeTruthy();
+    expect(within(recruiterPostingCard).getByText('$150,000 - $190,000')).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+  });
+
+  it('exposes application status timeline events with semantic structure', async () => {
+    vi.mocked(applicationService.getUserApplications).mockResolvedValue([applicationFixture]);
+    vi.mocked(applicationService.getApplicationStatusEvents).mockResolvedValue([applicationStatusEventFixture]);
+
+    renderJobsPage('/jobs?tab=applied', ['ROLE_USER', 'ROLE_RECRUITER']);
+
+    await waitFor(() => {
+      expect(screen.getByRole('list', { name: 'Applied applications' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+
+    const timeline = await screen.findByRole('region', {
+      name: 'Application status timeline for Frontend Platform Engineer at Northstar Labs',
+    });
+    const statusEvents = within(timeline).getByRole('list', { name: 'Recorded application status events' });
+    expect(within(statusEvents).getByRole('listitem', {
+      name: /Status REVIEWED.*From PENDING to REVIEWED.*Recruiter reviewed profile/i,
+    })).toBeTruthy();
+    expectDecorativeSvgIcons(timeline);
   });
 
   it('shows safe recruiter postings load failure copy without exposing raw provider errors', async () => {

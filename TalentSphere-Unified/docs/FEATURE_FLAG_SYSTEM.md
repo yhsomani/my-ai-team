@@ -10,7 +10,7 @@
 
 ```
 services/shared/src/main/java/com/talentsphere/shared/config/
-├── Feature.java                    # SINGLE SOURCE - All 40+ flags defined here
+├── Feature.java                    # SINGLE SOURCE - All 40 flags defined here
 ├── FeatureFlagConfig.java           # Spring configuration properties
 ├── FeatureFlagService.java         # Runtime service for flag checks
 ├── FeatureFlagAspect.java          # AOP aspect for @EnabledForFeature
@@ -150,6 +150,9 @@ POST /api/v1/admin/feature-flags/enable_coding_challenges/disable
 2. **NO boolean constants scattered in code**
 3. **All services inject FeatureFlagService**
 4. **One import: `com.talentsphere.shared.config.*`**
+5. **Run `npm run validate:feature-flags` after changing flags**
+
+`npm run validate:feature-flags` guards the source-level feature flag contract. It verifies that `Feature.java`, `services/shared/src/main/resources/feature-flags.yml`, and `services/bom/application-feature-flags.yml` contain the same stable 40 lower-snake `enable_*` names with matching defaults, no duplicates, enabled core flags, descriptions, and source-level service/controller tests.
 
 ---
 
@@ -222,3 +225,4 @@ if (featureFlagService.isEnabled(Feature.enable_new_feature)) {
 - [x] Admin API: FeatureFlagController in gateway
 - [x] Clean import pattern established
 - [x] Strict access enforced
+- [x] Source-level validator: `npm run validate:feature-flags`

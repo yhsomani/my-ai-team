@@ -15,6 +15,11 @@ interface State {
   isServiceDown: boolean;
 }
 
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
+
 // Heuristic: detect connectivity/service errors
 function detectServiceError(error: Error): boolean {
   const msg = error.message?.toLowerCase() || '';
@@ -79,7 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
             className="w-full max-w-xl rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-6 text-center shadow-[var(--shadow-sm)] sm:p-8"
           >
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg border border-warning/25 bg-warning/10 text-warning">
-              <Icon className="h-6 w-6" aria-hidden="true" />
+              <Icon {...decorativeIconProps} className="h-6 w-6" />
             </div>
             <p className="mb-2 text-xs font-medium uppercase text-[var(--text-muted)]">
               Application recovery
@@ -95,7 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
             <div className="mt-6 flex justify-center">
               <Button type="button" onClick={this.handleRetry}>
-                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                <RefreshCw {...decorativeIconProps} className="h-4 w-4" />
                 Reload page
               </Button>
             </div>

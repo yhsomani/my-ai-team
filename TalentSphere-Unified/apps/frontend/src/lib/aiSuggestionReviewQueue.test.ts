@@ -82,6 +82,7 @@ describe('aiSuggestionReviewQueue', () => {
     expect(queue.summary).toBe('2 AI recommendations waiting for review');
     expect(queue.items.map(item => item.id)).toEqual(['draft-newer', 'draft-older', 'saved-1', 'dismissed-1']);
     expect(queue.draftItems.map(item => item.label)).toEqual(['Learning', 'Resume Builder']);
+    expect(queue.items.find(item => item.id === 'draft-older')?.sourceLabel).toBe('Heuristic AI guidance');
   });
 
   it('deduplicates assistant messages and ignores user messages', () => {

@@ -201,7 +201,7 @@ test.describe('messaging workflow', () => {
     await expect(messageLog.getByText(reply)).toBeVisible();
     await expect(messageLog.getByText('Failed to send')).toBeVisible();
 
-    await messageLog.getByRole('button', { name: 'Retry' }).click();
+    await messageLog.getByRole('button', { name: 'Retry failed message' }).click();
 
     await expect.poll(() => sendAttempts.length).toBe(2);
     expect(sendAttempts[1]).toMatchObject({
@@ -410,7 +410,7 @@ test.describe('messaging workflow', () => {
     await conversationButton.focus();
     await page.keyboard.press('Enter');
 
-    const markReadButton = page.getByRole('button', { name: '1 unread', exact: true });
+    const markReadButton = page.getByRole('button', { name: 'Mark 1 visible unread message as read' });
     await markReadButton.focus();
     await expect(markReadButton).toBeFocused();
     await page.keyboard.press('Enter');

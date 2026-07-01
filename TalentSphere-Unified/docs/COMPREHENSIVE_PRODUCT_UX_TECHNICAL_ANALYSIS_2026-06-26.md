@@ -22,8 +22,8 @@ The main product gaps are trust, operational rollout, and cross-workflow continu
 | Public entry | Landing page, role CTAs, public stats | Visitors | Supabase counts with fallback | Role-preselected register links | Persona proof, signed-in redirect logic |
 | Auth | Login, register, Supabase session, dev mock user | All | Supabase Auth | Recruiter role mapping from account type, role-specific next-step disclosure, safe public auth provider-failure copy, recruiter company-setup handoff, and append-only registration onboarding analytics | Full persisted first-run wizard, live provider failure validation, and public reset/OAuth product decisions remain missing |
 | Shell/navigation | Sidebar, mobile drawer, bottom nav, header search, reminders and query-paginated account notifications | Auth users | Redux auth state, notifications table/local fallback | Role-aware destination filtering, saved-search notification feed, due-aware scheduled reminder display, safe notification load/read recovery, user-owned digest/quiet-hour preferences that can defer immediate saved-search alerts, and scheduler-backed reminder/digest promotion | Kubernetes pod health, scheduler image/secret health verification, backend-owned scheduler status contracts, live notification provider validation, and richer command actions remain incomplete |
-| Talent dashboard | Stats, jobs, challenges, actions, freshness status, activation checklist, operational analytics | Talent | Dashboard service querying Supabase | Parallel/partial fetch handling, signal-driven next steps, and append-only dashboard handoff/recovery analytics | Deeper personalization and checklist ranking |
-| Recruiter dashboard | Jobs/applicants/offers, recent applications, setup checklist, operational analytics | Recruiters | Recruiter service querying Supabase | Independent section loading, signal-driven setup prompts, and append-only dashboard handoff/recovery analytics | No funnel drilldown or job-template next-best action |
+| Talent dashboard | Stats, jobs, challenges, actions, freshness status, activation checklist, semantic summary lists, operational analytics | Talent | Dashboard service querying Supabase | Parallel/partial fetch handling, signal-driven next steps, accessible summary grouping, and append-only dashboard handoff/recovery analytics | Deeper personalization and checklist ranking |
+| Recruiter dashboard | Jobs/applicants/offers, recent applications, setup checklist, semantic summary lists, operational analytics | Recruiters | Recruiter service querying Supabase | Independent section loading, signal-driven setup prompts, accessible summary grouping, and append-only dashboard handoff/recovery analytics | No funnel drilldown or job-template next-best action |
 | Admin dashboard | Stats, scheduled automation rollout/run-history status, service health, fallback labels, investigation links, product analytics insights, audit pagination, operational analytics | Admins | Supabase counts, frontend-safe scheduler rollout catalog with optional provider run-history API, known health/status routes, product analytics events/local fallback, mock fallback | Timeout to degraded fallback, scheduled automation status/run-history review, direct health/status/log-query handoffs, aggregate product insight generation, and append-only admin refresh/scheduler/investigation/audit analytics | Kubernetes pod health, scheduler image/secret health verification, backend-owned scheduler status contracts, incident timeline, alert subscriptions, and provider-configured logs/metrics URLs still incomplete |
 | Jobs | Search/filter, cursor-backed Explore results, safe Explore catalog, Applied-tab, My Posts load recovery, and application/publish action recovery, local profile/job fit reasons, account-synced/local-fallback hide/restore controls, saved searches with reviewed deletion, apply review with reviewed profile-draft replacement and reviewed draft clearing, application details, full recruiter draft workflow, account-synced/local-fallback post templates with reviewed deletion, draft-save review, restorable recruiter draft versions, advisory duplicate warning, company-aware draft attachment, inline company setup/completion, recruiter My Posts, edit draft with safe context recovery, edit-change summary, safe Post Job action-failure recovery, publish checklist, publish analytics, publish readiness policy | Talent, recruiters | Supabase jobs/applications/companies, `hidden_explore_jobs`, `job_post_draft_versions`, `job_post_templates`, API fallback, local storage | Safe failed-load copy and explicit Retry jobs for catalog failures, safe Application history recovery with explicit Retry applications for Applied-tab load failures, safe My Posts recovery with explicit Retry postings for recruiter posting load failures, safe application-submit and recruiter publish action-failure recovery inside existing review modals, server-backed saved searches with local fallback, opt-in in-app new-match notifications that respect Job Alerts and daily/weekly digest preferences before immediate delivery, reviewed saved-search deletion, queued saved-search digest items with dry-run-by-default discovery/delivery runners and Kubernetes CronJobs, append-only saved-search analytics, server-backed editable application drafts and restorable application draft versions with local fallback, reviewed profile-draft replacement, reviewed application draft clearing, append-only application workflow analytics, local advisory fit reasons from visible job data and profile skills/location, account-synced/local-fallback hide/restore preferences for irrelevant Explore cards, append-only hidden preference analytics, explicit current-view hidden-preference refinements, single recruiter posting entry path, recruiter registration company-setup handoff, append-only company setup onboarding analytics, account-synced/local-fallback recruiter job-post templates with explicit delete confirmation, account-synced/local-fallback recruiter job-post draft versions, recruiter draft review, duplicate-post warning, company attachment, inline company creation/completion with explicit attach/save, safe company create/update and draft save/update retry, status events, safe Retry draft context for edit-draft recruiter job context failures, explicit draft updates with reviewed change summary, explicit publish review, backend-owned publish readiness enforcement, and append-only publish review/outcome analytics | Backend-owned cursor contract, backend-owned ranking, backend-wide preference learning, live provider/RLS validation, and multi-company defaults remain missing |
 | Candidate pipeline | Application list, advisory signals, current-page review focus filters, analytics-driven focus actions, first-candidate review queue action, details previous/next queue navigation, unsaved private review guard, reviewed private-review reset, current-page scorecard analytics, details modal, notes, interview planning, private scorecards, reviewed bulk Interview/Offer/Reject moves, interview/offer/reject, candidate workflow analytics | Recruiters | Supabase jobs/applications/notes/scorecards | Explainable advisory review signals, current-page review focus filters, analytics-driven review actions, first-candidate review queue entry, previous/next details navigation, unsaved private review protection, reviewed private-review reset, current-page advisory sorting, current-page scorecard coverage analytics, append-only workflow analytics, draft-only interview planning, server-backed private structured scorecards with local fallback, reviewed selected-candidate bulk decisions, safe status action-failure recovery, and server-backed private notes with local fallback | No provider-backed scheduling, backend-owned scoring, or longitudinal scorecard trend dashboards |
@@ -32,12 +32,12 @@ The main product gaps are trust, operational rollout, and cross-workflow continu
 | LMS | Cursor-backed course catalog, AI reviewed catalog-search handoff, progress, retryable enrollment/progress load failure handling, safe enrollment/progress-save action failure recovery, lesson player, complete lesson, LMS workflow analytics | Talent | API Gateway -> Supabase fallback | Continue Learning, Recommended Next, reviewed AI course-search prefill, retryable progress-load recovery, safe enrollment/progress-save retry, and append-only catalog/enrollment/lesson analytics | Learning paths not profile/goal-aware |
 | Challenges | Filters, workspace, starter code, reviewed starter-code reset, local sample check, retry history, submissions, safe submission action-failure recovery, challenge workflow analytics | Talent | Supabase challenges/submissions and product analytics | Local JS/TS sample run before submit plus safe submission retry, reviewed reset analytics, and append-only category/workspace/language/local-check/retry/submission analytics | No deep link, backend execution feedback limited |
 | AI | Chat, server-backed/local-fallback history, reviewed chat clear, draft disclosure, safe chat provider recovery, review queue, workflow handoffs, profile/resume/application/learning draft handoffs, save/dismiss, destination prefill decision audit, career path with safe provider recovery | All | Supabase Edge Functions/RPC | Draft prompts plus reviewed chat clearing, server-backed session/review records, queue-level approval controls, safe chat provider-failure draft copy without raw provider error exposure, explicit non-mutating handoff links with local fallback, Profile Headline/Location/Bio draft review, Resume Headline/Phone/Location/Website/Summary draft review, Application Resume URL/Cover Letter draft review, Learning Course Search/Skill/Certification catalog-search review, destination prefill used/rejected audit events, and safe Career Path provider-unavailable retry without raw AI/provider error exposure | Deeper cross-workflow rejected-suggestion reuse, live provider validation, and admin review tooling remain limited |
-| Networking | Suggestions, requests, connections, reminders, networking workflow analytics | All | Networking service graph suggestions plus Supabase connections/profiles/preferences/notifications and product analytics | API-first backend graph-ranked suggestions with Supabase profile hydration fallback, profile-aware recommendation reasons/scores, privacy-preserving mutual-connection counts, reversible account-synced suggestion hiding with local fallback, inline profile preview, explicit connect actions with safe inline action-failure recovery for Connect, Accept, Decline, and Withdraw, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default scheduler promotion for due synced reminders, Admin scheduled-automation rollout/run-history visibility, and append-only networking analytics for suggestion, request, reminder, preference, and preview friction | Full profile-service-backed recommendation contract, reminder frequency controls, and backend-owned scheduler status contracts remain incomplete |
+| Networking | Suggestions, requests, connections, reminders, networking workflow analytics | All | Networking service graph suggestions plus Supabase connections/profiles/preferences/notifications and product analytics | API-first backend graph-ranked suggestions with Supabase profile hydration fallback, profile-aware recommendation reasons/scores, privacy-preserving mutual-connection counts, reversible account-synced suggestion hiding with local fallback, accessible card-list semantics and person-specific repeated action labels, inline profile preview, explicit connect actions with safe inline action-failure recovery for Connect, Accept, Decline, and Withdraw, selectable-timing notification-backed sent-request reminders with local fallback and opportunistic account-notification backfill, dry-run-by-default scheduler promotion for due synced reminders, Admin scheduled-automation rollout/run-history visibility, and append-only networking analytics for suggestion, request, reminder, preference, and preview friction | Full profile-service-backed recommendation contract, reminder frequency controls, and backend-owned scheduler status contracts remain incomplete |
 | Messaging | Conversations, participant profile names, unread badges, realtime visible-row freshness, draft-only suggested replies, optimistic sends, retry, explicit visible-message read receipts, reviewed link/file attachments with hidden-draft prevention, messaging workflow analytics | All | Supabase conversations/messages/profiles plus file-service upload/download | Draft-only local reply suggestions, optimistic local send/retry with safe failed-send recovery, user-triggered read marking with safe failure recovery, bounded visible-conversation realtime updates, visible participant profile enrichment, explicit reviewed link attachments, explicit file upload/download handoff with safe upload-failure recovery and server-side size/folder/blocked-extension guardrails, append-only workflow analytics, and hidden attachment-draft prevention | Backend-owned unread counters, live presence, group context, backend-owned chat contracts, virus scanning, and provider storage hardening incomplete |
-| Billing | Plans, subscription, confirmation, portal handoff, history, billing workflow analytics | All | Supabase tables/functions and product analytics | Confirmation before checkout/provider actions, safe load/action failure recovery, and append-only load/retry/checkout/portal analytics | Provider status details and 2FA provider setup missing |
+| Billing | Plans, subscription, confirmation, portal handoff, history, billing workflow analytics | All | Supabase tables/functions and product analytics | Accessible plan comparison, confirmation before checkout/provider actions, safe load/action failure recovery, and append-only load/retry/checkout/portal analytics | Provider status details and 2FA provider setup missing |
 | Settings | Profile, notification toggles, digest frequency, quiet hours, retryable notification/billing load recovery, retryable profile/security action failure recovery, password reset review/cancel, account deactivation confirmation, billing handoff, settings workflow analytics | All | Supabase settings/profile | First-time notification defaults, safe notification/billing failed-load copy with retry, safe profile-save/password-reset/account-deactivation failure copy with retry, job-alert preference used by saved-search notifications, explicit delivery preference controls, clearer soft-deactivation wording, and append-only workflow analytics for tab/save/preference/security/billing handoff decisions | Provider-backed 2FA plus backend-owned scheduler status and secret/image health monitoring missing |
 | Product analytics and automation audit | Event taxonomy, ingestion helper, product analytics insight summarizer, dashboard/admin operational analytics helper, LMS workflow analytics helper, challenge workflow analytics helper, billing workflow analytics helper, profile workflow analytics helper, resume workflow analytics helper, networking workflow analytics helper, onboarding analytics helper, saved-search analytics helper, application workflow analytics helper, candidate workflow analytics helper, messaging workflow analytics helper, settings workflow analytics helper, automation suggestion audit helper, extension operational analytics helper | Product/ops/support | Supabase `product_analytics_events`, `automation_suggestion_audit_events`, local fallback, admin analytics RLS, and extension local diagnostics storage | AI recommendation generation, save/dismiss decisions, failures, workflow handoffs, Dashboard activation/retry/degraded/handoff decisions, Admin refresh/service-investigation/audit-pagination/product-analytics-insight decisions, LMS catalog/filter/pagination/AI-search/enrollment/lesson decisions, Challenges category/workspace/language/reset-review/local-check/retry/submission decisions, Billing load/retry/plan-review/checkout/payment-method portal decisions, Profile load/tab/edit/suggestion/completion/delete/photo-upload/photo-removal decisions, Resume load/tab/import/AI-draft/skill-save/save/export/export-history decisions, Networking suggestions/tab/preview/connect/accept/decline/withdraw/reminder/suggestion-preference decisions, destination prefill used/rejected decisions, Jobs application review/submission decisions, recruiter candidate review/status/bulk/draft-aid/private-review-reset decisions, Messaging selection/send/read/retry/draft-aid decisions, Settings profile/notification/security/billing and reviewed security cancellation decisions, Jobs recommendation preference updates/refinements, Jobs saved-search review/delete decisions, registration onboarding decisions, recruiter company setup decisions, recruiter publish review/outcome decisions, explicit review status changes, and companion extension operational decisions are tracked without blocking workflows; Admin Console surfaces privacy-bounded aggregate analytics counts/rates/friction signals, and extension users can review/export diagnostics and explicitly review before clearing console logs or local analytics | Expand first analytics dashboards into alerting, workflow-level improvement metrics, and prioritized product experiments |
-| Chrome extension | Local tracker dashboard with local-record wording, local tracker with reviewed tracked-job removal, page scan draft with reviewed discard, local keyword-overlap Resume Match Preview, interview prep with reviewed clearing, Local Settings with prep-card reset analytics, explicit local-only sync status, local interview reminder preference, local operational analytics, diagnostics reviewed console-log clearing, local diagnostic test-event logging, diagnostics analytics export/reviewed-clear controls | Talent | Chrome APIs/local storage | Active-tab scrape into editable draft plus local Store Local Usage Diagnostics events for scan/tracker/resume-match-preview/planner/settings/diagnostics decisions; dashboard labels distinguish local tracker records from web-app applications or catalog data; settings show local-only storage with sync-plan review instead of a false sync toggle, clarify diagnostics are stored locally rather than shared telemetry, label interview reminders as a local preference until browser notifications exist, name prep-card reset decisions as prep-card reset analytics instead of diagnostics reset analytics, present resume matching as a local keyword-overlap preview instead of AI-backed optimization with safe missing/short/large text guidance, accessible compare labels, live status semantics, character counts, and read-only report semantics, expose Interview Planner labels/live validation/stateful prep-card toggles without recording raw prep topics, and show safe prep/settings storage-failure warnings without raw quota/runtime/storage-key details; diagnostics panel surfaces reviewed console-log clearing, local diagnostic test-event logging, local analytics count/latest event, and explicit analytics export plus reviewed analytics clear controls | No authenticated web sync or external AI call for extension resume matching; future sync should require explicit approve-before-import/export |
+| Chrome extension | Local tracker dashboard with local-record wording, local tracker with reviewed tracked-job removal, page scan draft with reviewed discard, safe popup storage warning, install-time storage schema marker, local keyword-overlap Resume Match Preview, interview prep with reviewed clearing, Local Settings with prep-card reset analytics, explicit local-only sync status, local interview reminder preference, local operational analytics, diagnostics reviewed console-log clearing, local diagnostic test-event logging, diagnostics analytics export/reviewed-clear controls | Talent | Chrome APIs/local storage | Active-tab scrape into editable draft plus local Store Local Usage Diagnostics events for scan/tracker/resume-match-preview/planner/settings/diagnostics decisions; dashboard labels distinguish local tracker records from web-app applications or catalog data; settings show local-only storage with sync-plan review instead of a false sync toggle, clarify diagnostics are stored locally rather than shared telemetry, label interview reminders as a local preference until browser notifications exist, name prep-card reset decisions as prep-card reset analytics instead of diagnostics reset analytics, present resume matching as a local keyword-overlap preview instead of AI-backed optimization with safe missing/short/large text guidance, accessible compare labels, live status semantics, character counts, and read-only report semantics, expose Interview Planner labels/live validation/stateful prep-card toggles without recording raw prep topics, show safe prep/settings storage-failure warnings, and show one safe popup warning when tracker, scanned-draft, or diagnostics storage load/save fails, without raw quota/runtime/storage-key details; shared storage removed-key fallback prevents mounted popup/options views from receiving `undefined`; diagnostics panel surfaces reviewed console-log clearing, local diagnostic test-event logging, local analytics count/latest event, and explicit analytics export plus reviewed analytics clear controls; built MV3 runtime smoke now verifies install-time storage schema marker creation, options Resume Match validation/report behavior, Interview Planner prep-card create/toggle persistence, Prep Clear All cancel/confirm, Settings reset cancel/confirm, popup storage load and quota-pressure save warnings, and options prep/settings storage load and quota-pressure save warnings | No authenticated web sync or external AI call for extension resume matching; future sync should require explicit approve-before-import/export; published/prior-version update migration remains pending |
 | Backend services | Domain REST APIs for auth, user, profile, jobs, applications, LMS, etc. | Platform | Spring Boot services, DB migrations, RabbitMQ configs | Outbox, resilience patterns in places | Frontend often bypasses services via Supabase direct access |
 
 ### 1.2 User Roles And Permissions
@@ -64,9 +64,9 @@ The main product gaps are trust, operational rollout, and cross-workflow continu
 | Learning | LMS -> optional AI learning search handoff -> review/apply catalog search -> retry progress if enrolled-course state cannot load -> Continue/Recommended -> course modal -> enroll/complete lesson with safe retry when persistence fails | AI search handoff reduces copying from chat, retryable progress-load failure handling prevents false empty progress states, safe enrollment/progress-save recovery keeps retry in the course modal, and LMS workflow analytics now exposes catalog/progress friction; recommendations are still not deeply skill-gap/path based |
 | Challenge solving | Challenges -> Solve -> edit solution -> optional reviewed starter-code reset -> local check -> submit -> retry history | Good local precheck, reviewed reset control, and append-only challenge workflow analytics; no deep link or richer backend judging feedback |
 | AI help | AI -> draft prompt -> send -> review queue -> save/dismiss or open workflow handoff; optional reviewed clear starts a fresh chat | AI is safely non-mutating, review state can persist across account devices when backend tables are available, profile/resume/application/learning suggestions can become reviewed drafts or reviewed workflow prefill, and chat clearing is now explicitly reviewed |
-| Networking | Network -> suggested person -> review reasons -> optional note -> send -> sent/incoming actions or explicit timed reminder | Good explicit actions, safe inline action-failure recovery, API-first backend graph suggestions, profile-aware recommendation reasons, mutual-connection counts, account-synced hidden suggestions, selectable-timing notification-backed follow-up reminders, local reminder backfill into account notifications, scheduler-backed due-reminder promotion, Admin scheduler rollout visibility, and append-only networking workflow analytics; full profile-service-backed recommendations, frequency controls, and provider-backed run history are still missing |
+| Networking | Network -> suggested person -> review reasons -> optional note -> send -> sent/incoming actions or explicit timed reminder | Good explicit actions, accessible card-list semantics, person-specific repeated action labels, safe inline action-failure recovery, API-first backend graph suggestions, profile-aware recommendation reasons, mutual-connection counts, account-synced hidden suggestions, selectable-timing notification-backed follow-up reminders, local reminder backfill into account notifications, scheduler-backed due-reminder promotion, Admin scheduler rollout visibility, and append-only networking workflow analytics; full profile-service-backed recommendations, frequency controls, and provider-backed run history are still missing |
 | Messaging | Messages -> review unread badges -> select conversation -> optionally insert a suggested reply draft -> edit/send/retry, attach reviewed link, or explicitly upload a file before send -> optionally mark visible incoming messages read | Mobile flow, read triage, draft-only suggested replies, explicit read marking, hidden attachment-draft prevention, append-only workflow analytics, link attachment sharing, provider-backed upload/download handoff, and server-side upload guardrails improved; virus scanning, storage hardening, and backend-owned chat contracts remain incomplete |
-| Billing/settings | Billing/Settings -> confirm high-impact changes or open Billing from Settings summary | Good critical-action confirmation, explicit notification delivery controls, clarified account deactivation wording, append-only settings workflow analytics, Billing handoff tracking, and Billing page workflow analytics; provider/2FA setup and scheduler rollout status need clearer backend integration |
+| Billing/settings | Billing/Settings -> confirm high-impact changes or open Billing from Settings summary | Good accessible Billing plan comparison, critical-action confirmation, explicit notification delivery controls, clarified account deactivation wording, append-only settings workflow analytics, Billing handoff tracking, and Billing page workflow analytics; provider/2FA setup and scheduler rollout status need clearer backend integration |
 | Admin ops | Admin -> service health/scheduled automations/product analytics insights -> refresh/audit pagination/investigation links | Fallbacks are labeled, scheduled automation rollout/run-history gaps are visible, product analytics friction summaries are visible, and operational decisions are analytics-backed; real incident timeline, alert subscriptions, backend-owned scheduler status contracts, provider-configured observability, and analytics alerting remain incomplete |
 | Extension tracking | Extension -> scan page -> edit draft -> save local tracker | Good confirmation flow; no cloud sync or web handoff despite settings copy |
 
@@ -89,7 +89,7 @@ The main product gaps are trust, operational rollout, and cross-workflow continu
 | Resume -> product analytics | Resume load/failure, tab selection, import open/cancel/file/analyze/apply, AI draft review/discard/failure, detected-skill save, detected-row save, profile-field save, native PDF/HTML/print export, provider PDF upload, export-history, artifact library/copy/delete-review/delete-cancel/delete, and artifact account-sync outcomes emit append-only events | Add provider retention/revocation audit events when artifact retention policy is formalized |
 | Networking -> product analytics | Suggestions load/failure, tab selection, preview/full-profile handoff, connect/accept/decline/withdraw outcomes and safe action-recovery states, reminder set/clear/sync/backfill states, and suggestion hide/restore/sync outcomes emit append-only events | Add scheduler rollout and provider notification diagnostics when operational status APIs exist |
 | Product analytics -> Admin insights | Admin Console reads recent `product_analytics_events` under admin RLS, falls back to local analytics events when the server query fails, and displays aggregate counts, rates, top areas, and friction signals without raw user IDs, object IDs, metadata, issue text, or errors | Add threshold-based alerts and workflow drilldowns |
-| Extension -> local operational analytics | Store Local Usage Diagnostics-gated events capture popup/options opens, tab changes, page-scan lifecycle with safe visible scan status copy, scanned-draft save/reviewed-discard, tracker mutations, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, reviewed prep-card actions, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes in this browser without raw URLs, names, resume text, job descriptions, extracted keywords, page content, topics, notes, raw runtime errors, or raw provider errors; the Diagnostics tab now shows count/latest event and offers explicit local JSON export or reviewed queue clear | Authenticated sync remains future work and should require explicit approve-before-import/export |
+| Extension -> local operational analytics | Store Local Usage Diagnostics-gated events capture popup/options opens, tab changes, page-scan lifecycle with safe visible scan status copy, scanned-draft save/reviewed-discard, tracker mutations, diagnostics actions including reviewed console-log clearing, local analytics clearing, and local diagnostic test-event logging, local resume-match preview runs, reviewed prep-card actions, settings changes including cloud-sync plan review and local reminder preference changes, and background scan/message outcomes in this browser without raw URLs, names, resume text, job descriptions, extracted keywords, page content, topics, notes, raw runtime errors, or raw provider errors; the popup now shows a safe storage warning for tracker, scanned-draft, and local diagnostics storage load/save failures, and the Diagnostics tab shows count/latest event plus explicit local JSON export or reviewed queue clear | Authenticated sync remains future work and should require explicit approve-before-import/export |
 | Extension -> web app | Extension stores local jobs/drafts | Authenticated sync draft, explicit approve-before-import |
 | Admin -> operations | Supabase counts and mock fallback rows | Real health, logs, traces, alert events |
 
@@ -140,12 +140,12 @@ The main product gaps are trust, operational rollout, and cross-workflow continu
 | Candidates | Cursor-backed application list with query-level candidate/job search, explainable advisory signals, current-page review focus filters, analytics-driven focus actions, first-candidate review queue entry, previous/next details navigation, unsaved private review guards, reviewed private-review reset, current-page advisory sorting, current-page scorecard analytics, details modal, draft-only interview plans, server-backed/local-fallback private structured scorecards, persisted private notes, confirmed interview/offer/reject with safe action-failure recovery, reviewed bulk Interview/Offer/Reject moves with accurate all-failed recovery copy | No provider-backed interview scheduling, backend-owned advisory score, longitudinal scorecard analytics, or indexed service-owned search endpoint | Add provider-backed interview scheduler, backend-owned advisory score, longitudinal scorecard analytics, and backend-owned candidate search |
 | Profile | Edit/add/edit/remove rows, local suggestions, AI profile draft review, reviewed resume-skill/row import, reviewed avatar crop/upload/removal, safe profile action-failure recovery, append-only workflow analytics | Backend-owned approval logs still limited | Add profile approval/audit records |
 | Resume | Text/DOCX/searchable-PDF import, AI draft handoff, selected fields, detected skills and profile rows, native PDF/HTML/print export, opt-in file-service PDF upload, account-synced/local-fallback uploaded-artifact open/copy/delete controls, accessible provider-delete confirmation, local uploaded-artifact delete receipts, account-synced/local-fallback export activity, safe Resume action-failure recovery, append-only workflow analytics | No scanned-PDF OCR or formal provider retention/revocation policy | Add scanned-PDF OCR review and artifact retention controls |
-| LMS | Cursor-backed, query-searchable, and enrollment-filtered course list, reviewed AI catalog-search handoff, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, lesson player, progress | Course content can be placeholder; recommendations are shallow, and formal backend-owned cursor/progress contracts are still missing | Add backend-owned course cursor/progress contracts, live action-failure validation, and profile-based learning paths |
-| Challenges | Workspace, reviewed starter-code reset, local JS/TS checks, submit with safe action-failure recovery, retry history, append-only workflow analytics | No deep link; local runner is limited; backend judging feedback sparse | Add `/challenges/:id`, richer results, diff attempts, and live submission action-failure validation |
+| LMS | Cursor-backed, query-searchable, and enrollment-filtered course list, reviewed AI catalog-search handoff, retryable progress-load failure handling, safe enrollment/progress-save action failure recovery, semantic course progressbars, lesson player, progress | Course content can be placeholder; recommendations are shallow, and formal backend-owned cursor/progress contracts are still missing | Add backend-owned course cursor/progress contracts, live action-failure validation, manual screen-reader walkthroughs, and profile-based learning paths |
+| Challenges | Semantic catalog/workspace structure, reviewed starter-code reset, local JS/TS checks, submit with safe action-failure recovery, retry history, append-only workflow analytics | No deep link; local runner is limited; backend judging feedback sparse | Add `/challenges/:id`, richer results, diff attempts, live submission action-failure validation, and manual screen-reader workspace walkthroughs |
 | AI | Chat drafts, disclosure, reviewed chat clearing, server-backed save/dismiss with local fallback, review queue, workflow handoff links, Profile/Resume/Application/Learning draft review, and destination prefill decision audit | Rejected-suggestion reuse and admin/product review tooling are still limited | Add rejected-suggestion reuse, admin review filters, and broader destination coverage as new AI handoffs are added |
-| Networking | API-first graph-ranked suggestions with profile hydration fallback, profile-aware reasons, privacy-preserving mutual counts, account-synced hide/restore controls, inline profile preview, requests with safe action-failure recovery, selectable-timing notification-backed reminders with local fallback/backfill, scheduler-backed due reminder promotion, Admin rollout/run-history visibility, and append-only workflow analytics | Full profile-service-backed recommendation generation, reminder frequency controls, and backend-owned scheduler status contracts are still missing | Add profile-service-backed suggestion payloads, frequency controls, and production scheduler health checks |
+| Networking | API-first graph-ranked suggestions with profile hydration fallback, profile-aware reasons, privacy-preserving mutual counts, account-synced hide/restore controls, accessible card-list semantics, inline profile preview, requests with safe action-failure recovery, selectable-timing notification-backed reminders with local fallback/backfill, scheduler-backed due reminder promotion, Admin rollout/run-history visibility, and append-only workflow analytics | Full profile-service-backed recommendation generation, reminder frequency controls, and backend-owned scheduler status contracts are still missing | Add profile-service-backed suggestion payloads, frequency controls, and production scheduler health checks |
 | Messaging | Cursor-backed conversation list with participant profiles, unread badges, realtime visible-row preview/badge updates, realtime stream, cursor-backed active thread history, draft-only suggested replies, optimistic sends, retry, explicit visible-message read marking, reviewed link attachments, explicit file upload/download handoff with server-side guardrails | Formal backend-owned chat cursor contracts, backend-owned unread counters, live presence, virus scanning/provider storage hardening, and richer group participant context are still incomplete | Add backend chat cursor contracts, durable unread counters, presence/group context, virus scanning, and provider storage hardening |
-| Billing | Plans, confirmation, provider handoff, append-only workflow analytics | Provider failure details limited | Add provider health/config diagnostics for admins and clearer user recovery |
+| Billing | Plans with accessible comparison semantics, confirmation, provider handoff, append-only workflow analytics | Provider failure details limited | Add provider health/config diagnostics for admins and clearer user recovery |
 | Settings | Profile, notifications, delivery controls, security, billing summary, retryable notification/billing load recovery, safe profile/security action-failure recovery | 2FA unavailable; account deactivation is now clearer but still backend-soft-delete only; scheduler rollout/run-history status is visible in Admin when configured, but not backed by a backend-owned Kubernetes health contract | Add provider-backed 2FA setup, backend-owned scheduler status checks, and settings schema migration checks |
 | Admin | Stats/health/fallback, scheduled automation rollout/run-history status, health/status links, log queries | Fallback is labeled and actionable, but provider-backed logs/metrics URLs, Kubernetes pod/image/secret health, incident timeline, and alert subscriptions are still incomplete | Add service details, audit filters, incidents, alert subscriptions, Kubernetes scheduler health, and configured logs/metrics providers |
 | Extension | Tracker, scan-to-draft, local resume-match preview, local-only settings, diagnostics | Authenticated web sync and provider-backed resume optimization are not implemented | Add explicit approve-before-import/export sync handoff when backend contracts exist |
@@ -162,7 +162,7 @@ Performance priorities:
 
 - Continue pagination rollout for backend-owned APIs; Jobs Explore, Candidates, Messaging conversation lists, Messaging active threads, header notifications, LMS course catalog, and Admin audit logs are cursor-backed; remaining work is formal backend-owned cursor contracts for chat/notification/LMS APIs.
 - Consider a dedicated latest-message projection/materialized field for conversation previews as chat volume grows.
-- Cache dashboard widgets independently with stale timestamps.
+- Cache dashboard summary sections independently with stale timestamps.
 - Do not make guaranteed-dead fallback API calls.
 - Add list virtualization once result counts are high.
 
@@ -808,7 +808,7 @@ Changed:
 
 Why it improves UX:
 
-- New and returning users no longer have to infer the best next action from disconnected dashboard widgets.
+- New and returning users no longer have to infer the best next action from disconnected dashboard summary panels.
 - Recruiters and talent users see different activation paths that match their role and business workflow.
 - The checklist turns broad platform capability into a small sequence of concrete tasks.
 
@@ -6482,6 +6482,436 @@ Control and safeguards:
 - Focused validation passed: `cd chrome-extension-project && npm run test:options-ux`.
 - Extension production build passed: `cd chrome-extension-project && npm run build`.
 - Full extension/source validation passed after documentation updates: root `npm run test:extension-options-ux`, extension messaging, portal fixture, popup UX, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+### 8.302 Extension Popup Storage Recovery
+
+Changed:
+
+- Wired popup tracked-job, scanned-draft, and local operational analytics storage issue state into `PopupApp`.
+- Added one safe live popup warning under navigation for load/save failures across tracker, draft, and diagnostics storage.
+- Changed the popup footer to show a degraded local-storage label while any popup storage issue is active.
+- Kept optimistic session UI behavior when a popup storage save fails.
+- Extended `popup-ux-contract.test.mjs` to cover storage issue wiring, safe warning copy, degraded footer copy, and raw quota/runtime/storage-key exclusion.
+
+Why it improves UX:
+
+- Users can tell when a local tracker, scanned-draft, or diagnostics change may not survive reload.
+- Storage recovery stays in a single popup-wide location instead of being duplicated across Dashboard, Tracker, and Diagnostics.
+- Warning copy remains actionable without exposing Chrome runtime details, quota exception names, storage keys, or token-like values.
+
+Control and safeguards:
+
+- Storage keys, localStorage fallback, page-scan messaging, tracked-job add/delete/status behavior, scanned-draft save/discard behavior, diagnostics export/clear behavior, local-only sync posture, successful persistence behavior, and operational analytics event names are unchanged.
+- The UI keeps the existing session-visible optimistic update behavior when a save fails.
+
+### 8.303 Validation Addendum
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:popup-ux`.
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-popup-ux`, extension options, messaging, portal fixture, storage migration, contract, runtime smoke, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+### 8.304 Extension Options Runtime Flow
+
+Changed:
+
+- Extended `runtime-smoke.test.mjs` to open the built options page inside the installed MV3 extension.
+- Added live-runtime assertions for Resume Match empty-field validation and completed local report-region semantics.
+- Added live-runtime assertions for Interview Planner empty-topic validation.
+- Added live-runtime assertions for prep-card creation, pressed-state toggling, and `ts_prep` persistence through real `chrome.storage.local`.
+- Preserved the existing runtime smoke coverage for host-mapped portal fixtures, popup render, storage round trip, and background ping.
+
+Why it improves UX:
+
+- The source-level options contract is now backed by a live built-extension flow for the highest-risk local options interactions.
+- Resume Match and Interview Planner validation, result, and stateful-card semantics are verified in the same runtime shape users install.
+- Prep-card persistence is checked through the browser extension storage API instead of only source inspection.
+
+Control and safeguards:
+
+- Keyword extraction, delayed match timing, prep-card add/toggle behavior, storage keys, diagnostics metadata, MV3 permissions, local-only sync posture, and operational analytics event names are unchanged.
+- Runtime coverage remains deterministic with host-mapped fixture pages and a temporary browser profile.
+
+### 8.305 Validation Addendum
+
+- Focused validation passed: `cd chrome-extension-project && npm run build && npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with built popup and options results, including Resume Match validation/report behavior and Interview Planner prep-card create/toggle persistence.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-runtime-smoke`, extension options, popup, messaging, portal fixture, storage migration, contract, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+### 8.306 Extension Options Prep Reset Runtime Flow
+
+Changed:
+
+- Extended the built-options runtime smoke to open the Interview Planner Clear All review panel.
+- Added live-runtime assertions that Keep Cards preserves `ts_prep` and Clear Cards removes local prep cards.
+- Added live-runtime assertions that the empty prep-card state returns after confirmed clearing.
+- Added live-runtime assertions for the Settings Clear Prep Cards review panel, including Keep Cards and confirmed Clear Cards behavior.
+- Added a final assertion that the Settings reset button is disabled once no prep cards remain.
+
+Why it improves UX:
+
+- Reviewed destructive prep-card actions are now proven in the built MV3 runtime, not only by source-level semantics.
+- Users keep explicit control because cancel and confirm paths are both verified for the planner-owned and settings-owned reset entry points.
+- Local storage outcomes are checked after every reviewed decision.
+
+Control and safeguards:
+
+- Prep-card add/toggle/clear/reset handlers, storage keys, review copy, diagnostics metadata, cloud-sync disabled posture, and operational analytics event names are unchanged.
+- The test only exercises existing UI controls and storage behavior.
+
+### 8.307 Validation Addendum
+
+- Focused validation passed: `cd chrome-extension-project && npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with Prep Clear All cancel/confirm and Settings reset cancel/confirm evidence.
+- Full extension/source validation passed after documentation updates: root `npm run test:extension-runtime-smoke`, extension options, popup, messaging, portal fixture, storage migration, contract, extension production build, module manifest validation, docs lifecycle validation, UI design-system validation, diff check, and trailing-whitespace check.
+
+### 8.308 Extension Runtime Storage-Failure Coverage
+
+Changed:
+
+- Extended the built-runtime smoke harness with CDP new-document storage failure injection for popup and options pages.
+- Added popup load/save warning assertions for the single popup-wide storage warning and degraded local-storage footer state.
+- Added options load/save warning assertions for Interview Planner preparation cards and Local Settings preferences.
+- Updated the shared storage hook so removed keys reset to the hook initial value instead of pushing `undefined` into mounted views.
+- Extended the options UX contract to guard the removed-key fallback.
+
+Why it improves UX:
+
+- Users now get verified safe recovery copy when browser-local extension storage cannot load or save.
+- Current-session optimistic changes stay visible without pretending persistence succeeded.
+- Removing or clearing storage keys no longer risks crashing array-backed popup/options views.
+
+Control and safeguards:
+
+- Storage keys, localStorage fallback, successful persistence behavior, prep/tracker/settings handlers, local-only sync posture, diagnostics metadata, and operational analytics event names are unchanged.
+- Warning copy remains generic and does not expose quota exceptions, Chrome runtime strings, storage keys, token-like values, raw resume/job text, raw notes, or prep topics.
+
+### 8.309 Validation Addendum
+
+- Extension production build passed: `cd chrome-extension-project && npm run build`.
+- Focused runtime validation passed: `EXTENSION_RUNTIME_BROWSER_BIN='/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' npm run test:runtime-smoke`.
+- Runtime smoke passed in headless Microsoft Edge 149 with install-time storage schema marker evidence, popup storage load warning evidence, popup quota-pressure save-warning evidence, options prep/settings storage load warning evidence, and options prep/settings quota-pressure save-warning evidence.
+
+### 8.310 Extension Runtime Quota-Pressure Addendum
+
+- Updated the built-runtime popup and options save-failure fixtures to throw a `QuotaExceededError`.
+- Runtime assertions now prove the simulated quota-pressure error name is present as test evidence while the visible popup/options warning copy hides raw quota/runtime/storage-key details.
+- True storage-capacity exhaustion remains a separate operational browser-capacity check because this fixture intentionally avoids filling real browser storage.
+
+### 8.311 Extension Runtime Storage Schema Marker Addendum
+
+- Added a built-runtime assertion that polls real `chrome.storage.local` for the install-time `ts_extension_storage_schema` marker after the MV3 extension loads.
+- The runtime smoke now verifies the marker version and timestamp shape without exposing the storage key in visible UI copy.
+- Published/prior-version update migration with seeded old storage remains a separate release gap.
+
+### 8.312 Messaging Thread-Control Accessibility Addendum
+
+- Added descriptive conversation-row accessible names with participant, unread state, and last-message context.
+- Added active-row current state for the selected conversation and explicit accessibility labels for failed-message retry plus visible-unread mark-read controls.
+- Focused unit validation passed with `MessagingPage.test.tsx`, and focused Chromium Messaging workflow validation passed after updating the accessible Retry failed message and mark-read selectors; manual screen-reader walkthrough evidence remains a separate release gap.
+
+### 8.313 Networking Card/List Accessibility Addendum
+
+- Added list/listitem semantics for suggested professionals, incoming requests, sent requests, and accepted connections.
+- Added person-specific card labels plus person-specific accessible names for repeated Preview, Connect, Request Sent, Accept, Decline, Remind Me, Clear Reminder, Withdraw, and accepted-profile preview controls.
+- Focused unit validation passed with `NetworkingPage.test.tsx`, and focused Chromium Networking workflow validation passed after updating selectors to the new accessible action names; manual screen-reader walkthrough evidence and latest all-browser rerun remain separate release gaps.
+
+### 8.314 Billing Plan-Comparison Accessibility Addendum
+
+- Added named list/listitem semantics for Billing plan cards.
+- Added plan-specific comparison labels, labeled feature lists, and plan-specific Current Plan/Review Plan accessible names.
+- Focused unit validation passed with `BillingPage.test.tsx`, and focused Chromium Billing workflow validation passed after updating selectors to the new accessible action names; manual screen-reader walkthrough evidence and latest all-browser rerun remain separate release gaps.
+
+### 8.315 Learning Progress Accessibility Addendum
+
+- Added semantic `progressbar` roles to Continue Learning, catalog-card, and course-detail progress tracks.
+- Added contextual course-specific progress labels plus min/max/current values and readable percent text.
+- Focused unit validation passed with `LMSPage.test.tsx`, focused Chromium Learning workflow validation passed after the semantic progress update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, and live LMS provider/RLS progress validation remain separate release gaps.
+
+### 8.316 Challenges Workspace Accessibility Addendum
+
+- Added challenge catalog list/listitem semantics with challenge-specific card labels.
+- Added named workspace regions/lists for Prompt, Solution, Sample Cases, latest Submission, Retry History, sample cases, local-check results, and retry-history attempts.
+- Added a hidden challenge/language description to the existing Solution code editor label without changing editor behavior.
+- Focused unit validation passed with `ChallengesPage.test.tsx`, focused Chromium Challenges workflow validation passed after the semantic workspace update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, and live challenge provider/RLS validation remain separate release gaps.
+
+### 8.317 Dashboard Summary Accessibility Addendum
+
+- Added named list/listitem semantics for talent and recruiter metric cards, checklist tasks, quick actions, recent opportunities, recent applications, and active challenge summaries.
+- Added summary labels that preserve Dashboard as a handoff surface instead of duplicating Jobs, Learning, Challenges, Candidates, or Messaging workflows.
+- Focused unit validation passed with `DashboardPage.test.tsx`, focused Chromium Dashboard workflow validation passed after the semantic summary update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, and live dashboard source/freshness validation remain separate release gaps.
+
+### 8.318 Candidates List Accessibility Addendum
+
+- Added named list/listitem semantics for candidate review metrics and candidate application rows.
+- Added metric labels for scorecard coverage, average rubric, evidence gaps, and scorecard sync plus row labels for candidate, job, status, and email context.
+- Focused unit validation passed with `CandidatesPage.test.tsx`, focused Chromium Candidates workflow validation passed after the semantic row update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live recruiter/RLS candidate validation, and production data-scale behavior remain separate release gaps.
+
+### 8.319 Settings Accessibility Structure Addendum
+
+- Added a named Settings sections tablist with controlled tabpanels and arrow/Home/End keyboard movement.
+- Added named list/listitem semantics for notification channels, activity alerts, delivery controls, security actions, and billing summary metrics, plus a named Billing management handoff region.
+- Focused unit validation passed with `SettingsPage.test.tsx`, focused Chromium Settings workflow validation passed after updating selectors to tabs, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live settings/RLS provider validation, and security-sensitive audit verification remain separate release gaps.
+
+### 8.320 AI Assistant Review Accessibility Addendum
+
+- Added named list/listitem semantics for AI Review Queue draft recommendations with source-labeled item labels.
+- Added a named live AI conversation log with per-message article labels for welcome, user, draft, saved, and dismissed assistant states.
+- Added named prompt suggestion list semantics for the empty-state suggestion controls.
+- Focused unit validation passed with `AIAssistant.test.tsx`, focused Chromium AI Assistant workflow validation passed after the semantic review update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live backend AI/provider validation, automation-table RLS validation, prompt/version governance, and rate-limit behavior remain separate release gaps.
+
+### 8.321 Admin Operational Accessibility Addendum
+
+- Added named list/listitem semantics for Admin summary metrics.
+- Added named operational regions for Product Analytics Insights, Scheduled Automations, Service Health, and Audit Log.
+- Added named analytics summary/top-area/friction/opportunity lists, scheduled automation summary/job lists, Service Health table labels, and Audit Log table/row labels.
+- Focused unit validation passed with `AdminDashboard.test.tsx`, focused Chromium Admin workflow validation passed after the semantic operational update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live admin authZ/RLS validation, production telemetry, scheduler provider run-history validation, and deployed dashboard verification remain separate release gaps.
+
+### 8.322 Jobs Result Accessibility Addendum
+
+- Added named list/listitem semantics for Jobs Explore results, Applied applications, My Posts recruiter postings, and saved searches.
+- Added contextual card labels for job result, application status, recruiter posting checklist, and saved-search tracking state.
+- Focused unit validation passed with `JobsPage.test.tsx`, focused Chromium Jobs and Post Job workflow validations passed after the semantic result update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live jobs/application/recruiter RLS validation, duplicate/closed-job validation, provider sync-conflict checks, and deployed provider behavior remain separate release gaps.
+
+### 8.323 Profile Section Accessibility Addendum
+
+- Added named region/list/listitem semantics for the Profile summary, skill chips, summary metrics, completion checklist, local suggestions, experience rows, education rows, and achievement cards.
+- Added a semantic completion progressbar and wired Profile tabs to tabpanels through the shared Tabs ID prefix.
+- Focused unit validation passed with `ProfilePage.test.tsx`, focused Chromium Profile workflow validation passed after the semantic section update, and frontend lint/build plus module/docs/design/IA guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live profile/avatar/provider/RLS validation, date-range validation, skill dedupe, permission tests, and deployed provider behavior remain separate release gaps.
+
+### 8.324 Resume Editor Accessibility Addendum
+
+- Added a named Resume actions toolbar and wired Resume tabs to controlled Editor and Preview tabpanels through the shared Tabs ID prefix.
+- Added named region/list/listitem semantics for editor fields, work experience rows, skills, import-review fields/skills/profile rows, uploaded artifacts, deleted receipts, export history, and preview sections.
+- Focused unit validation passed with `ResumeBuilder.test.tsx`, focused Chromium Resume workflow validation passed after the semantic editor update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live artifact/provider/RLS validation, deeper import validation, scanned-PDF/OCR policy, provider retention policy, and deployed provider behavior remain separate release gaps.
+
+### 8.325 Application Timeline Accessibility Addendum
+
+- Added a named application status timeline region inside the Jobs Applied Application Details modal.
+- Added list/listitem semantics for recorded status events, rejected fallback state, and inferred Submitted/Reviewed/Interview/Offer timeline steps.
+- Focused unit validation passed with `JobsPage.test.tsx`, focused Chromium Jobs workflow validation passed after the semantic timeline update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live application status-event/RLS validation, duplicate/closed-job validation, provider sync-conflict checks, and deployed provider behavior remain separate release gaps.
+
+### 8.326 Public Landing Semantic Structure Addendum
+
+- Added a named Public navigation landmark and named Public role entry points group for the Talent and Recruiter CTAs.
+- Added named region/list/listitem semantics for the career command center preview, workflow control principles, platform pillars, feature-ownership decisions, and public platform stats.
+- Focused Chromium auth/landing workflow validation passed after the semantic landing update and verified 390px mobile no-overflow rendering; frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates. Asset-failure simulation, CTA telemetry verification, live anonymous stats/RLS validation, latest all-browser landing rerun, manual screen-reader walkthrough evidence, hosted CI execution, and deployed CDN behavior remain separate release gaps.
+
+### 8.327 Candidate Details Accessibility Addendum
+
+- Added named region/list semantics for Candidate Details queue navigation, identity summary, application metadata, advisory signal, submitted materials, review guidance, interview-plan draft, scorecard dimensions, and recruiter notes.
+- Kept scorecard dimension listitems semantic without duplicating the existing slider labels, preserving the browser workflow selectors for Role Fit, Technical Depth, Communication, and Execution.
+- Focused unit validation passed with `CandidatesPage.test.tsx`, focused Chromium Candidates workflow validation passed after the semantic details update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live recruiter/RLS candidate validation, realtime candidate updates, production data-scale behavior, hosted CI execution, and deployed provider behavior remain separate release gaps.
+
+### 8.328 Post Job Section Accessibility Addendum
+
+- Added named workspace, form, template-control, draft-history, company-context, company-profile, editable draft-field, review, metadata, requirement-preview, duplicate/change-list, and action-group semantics to Post Job.
+- Added labels for draft-history items, review metadata, requirements, duplicate jobs, and edit changes while preserving existing form-control labels and workflow selectors.
+- Focused unit validation passed with `PostJobPage.test.tsx`, focused Chromium Post Job workflow validation passed after the semantic section update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live recruiter job/company/template/draft-history RLS validation, hosted CI execution, provider sync-conflict checks, and deployed provider behavior remain separate release gaps.
+
+### 8.329 Billing Payment And History Accessibility Addendum
+
+- Added named Billing workspace, payment-method region/group, transaction-history region, and transaction list semantics.
+- Added transaction labels with description, date, status, and signed amount while preserving existing plan-comparison labels and billing action selectors.
+- Focused unit validation passed with `BillingPage.test.tsx`, focused Chromium Billing workflow validation passed after the semantic payment/history update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live billing provider/RLS validation, hosted CI execution, webhook signature/idempotency behavior, webhook-owned subscription/payment state, and deployed provider behavior remain separate release gaps.
+
+### 8.330 Auth Entry Semantic Structure Addendum
+
+- Added H1-named public auth main landmarks, named authentication panels, and named alternate-entry navigation semantics through `AuthShell`.
+- Added named Login/Register form semantics plus Account Type group relationships and a named registration next-step status while preserving configured email auth, role intent, safe auth-error copy, and inactive public OAuth/reset visibility.
+- Focused unit validation passed with `AuthEntry.test.tsx`, focused Chromium auth-entry workflow validation passed after the semantic auth update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live Supabase signup/login validation, hosted CI execution, callback/no-token logging checks, public reset-password/OAuth product decision, and deployed auth provider behavior remain separate release gaps.
+
+### 8.331 Career Path Guidance Accessibility Addendum
+
+- Added a named Career path workspace and generated career path region.
+- Added required-skill list semantics, milestone listitem labels with completed/pending state, and review-boundary region/list semantics while preserving generated-guidance rendering, retry behavior, Learning and AI Assistant handoffs, and review-only boundaries.
+- Focused unit validation passed with `AICareerPath.test.tsx`, focused Chromium Career Path workflow validation passed after the semantic guidance update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, live backend AI/provider validation, hosted CI execution, prompt/privacy governance, provider telemetry, rate-limit behavior, and deployed provider behavior remain separate release gaps.
+
+### 8.332 CommandSearch Semantic Structure Addendum
+
+- Added a named Command search landmark, described destination listbox, route-label plus route-registry description option labels, and named no-result status.
+- Scoped the keyboard navigation guardrail's login email selector to the named Email sign-in form so auth form semantics and exact input labels remain compatible.
+- Focused Chromium command-search workflow and keyboard-navigation validation passed after the semantic shell-search update, and frontend lint/build plus module/docs/design/IA/diff hygiene guardrails passed after documentation updates; manual screen-reader walkthrough evidence, latest all-browser semantic rerun, hosted CI execution, live Supabase session behavior, deployed CDN behavior, and a separate product full-text search contract remain separate release gaps.
+
+### 8.333 Shell Navigation Semantic Structure Addendum
+
+- Added explicit accessible names for collapsed desktop sidebar route links, theme, and sign-out controls.
+- Added a distinct `Expanded mobile navigation` landmark for the mobile slide-over and connected the Header mobile navigation trigger with expanded/controlled state.
+- Added named shortcut/menu navigation and active-route state to the exported legacy `MobileMenu` without changing route filtering or destinations.
+- Focused Chromium keyboard-navigation validation passed with mobile slide-over and collapsed desktop sidebar assertions; route-access, accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser shell-navigation rerun, hosted CI execution, live Supabase session behavior, and deployed CDN behavior remain separate release gaps.
+
+### 8.334 Shared Toast Accessibility Addendum
+
+- Added a named `Toast notifications` region to the shared toast stack.
+- Added toast-type-specific status/alert accessible names, assertive atomic error alerts, decorative icon hiding, and notification-specific dismiss labels.
+- Focused unit validation passed with `Toast.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Full shared-feedback manual screen-reader walkthroughs, all-browser toast rendering, hosted CI execution, and deployed runtime behavior remain separate release gaps.
+
+### 8.335 Legacy Toast Compatibility Accessibility Addendum
+
+- Added a named `Realtime toast notifications` region to the compatibility `context/ToastContext` path used by older realtime notification imports.
+- Added toast-type-specific status/alert accessible names, assertive atomic error alerts, and notification-specific Dismiss controls while preserving click-to-dismiss and 5-second auto-dismiss behavior.
+- Focused unit validation passed with `ToastContext.test.tsx` and the shared toast contract; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, all-browser realtime-toast rendering, hosted CI execution, deployed socket runtime behavior, and final retirement/unification of the legacy context remain separate release gaps.
+
+### 8.336 Shared Modal Scroll Containment Addendum
+
+- Added reference-counted background page scroll locking to shared `AuraModal` while a review or confirmation dialog is open.
+- Restored the prior body overflow value when the modal closes or unmounts while preserving dialog naming, focus trap, Escape close, opener focus restoration, route-owned content, route-owned actions, and modal sizing.
+- Focused unit validation passed with `AuraModal.test.tsx`, focused Chromium keyboard-navigation validation passed after exact shell notification-region selectors were tightened, and accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser modal rendering, hosted CI execution, and deployed runtime behavior remain separate release gaps.
+
+### 8.337 Shared Skeleton Accessibility And Motion Addendum
+
+- Made shared `Skeleton` placeholders decorative by default when callers do not provide explicit loading semantics.
+- Preserved caller-provided loading role/name semantics for announced skeleton states and changed the pulse utility to reduced-motion-aware styling.
+- Focused unit validation passed with `Skeleton.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser reduced-motion rendering, hosted CI execution, and visual comparison of every skeleton state remain separate release gaps.
+
+### 8.338 Shared Empty-State Semantics Addendum
+
+- Converted shared `EmptyState` surfaces into title-named sections and connected optional description copy with `aria-describedby`.
+- Hid decorative empty-state icons from assistive technologies while preserving caller-owned recovery actions and route-owned empty-state copy.
+- Focused unit validation passed with `EmptyState.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser empty-state rendering, hosted CI execution, and visual comparison of every empty-state variant remain separate release gaps.
+
+### 8.339 Shared Toggle Semantics Addendum
+
+- Bound shared `Toggle` visible labels and helper descriptions to the switch control with `aria-labelledby` and `aria-describedby`.
+- Added fallback accessible naming for unlabeled switches and hid the visual switch thumb from assistive technologies while preserving checked-state and disabled behavior.
+- Focused unit validation passed with `Toggle.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser settings/toggle rendering, hosted CI execution, and route-specific preference walkthroughs remain separate release gaps.
+
+### 8.340 Shared Badge Semantics Addendum
+
+- Added optional accessible descriptions to shared compact metadata badges for abbreviated labels.
+- Exposed badge variant metadata for audits, constrained inline sizing for narrow surfaces, and preserved caller-owned roles/data attributes without adding implicit status or alert live regions.
+- Focused unit validation passed with `Badge.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser badge rendering, hosted CI execution, and route-specific status-badge walkthroughs remain separate release gaps.
+
+### 8.341 Shared Input Semantics Addendum
+
+- Added collision-safe generated IDs for shared inputs when callers do not pass explicit IDs.
+- Connected helper/error text to fields, exposed active errors through invalid/error-message semantics, preserved caller-provided descriptions, and hid decorative leading icons from assistive technologies.
+- Focused unit validation passed with `AuraInput.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser form rendering, hosted CI execution, and route-specific form validation walkthroughs remain separate release gaps.
+
+### 8.342 Shared Button Presentation Addendum
+
+- Changed shared non-icon buttons to minimum-height sizing with wrapping-safe long-label presentation.
+- Preserved visible loading labels, busy/loading metadata, loading disablement, fixed icon-button dimensions, and caller-owned click/submit behavior.
+- Focused unit validation passed with `AuraButton.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser button rendering, hosted CI execution, and route-specific long-label visual review remain separate release gaps.
+
+### 8.343 Shared Page Header Semantics Addendum
+
+- Bound shared `PageHeader` titles and optional descriptions to the header wrapper.
+- Preserved title-adjacent badges and added title-specific action groups for page-level controls without moving route-owned actions.
+- Focused unit validation passed with `PageHeader.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser page-header rendering, hosted CI execution, and route-specific action-group walkthroughs remain separate release gaps.
+
+### 8.344 Shared Card Containment Addendum
+
+- Added max-width/min-width containment defaults and audit slot metadata to shared cards.
+- Made card titles/descriptions wrapping-safe, content min-width safe, and footers able to wrap action controls while preserving caller-owned roles and labels.
+- Focused unit validation passed with `GlassCard.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser card rendering, hosted CI execution, and route-specific long-text card visual review remain separate release gaps.
+
+### 8.345 Shared Image Presentation Addendum
+
+- Preserved caller-owned image alt text plus load/error handlers while adding lazy loading and async decoding defaults.
+- Added named failed-image fallback semantics for meaningful images, hidden decorative failed-image fallbacks, and source-change recovery after failed loads.
+- Focused unit validation passed with `AuraImage.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser image rendering, hosted CI execution, and route-specific image-failure visual review remain separate release gaps.
+
+### 8.346 Shared Tabs Semantics Addendum
+
+- Added explicit horizontal orientation and source-audit slot metadata to shared tabs.
+- Hid tab icons from assistive technologies while preserving visible labels, click selection, stable tab/panel relationships from `idPrefix`, and Arrow/Home/End roving focus behavior.
+- Focused unit validation passed with `Tabs.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser tab rendering, hosted CI execution, and route-specific tabpanel walkthroughs remain separate release gaps.
+
+### 8.347 Legacy Helper Presentation Addendum
+
+- Added named metric group semantics and connected descriptions to exported `StatCard` while hiding decorative metric icons.
+- Added named article semantics to `PostCard`, hid decorative avatar initials, and named exported status bars while hiding status icons and separators from assistive technologies.
+- Focused unit validation passed with `LegacyHelpers.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser helper rendering, hosted CI execution, and route-specific migration away from legacy helpers remain separate release gaps.
+
+### 8.348 Typography And Page Template Helper Addendum
+
+- Extended exported typography helpers to preserve caller attributes and caller classes while adding wrapping-safe heading/body/metadata defaults.
+- Added named main content landmarks, class hooks, and header-hidden utility-layout support to `PageTemplate` while preserving optional shared `PageHeader` rendering and caller-owned action controls.
+- Focused unit validation passed with `Typography.test.tsx` and `PageTemplate.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser helper rendering, hosted CI execution, and route-specific migration away from legacy templates remain separate release gaps.
+
+### 8.349 Responsive Layout Shell Contract Addendum
+
+- Added a named Application content landmark and shell slot metadata to the authenticated `ResponsiveLayout`.
+- Preserved userless passthrough, sidebar/header composition, resize-driven sidebar offsets, header sidebar toggles, and logout through the existing auth service plus `/login` route.
+- Focused unit validation passed with `ResponsiveLayout.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser shell rendering, hosted CI execution, live auth-session behavior, and deployed CDN behavior remain separate release gaps.
+
+### 8.350 Legacy Navbar Contract Addendum
+
+- Added named legacy application and mobile navigation landmarks to exported `AuraNavbar`.
+- Marked active route links with `aria-current`, hid decorative icons, and added explicit mobile-menu expanded/controlled relationships while preserving public auth links, route destinations, profile/search/notification controls, animated close behavior, and logout routing.
+- Focused unit validation passed with `AuraNavbar.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser legacy navbar rendering, hosted CI execution, live auth-session behavior, and final retirement or migration of legacy nav helpers remain separate release gaps.
+
+### 8.351 Shared Theme Provider Resilience Addendum
+
+- Preserved the `aura-theme` storage key, root `light`/`dark` classes, stored-theme priority, and system preference fallback in `AuraThemeProvider`.
+- Added safe browser-environment guards so unavailable storage or missing `matchMedia` does not break current-session visual mode toggling.
+- Focused unit validation passed with `AuraThemeProvider.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser theme rendering, hosted CI execution, and live browser storage-denial behavior remain separate release gaps.
+
+### 8.352 Legacy Mobile Menu Contract Addendum
+
+- Added focused compatibility coverage for exported `MobileMenu` shortcut and expanded navigation landmarks.
+- Hid shortcut, expanded route, menu-toggle, close, theme, and sign-out icons from assistive technologies while preserving link destinations, active-route state, controlled open/close behavior, route-close behavior, theme toggling, and sign-out callbacks.
+- Focused unit validation passed with `MobileMenu.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser legacy mobile-menu rendering, hosted CI execution, and final retirement or migration of legacy mobile menu helpers remain separate release gaps.
+
+### 8.353 Active Sidebar Shell Contract Addendum
+
+- Added explicit naming for the active sidebar brand/home link so the collapsed desktop sidebar does not expose an unnamed icon-only home destination.
+- Hid shell brand, route, close, theme, sign-out, collapse icons, separator dividers, and the mobile overlay from assistive technologies while preserving route-registry filtering, link destinations, active-route state, and close/theme/sign-out/collapse callbacks.
+- Focused unit validation passed with `Sidebar.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser sidebar rendering, hosted CI execution, live auth-session behavior, and deployed CDN behavior remain separate release gaps.
+
+### 8.354 Active Header Shell Contract Addendum
+
+- Made active header navigation and notification trigger buttons explicit while preserving their controlled relationships.
+- Hid mobile-menu and notification icons, unread-dot indicators, and the visual avatar initial from assistive technologies without changing command search, notification loading/read/retry behavior, service calls, route navigation, or analytics.
+- Focused unit validation passed with `Header.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser header rendering, hosted CI execution, live notification provider behavior, live auth-session behavior, and deployed CDN behavior remain separate release gaps.
+
+### 8.355 CommandSearch Decorative Presentation Contract Addendum
+
+- Hid the visual search, destination result, and trailing arrow icons from assistive technologies while keeping route meaning in the named search landmark, described combobox/listbox relationship, route-label option names, live result status, and no-result status.
+- Preserved route metadata, role filtering, label-ranked results, shortcut focus, keyboard behavior, click/submit navigation, route destinations, shell close callbacks, page behavior, analytics, and feature ownership.
+- Focused unit validation passed with `CommandSearch.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader walkthrough evidence, latest all-browser command-search rendering, hosted CI execution, live Supabase session behavior, and deployed CDN behavior remain separate release gaps.
+
+### 8.356 Messaging Conversation-List Semantics Addendum
+
+- Added participant presence status to active Messaging conversation-row accessible names.
+- Hid the active conversation-list search icon, Retry conversations icon, fallback participant initials, and online dot from assistive technologies while preserving visible layout and row status presentation.
+- Preserved conversation filtering, pagination, selection, unread badges, message-history loading, send/retry behavior, mark-read behavior, attachment upload/link behavior, suggested-reply behavior, route behavior, service calls, analytics, and Messages ownership.
+- Focused unit validation passed with `MessagingPage.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader thread walkthrough evidence, latest all-browser conversation-list rendering, live messaging API/Supabase/realtime behavior, hosted CI execution, provider storage, realtime reconnect/order behavior, attachment signed-access behavior, and deployed provider behavior remain separate release gaps.
+
+### 8.357 Messaging Thread And Composer Presentation Addendum
+
+- Hid active Messaging thread and composer visual icons from assistive technologies, including back, unavailable call, mark-read, history, attachment, failed-message retry, upload, suggestion, and send icons.
+- Hid decorative active-thread avatar initials and realtime status dots while keeping participant identity, realtime status copy, and action meaning in visible text or explicit accessible labels.
+- Preserved active conversation selection, realtime status copy, message-history loading, older-history loading, visible mark-read behavior, send/retry behavior, attachment link/upload behavior, suggested-reply insertion, route behavior, service calls, analytics, and Messages ownership.
+- Focused unit validation passed with `MessagingPage.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader thread/composer walkthrough evidence, latest all-browser thread/composer rendering, live messaging API/Supabase/realtime behavior, hosted CI execution, provider storage, realtime reconnect/order behavior, attachment signed-access behavior, and deployed provider behavior remain separate release gaps.
+
+### 8.358 Networking Card And Control Presentation Addendum
+
+- Hid active Networking search, card metadata, status, action, and profile-preview modal icons from assistive technologies.
+- Hid decorative suggestion, request, connection, and preview avatar initials while keeping identity and action meaning in visible text or person-specific accessible labels.
+- Preserved suggestion loading, search, tab switching, connection-state loading, Connect/Accept/Decline/Withdraw behavior, reminder set/clear behavior, hidden-suggestion preferences, profile preview/full-profile behavior, route behavior, service calls, toast behavior, analytics, and Network ownership.
+- Focused unit validation passed with `NetworkingPage.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader Network walkthrough evidence, latest all-browser Networking card/modal rendering, live networking API/Supabase/RLS behavior, scheduler reminder delivery, hosted CI execution, notification provider behavior, and deployed provider behavior remain separate release gaps.
+
+### 8.359 AI Assistant Presentation Addendum
+
+- Hid AI Assistant badge, review-queue, recommendation-card, conversation-avatar, draft-prompt, and composer icons from assistive technologies.
+- Kept AI review, chat, prompt, and action meaning in visible text, message article labels, named lists/logs, or explicit accessible labels.
+- Preserved session load/save/delete behavior, chat persistence, prompt suggestions, backend chat calls, provider retry, draft response creation, automation suggestion persistence, review save/dismiss status, review audits, clear-chat review, workflow handoffs, route behavior, service calls, toast behavior, analytics, and AI ownership.
+- Focused unit validation passed with `AIAssistant.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader AI walkthrough evidence, latest all-browser AI rendering, live backend AI/provider/RLS behavior, hosted CI execution, prompt/version governance, provider telemetry, rate-limit behavior, and deployed provider behavior remain separate release gaps.
+
+### 8.360 Career Path Presentation Addendum
+
+- Hid Career Path unavailable-state, retry, AI handoff, generated-path, milestone-state, Learning handoff, and review-boundary icons from assistive technologies.
+- Kept generated guidance, unavailable-state, retry, handoff, milestone, and review-boundary meaning in headings, region/list labels, listitem labels, visible copy, and button text.
+- Preserved AI service generation ownership, response normalization, load/retry behavior, fallback milestones, Learning navigation, AI Assistant navigation, provider-unavailable state, route behavior, source-labeling, service calls, and review-only guarantees.
+- Focused unit validation passed with `AICareerPath.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader Career Path walkthrough evidence, latest all-browser Career Path rendering, live backend AI/provider validation, hosted CI execution, prompt/version governance, provider telemetry, rate-limit behavior, deployed provider behavior, and route-analytics evidence for merging into AI remain separate release gaps.
+
+### 8.361 Admin Console Presentation Addendum
+
+- Hid Admin refresh, failed-load, degraded-state, summary metric, product-analytics, scheduler, service-health, observability-link, and audit-log icons from assistive technologies.
+- Kept operational meaning in headings, named regions, table/list labels, row labels, visible status text, and explicit Refresh, Retry, Status, Runbook, observability-link, and audit controls.
+- Preserved admin stats calls, audit pagination behavior, product analytics insight loading, scheduler status loading, scheduler status/runbook links, service investigation links, refresh handlers, source labels, role gating, route behavior, service calls, analytics, and Admin ownership.
+- Focused unit validation passed with `AdminDashboard.test.tsx`; accessibility semantics, frontend lint/build, module-manifest, docs lifecycle, UI design-system, and IA guardrails also passed after documentation updates. Manual screen-reader Admin walkthrough evidence, latest all-browser Admin rendering, live admin authZ/RLS, production service-health telemetry, real observability links, scheduler provider run history, live audit pagination, hosted CI execution, deployed dashboards, and destructive-action confirmation coverage remain separate release gaps.
 
 ## 9. Highest-Risk Issues To Address Next
 

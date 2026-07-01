@@ -73,7 +73,7 @@ const installNotificationStubs = async (
 const openNotifications = async (page: Page) => {
   const notificationsButton = page.getByRole('button', { name: /^View notifications/ });
   await notificationsButton.click();
-  const notificationsRegion = page.getByRole('region', { name: 'Notifications' });
+  const notificationsRegion = page.getByRole('region', { name: 'Notifications', exact: true });
   await expect(notificationsRegion).toBeVisible();
   return { notificationsButton, notificationsRegion };
 };

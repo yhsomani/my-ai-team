@@ -202,17 +202,13 @@ class ChatServiceTest {
     }
 
     @Test
-    void saveMessageFallback_ShouldMarkMessageAsBuffered() {
+    void saveMessageFallback_ShouldFail_WhenMessageWasNotPersisted() {
         // Arrange
         ChatMessage fallbackMessage = new ChatMessage();
         fallbackMessage.setContent("Original message");
 
-        // Act
-        ChatMessage result = chatService.saveMessageFallback(fallbackMessage, new RuntimeException("DB Down"));
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.getContent().startsWith("BUFFERED_"));
-        assertFalse(result.getIsRead());
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () ->
+                chatService.saveMessageFallback(fallbackMessage, new RuntimeException("DB Down")));
     }
 }

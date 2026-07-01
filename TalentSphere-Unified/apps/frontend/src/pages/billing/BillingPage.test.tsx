@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../components/shared/Toast';
-import { paymentService, type PaymentPlan } from '../../services/paymentService';
+import { paymentService, type Payment, type PaymentPlan } from '../../services/paymentService';
 import authReducer from '../../store/slices/authSlice';
 import BillingPage from './BillingPage';
 
@@ -39,6 +39,38 @@ const paidPlan: PaymentPlan = {
   is_active: true,
 };
 
+const freePlan: PaymentPlan = {
+  id: 'plan-free',
+  name: 'Talent Free',
+  price: 0,
+  currency: 'USD',
+  interval: 'month',
+  features: ['Profile workspace', 'Basic job tracking'],
+  is_active: true,
+};
+
+const completedPayment: Payment = {
+  id: 'payment-pro-unit',
+  user_id: 'billing-user',
+  amount: 49,
+  currency: 'USD',
+  description: 'Talent Pro subscription',
+  status: 'COMPLETED',
+  payment_method: 'Visa ending in 4242',
+  created_at: '2026-06-27T09:30:00.000Z',
+} as Payment;
+
+const refundedPayment: Payment = {
+  id: 'payment-refund-unit',
+  user_id: 'billing-user',
+  amount: -12,
+  currency: 'USD',
+  description: 'Plan adjustment credit',
+  status: 'REFUNDED',
+  payment_method: 'Visa ending in 4242',
+  created_at: '2026-06-26T09:30:00.000Z',
+} as Payment;
+
 const renderBillingPage = () => {
   const store = configureStore({
     reducer: {
@@ -66,6 +98,15 @@ const renderBillingPage = () => {
   );
 
   return store;
+};
+
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
 };
 
 describe('BillingPage', () => {
@@ -131,6 +172,82 @@ describe('BillingPage', () => {
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
   });
 
+  it('exposes plan comparison cards and actions with plan-specific accessible names', async () => {
+    vi.mocked(paymentService.getPlans).mockResolvedValue([freePlan, paidPlan]);
+    vi.mocked(paymentService.getUserSubscription).mockResolvedValue({
+      id: 'subscription-free',
+      user_id: 'billing-user',
+      plan_id: 'plan-free',
+      status: 'ACTIVE',
+      payment_method: 'Visa ending in 4242',
+      next_billing_date: '2026-08-01T00:00:00.000Z',
+      subscription_plans: {
+        name: 'Talent Free',
+        price: 0,
+        currency: 'USD',
+        interval: 'month',
+      },
+    } as any);
+
+    renderBillingPage();
+
+    const planList = await screen.findByRole('list', { name: 'Billing plans' });
+    const freeCard = within(planList).getByRole('listitem', {
+      name: 'Current plan: Talent Free. $0 per month. 2 features.',
+    });
+    const proCard = within(planList).getByRole('listitem', {
+      name: 'Available plan: Talent Pro. $49 per month. 2 features.',
+    });
+
+    expect((within(freeCard).getByRole('button', { name: 'Current plan: Talent Free' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(within(freeCard).getByRole('list', { name: 'Features for Talent Free' })).toBeTruthy();
+    expect(within(proCard).getByRole('button', { name: 'Review Talent Pro plan' })).toBeTruthy();
+    expect(within(proCard).getByRole('list', { name: 'Features for Talent Pro' })).toBeTruthy();
+    expectDecorativeSvgIcons(freeCard);
+    expectDecorativeSvgIcons(proCard);
+  });
+
+  it('exposes payment method and transaction history with semantic structure', async () => {
+    vi.mocked(paymentService.getPlans).mockResolvedValue([freePlan, paidPlan]);
+    vi.mocked(paymentService.getHistory).mockResolvedValue([completedPayment, refundedPayment]);
+    vi.mocked(paymentService.getUserSubscription).mockResolvedValue({
+      id: 'subscription-free',
+      user_id: 'billing-user',
+      plan_id: 'plan-free',
+      status: 'ACTIVE',
+      payment_method: 'Visa ending in 4242',
+      subscription_plans: {
+        name: 'Talent Free',
+        price: 0,
+        currency: 'USD',
+        interval: 'month',
+      },
+    } as any);
+
+    renderBillingPage();
+
+    expect(await screen.findByRole('region', { name: 'Billing workspace' })).toBeTruthy();
+    expect(screen.getByText('Demo billing mode').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('demo');
+    expect(screen.getByText('Requests only').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('demo');
+    expect(screen.getByText('Demo source').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('demo');
+    expect(screen.getByText('Demo history').closest('[data-ui="source-status-badge"]')?.getAttribute('data-source-status')).toBe('demo');
+    const paymentMethodRegion = screen.getByRole('region', { name: 'Billing payment method' });
+    expect(within(paymentMethodRegion).getByRole('group', {
+      name: 'Payment method: Visa ending in 4242',
+    })).toBeTruthy();
+    expect(within(paymentMethodRegion).getByRole('button', { name: 'Update' })).toBeTruthy();
+    expectDecorativeSvgIcons(paymentMethodRegion);
+
+    const transactionRegion = screen.getByRole('region', { name: 'Billing transaction history' });
+    const transactionList = within(transactionRegion).getByRole('list', { name: 'Billing transactions' });
+    expect(within(transactionList).getByRole('listitem', {
+      name: /Talent Pro subscription.*COMPLETED.*\+\$49/,
+    })).toBeTruthy();
+    expect(within(transactionList).getByRole('listitem', {
+      name: /Plan adjustment credit.*REFUNDED.*-\$12/,
+    })).toBeTruthy();
+  });
+
   it('shows safe plan checkout failure copy and retries through the existing plan review', async () => {
     vi.mocked(paymentService.getPlans).mockResolvedValue([paidPlan]);
     vi.mocked(paymentService.subscribeToPlan)
@@ -144,10 +261,11 @@ describe('BillingPage', () => {
       expect(screen.getByRole('heading', { name: 'Talent Pro' })).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Review Plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review Talent Pro plan' }));
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: 'Review Talent Pro' })).toBeTruthy();
     });
+    expectDecorativeSvgIcons(screen.getByRole('dialog', { name: 'Review Talent Pro' }));
 
     fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
 
@@ -185,6 +303,7 @@ describe('BillingPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: 'Update Payment Method' })).toBeTruthy();
     });
+    expectDecorativeSvgIcons(screen.getByRole('dialog', { name: 'Update Payment Method' }));
 
     fireEvent.click(screen.getByRole('button', { name: /Open Billing Portal/i }));
 

@@ -23,6 +23,7 @@ export function useChromeStorage<T>(
 
   // Maintain a ref to the latest state to avoid closure stale-state issues in functional updates
   const stateRef = useRef<T>(storedValue);
+  const initialValueRef = useRef<T>(initialValue);
 
   useEffect(() => {
     stateRef.current = storedValue;
@@ -60,7 +61,7 @@ export function useChromeStorage<T>(
       ) => {
         if (areaName === 'local' && changes[key]) {
           const newValue = changes[key].newValue;
-          setStoredValue(newValue);
+          setStoredValue(newValue === undefined ? initialValueRef.current : newValue);
         }
       };
       chrome.storage.onChanged.addListener(handleStorageChange);

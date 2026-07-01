@@ -9,7 +9,8 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchConversations, fetchMessages, loadMoreConversations, loadOlderMessages, markConversationMessagesRead, setActiveConversation, sendMessage, selectAllConversations } from '../../store/slices/messagingSlice';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Skeleton } from '../../components/shared/Skeleton';
-import type { Message } from '../../types/messaging';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
+import type { Conversation, Message } from '../../types/messaging';
 import {
   getAttachmentFallbackContent,
   getAttachmentFileSizeBand,
@@ -47,6 +48,11 @@ const messagingComposerPanelClassName = 'rounded-md border border-[var(--border-
 const conversationLoadFailureMessage = 'Conversation data did not respond. Retry to reload conversation list, unread counts, and recent activity.';
 const messageHistoryLoadFailureMessage = 'Message history did not respond. Retry to reload the selected conversation without sending a message.';
 const olderMessagesLoadFailureMessage = 'Older messages did not respond. Retry to reload previous thread history without changing the conversation.';
+const messagingRealtimeActionFlags = {
+  voiceCalls: false,
+  videoCalls: false,
+  moreActions: false,
+};
 
 const getParticipantInitials = (name?: string) => {
   const initials = (name || 'User')
@@ -91,6 +97,22 @@ const formatFullTimestamp = (value?: string | Date) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+const getConversationAccessibleLabel = (conversation: Conversation) => {
+  const participantName = conversation.participant?.fullName || 'Unknown contact';
+  const participantStatus = conversation.participant?.status
+    ? `Status: ${conversation.participant.status.charAt(0).toUpperCase()}${conversation.participant.status.slice(1)}.`
+    : 'Status unavailable.';
+  const unreadCount = conversation.unreadCount || 0;
+  const unreadLabel = unreadCount > 0
+    ? `${unreadCount} unread ${unreadCount === 1 ? 'message' : 'messages'}`
+    : 'No unread messages';
+  const lastMessageLabel = conversation.lastMessage?.content
+    ? `Last message: ${conversation.lastMessage.content}`
+    : 'No messages yet';
+
+  return `Open conversation with ${participantName}. ${unreadLabel}. ${lastMessageLabel}. ${participantStatus}`;
 };
 
 const getMessagingWorkflowErrorCategory = (error: unknown, fallback: string) => (
@@ -601,12 +623,18 @@ const MessagingPage: React.FC = () => {
       : realtimeStatus === 'disconnected'
         ? 'bg-destructive'
         : 'bg-[var(--text-muted)]';
+  const hasRealtimeActions = Object.values(messagingRealtimeActionFlags).some(Boolean);
 
   const conversationList = (
     <>
       <div className={`${messagingPanelClassName} rounded-none border-x-0 border-t-0`}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            size={14}
+            aria-hidden="true"
+            focusable="false"
+          />
           <input
             type="text"
             aria-label="Search conversations"
@@ -625,14 +653,18 @@ const MessagingPage: React.FC = () => {
           </p>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-default)]">
+      <div
+        className="flex-1 overflow-y-auto divide-y divide-[var(--border-default)]"
+        role="list"
+        aria-label="Conversations"
+      >
         {status === 'loading' && [1,2,3].map(i => <Skeleton key={i} className="m-1 h-16 w-[calc(100%-0.5rem)]" />)}
         {status === 'failed' && conversations.length === 0 && (
           <div role="alert" className="flex flex-col items-center gap-2 p-6 text-center text-sm text-[var(--text-muted)]">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Messages could not load</p>
             <span>{conversationLoadFailureMessage}</span>
             <Button type="button" variant="outline" size="sm" onClick={retryLoadConversations}>
-              <RotateCcw size={13} className="mr-1" /> Retry conversations
+              <RotateCcw size={13} className="mr-1" aria-hidden="true" focusable="false" /> Retry conversations
             </Button>
           </div>
         )}
@@ -642,41 +674,45 @@ const MessagingPage: React.FC = () => {
           </div>
         )}
         {filteredConvos.map((convo) => (
-          <button
-            key={convo.id}
-            onClick={() => handleSelectConversation(convo.id)}
-            className={`flex min-h-20 w-full items-center gap-3 px-3 py-3 text-left transition-colors ${
-              activeConversationId === convo.id ? 'bg-accent/10' : 'hover:bg-[var(--bg-primary)]'
-            }`}
-          >
-            <div className="relative">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
-                {getParticipantInitials(convo.participant?.fullName)}
-              </div>
-              {convo.participant?.status === 'online' && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-[var(--bg-secondary)]" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium truncate">{convo.participant?.fullName}</span>
-                <div className="ml-2 flex shrink-0 items-center gap-1.5">
-                  {Boolean(convo.unreadCount) && (
-                    <span
-                      className="min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-semibold text-accent-foreground"
-                      aria-label={`${convo.unreadCount} unread ${convo.unreadCount === 1 ? 'message' : 'messages'}`}
-                    >
-                      {convo.unreadCount && convo.unreadCount > 99 ? '99+' : convo.unreadCount}
-                    </span>
-                  )}
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {formatMessageTime(convo.lastMessage?.timestamp || convo.updatedAt || convo.createdAt)}
-                  </span>
+          <div key={convo.id} role="listitem">
+            <button
+              type="button"
+              onClick={() => handleSelectConversation(convo.id)}
+              aria-current={activeConversationId === convo.id ? 'true' : undefined}
+              aria-label={getConversationAccessibleLabel(convo)}
+              className={`flex min-h-20 w-full items-center gap-3 px-3 py-3 text-left transition-colors ${
+                activeConversationId === convo.id ? 'bg-accent/10' : 'hover:bg-[var(--bg-primary)]'
+              }`}
+            >
+              <div className="relative">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent" aria-hidden="true">
+                  {getParticipantInitials(convo.participant?.fullName)}
                 </div>
+                {convo.participant?.status === 'online' && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-[var(--bg-secondary)]" aria-hidden="true" />
+                )}
               </div>
-              <p className="text-xs text-[var(--text-muted)] truncate">{convo.lastMessage?.content || 'No messages yet'}</p>
-            </div>
-          </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium truncate">{convo.participant?.fullName}</span>
+                  <div className="ml-2 flex shrink-0 items-center gap-1.5">
+                    {Boolean(convo.unreadCount) && (
+                      <span
+                        className="min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-semibold text-accent-foreground"
+                        aria-label={`${convo.unreadCount} unread ${convo.unreadCount === 1 ? 'message' : 'messages'}`}
+                      >
+                        {convo.unreadCount && convo.unreadCount > 99 ? '99+' : convo.unreadCount}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      {formatMessageTime(convo.lastMessage?.timestamp || convo.updatedAt || convo.createdAt)}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] truncate">{convo.lastMessage?.content || 'No messages yet'}</p>
+              </div>
+            </button>
+          </div>
         ))}
         {!isSearchingConversations && hasMoreConversations && (
           <div className="p-3">
@@ -699,6 +735,18 @@ const MessagingPage: React.FC = () => {
   return (
     <div className="flex h-[calc(100dvh-8rem)] min-h-[560px] flex-col gap-4">
       <PageHeader title="Messages" description="Chat with your connections." />
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Messaging source status">
+        <SourceStatusBadge
+          status="account"
+          label="Account messages"
+          description="Conversation history, unread counts, and sent messages use account-backed messaging tables when sync succeeds."
+        />
+        <SourceStatusBadge
+          status="unavailable"
+          label="Calls unavailable"
+          description="Voice calls, video calls, and overflow actions are hidden until a provider-backed messaging action is implemented."
+        />
+      </div>
 
       <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-[20rem_minmax(0,1fr)]">
         {/* Conversation List */}
@@ -735,9 +783,9 @@ const MessagingPage: React.FC = () => {
                     aria-label="Back to conversations"
                     onClick={() => setShowMobileConversations(true)}
                   >
-                    <ArrowLeft size={16} />
+                    <ArrowLeft size={16} aria-hidden="true" focusable="false" />
                   </Button>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent" aria-hidden="true">
                     {getParticipantInitials(activeConvo.participant?.fullName)}
                   </div>
                   <div className="min-w-0">
@@ -745,11 +793,11 @@ const MessagingPage: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
                       <span>{activeConvo.participant?.status === 'online' ? 'Online' : 'Offline'}</span>
                       <span className="inline-flex items-center gap-1">
-                        <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatusClassName}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatusClassName}`} aria-hidden="true" />
                         {realtimeStatusLabel}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <Clock size={11} />
+                        <Clock size={11} aria-hidden="true" focusable="false" />
                         {messageCountLabel}
                       </span>
                       {visibleIncomingUnreadCount > 0 && (
@@ -757,9 +805,10 @@ const MessagingPage: React.FC = () => {
                           type="button"
                           onClick={handleMarkVisibleRead}
                           disabled={isMarkingRead}
+                          aria-label={`Mark ${visibleIncomingUnreadCount} visible unread ${visibleIncomingUnreadCount === 1 ? 'message' : 'messages'} as read`}
                           className="inline-flex items-center gap-1 rounded border border-[var(--border-default)] px-1.5 py-0.5 text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <CheckCheck size={11} />
+                          <CheckCheck size={11} aria-hidden="true" focusable="false" />
                           {isMarkingRead ? 'Marking read...' : `${visibleIncomingUnreadCount} unread`}
                         </button>
                       )}
@@ -767,11 +816,19 @@ const MessagingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="hidden shrink-0 items-center gap-1 sm:flex">
-                  <Button variant="ghost" size="icon" aria-label="Voice calls unavailable" title="Voice calls unavailable" disabled><Phone size={16} /></Button>
-                  <Button variant="ghost" size="icon" aria-label="Video calls unavailable" title="Video calls unavailable" disabled><Video size={16} /></Button>
-                  <Button variant="ghost" size="icon" aria-label="More messaging actions unavailable" title="More actions unavailable" disabled><MoreVertical size={16} /></Button>
-                </div>
+                {hasRealtimeActions && (
+                  <div className="hidden shrink-0 items-center gap-1 sm:flex">
+                    {messagingRealtimeActionFlags.voiceCalls && (
+                      <Button variant="ghost" size="icon" aria-label="Start voice call" title="Start voice call"><Phone size={16} aria-hidden="true" focusable="false" /></Button>
+                    )}
+                    {messagingRealtimeActionFlags.videoCalls && (
+                      <Button variant="ghost" size="icon" aria-label="Start video call" title="Start video call"><Video size={16} aria-hidden="true" focusable="false" /></Button>
+                    )}
+                    {messagingRealtimeActionFlags.moreActions && (
+                      <Button variant="ghost" size="icon" aria-label="More messaging actions" title="More actions"><MoreVertical size={16} aria-hidden="true" focusable="false" /></Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Messages */}
@@ -802,7 +859,7 @@ const MessagingPage: React.FC = () => {
                       size="sm"
                       onClick={messageHistoryError === 'older' ? handleLoadOlderMessages : retryLoadMessages}
                     >
-                      <RotateCcw size={13} className="mr-1" />
+                      <RotateCcw size={13} className="mr-1" aria-hidden="true" focusable="false" />
                       {messageHistoryError === 'older' ? 'Retry older messages' : 'Retry message history'}
                     </Button>
                   </div>
@@ -816,7 +873,7 @@ const MessagingPage: React.FC = () => {
                       onClick={handleLoadOlderMessages}
                       disabled={messageHistoryStatus === 'loadingMore'}
                     >
-                      <ChevronUp size={14} className="mr-1" />
+                      <ChevronUp size={14} className="mr-1" aria-hidden="true" focusable="false" />
                       {messageHistoryStatus === 'loadingMore' ? 'Loading older...' : 'Load older messages'}
                     </Button>
                   </div>
@@ -852,9 +909,9 @@ const MessagingPage: React.FC = () => {
                               />
                             )}
                             <span className="flex items-center gap-2 px-3 py-2">
-                              <Paperclip size={13} />
+                              <Paperclip size={13} aria-hidden="true" focusable="false" />
                               <span className="min-w-0 flex-1 truncate">{getAttachmentLabel(msg.attachmentUrl)}</span>
-                              <ExternalLink size={12} />
+                              <ExternalLink size={12} aria-hidden="true" focusable="false" />
                             </span>
                           </a>
                         )}
@@ -865,16 +922,17 @@ const MessagingPage: React.FC = () => {
                           className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] opacity-80 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                           title={formatFullTimestamp(msg.timestamp)}
                         >
-                          {isFailedMessage && <AlertCircle size={12} className="text-destructive" />}
+                          {isFailedMessage && <AlertCircle size={12} className="text-destructive" aria-hidden="true" focusable="false" />}
                           <span>{formatMessageTime(msg.timestamp)}</span>
                           {isOwnMessage && <span>{getDeliveryLabel(msg as LocalMessage)}</span>}
                           {isFailedMessage && (
                             <button
                               type="button"
                               onClick={() => retryMessage(msg as LocalMessage)}
+                              aria-label="Retry failed message"
                               className="inline-flex items-center gap-1 font-medium text-destructive hover:underline"
                             >
-                              <RotateCcw size={11} /> Retry
+                              <RotateCcw size={11} aria-hidden="true" focusable="false" /> Retry
                             </button>
                           )}
                         </div>
@@ -890,7 +948,7 @@ const MessagingPage: React.FC = () => {
                   <div id="message-attachment-panel" className={`mb-2 ${messagingComposerPanelClassName}`}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <label htmlFor="message-attachment-url" className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-                        <Paperclip size={13} /> Attachment link
+                        <Paperclip size={13} aria-hidden="true" focusable="false" /> Attachment link
                       </label>
                       <button
                         type="button"
@@ -913,7 +971,7 @@ const MessagingPage: React.FC = () => {
                         className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                         aria-label="Remove attachment link"
                       >
-                        <X size={13} />
+                        <X size={13} aria-hidden="true" focusable="false" />
                       </button>
                     </div>
                     <input
@@ -941,7 +999,7 @@ const MessagingPage: React.FC = () => {
                         disabled={attachmentUploadStatus === 'uploading'}
                         aria-controls="message-attachment-file"
                       >
-                        <UploadCloud size={13} />
+                        <UploadCloud size={13} aria-hidden="true" focusable="false" />
                         {attachmentUploadStatus === 'uploading' ? 'Uploading...' : 'Upload file'}
                       </Button>
                       <input
@@ -978,7 +1036,7 @@ const MessagingPage: React.FC = () => {
                 {shouldShowReplySuggestions && (
                   <div className={`mb-2 ${messagingComposerPanelClassName}`}>
                     <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-                      <Sparkles size={13} />
+                      <Sparkles size={13} aria-hidden="true" focusable="false" />
                       <span>Suggested replies</span>
                     </div>
                     <div className="flex flex-wrap gap-2" aria-label="Suggested reply drafts">
@@ -996,7 +1054,12 @@ const MessagingPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <form className="flex gap-2" onSubmit={handleSendMessage}>
+                <form
+                  className="flex gap-2"
+                  onSubmit={handleSendMessage}
+                  aria-label="Message composer"
+                  data-ui="messaging-composer-form"
+                >
                   <Button
                     size="icon"
                     variant={showAttachmentField ? 'secondary' : 'outline'}
@@ -1036,9 +1099,12 @@ const MessagingPage: React.FC = () => {
                       focusAttachmentUrlInput();
                     }}
                   >
-                    <Paperclip size={16} />
+                    <Paperclip size={16} aria-hidden="true" focusable="false" />
                   </Button>
                   <label htmlFor="message-composer" className="sr-only">Message text</label>
+                  <p id="message-composer-help" className="sr-only">
+                    Review message text, reply suggestions, and attachment drafts before sending.
+                  </p>
                   <input
                     id="message-composer"
                     ref={composerInputRef}
@@ -1046,11 +1112,11 @@ const MessagingPage: React.FC = () => {
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     placeholder={normalizedAttachmentUrl ? 'Add a caption...' : 'Type a message...'}
-                    aria-describedby="message-send-status"
+                    aria-describedby="message-composer-help message-send-status"
                     className="h-10 min-w-0 flex-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   />
                   <Button size="icon" type="submit" disabled={!canSendMessage} aria-label="Send message">
-                    <Send size={16} />
+                    <Send size={16} aria-hidden="true" focusable="false" />
                   </Button>
                 </form>
                 <p id="message-send-status" className="sr-only" aria-live="polite">{sendFeedback}</p>

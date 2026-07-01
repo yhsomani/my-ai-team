@@ -17,7 +17,7 @@ interface SidebarProps {
 
 const renderRouteIcon = (item: AppRouteDefinition) => {
   const Icon = item.icon;
-  return Icon ? <Icon size={18} /> : null;
+  return Icon ? <Icon size={18} aria-hidden="true" focusable="false" /> : null;
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, toggleTheme, handleLogout }) => {
@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
     <>
       {/* Mobile Overlay */}
       <div
+        aria-hidden="true"
         className={`
           lg:hidden fixed inset-0 z-40 bg-[var(--bg-overlay)] backdrop-blur-sm transition-opacity duration-300
           ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
@@ -43,6 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
 
       {/* Mobile Sidebar (Slide-over) */}
       <aside
+        id="app-shell-mobile-sidebar"
+        aria-label="Mobile sidebar"
         aria-hidden={!isOpen}
         className={`
           lg:hidden fixed left-0 top-0 h-full z-50 w-72
@@ -53,18 +56,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
       >
         <div className="flex flex-col h-full">
           <div className="h-14 flex items-center justify-between px-4 border-b border-[var(--border-default)]">
-            <Link to="/" className="flex items-center gap-2.5" onClick={() => setIsOpen(false)}>
-              <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-accent-foreground">
-                <Layers size={16} />
+            <Link to="/" aria-label="TalentSphere home" className="flex items-center gap-2.5" onClick={() => setIsOpen(false)}>
+              <div aria-hidden="true" className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-accent-foreground">
+                <Layers size={16} aria-hidden="true" focusable="false" />
               </div>
               <span className="text-sm font-semibold">TalentSphere</span>
             </Link>
-            <button aria-label="Close sidebar" onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-lg">
-              <ChevronLeft size={20} />
+            <button type="button" aria-label="Close sidebar" onClick={() => setIsOpen(false)} className="text-[var(--text-muted)] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-lg">
+              <ChevronLeft size={20} aria-hidden="true" focusable="false" />
             </button>
           </div>
 
-          <nav aria-label="Primary navigation" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          <nav aria-label="Expanded mobile navigation" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
             <p className="px-3 mb-2 text-[10px] font-bold text-[var(--text-muted)] uppercase">Main</p>
             {mainNav.map((item) => (
               <Link
@@ -72,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 to={item.path}
                 onClick={() => setIsOpen(false)}
                 aria-current={isActive(item.path) ? 'page' : undefined}
+                aria-label={item.label}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                   ${isActive(item.path)
@@ -84,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               </Link>
             ))}
 
-            <div className="my-4 border-t border-[var(--border-default)] mx-3" />
+            <div aria-hidden="true" className="my-4 border-t border-[var(--border-default)] mx-3" />
 
             <p className="px-3 mb-2 text-[10px] font-bold text-[var(--text-muted)] uppercase">Account</p>
             {accountNav.map((item) => (
@@ -93,6 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
                 to={item.path}
                 onClick={() => setIsOpen(false)}
                 aria-current={isActive(item.path) ? 'page' : undefined}
+                aria-label={item.label}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                   ${isActive(item.path)
@@ -107,12 +112,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           </nav>
 
           <div className="p-4 border-t border-[var(--border-default)] space-y-2">
-            <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            <button type="button" onClick={toggleTheme} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+              {theme === 'light' ? <Moon size={18} aria-hidden="true" focusable="false" /> : <Sun size={18} aria-hidden="true" focusable="false" />}
               <span className="text-sm">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
             </button>
-            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/5">
-              <LogOut size={18} />
+            <button type="button" onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/5">
+              <LogOut size={18} aria-hidden="true" focusable="false" />
               <span className="text-sm">Sign out</span>
             </button>
           </div>
@@ -128,9 +133,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
       `}>
         {/* Logo */}
         <div className={`h-14 flex items-center border-b border-[var(--border-default)] ${isOpen ? 'px-4' : 'px-0 justify-center'}`}>
-          <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-accent-foreground shrink-0">
-              <Layers size={16} />
+          <Link to="/" aria-label="TalentSphere home" className="flex items-center gap-2.5 overflow-hidden">
+            <div aria-hidden="true" className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-accent-foreground shrink-0">
+              <Layers size={16} aria-hidden="true" focusable="false" />
             </div>
             {isOpen && (
               <span className="text-sm font-semibold text-[var(--text-primary)] whitespace-nowrap">
@@ -150,6 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               key={item.path}
               to={item.path}
               title={!isOpen ? item.label : undefined}
+              aria-label={!isOpen ? item.label : undefined}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
@@ -165,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           ))}
 
           {/* Separator */}
-          <div className={`my-3 border-t border-[var(--border-default)] ${isOpen ? 'mx-2' : 'mx-1'}`} />
+          <div aria-hidden="true" className={`my-3 border-t border-[var(--border-default)] ${isOpen ? 'mx-2' : 'mx-1'}`} />
 
           {isOpen && (
             <p className="px-2 mb-2 text-[11px] font-medium text-[var(--text-muted)] uppercase">Account</p>
@@ -175,6 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               key={item.path}
               to={item.path}
               title={!isOpen ? item.label : undefined}
+              aria-label={!isOpen ? item.label : undefined}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={`
                 flex items-center gap-2.5 rounded-lg transition-colors duration-150
@@ -193,7 +200,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
         {/* Footer */}
         <div className={`py-3 px-2 border-t border-[var(--border-default)] space-y-0.5`}>
           <button
+            type="button"
             onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}
             title={!isOpen ? (theme === 'light' ? 'Dark mode' : 'Light mode') : undefined}
             className={`
               w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)]
@@ -201,11 +210,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
           >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            {theme === 'light' ? <Moon size={18} aria-hidden="true" focusable="false" /> : <Sun size={18} aria-hidden="true" focusable="false" />}
             {isOpen && <span className="text-sm">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>}
           </button>
           <button
+            type="button"
             onClick={handleLogout}
+            aria-label="Sign out"
             title={!isOpen ? 'Sign out' : undefined}
             className={`
               w-full flex items-center gap-2.5 rounded-lg text-[var(--text-secondary)]
@@ -213,12 +224,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
           >
-            <LogOut size={18} />
+            <LogOut size={18} aria-hidden="true" focusable="false" />
             {isOpen && <span className="text-sm">Sign out</span>}
           </button>
 
           {/* Collapse toggle */}
           <button
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
             aria-expanded={isOpen}
@@ -229,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
               ${isOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
             `}
           >
-            {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            {isOpen ? <ChevronLeft size={18} aria-hidden="true" focusable="false" /> : <ChevronRight size={18} aria-hidden="true" focusable="false" />}
             {isOpen && <span className="text-sm">Collapse</span>}
           </button>
         </div>
@@ -241,6 +253,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, theme, togg
           <Link
             key={item.path}
             to={item.path}
+            aria-label={item.label}
             aria-current={isActive(item.path) ? 'page' : undefined}
             className={`
               flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors

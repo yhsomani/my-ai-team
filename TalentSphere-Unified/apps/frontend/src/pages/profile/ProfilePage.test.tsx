@@ -108,6 +108,16 @@ const renderProfilePage = () => {
   return store;
 };
 
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach(icon => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
+  });
+};
+
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -192,6 +202,78 @@ describe('ProfilePage', () => {
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
   });
 
+  it('exposes profile summary, completion tasks, suggestions, and section rows with semantic structure', async () => {
+    vi.mocked(profileService.getProfile).mockResolvedValue({
+      ...profileFixture,
+      headline: '',
+      bio: '',
+      location: 'Remote',
+      connectionCount: 12,
+      applicationCount: 3,
+      experiences: [
+        {
+          id: 'experience-design',
+          title: 'Design Lead',
+          company: 'Northstar Labs',
+          location: 'Remote',
+          startDate: '2024-01-01',
+          current: true,
+          description: 'Leads design systems.',
+        },
+      ],
+      educations: [
+        {
+          id: 'education-stanford',
+          degree: 'B.S.',
+          fieldOfStudy: 'Human-computer interaction',
+          institution: 'Stanford University',
+          startDate: '2019-01-01',
+          endDate: '2023-05-01',
+        },
+      ],
+      achievements: [
+        {
+          title: 'Mentor Badge',
+          description: 'Completed mentoring milestones.',
+        },
+      ],
+    } as any);
+
+    renderProfilePage();
+
+    await screen.findByRole('heading', { name: 'Avery Profile' });
+
+    const summary = screen.getByRole('region', { name: 'Avery Profile profile summary' });
+    expect(within(summary).getByLabelText('Location: Remote')).toBeTruthy();
+    expect(within(summary).getByLabelText('Website: https://avery.example')).toBeTruthy();
+    expect(within(summary).getByLabelText('Joined: 2025')).toBeTruthy();
+    expect(within(summary).getByRole('list', { name: 'Profile skills' })).toBeTruthy();
+    expect(within(summary).getByRole('listitem', { name: /React skill.*Advanced proficiency.*5 years experience/i })).toBeTruthy();
+    expect(within(summary).getByRole('listitem', { name: '12 Connections' })).toBeTruthy();
+    expect(within(summary).getByRole('listitem', { name: '3 Applications' })).toBeTruthy();
+    expect(within(summary).getByRole('listitem', { name: '1 Badges' })).toBeTruthy();
+
+    expect(screen.getByRole('tablist', { name: 'Profile sections' })).toBeTruthy();
+    const overviewPanel = screen.getByRole('tabpanel', { name: 'Overview' });
+    expect(within(overviewPanel).getByRole('region', { name: 'Profile completion' })).toBeTruthy();
+    expect(within(overviewPanel).getByRole('progressbar', { name: 'Profile completion progress' }).getAttribute('aria-valuenow')).toBe('75');
+    expect(within(overviewPanel).getByRole('listitem', { name: /Basic information incomplete.*Add headline, location, and bio/i })).toBeTruthy();
+    expect(within(overviewPanel).getByRole('listitem', { name: /Suggested headline from Work history.*Design Lead at Northstar Labs/i })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Experience' }));
+    const experiencePanel = screen.getByRole('tabpanel', { name: 'Experience' });
+    expect(within(experiencePanel).getByRole('listitem', { name: /Design Lead at Northstar Labs.*Remote.*2024.*Present.*Leads design systems/i })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Education' }));
+    const educationPanel = screen.getByRole('tabpanel', { name: 'Education' });
+    expect(within(educationPanel).getByRole('listitem', { name: /B\.S\. at Stanford University.*Human-computer interaction.*2023/i })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Achievements' }));
+    const achievementsPanel = screen.getByRole('tabpanel', { name: 'Achievements' });
+    expect(within(achievementsPanel).getByRole('listitem', { name: /Mentor Badge.*Completed mentoring milestones/i })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+  });
+
   it('keeps profile save failure in the edit modal with safe copy and retries through Save Changes', async () => {
     vi.mocked(profileService.updateProfile)
       .mockRejectedValueOnce(new Error('PostgREST profile update failed service_role_token=secret'))
@@ -203,6 +285,7 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Profile' }));
 
     const dialog = await screen.findByRole('dialog');
+    expectDecorativeSvgIcons(dialog);
     fireEvent.change(within(dialog).getByLabelText('Headline'), {
       target: { value: 'Senior Product Designer' },
     });
@@ -240,6 +323,7 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add role' }));
 
     let dialog = await screen.findByRole('dialog');
+    expectDecorativeSvgIcons(dialog);
     fireEvent.change(within(dialog).getByLabelText('Title'), { target: { value: 'Frontend Engineer' } });
     fireEvent.change(within(dialog).getByLabelText('Company'), { target: { value: 'TechCorp' } });
     fireEvent.change(within(dialog).getByLabelText('Start Date'), { target: { value: '2024-01-01' } });
@@ -271,6 +355,7 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove skill React' }));
 
     let dialog = await screen.findByRole('dialog');
+    expectDecorativeSvgIcons(dialog);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
 
     await screen.findByText('Profile item was not removed. Try Remove again from this review.');
@@ -301,6 +386,7 @@ describe('ProfilePage', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     let dialog = await screen.findByRole('dialog');
+    expectDecorativeSvgIcons(dialog);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Upload Photo' }));
 
     await screen.findByText('Profile photo was not uploaded. Review the image and try Upload Photo again.');
@@ -338,6 +424,7 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile photo' }));
 
     let dialog = await screen.findByRole('dialog');
+    expectDecorativeSvgIcons(dialog);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remove Photo' }));
 
     await screen.findByText('Profile photo was not removed. Try Remove Photo again from this review.');

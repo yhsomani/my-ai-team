@@ -1,8 +1,20 @@
-export * from './AuraButton';
-export * from './AuraCard';
-export * from './AuraImage';
-export * from './AuraInput';
-export * from './AuraModal';
-export * from './AuraThemeProvider';
-export * from './Skeleton';
-export * from './GlassCard';
+// Public shared primitive barrel. Keep compatibility aliases wired to the same implementations.
+export { AuraButton, Button } from './AuraButton';
+export { AuraBadge, Badge } from './Badge';
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './GlassCard';
+export { BodyMD, DisplayLG, HeadlineMD, LabelSM } from '../atoms/Typography';
+export { AuraImage, MemoizedAuraImage } from './AuraImage';
+export { AuraInput, Input } from './AuraInput';
+export { AuraModal } from './AuraModal';
+export { AuraNavbar } from './AuraNavbar';
+export { SourceStatusBadge, getSourceStatusDefaults, type SourceStatusKind } from './SourceStatusBadge';
+export { AuraStatusBar, StatusBarSurface } from './AuraStatusBar';
+export { AuraThemeProvider } from './AuraThemeProvider';
+export { EmptyState } from './EmptyState';
+export { PageHeader } from './PageHeader';
+export { PageTemplate } from '../templates/PageTemplate';
+export { ResponsiveLayout } from './ResponsiveLayout';
+export { Skeleton } from './Skeleton';
+export { Tabs } from './Tabs';
+export { ToastProvider, useToast, type ToastType } from './Toast';
+export { Toggle } from './Toggle';

@@ -11,6 +11,7 @@ import { useAppSelector } from '../../store/hooks';
 import { recordDashboardOperationalAnalytics } from '../../lib/dashboardOperationalAnalytics';
 
 const auditLogPageSize = 5;
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 const getAdminErrorCategory = (error: unknown) => {
   if (!error) return 'unknown_error';
@@ -388,13 +389,13 @@ const AdminDashboard: React.FC = () => {
           description="Global system overview and administrative controls."
           actions={
             <Button variant="outline" size="sm" onClick={handleAdminRefresh} isLoading={refreshing}>
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Refresh
             </Button>
           }
         />
         <EmptyState
-          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          icon={<AlertTriangle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
           title="Admin console could not load"
           description="Operational data did not respond. Retry to reload metrics, service health, scheduler status, analytics insights, and audit events."
           action={{ label: 'Retry admin console', onClick: handleAdminRefresh }}
@@ -406,10 +407,10 @@ const AdminDashboard: React.FC = () => {
   const { stats, services, metadata } = data;
 
   const statCards = [
-    { label: 'Total Users', value: stats.totalUsers.toLocaleString(), icon: <Users size={18} />, trend: 'Active' },
-    { label: 'System Load', value: `${stats.systemLoad}%`, icon: <Activity size={18} />, trend: stats.systemLoad < 80 ? 'Stable' : 'High' },
-    { label: 'Services Online', value: `${stats.servicesOnline}/${stats.totalServices}`, icon: <Server size={18} />, status: stats.servicesOnline === stats.totalServices ? 'Healthy' : 'Degraded' },
-    { label: 'Security Alerts', value: stats.securityAlerts.toString(), icon: <ShieldCheck size={18} />, status: stats.securityAlerts === 0 ? 'Safe' : 'Warning' },
+    { label: 'Total Users', value: stats.totalUsers.toLocaleString(), icon: <Users {...decorativeIconProps} size={18} />, trend: 'Active' },
+    { label: 'System Load', value: `${stats.systemLoad}%`, icon: <Activity {...decorativeIconProps} size={18} />, trend: stats.systemLoad < 80 ? 'Stable' : 'High' },
+    { label: 'Services Online', value: `${stats.servicesOnline}/${stats.totalServices}`, icon: <Server {...decorativeIconProps} size={18} />, status: stats.servicesOnline === stats.totalServices ? 'Healthy' : 'Degraded' },
+    { label: 'Security Alerts', value: stats.securityAlerts.toString(), icon: <ShieldCheck {...decorativeIconProps} size={18} />, status: stats.securityAlerts === 0 ? 'Safe' : 'Warning' },
   ];
 
   return (
@@ -428,7 +429,7 @@ const AdminDashboard: React.FC = () => {
               Refreshed {formatTimestamp(metadata.fetchedAt)}
             </Badge>
             <Button variant="outline" size="sm" onClick={handleAdminRefresh} isLoading={refreshing}>
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Refresh
             </Button>
           </>
@@ -437,7 +438,7 @@ const AdminDashboard: React.FC = () => {
 
       {metadata.degraded && (
         <div className="rounded-lg border border-warning/20 bg-warning-muted/20 p-4 flex gap-3" role="alert">
-          <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" />
+          <AlertTriangle {...decorativeIconProps} size={18} className="text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium">Fallback data is displayed</p>
             <p className="text-sm text-[var(--text-secondary)]">
@@ -447,9 +448,14 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Admin summary metrics">
         {statCards.map((stat, i) => (
-          <Card key={i} className="p-5">
+          <Card
+            key={i}
+            role="listitem"
+            aria-label={`${stat.label}: ${stat.value}. Status: ${stat.trend || stat.status}. Source: ${getSourceLabel(metadata.source)}.`}
+            className="p-5"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-[var(--text-secondary)]">{stat.label}</span>
               <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
@@ -469,7 +475,7 @@ const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      <Card>
+      <Card role="region" aria-label="Product Analytics Insights">
         <div className="p-5 border-b border-[var(--border-default)] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-sm font-semibold">Product Analytics Insights</h3>
@@ -493,7 +499,7 @@ const AdminDashboard: React.FC = () => {
               onClick={handleProductAnalyticsRetry}
               isLoading={analyticsLoading}
             >
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Refresh Analytics
             </Button>
           </div>
@@ -509,41 +515,57 @@ const AdminDashboard: React.FC = () => {
           <div className="p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[var(--text-secondary)]">{analyticsError}</p>
             <Button variant="outline" size="sm" onClick={handleProductAnalyticsRetry} isLoading={analyticsLoading}>
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Retry Analytics
             </Button>
           </div>
         ) : analyticsInsights ? (
           <div className="p-5 space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" role="list" aria-label="Product analytics summary metrics">
+              <div
+                role="listitem"
+                aria-label={`Recent Events: ${analyticsInsights.summary.eventCount}. ${analyticsInsights.summary.uniqueAreaCount} areas.`}
+                className="rounded-lg border border-[var(--border-default)] p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-[var(--text-muted)]">Recent Events</span>
-                  <BarChart3 size={14} className="text-accent" />
+                  <BarChart3 {...decorativeIconProps} size={14} className="text-accent" />
                 </div>
                 <p className="mt-2 text-xl font-semibold">{analyticsInsights.summary.eventCount}</p>
                 <p className="text-[10px] text-[var(--text-muted)]">{analyticsInsights.summary.uniqueAreaCount} areas</p>
               </div>
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+              <div
+                role="listitem"
+                aria-label={`Acceptance: ${formatRate(analyticsInsights.summary.acceptanceRate)}. ${analyticsInsights.summary.automationAcceptedCount} accepted.`}
+                className="rounded-lg border border-[var(--border-default)] p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-[var(--text-muted)]">Acceptance</span>
-                  <TrendingUp size={14} className="text-success" />
+                  <TrendingUp {...decorativeIconProps} size={14} className="text-success" />
                 </div>
                 <p className="mt-2 text-xl font-semibold">{formatRate(analyticsInsights.summary.acceptanceRate)}</p>
                 <p className="text-[10px] text-[var(--text-muted)]">{analyticsInsights.summary.automationAcceptedCount} accepted</p>
               </div>
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+              <div
+                role="listitem"
+                aria-label={`Rejection: ${formatRate(analyticsInsights.summary.rejectionRate)}. ${analyticsInsights.summary.automationDismissedCount} rejected.`}
+                className="rounded-lg border border-[var(--border-default)] p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-[var(--text-muted)]">Rejection</span>
-                  <AlertTriangle size={14} className="text-warning" />
+                  <AlertTriangle {...decorativeIconProps} size={14} className="text-warning" />
                 </div>
                 <p className="mt-2 text-xl font-semibold">{formatRate(analyticsInsights.summary.rejectionRate)}</p>
                 <p className="text-[10px] text-[var(--text-muted)]">{analyticsInsights.summary.automationDismissedCount} rejected</p>
               </div>
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+              <div
+                role="listitem"
+                aria-label={`Friction: ${formatRate(analyticsInsights.summary.failureRate)}. ${analyticsInsights.summary.failureCount + analyticsInsights.summary.degradedCount} signals.`}
+                className="rounded-lg border border-[var(--border-default)] p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] text-[var(--text-muted)]">Friction</span>
-                  <Activity size={14} className="text-destructive" />
+                  <Activity {...decorativeIconProps} size={14} className="text-destructive" />
                 </div>
                 <p className="mt-2 text-xl font-semibold">{formatRate(analyticsInsights.summary.failureRate)}</p>
                 <p className="text-[10px] text-[var(--text-muted)]">{analyticsInsights.summary.failureCount + analyticsInsights.summary.degradedCount} signals</p>
@@ -554,9 +576,14 @@ const AdminDashboard: React.FC = () => {
               <div>
                 <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Top Areas</h4>
                 {analyticsInsights.summary.topAreas.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2" role="list" aria-label="Top product analytics areas">
                     {analyticsInsights.summary.topAreas.map(area => (
-                      <div key={area.area} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border-default)] px-3 py-2">
+                      <div
+                        key={area.area}
+                        role="listitem"
+                        aria-label={`${area.area}: ${area.eventCount} events, ${area.failureCount + area.degradedCount} friction signals, ${area.automationCount} automation events.`}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border-default)] px-3 py-2"
+                      >
                         <div className="min-w-0">
                           <p className="break-words text-sm font-medium">{area.area}</p>
                           <p className="text-[10px] text-[var(--text-muted)]">
@@ -574,9 +601,14 @@ const AdminDashboard: React.FC = () => {
 
               <div>
                 <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Friction Signals</h4>
-                <div className="space-y-2">
+                <div className="space-y-2" role="list" aria-label="Product analytics friction signals">
                   {analyticsInsights.summary.frictionSignals.map(signal => (
-                    <div key={signal.label} className="rounded-lg border border-[var(--border-default)] px-3 py-2">
+                    <div
+                      key={signal.label}
+                      role="listitem"
+                      aria-label={`${signal.label}: ${signal.value}. Severity: ${signal.severity}.`}
+                      className="rounded-lg border border-[var(--border-default)] px-3 py-2"
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <p className="min-w-0 break-words text-sm font-medium">{signal.label}</p>
                         <Badge variant={getFrictionBadgeVariant(signal.severity)} className="shrink-0">{signal.value}</Badge>
@@ -589,9 +621,14 @@ const AdminDashboard: React.FC = () => {
 
               <div>
                 <h4 className="mb-3 text-sm font-semibold text-[var(--text-secondary)]">Improvement Opportunities</h4>
-                <div className="space-y-2">
+                <div className="space-y-2" role="list" aria-label="Product analytics improvement opportunities">
                   {analyticsInsights.summary.improvementOpportunities.map(opportunity => (
-                    <div key={opportunity.id} className="rounded-lg border border-[var(--border-default)] px-3 py-2">
+                    <div
+                      key={opportunity.id}
+                      role="listitem"
+                      aria-label={`${opportunity.title}: ${opportunity.priority}${opportunity.area ? `, ${opportunity.area}` : ''}.`}
+                      className="rounded-lg border border-[var(--border-default)] px-3 py-2"
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="break-words text-sm font-medium">{opportunity.title}</p>
@@ -613,7 +650,7 @@ const AdminDashboard: React.FC = () => {
         ) : null}
       </Card>
 
-      <Card>
+      <Card role="region" aria-label="Scheduled Automations">
         <div className="p-5 border-b border-[var(--border-default)] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-sm font-semibold">Scheduled Automations</h3>
@@ -638,7 +675,7 @@ const AdminDashboard: React.FC = () => {
               onClick={handleScheduledAutomationRefresh}
               isLoading={schedulerLoading}
             >
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Refresh Status
             </Button>
           </div>
@@ -651,26 +688,26 @@ const AdminDashboard: React.FC = () => {
           </div>
         ) : schedulerStatus ? (
           <div className="p-5 space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" role="list" aria-label="Scheduled automation summary">
+              <div role="listitem" aria-label={`Configured: ${schedulerStatus.summary.configuredCount}.`} className="rounded-lg border border-[var(--border-default)] p-3">
                 <p className="text-[11px] text-[var(--text-muted)]">Configured</p>
                 <p className="mt-2 text-xl font-semibold">{schedulerStatus.summary.configuredCount}</p>
               </div>
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+              <div role="listitem" aria-label={`Needs Verification: ${schedulerStatus.summary.needsVerificationCount}.`} className="rounded-lg border border-[var(--border-default)] p-3">
                 <p className="text-[11px] text-[var(--text-muted)]">Needs Verification</p>
                 <p className="mt-2 text-xl font-semibold">{schedulerStatus.summary.needsVerificationCount}</p>
               </div>
-              <div className="rounded-lg border border-[var(--border-default)] p-3">
+              <div role="listitem" aria-label={`Degraded: ${schedulerStatus.summary.degradedCount}.`} className="rounded-lg border border-[var(--border-default)] p-3">
                 <p className="text-[11px] text-[var(--text-muted)]">Degraded</p>
                 <p className="mt-2 text-xl font-semibold">{schedulerStatus.summary.degradedCount}</p>
               </div>
               {schedulerStatus.metadata.providerStatus !== 'not_configured' && (
                 <>
-                  <div className="rounded-lg border border-[var(--border-default)] p-3">
+                  <div role="listitem" aria-label={`Run Reported: ${schedulerStatus.summary.runHistoryReportedCount}.`} className="rounded-lg border border-[var(--border-default)] p-3">
                     <p className="text-[11px] text-[var(--text-muted)]">Run Reported</p>
                     <p className="mt-2 text-xl font-semibold">{schedulerStatus.summary.runHistoryReportedCount}</p>
                   </div>
-                  <div className="rounded-lg border border-[var(--border-default)] p-3">
+                  <div role="listitem" aria-label={`Run Issues: ${schedulerStatus.summary.lastRunFailedCount + schedulerStatus.summary.lastRunMissedCount}.`} className="rounded-lg border border-[var(--border-default)] p-3">
                     <p className="text-[11px] text-[var(--text-muted)]">Run Issues</p>
                     <p className="mt-2 text-xl font-semibold">
                       {schedulerStatus.summary.lastRunFailedCount + schedulerStatus.summary.lastRunMissedCount}
@@ -679,15 +716,20 @@ const AdminDashboard: React.FC = () => {
                 </>
               )}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2" role="list" aria-label="Scheduled automation jobs">
               {schedulerStatus.jobs.map(job => (
-                <div key={job.id} className="rounded-lg border border-[var(--border-default)] px-3 py-3">
+                <div
+                  key={job.id}
+                  role="listitem"
+                  aria-label={`${job.name}: ${getSchedulerStatusLabel(job.status)}. ${job.purpose} Schedule: ${job.schedule}.`}
+                  className="rounded-lg border border-[var(--border-default)] px-3 py-3"
+                >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <p className="break-words text-sm font-medium">{job.name}</p>
                       <p className="mt-1 break-words text-xs text-[var(--text-muted)]">{job.purpose}</p>
                       <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
-                        <Clock size={11} />
+                        <Clock {...decorativeIconProps} size={11} />
                         {job.schedule}
                       </p>
                     </div>
@@ -707,7 +749,7 @@ const AdminDashboard: React.FC = () => {
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 rounded-md border border-[var(--border-default)] px-2 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
                         >
-                          Status <ExternalLink size={12} />
+                          Status <ExternalLink {...decorativeIconProps} size={12} />
                         </a>
                       )}
                     </div>
@@ -731,7 +773,7 @@ const AdminDashboard: React.FC = () => {
                 )}
                 {schedulerStatus.metadata.runbookUrl && (
                   <a href={schedulerStatus.metadata.runbookUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-accent">
-                    Runbook <ExternalLink size={12} />
+                    Runbook <ExternalLink {...decorativeIconProps} size={12} />
                   </a>
                 )}
               </div>
@@ -740,7 +782,7 @@ const AdminDashboard: React.FC = () => {
         ) : null}
       </Card>
 
-      <Card>
+      <Card role="region" aria-label="Service Health">
         <div className="p-5 border-b border-[var(--border-default)] flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">Service Health</h3>
@@ -748,10 +790,10 @@ const AdminDashboard: React.FC = () => {
               Source: {getSourceLabel(metadata.source)} · {metadata.message}
             </p>
           </div>
-          <Database size={18} className="text-[var(--text-muted)]" />
+          <Database {...decorativeIconProps} size={18} className="text-[var(--text-muted)]" />
         </div>
         <div className="overflow-x-auto p-0">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left" aria-label="Service health">
             <thead className="text-xs text-[var(--text-muted)] uppercase bg-[var(--bg-secondary)]">
               <tr>
                 <th className="px-6 py-3 font-medium">Service Name</th>
@@ -765,7 +807,11 @@ const AdminDashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-[var(--border-default)]">
               {services.map((service, i) => (
-                <tr key={i} className="hover:bg-[var(--bg-secondary)] transition-colors">
+                <tr
+                  key={i}
+                  aria-label={`${service.name}: ${service.status}, uptime ${service.uptime}%, source ${getSourceLabel(service.source)}.`}
+                  className="hover:bg-[var(--bg-secondary)] transition-colors"
+                >
                   <td className="px-6 py-4 font-medium">{service.name}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -799,7 +845,7 @@ const AdminDashboard: React.FC = () => {
                           className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--border-default)] px-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-accent hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                         >
                           {link.label}
-                          <ExternalLink size={12} />
+                          <ExternalLink {...decorativeIconProps} size={12} />
                         </a>
                       ))}
                     </div>
@@ -821,7 +867,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </Card>
 
-      <Card>
+      <Card role="region" aria-label="Audit Log">
         <div className="p-5 border-b border-[var(--border-default)] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-sm font-semibold">Audit Log</h3>
@@ -833,7 +879,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             {auditError && <Badge variant="warning">Needs retry</Badge>}
-            <FileText size={18} className="text-[var(--text-muted)]" />
+            <FileText {...decorativeIconProps} size={18} className="text-[var(--text-muted)]" />
           </div>
         </div>
         {auditLoading ? (
@@ -846,7 +892,7 @@ const AdminDashboard: React.FC = () => {
           <div className="p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-[var(--text-secondary)]">{auditError}</p>
             <Button variant="outline" size="sm" onClick={handleAuditRetry} isLoading={auditLoading}>
-              <RefreshCw size={14} />
+              <RefreshCw {...decorativeIconProps} size={14} />
               Retry Audit Logs
             </Button>
           </div>
@@ -857,7 +903,7 @@ const AdminDashboard: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-sm text-left" aria-label="Audit log events">
                 <thead className="text-xs text-[var(--text-muted)] uppercase bg-[var(--bg-secondary)]">
                   <tr>
                     <th className="px-6 py-3 font-medium">Time</th>
@@ -869,7 +915,11 @@ const AdminDashboard: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-[var(--border-default)]">
                   {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-[var(--bg-secondary)] transition-colors">
+                    <tr
+                      key={log.id}
+                      aria-label={`${log.action}: ${formatEntity(log)} by ${log.userId || 'System'}.`}
+                      className="hover:bg-[var(--bg-secondary)] transition-colors"
+                    >
                       <td className="px-6 py-4 text-[var(--text-secondary)] whitespace-nowrap">{formatTimestamp(log.createdAt)}</td>
                       <td className="px-6 py-4">
                         <Badge variant="outline">{log.action}</Badge>

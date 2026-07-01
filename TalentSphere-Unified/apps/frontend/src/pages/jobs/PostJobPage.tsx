@@ -126,6 +126,10 @@ const postJobTextareaClassName = 'min-h-28 w-full resize-none rounded-md border 
 const postJobTextareaWithIconClassName = 'min-h-28 w-full resize-none rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] py-2 pl-10 pr-3 text-sm leading-6 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent';
 const postJobIconClassName = 'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]';
 const postJobTopIconClassName = 'pointer-events-none absolute left-3 top-3 h-4 w-4 text-[var(--text-muted)]';
+const decorativeIconProps = {
+  'aria-hidden': true,
+  focusable: 'false' as const,
+};
 const postJobDraftContextLoadFailureMessage = 'Draft context did not respond. Retry draft context to reload recruiter postings, duplicate checks, and saved-draft details before reviewing or saving changes.';
 const postJobCompanyContextLoadFailureMessage = 'Company profile lookup did not respond. Retry company context to reload company readiness before saving or publishing.';
 const postJobTemplateBrowserLoadFailureMessage = 'Saved templates could not be loaded in this browser.';
@@ -147,6 +151,24 @@ const formatDraftHistoryTime = (value: string) => (
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(value))
+);
+
+const getPostJobReviewMetadataLabel = (label: string, value: string | number) => (
+  `${label}: ${value}`
+);
+
+const getPostJobRequirementLabel = (requirement: string) => `Requirement: ${requirement}`;
+
+const getPostJobDraftChangeLabel = (change: { label: string; before: string; after: string }) => (
+  `${change.label}: ${change.before} to ${change.after}`
+);
+
+const getPostJobDuplicateLabel = (match: { title: string; location: string; jobTypeLabel: string; status: string }) => (
+  `${match.title}. ${match.location}. ${match.jobTypeLabel}. ${match.status}`
+);
+
+const getPostJobDraftHistoryLabel = (entry: JobPostDraftHistoryEntry) => (
+  `${entry.title || 'Untitled role'}. ${getDraftHistoryReasonLabel(entry.reason)}. ${entry.location || 'No location'}. ${entry.persistedTo === 'server' ? 'Account synced' : 'Local only'}`
 );
 
 const getDraftHistoryReasonLabel = (reason: JobPostDraftHistoryReason) => {
@@ -1105,7 +1127,7 @@ const PostJobPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div role="region" aria-label="Post job workspace" className="mx-auto max-w-5xl space-y-6">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
@@ -1142,7 +1164,7 @@ const PostJobPage: React.FC = () => {
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmTemplateDelete}>
-              <Trash2 size={16} className="mr-1.5" /> Delete Template
+              <Trash2 {...decorativeIconProps} size={16} className="mr-1.5" /> Delete Template
             </Button>
           </>
         }
@@ -1161,9 +1183,9 @@ const PostJobPage: React.FC = () => {
       </AuraModal>
 
       <Card className="p-4 sm:p-5">
-        <form onSubmit={isReviewing ? handleSaveDraft : handleReviewDraft} className="space-y-6">
+        <form aria-label="Post job draft workflow" onSubmit={isReviewing ? handleSaveDraft : handleReviewDraft} className="space-y-6">
           {isReviewing ? (
-            <section aria-labelledby="job-draft-review-heading" className="space-y-5">
+            <section role="region" aria-label="Job draft review" className="space-y-5">
               <div className="flex flex-col gap-3 border-b border-[var(--border-default)] pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase text-accent">Draft review</p>
@@ -1175,27 +1197,27 @@ const PostJobPage: React.FC = () => {
                   </p>
                 </div>
                 <span className="inline-flex w-fit items-center gap-2 rounded-md border border-warning/30 bg-warning-muted px-3 py-1 text-sm font-medium text-warning">
-                  <CheckCircle2 size={16} />
+                  <CheckCircle2 {...decorativeIconProps} size={16} />
                   {isEditingDraft ? 'Updates Draft' : 'Saves as Draft'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
+              <div role="list" aria-label="Job draft review metadata" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div role="listitem" aria-label={getPostJobReviewMetadataLabel('Salary range', reviewSummary.salaryLabel)}>
                   <p className={postJobMetaLabelClassName}>Salary range</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">{reviewSummary.salaryLabel}</p>
                 </div>
-                <div>
+                <div role="listitem" aria-label={getPostJobReviewMetadataLabel('Requirements', `${reviewSummary.requirementCount} listed`)}>
                   <p className={postJobMetaLabelClassName}>Requirements</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">{reviewSummary.requirementCount} listed</p>
                 </div>
-                <div>
+                <div role="listitem" aria-label={getPostJobReviewMetadataLabel('Company', companySummary.label)}>
                   <p className={postJobMetaLabelClassName}>Company</p>
                   <p className="mt-1 text-sm text-[var(--text-primary)]">{companySummary.label}</p>
                 </div>
               </div>
 
-              <div>
+              <div role="region" aria-label="Job draft review description">
                 <p className={postJobMetaLabelClassName}>Description</p>
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[var(--text-secondary)]">
                   {reviewSummary.descriptionPreview}
@@ -1204,10 +1226,10 @@ const PostJobPage: React.FC = () => {
 
               <div>
                 <p className={postJobMetaLabelClassName}>Requirement preview</p>
-                <ul className="mt-2 space-y-2 text-sm text-[var(--text-secondary)]">
+                <ul aria-label="Job draft requirement preview" className="mt-2 space-y-2 text-sm text-[var(--text-secondary)]">
                   {reviewSummary.requirements.map((requirement) => (
-                    <li key={requirement} className="flex gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-success" />
+                    <li key={requirement} aria-label={getPostJobRequirementLabel(requirement)} className="flex gap-2">
+                      <CheckCircle2 {...decorativeIconProps} className="mt-0.5 h-4 w-4 flex-none text-success" />
                       <span>{requirement}</span>
                     </li>
                   ))}
@@ -1218,9 +1240,9 @@ const PostJobPage: React.FC = () => {
                 <div className={postJobInsetClassName}>
                   <p className="text-sm font-semibold text-accent">Changes to save</p>
                   {editChangeSummary.length > 0 ? (
-                    <ul className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
+                    <ul aria-label="Job draft changes" className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
                       {editChangeSummary.map(change => (
-                        <li key={change.label} className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                        <li key={change.label} aria-label={getPostJobDraftChangeLabel(change)} className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
                           <span className="font-medium text-[var(--text-primary)]">{change.label}</span>
                           <span>
                             <span className="text-[var(--text-secondary)]">{change.before}</span>
@@ -1246,9 +1268,9 @@ const PostJobPage: React.FC = () => {
                       ? 'An active draft or published job already matches this title, location, and job type.'
                       : `${duplicateMatches.length} active drafts or published jobs already match this title, location, and job type.`}
                   </p>
-                  <ul className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
+                  <ul aria-label="Possible duplicate jobs" className="mt-3 space-y-2 text-sm text-[var(--text-primary)]">
                     {duplicateMatches.map((match) => (
-                      <li key={match.id} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+                      <li key={match.id} aria-label={getPostJobDuplicateLabel(match)} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                         <span>{match.title} - {match.location} - {match.jobTypeLabel}</span>
                         <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">{match.status}</span>
                       </li>
@@ -1259,12 +1281,12 @@ const PostJobPage: React.FC = () => {
             </section>
           ) : (
             <>
-              <div className={postJobPanelClassName}>
+              <div role="region" aria-label="Job template controls" className={postJobPanelClassName}>
                 {editDraftLoadFailed && (
                   <div role="alert" className="mb-3 rounded-md border border-warning/30 bg-warning-muted p-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex min-w-0 gap-3">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-warning" />
+                        <AlertTriangle {...decorativeIconProps} className="mt-0.5 h-5 w-5 flex-none text-warning" />
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-warning">Saved draft context could not load</p>
                           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
@@ -1273,7 +1295,7 @@ const PostJobPage: React.FC = () => {
                         </div>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={retryDraftContextLoad}>
-                        <RefreshCw size={14} />
+                        <RefreshCw {...decorativeIconProps} size={14} />
                         Retry draft context
                       </Button>
                     </div>
@@ -1306,7 +1328,7 @@ const PostJobPage: React.FC = () => {
                       {templateStatus || 'Templates sync to your recruiter account when available and remain editable drafts. Saving still requires review.'}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div role="group" aria-label="Job template actions" className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -1314,7 +1336,7 @@ const PostJobPage: React.FC = () => {
                       onClick={applySelectedTemplate}
                       disabled={!selectedTemplate}
                     >
-                      <Copy size={14} />
+                      <Copy {...decorativeIconProps} size={14} />
                       Use Template
                     </Button>
                     <Button
@@ -1324,7 +1346,7 @@ const PostJobPage: React.FC = () => {
                       onClick={saveCurrentAsTemplate}
                       disabled={!hasJobPostDraftContent(formData)}
                     >
-                      <Save size={14} />
+                      <Save {...decorativeIconProps} size={14} />
                       Save Current
                     </Button>
                     <Button
@@ -1334,7 +1356,7 @@ const PostJobPage: React.FC = () => {
                       onClick={openTemplateDeleteReview}
                       disabled={!selectedTemplate}
                     >
-                      <Trash2 size={14} />
+                      <Trash2 {...decorativeIconProps} size={14} />
                       Delete
                     </Button>
                   </div>
@@ -1342,9 +1364,9 @@ const PostJobPage: React.FC = () => {
               </div>
 
               {(draftHistory.length > 0 || draftHistoryStatus) && (
-                <div className={postJobPanelClassName}>
+                <div role="region" aria-label="Recent draft versions" className={postJobPanelClassName}>
                   <div className="flex items-center gap-2">
-                    <History size={16} className="text-[var(--text-secondary)]" />
+                    <History {...decorativeIconProps} size={16} className="text-[var(--text-secondary)]" />
                     <p className="text-sm font-medium text-[var(--text-primary)]">Recent draft versions</p>
                   </div>
                   {draftHistoryStatus && (
@@ -1353,9 +1375,9 @@ const PostJobPage: React.FC = () => {
                     </p>
                   )}
                   {draftHistory.length > 0 && (
-                    <div className="mt-3 space-y-2">
+                    <div role="list" aria-label="Draft version history" className="mt-3 space-y-2">
                       {draftHistory.map(entry => (
-                        <div key={entry.id} className="flex flex-col gap-3 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div key={entry.id} role="listitem" aria-label={getPostJobDraftHistoryLabel(entry)} className="flex flex-col gap-3 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)]/60 p-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-[var(--text-primary)]">{entry.title || 'Untitled role'}</p>
                             <p className="text-xs text-[var(--text-secondary)]">
@@ -1371,7 +1393,7 @@ const PostJobPage: React.FC = () => {
                             size="sm"
                             onClick={() => restoreJobPostDraftVersion(entry)}
                           >
-                            <RotateCcw size={14} />
+                            <RotateCcw {...decorativeIconProps} size={14} />
                             Restore
                           </Button>
                         </div>
@@ -1381,12 +1403,12 @@ const PostJobPage: React.FC = () => {
                 </div>
               )}
 
-              <div className={postJobPanelClassName}>
+              <div role="region" aria-label="Company context" className={postJobPanelClassName}>
                 {companyContextLoadFailed && (
                   <div role="alert" className="mb-3 rounded-md border border-warning/30 bg-warning-muted p-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex min-w-0 gap-3">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-warning" />
+                        <AlertTriangle {...decorativeIconProps} className="mt-0.5 h-5 w-5 flex-none text-warning" />
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-warning">Company context could not load</p>
                           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
@@ -1395,7 +1417,7 @@ const PostJobPage: React.FC = () => {
                         </div>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={retryCompanyContextLoad}>
-                        <RefreshCw size={14} />
+                        <RefreshCw {...decorativeIconProps} size={14} />
                         Retry company context
                       </Button>
                     </div>
@@ -1403,7 +1425,7 @@ const PostJobPage: React.FC = () => {
                 )}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 gap-3">
-                    <Building2 className="mt-0.5 h-5 w-5 flex-none text-[var(--text-secondary)]" />
+                    <Building2 {...decorativeIconProps} className="mt-0.5 h-5 w-5 flex-none text-[var(--text-secondary)]" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-[var(--text-primary)]">Company context</p>
                       <p className="mt-1 text-sm text-[var(--text-primary)]">{companySummary.label}</p>
@@ -1426,7 +1448,7 @@ const PostJobPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="mt-4 space-y-3 border-t border-[var(--border-default)] pt-4">
+                <div role="region" aria-label="Company profile details" className="mt-4 space-y-3 border-t border-[var(--border-default)] pt-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-[var(--text-primary)]">Company profile details</p>
@@ -1526,18 +1548,18 @@ const PostJobPage: React.FC = () => {
                       disabled={!compact(companyDraft.name) || isCreatingCompany || isSavingCompanyProfile}
                       isLoading={companyContext?.id ? isSavingCompanyProfile : isCreatingCompany}
                     >
-                      <Building2 size={14} />
+                      <Building2 {...decorativeIconProps} size={14} />
                       {companyContext?.id ? 'Save Company Profile' : 'Create & Attach Company'}
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div role="region" aria-label="Job draft fields" className="space-y-4">
                 <div>
                   <label htmlFor="job-title" className={postJobLabelClassName}>Job Title</label>
                   <div className="relative">
-                    <Briefcase className={postJobIconClassName} />
+                    <Briefcase {...decorativeIconProps} className={postJobIconClassName} />
                     <input
                       id="job-title"
                       type="text"
@@ -1553,7 +1575,7 @@ const PostJobPage: React.FC = () => {
                 <div>
                   <label htmlFor="job-description" className={postJobLabelClassName}>Job Description</label>
                   <div className="relative">
-                    <FileText className={postJobTopIconClassName} />
+                    <FileText {...decorativeIconProps} className={postJobTopIconClassName} />
                     <textarea
                       id="job-description"
                       required
@@ -1570,7 +1592,7 @@ const PostJobPage: React.FC = () => {
                   <div>
                     <label htmlFor="job-location" className={postJobLabelClassName}>Location</label>
                     <div className="relative">
-                      <MapPin className={postJobIconClassName} />
+                      <MapPin {...decorativeIconProps} className={postJobIconClassName} />
                       <input
                         id="job-location"
                         type="text"
@@ -1603,7 +1625,7 @@ const PostJobPage: React.FC = () => {
                   <div>
                     <label htmlFor="job-salary-min" className={postJobLabelClassName}>Min Salary (USD)</label>
                     <div className="relative">
-                      <DollarSign className={postJobIconClassName} />
+                      <DollarSign {...decorativeIconProps} className={postJobIconClassName} />
                       <input
                         id="job-salary-min"
                         type="number"
@@ -1618,7 +1640,7 @@ const PostJobPage: React.FC = () => {
                   <div>
                     <label htmlFor="job-salary-max" className={postJobLabelClassName}>Max Salary (USD)</label>
                     <div className="relative">
-                      <DollarSign className={postJobIconClassName} />
+                      <DollarSign {...decorativeIconProps} className={postJobIconClassName} />
                       <input
                         id="job-salary-max"
                         type="number"
@@ -1665,7 +1687,7 @@ const PostJobPage: React.FC = () => {
             </p>
           )}
 
-          <div className="flex flex-col-reverse gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:justify-end">
+          <div role="group" aria-label="Post job draft actions" className="flex flex-col-reverse gap-3 border-t border-[var(--border-default)] pt-4 sm:flex-row sm:justify-end">
             {isReviewing ? (
               <Button
                 type="button"
@@ -1675,7 +1697,7 @@ const PostJobPage: React.FC = () => {
                   setFormStatus('');
                 }}
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft {...decorativeIconProps} className="w-4 h-4" />
                 Back to Edit
               </Button>
             ) : (
@@ -1692,7 +1714,7 @@ const PostJobPage: React.FC = () => {
               disabled={loading}
               className="gap-2"
             >
-              {isReviewing ? <Save className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {isReviewing ? <Save {...decorativeIconProps} className="w-4 h-4" /> : <Eye {...decorativeIconProps} className="w-4 h-4" />}
               {primaryActionLabel}
             </Button>
           </div>

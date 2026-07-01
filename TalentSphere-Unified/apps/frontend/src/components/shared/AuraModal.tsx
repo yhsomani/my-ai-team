@@ -9,6 +9,27 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+let activeBodyScrollLocks = 0;
+let bodyOverflowBeforeModal: string | null = null;
+
+const lockBodyScroll = () => {
+  if (activeBodyScrollLocks === 0) {
+    bodyOverflowBeforeModal = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+
+  activeBodyScrollLocks += 1;
+
+  return () => {
+    activeBodyScrollLocks = Math.max(activeBodyScrollLocks - 1, 0);
+
+    if (activeBodyScrollLocks === 0) {
+      document.body.style.overflow = bodyOverflowBeforeModal ?? '';
+      bodyOverflowBeforeModal = null;
+    }
+  };
+};
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,6 +65,7 @@ export const AuraModal: React.FC<ModalProps> = ({
     if (!isOpen) return;
 
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const unlockBodyScroll = lockBodyScroll();
     const focusableSelector = [
       'a[href]',
       'button:not([disabled])',
@@ -101,6 +123,7 @@ export const AuraModal: React.FC<ModalProps> = ({
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
+      unlockBodyScroll();
       if (previousFocus?.isConnected) {
         previousFocus.focus();
       }
@@ -110,9 +133,12 @@ export const AuraModal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div data-ui="modal-root" data-slot="modal-root" className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
+            data-ui="modal-backdrop"
+            data-slot="modal-backdrop"
+            aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -123,6 +149,9 @@ export const AuraModal: React.FC<ModalProps> = ({
           {/* Modal Content */}
           <motion.div
             ref={dialogRef}
+            data-ui="modal-dialog"
+            data-slot="modal-dialog"
+            data-size={size}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -136,21 +165,21 @@ export const AuraModal: React.FC<ModalProps> = ({
             )}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 border-b border-[var(--border-default)] bg-[var(--bg-secondary)] p-5">
+            <div data-ui="modal-header" data-slot="modal-header" className="flex items-start justify-between gap-3 border-b border-[var(--border-default)] bg-[var(--bg-secondary)] p-5">
               <h3 id={titleId} className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
-              <AuraButton variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="shrink-0">
-                <X size={20} />
+              <AuraButton type="button" variant="ghost" size="icon" aria-label="Close modal" onClick={onClose} className="shrink-0">
+                <X size={20} aria-hidden="true" focusable="false" />
               </AuraButton>
             </div>
 
             {/* Body */}
-            <div className="max-h-[min(70vh,calc(100vh-12rem))] overflow-y-auto p-5 sm:p-6">
+            <div data-ui="modal-body" data-slot="modal-body" className="max-h-[min(70vh,calc(100vh-12rem))] overflow-y-auto p-5 sm:p-6">
               {children}
             </div>
 
             {/* Footer */}
             {footer && (
-              <div className="flex flex-col-reverse gap-2 border-t border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row sm:items-center sm:justify-end">
+              <div data-ui="modal-footer" data-slot="modal-footer" className="flex flex-col-reverse gap-2 border-t border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row sm:items-center sm:justify-end">
                 {footer}
               </div>
             )}

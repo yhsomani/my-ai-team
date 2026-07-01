@@ -76,6 +76,8 @@ const getEnabledNotificationChannelCount = (notifications?: NotificationSettings
     : 0
 );
 
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
+
 const SettingsPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { addToast } = useToast();
@@ -205,6 +207,44 @@ const SettingsPage: React.FC = () => {
     setActiveTab(tabId);
   };
 
+  const focusSettingsTab = (tabId: string) => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(`settings-tab-${tabId}`)?.focus();
+    });
+  };
+
+  const handleSettingsTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, tabId: string) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === tabId);
+    if (currentIndex < 0) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const nextTab = tabs[(currentIndex + 1) % tabs.length];
+      handleTabSelect(nextTab.id);
+      focusSettingsTab(nextTab.id);
+    }
+
+    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const previousTab = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+      handleTabSelect(previousTab.id);
+      focusSettingsTab(previousTab.id);
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      handleTabSelect(tabs[0].id);
+      focusSettingsTab(tabs[0].id);
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      const lastTab = tabs[tabs.length - 1];
+      handleTabSelect(lastTab.id);
+      focusSettingsTab(lastTab.id);
+    }
+  };
+
   const handleNotificationPreferenceAnalytics = (
     preferenceKey: string,
     updates: Partial<NotificationSettingsType>
@@ -234,10 +274,10 @@ const SettingsPage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Profile Settings', icon: <User className="w-4 h-4" /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
-    { id: 'billing', label: 'Billing & Plans', icon: <CreditCard className="w-4 h-4" /> }
+    { id: 'profile', label: 'Profile Settings', icon: <User {...decorativeIconProps} className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell {...decorativeIconProps} className="w-4 h-4" /> },
+    { id: 'security', label: 'Security', icon: <Shield {...decorativeIconProps} className="w-4 h-4" /> },
+    { id: 'billing', label: 'Billing & Plans', icon: <CreditCard {...decorativeIconProps} className="w-4 h-4" /> }
   ];
 
   return (
@@ -253,14 +293,14 @@ const SettingsPage: React.FC = () => {
           className="flex flex-col gap-4 rounded-md border border-warning/30 bg-warning-muted p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <AlertTriangle {...decorativeIconProps} className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Settings data could not fully load</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">{settingsLoadError}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={loadSettingsData} disabled={loading}>
-            <RotateCw className="h-4 w-4" />
+            <RotateCw {...decorativeIconProps} className="h-4 w-4" />
             Retry settings
           </Button>
         </div>
@@ -269,18 +309,25 @@ const SettingsPage: React.FC = () => {
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-3">
           <Card className="p-2 sticky top-24">
-            <nav className="space-y-1">
+            <nav className="space-y-1" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
+                  id={`settings-tab-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`settings-panel-${tab.id}`}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
                   onClick={() => handleTabSelect(tab.id)}
+                  onKeyDown={(event) => handleSettingsTabKeyDown(event, tab.id)}
                   className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                     activeTab === tab.id
                       ? 'bg-accent-muted text-accent'
                       : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  {tab.icon}
+                  <span aria-hidden="true">{tab.icon}</span>
                   {tab.label}
                 </button>
               ))}
@@ -290,37 +337,65 @@ const SettingsPage: React.FC = () => {
 
         <div className="md:col-span-9 space-y-6">
           {activeTab === 'profile' && (
-            <ProfileSettings
-              profileData={profileData}
-              setProfileData={setProfileData}
-              handleProfileSave={handleProfileSave}
-              saving={saving}
-              profileSaveError={profileSaveError}
-              clearProfileSaveError={() => setProfileSaveError(null)}
-            />
+            <section
+              id="settings-panel-profile"
+              role="tabpanel"
+              aria-labelledby="settings-tab-profile"
+              tabIndex={0}
+            >
+              <ProfileSettings
+                profileData={profileData}
+                setProfileData={setProfileData}
+                handleProfileSave={handleProfileSave}
+                saving={saving}
+                profileSaveError={profileSaveError}
+                clearProfileSaveError={() => setProfileSaveError(null)}
+              />
+            </section>
           )}
 
           {activeTab === 'notifications' && (
-            <NotificationSettings
-              notifications={notifications}
-              setNotifications={setNotifications}
-              handleNotificationSave={handleNotificationSave}
-              recordPreferenceChange={handleNotificationPreferenceAnalytics}
-              loading={loading}
-              saving={saving}
-            />
+            <section
+              id="settings-panel-notifications"
+              role="tabpanel"
+              aria-labelledby="settings-tab-notifications"
+              tabIndex={0}
+            >
+              <NotificationSettings
+                notifications={notifications}
+                setNotifications={setNotifications}
+                handleNotificationSave={handleNotificationSave}
+                recordPreferenceChange={handleNotificationPreferenceAnalytics}
+                loading={loading}
+                saving={saving}
+              />
+            </section>
           )}
 
           {activeTab === 'security' && (
-            <SecuritySettings
-              userId={user?.id}
-              userEmail={user?.email}
-              recordSettingsAction={recordSettingsAnalytics}
-            />
+            <section
+              id="settings-panel-security"
+              role="tabpanel"
+              aria-labelledby="settings-tab-security"
+              tabIndex={0}
+            >
+              <SecuritySettings
+                userId={user?.id}
+                userEmail={user?.email}
+                recordSettingsAction={recordSettingsAnalytics}
+              />
+            </section>
           )}
 
           {activeTab === 'billing' && (
-            <BillingSettings billing={billing} onOpenBilling={handleOpenBilling} />
+            <section
+              id="settings-panel-billing"
+              role="tabpanel"
+              aria-labelledby="settings-tab-billing"
+              tabIndex={0}
+            >
+              <BillingSettings billing={billing} onOpenBilling={handleOpenBilling} />
+            </section>
           )}
         </div>
       </div>

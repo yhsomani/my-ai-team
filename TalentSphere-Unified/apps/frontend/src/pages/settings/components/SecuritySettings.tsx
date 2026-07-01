@@ -26,6 +26,7 @@ const getSecurityWorkflowErrorCategory = (error: unknown, fallback: string) => (
 );
 
 const accountDeactivationConfirmation = 'DEACTIVATE';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, userEmail, recordSettingsAction }) => {
   const { addToast } = useToast();
@@ -108,11 +109,15 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
       <Card className="p-6">
         <h3 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">Security Settings</h3>
 
-        <div className="space-y-6">
-          <div className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row">
+        <div className="space-y-6" role="list" aria-label="Security actions">
+          <div
+            role="listitem"
+            aria-label="Password. Send a password reset link to your account email"
+            className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row"
+          >
             <div>
               <h4 className="flex items-center gap-2 text-lg font-medium text-[var(--text-primary)]">
-                <Key className="h-5 w-5 text-accent" />
+                <Key {...decorativeIconProps} className="h-5 w-5 text-accent" />
                 Password
               </h4>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">Send a password reset link to your account email</p>
@@ -130,24 +135,34 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ userId, user
             </Button>
           </div>
 
-          <div className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row">
+          <div
+            role="listitem"
+            aria-label="Two-Factor Authentication. Provider integration required. Unavailable"
+            className="flex flex-col items-start justify-between gap-4 rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] p-5 sm:flex-row"
+          >
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="flex items-center gap-2 text-lg font-medium text-[var(--text-primary)]">
-                  <Shield className="h-5 w-5 text-success" />
+                  <Shield {...decorativeIconProps} className="h-5 w-5 text-success" />
                   Two-Factor Authentication
                 </h4>
-                <Badge variant="outline">Coming soon</Badge>
+                <Badge variant="outline">Provider required</Badge>
               </div>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">2FA setup requires an authentication provider integration</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                2FA setup is unavailable until an authentication provider integration is configured and verified.
+              </p>
             </div>
             <Button variant="outline" disabled>Unavailable</Button>
           </div>
 
-          <div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-md border border-destructive/30 bg-destructive-muted p-5 sm:flex-row">
+          <div
+            role="listitem"
+            aria-label="Danger Zone. Deactivate your account profile after typed review"
+            className="mt-12 flex flex-col items-start justify-between gap-4 rounded-md border border-destructive/30 bg-destructive-muted p-5 sm:flex-row"
+          >
             <div>
               <h4 className="flex items-center gap-2 text-lg font-medium text-destructive">
-                <Trash2 className="h-5 w-5" />
+                <Trash2 {...decorativeIconProps} className="h-5 w-5" />
                 Danger Zone
               </h4>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">Deactivate your account profile after confirmation</p>

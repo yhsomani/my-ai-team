@@ -1,118 +1,73 @@
 # TalentSphere Feature Flags Configuration
 # Version: 1.0.0
-# 60+ boolean feature flags for runtime toggles
+# Canonical 40-flag registry. Runtime defaults are validated against
+# services/shared/src/main/java/com/talentsphere/shared/config/Feature.java.
 
-feature_flags:
-  # Authentication & User Management
-  enable_magic_link_login: false
-  enable_social_oauth: false
-  enable_2fa: false
-  enable_passwordless: false
-  enable_session_timeout: true
-  enable_concurrent_sessions: false
-  enable_account_deletion: true
-  
-  # User Profiles
-  enable_profile_customization: true
-  enable_profile_verification: false
-  enable_portfolio_upload: true
-  enable_resume_builder: true
-  enable_skill_assessment: false
-  
-  # Jobs & Applications
-  enable_job_alerts: true
-  enable_job_recommendations: true
-  enable_cover_letter: true
-  enable_application_tracking: true
-  enable_anonymous_applications: false
-  enable_job_fair: false
-  
-  # Company
-  enable_company_branding: true
-  enable_company_reviews: true
-  enable_company_stats: true
-  enable_team_collaboration: false
-  
-  # Search
-  enable_advanced_search: true
-  enable_semantic_search: false
-  enable_search_suggestions: true
-  enable_filters_v2: false
-  
-  # Messaging & Networking
-  enable_inapp_messaging: true
-  enable_chat: true
-  enable_video_calls: false
-  enable_voice_messages: false
-  enable_connection_requests: true
-  enable_recommendations: true
-  enable_messaging_encryption: false
-  
-  # Learning (LMS)
+feature-flags:
+  # Core features
+  enable_auth: true
+  enable_user_management: true
+  enable_profile_management: true
+
+  # Job and application features
+  enable_job_listings: true
+  enable_job_search: true
+  enable_job_recommendations: false
+  enable_job_applications: true
+  enable_application_tracking: false
+
+  # Company features
+  enable_company_profiles: true
+  enable_company_verification: false
+  enable_company_search: true
+
+  # LMS and learning features
   enable_courses: true
-  enable_certifications: true
-  enable_learning_paths: true
-  enable assessments: true
-  enable_quizzes: true
-  enable_badges: true
-  
-  # Gamification
-  enable_leaderboards: true
-  enable_achievements: true
-  enable_points: true
-  enable_badges: true
-  enable_challenges: true
-  enable_daily_streaks: true
-  enable_rewards: false
-  
-  # Payments
-  enable_payments: true
-  enable_subscriptions: true
-  enable_premium_features: true
-  enable_refunds: true
-  enable_invoices: true
-  enable_coupons: false
-  
-  # File & Media
-  enable_file_upload: true
-  enable_image_optimization: true
-  enable_video_upload: false
-  enable_document_preview: true
-  enable_cloud_storage: false
-  
-  # Notifications
-  enable_push_notifications: true
-  enable_email_notifications: true
-  enable_sms_notifications: false
-  enable_notification_preferences: true
-  enable_quiet_hours: false
-  
-  # AI Features
-  enable_ai_recommendations: false
-  enable_ai_resume_review: false
+  enable_course_enrollment: true
+  enable_course_progress: true
+  enable_learning_paths: false
+  enable_course_certificates: false
+
+  # Challenge and gamification features
+  enable_coding_challenges: false
+  enable_leaderboards: false
+  enable_achievements: false
+  enable_xp_system: false
+
+  # AI features
+  enable_ai_resume_analysis: false
+  enable_ai_job_matching: false
   enable_ai_interview_prep: false
-  enable_ai_job_match: false
-  enable_ai_coach: false
-  
-  # Analytics
-  enable_analytics_dashboard: true
-  enable_real_time_analytics: true
-  enable_anonymous_analytics: true
-  enable_export_analytics: true
-  
-  # Admin & Moderation
-  enable_admin_panel: true
-  enable_content_moderation: true
-  enable_audit_logs: true
-  enable_user_banning: true
-  
-  # Beta Features
-  enable_collaboration_rooms: false
-  enable_live_events: false
-  enable_mentorship: false
-  enable_career_fairs: false
-  
-  # Experimental (behind flags)
-  enable_micro_frontends: false
-  enable_module_federation: false
-  enable_react_server_components: false
+
+  # Notification features
+  enable_notifications: true
+  enable_email_notifications: false
+  enable_push_notifications: false
+
+  # Messaging and networking features
+  enable_messaging: true
+  enable_chat: false
+  enable_connections: true
+  enable_posts: false
+
+  # Search features
+  enable_global_search: true
+  enable_elasticsearch: true
+
+  # Payment features
+  enable_payments: false
+  enable_subscriptions: false
+  enable_premium_features: false
+
+  # Video and media features
+  enable_video_content: false
+  enable_video_interviews: false
+
+  # Analytics features
+  enable_analytics: false
+  enable_user_analytics: false
+  enable_employer_analytics: false
+
+feature-flag:
+  use-defaults: true
+  cache-enabled: true

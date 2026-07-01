@@ -51,6 +51,7 @@ const networkingConnectFailureMessage = 'Connection request was not sent. Review
 const networkingAcceptFailureMessage = 'Connection request was not accepted. Try Accept again from this card.';
 const networkingDeclineFailureMessage = 'Connection request was not declined. Try Decline again from this card.';
 const networkingWithdrawFailureMessage = 'Sent request was not withdrawn. Try Withdraw again from this card.';
+const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
 type NetworkingActionFailure = {
   title: string;
@@ -82,6 +83,8 @@ const getInitials = (name?: string) => {
 const getConnectionPerson = (connection: Connection, currentUserId?: string): PublicProfile | undefined => {
   return connection.requesterId === currentUserId ? connection.recipient : connection.requester;
 };
+
+const getProfileDisplayName = (profile?: PublicProfile | null) => profile?.fullName || 'profile';
 
 const getHiddenSuggestionStorageKey = (userId?: string) => `talentsphere.networking.hiddenSuggestions.${userId || 'guest'}`;
 
@@ -959,7 +962,7 @@ const NetworkingPage: React.FC = () => {
           description="Review suggestions, connection requests, and follow-up reminders."
         />
         <EmptyState
-          icon={<AlertTriangle className="h-12 w-12 text-warning" aria-hidden="true" />}
+          icon={<AlertTriangle {...decorativeIconProps} className="h-12 w-12 text-warning" />}
           title="Network could not load"
           description="Networking suggestions did not respond. Retry to reload professional suggestions and connection context."
           action={user?.id ? { label: 'Retry network', onClick: handleNetworkLoadRetry } : undefined}
@@ -975,7 +978,16 @@ const NetworkingPage: React.FC = () => {
         description="Review suggestions, connection requests, and follow-up reminders."
       />
 
-      <div className={networkingPanelClassName}>
+      <div
+        className={networkingPanelClassName}
+        role="group"
+        aria-label="Network view controls"
+        aria-describedby="network-view-control-help"
+        data-ui="network-view-controls"
+      >
+        <p id="network-view-control-help" className="sr-only">
+          Network tabs, hidden suggestions, and search controls change only the visible relationship view.
+        </p>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-1" role="tablist" aria-label="Networking views">
             {tabs.map((tab) => {
@@ -1012,11 +1024,20 @@ const NetworkingPage: React.FC = () => {
                 Show hidden
               </Button>
             )}
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+            <div
+              className="relative w-full sm:w-72"
+              role="search"
+              aria-label="Network search"
+              data-ui="network-search-surface"
+            >
+              <Search {...decorativeIconProps} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+              <p id="network-search-help" className="sr-only">
+                Search narrows the active Network view by person name, role, headline, location, or skill.
+              </p>
               <input
                 type="text"
                 aria-label="Search network"
+                aria-describedby="network-search-help"
                 placeholder="Search people..."
                 className={networkingSearchFieldClassName}
                 value={searchTerm}
@@ -1074,12 +1095,14 @@ const NetworkingPage: React.FC = () => {
       ) : activeTab === 'discover' && filtered.length === 0 ? (
         <EmptyState title="No results" description="Try a different search term." />
       ) : activeTab === 'discover' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((profile) => (
-            <Card key={profile.id} className={networkingDiscoverCardClassName}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Suggested professionals">
+          {filtered.map((profile) => {
+            const profileName = getProfileDisplayName(profile);
+            return (
+            <Card key={profile.id} role="listitem" aria-label={`Suggested professional ${profileName}`} className={networkingDiscoverCardClassName}>
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent" aria-hidden="true">
                     {profile.avatarUrl ? (
                       <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
@@ -1095,20 +1118,20 @@ const NetworkingPage: React.FC = () => {
                   {typeof profile.recommendationScore === 'number' && (
                     <Badge variant="outline">{profile.recommendationScore}% fit</Badge>
                   )}
-                  <Button variant="ghost" size="icon" aria-label={`Preview ${profile.fullName || 'profile'}`} onClick={() => previewProfile(profile, 'discover_card')}>
-                    <ExternalLink size={14} />
+                  <Button variant="ghost" size="icon" aria-label={`Preview ${profileName} profile`} onClick={() => previewProfile(profile, 'discover_card')}>
+                    <ExternalLink {...decorativeIconProps} size={14} />
                   </Button>
-                  <Button variant="ghost" size="icon" aria-label={`Hide suggestion ${profile.fullName || 'profile'}`} onClick={() => hideSuggestion(profile)}>
-                    <X size={14} />
+                  <Button variant="ghost" size="icon" aria-label={`Hide suggestion ${profileName}`} onClick={() => hideSuggestion(profile)}>
+                    <X {...decorativeIconProps} size={14} />
                   </Button>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-3">
-                <MapPin size={12} /> {profile.location || 'Unknown Location'}
+                <MapPin {...decorativeIconProps} size={12} /> {profile.location || 'Unknown Location'}
               </div>
               {Boolean(profile.mutualConnections) && (
                 <div className="mb-3 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                  <Users size={12} />
+                  <Users {...decorativeIconProps} size={12} />
                   <span>
                     {profile.mutualConnections} mutual {profile.mutualConnections === 1 ? 'connection' : 'connections'}
                   </span>
@@ -1119,7 +1142,7 @@ const NetworkingPage: React.FC = () => {
               )}
               <div className={`mb-3 ${networkingInsetClassName}`}>
                 <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
-                  <Lightbulb size={12} className="text-accent" />
+                  <Lightbulb {...decorativeIconProps} size={12} className="text-accent" />
                   <span>Why suggested</span>
                 </div>
                 <ul className="space-y-1">
@@ -1159,6 +1182,7 @@ const NetworkingPage: React.FC = () => {
                 variant={pendingRequestIds.has(profile.id) ? 'secondary' : 'default'}
                 size="sm"
                 className="mt-auto w-full"
+                aria-label={pendingRequestIds.has(profile.id) ? `Connection request sent to ${profileName}` : `Connect with ${profileName}`}
                 onClick={() => handleConnect(profile.id)}
                 disabled={pendingRequestIds.has(profile.id)}
                 isLoading={actionLoadingIds.has(profile.id)}
@@ -1166,23 +1190,25 @@ const NetworkingPage: React.FC = () => {
                 {pendingRequestIds.has(profile.id) ? (
                   'Request Sent'
                 ) : (
-                  <><UserPlus size={14} className="mr-1" /> Connect</>
+                  <><UserPlus {...decorativeIconProps} size={14} className="mr-1" /> Connect</>
                 )}
               </Button>
             </Card>
-          ))}
+            );
+          })}
         </div>
       ) : activeTab === 'incoming' && filteredIncoming.length === 0 ? (
-        <EmptyState title="No incoming requests" description="New connection requests will appear here." icon={<UserCheck size={24} />} />
+        <EmptyState title="No incoming requests" description="New connection requests will appear here." icon={<UserCheck {...decorativeIconProps} size={24} />} />
       ) : activeTab === 'incoming' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Incoming connection requests">
           {filteredIncoming.map((connection) => {
             const person = getConnectionPerson(connection, user?.id);
+            const personName = getProfileDisplayName(person);
             return (
-              <Card key={connection.id} className={networkingRecordCardClassName}>
+              <Card key={connection.id} role="listitem" aria-label={`Incoming request from ${personName}`} className={networkingRecordCardClassName}>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent" aria-hidden="true">
                       {getInitials(person?.fullName)}
                     </div>
                     <div className="min-w-0">
@@ -1190,11 +1216,11 @@ const NetworkingPage: React.FC = () => {
                       <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
-                  <Badge variant="warning"><Clock size={11} className="mr-1" /> Pending</Badge>
+                  <Badge variant="warning"><Clock {...decorativeIconProps} size={11} className="mr-1" /> Pending</Badge>
                 </div>
                 {person?.location && (
                   <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-3">
-                    <MapPin size={12} /> {person.location}
+                    <MapPin {...decorativeIconProps} size={12} /> {person.location}
                   </div>
                 )}
                 {connection.message && (
@@ -1203,7 +1229,7 @@ const NetworkingPage: React.FC = () => {
                   </p>
                 )}
                 <div className="mb-4 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                  <Clock size={12} />
+                  <Clock {...decorativeIconProps} size={12} />
                   <span>Received {formatConnectionAge(connection.createdAt)}</span>
                 </div>
                 {actionFailures[`incoming:${connection.id}`] && (
@@ -1212,16 +1238,16 @@ const NetworkingPage: React.FC = () => {
                   </div>
                 )}
                 <div className="mt-auto grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => previewProfile(person, 'incoming_request_card')}>
-                    <ExternalLink size={13} />
+                  <Button variant="outline" size="sm" aria-label={`Preview ${personName} profile`} onClick={() => previewProfile(person, 'incoming_request_card')}>
+                    <ExternalLink {...decorativeIconProps} size={13} />
                     Profile
                   </Button>
-                  <Button size="sm" onClick={() => handleAccept(connection)} isLoading={actionLoadingIds.has(connection.id)}>
-                    <Check size={13} />
+                  <Button size="sm" aria-label={`Accept connection request from ${personName}`} onClick={() => handleAccept(connection)} isLoading={actionLoadingIds.has(connection.id)}>
+                    <Check {...decorativeIconProps} size={13} />
                     Accept
                   </Button>
-                  <Button variant="destructive" size="sm" className="col-span-2" onClick={() => handleReject(connection, 'reject')} disabled={actionLoadingIds.has(connection.id)}>
-                    <X size={13} />
+                  <Button variant="destructive" size="sm" className="col-span-2" aria-label={`Decline connection request from ${personName}`} onClick={() => handleReject(connection, 'reject')} disabled={actionLoadingIds.has(connection.id)}>
+                    <X {...decorativeIconProps} size={13} />
                     Decline
                   </Button>
                 </div>
@@ -1230,19 +1256,20 @@ const NetworkingPage: React.FC = () => {
           })}
         </div>
       ) : activeTab === 'sent' && filteredSent.length === 0 ? (
-        <EmptyState title="No sent requests" description="Requests you send will appear here." icon={<Clock size={24} />} />
+        <EmptyState title="No sent requests" description="Requests you send will appear here." icon={<Clock {...decorativeIconProps} size={24} />} />
       ) : activeTab === 'sent' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Sent connection requests">
           {filteredSent.map((connection) => {
             const person = getConnectionPerson(connection, user?.id);
+            const personName = getProfileDisplayName(person);
             const reminderState = remindersByRequestId[connection.id];
             const hasReminder = Boolean(reminderState);
             const selectedReminderDelay = reminderDelayByRequestId[connection.id] || reminderState?.delay || defaultReminderDelay;
             return (
-              <Card key={connection.id} className={networkingRecordCardClassName}>
+              <Card key={connection.id} role="listitem" aria-label={`Sent request to ${personName}`} className={networkingRecordCardClassName}>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent" aria-hidden="true">
                       {getInitials(person?.fullName)}
                     </div>
                     <div className="min-w-0">
@@ -1250,7 +1277,7 @@ const NetworkingPage: React.FC = () => {
                       <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
-                  <Badge variant="warning"><Clock size={11} className="mr-1" /> Sent</Badge>
+                  <Badge variant="warning"><Clock {...decorativeIconProps} size={11} className="mr-1" /> Sent</Badge>
                 </div>
                 {connection.message && (
                   <p className={`mb-4 text-xs text-[var(--text-secondary)] ${networkingInsetClassName}`}>
@@ -1259,11 +1286,11 @@ const NetworkingPage: React.FC = () => {
                 )}
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
                   <span className="inline-flex items-center gap-1.5">
-                    <Clock size={12} />
+                    <Clock {...decorativeIconProps} size={12} />
                     Sent {formatConnectionAge(connection.createdAt)}
                   </span>
                   {hasReminder && (
-                    <Badge variant="outline"><Bell size={11} className="mr-1" /> {formatReminderDueLabel(reminderState?.dueAt)}</Badge>
+                    <Badge variant="outline"><Bell {...decorativeIconProps} size={11} className="mr-1" /> {formatReminderDueLabel(reminderState?.dueAt)}</Badge>
                   )}
                 </div>
                 {actionFailures[`sent:${connection.id}`] && (
@@ -1289,20 +1316,21 @@ const NetworkingPage: React.FC = () => {
                       <option key={option.id} value={option.id}>{option.label}</option>
                     ))}
                   </select>
-                  <Button variant="outline" size="sm" onClick={() => previewProfile(person, 'sent_request_card')}>
-                    <ExternalLink size={13} />
+                  <Button variant="outline" size="sm" aria-label={`Preview ${personName} profile`} onClick={() => previewProfile(person, 'sent_request_card')}>
+                    <ExternalLink {...decorativeIconProps} size={13} />
                     Profile
                   </Button>
                   <Button
                     variant={hasReminder ? 'secondary' : 'outline'}
                     size="sm"
+                    aria-label={hasReminder ? `Clear follow-up reminder for ${personName}` : `Set follow-up reminder for ${personName}`}
                     onClick={() => toggleRequestReminder(connection)}
                   >
-                    <Bell size={13} />
+                    <Bell {...decorativeIconProps} size={13} />
                     {hasReminder ? 'Clear Reminder' : 'Remind Me'}
                   </Button>
-                  <Button variant="destructive" size="sm" className="col-span-2" onClick={() => handleReject(connection, 'withdraw')} isLoading={actionLoadingIds.has(connection.id)}>
-                    <X size={13} />
+                  <Button variant="destructive" size="sm" className="col-span-2" aria-label={`Withdraw connection request to ${personName}`} onClick={() => handleReject(connection, 'withdraw')} isLoading={actionLoadingIds.has(connection.id)}>
+                    <X {...decorativeIconProps} size={13} />
                     Withdraw
                   </Button>
                 </div>
@@ -1311,16 +1339,17 @@ const NetworkingPage: React.FC = () => {
           })}
         </div>
       ) : filteredConnections.length === 0 ? (
-        <EmptyState title="No connections yet" description="Accepted connections will appear here." icon={<Users size={24} />} />
+        <EmptyState title="No connections yet" description="Accepted connections will appear here." icon={<Users {...decorativeIconProps} size={24} />} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Accepted connections">
           {filteredConnections.map((connection) => {
             const person = getConnectionPerson(connection, user?.id);
+            const personName = getProfileDisplayName(person);
             return (
-              <Card key={connection.id} className={networkingRecordCardClassName}>
+              <Card key={connection.id} role="listitem" aria-label={`Accepted connection ${personName}`} className={networkingRecordCardClassName}>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-muted text-sm font-semibold text-success">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-muted text-sm font-semibold text-success" aria-hidden="true">
                       {getInitials(person?.fullName)}
                     </div>
                     <div className="min-w-0">
@@ -1328,15 +1357,15 @@ const NetworkingPage: React.FC = () => {
                       <p className="truncate text-xs text-[var(--text-muted)]">{person?.currentRole || person?.headline || 'Professional'}</p>
                     </div>
                   </div>
-                  <Badge variant="success"><UserCheck size={11} className="mr-1" /> Connected</Badge>
+                  <Badge variant="success"><UserCheck {...decorativeIconProps} size={11} className="mr-1" /> Connected</Badge>
                 </div>
                 {person?.location && (
                   <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4">
-                    <MapPin size={12} /> {person.location}
+                    <MapPin {...decorativeIconProps} size={12} /> {person.location}
                   </div>
                 )}
-                <Button variant="outline" size="sm" className="mt-auto w-full" onClick={() => previewProfile(person, 'connection_card')}>
-                  <ExternalLink size={13} />
+                <Button variant="outline" size="sm" className="mt-auto w-full" aria-label={`Preview ${personName} profile`} onClick={() => previewProfile(person, 'connection_card')}>
+                  <ExternalLink {...decorativeIconProps} size={13} />
                   Open Profile
                 </Button>
               </Card>
@@ -1361,7 +1390,7 @@ const NetworkingPage: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border-default)] px-5 py-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent" aria-hidden="true">
                   {profilePreview.avatarUrl ? (
                     <img src={profilePreview.avatarUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -1376,7 +1405,7 @@ const NetworkingPage: React.FC = () => {
                 </div>
               </div>
               <Button variant="ghost" size="icon" aria-label="Close profile preview" onClick={() => setProfilePreview(null)}>
-                <X size={18} />
+                <X {...decorativeIconProps} size={18} />
               </Button>
             </div>
 
@@ -1384,7 +1413,7 @@ const NetworkingPage: React.FC = () => {
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 {profilePreviewDetails.fitLabel && <Badge variant="outline">{profilePreviewDetails.fitLabel}</Badge>}
                 {profilePreviewDetails.mutualConnectionLabel && <Badge variant="outline">{profilePreviewDetails.mutualConnectionLabel}</Badge>}
-                <Badge variant="outline"><MapPin size={11} className="mr-1" /> {profilePreviewDetails.location}</Badge>
+                <Badge variant="outline"><MapPin {...decorativeIconProps} size={11} className="mr-1" /> {profilePreviewDetails.location}</Badge>
               </div>
 
               {(profilePreviewDetails.headline || profilePreviewDetails.summary) && (
@@ -1430,7 +1459,7 @@ const NetworkingPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border-default)] px-5 py-4">
               <Button variant="outline" onClick={() => setProfilePreview(null)}>Close</Button>
               <Button onClick={() => openFullProfile(profilePreview)} disabled={!profilePreviewDetails.profilePath}>
-                <ExternalLink size={14} />
+                <ExternalLink {...decorativeIconProps} size={14} />
                 Full Profile
               </Button>
             </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -87,6 +87,29 @@ const templateFixture: JobPostTemplate = {
   updatedAt: '2026-06-28T09:00:00.000Z',
 };
 
+const draftHistoryFixture = {
+  id: 'history-unit',
+  recruiterId: 'post-job-recruiter',
+  draftKey: 'new',
+  jobId: null,
+  companyId: 'company-unit',
+  companyName: 'Northstar Labs',
+  companyAttached: true,
+  title: 'Saved Platform Draft',
+  description: 'A saved draft for the frontend platform role.',
+  location: 'Remote',
+  jobType: 'FULL_TIME',
+  salaryMin: '',
+  salaryMax: '',
+  salaryRange: '',
+  category: '',
+  requirements: 'React\nTypeScript',
+  reason: 'saved' as const,
+  persistedTo: 'server' as const,
+  createdAt: '2026-06-28T09:00:00.000Z',
+  updatedAt: '2026-06-28T09:00:00.000Z',
+};
+
 let localStorageData: Record<string, string>;
 
 const renderPostJobPage = (initialEntry = '/jobs/post?draftId=draft-unit') => {
@@ -140,6 +163,15 @@ const failLocalStorageWritesFor = (keyPart: string, message: string) => {
       throw new Error(message);
     }
     localStorageData[key] = value;
+  });
+};
+
+const expectDecorativeSvgIcons = (container: Element) => {
+  const icons = Array.from(container.querySelectorAll('svg'));
+  expect(icons.length).toBeGreaterThan(0);
+  icons.forEach((icon) => {
+    expect(icon.getAttribute('aria-hidden')).toBe('true');
+    expect(icon.getAttribute('focusable')).toBe('false');
   });
 };
 
@@ -270,6 +302,49 @@ describe('PostJobPage', () => {
     expect(screen.getByText('Northstar Labs will be attached to this draft.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save Company Profile' })).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
+  });
+
+  it('exposes Post Job edit and review sections with semantic structure', async () => {
+    vi.mocked(jobService.getJobPostDraftHistory).mockResolvedValue([draftHistoryFixture]);
+
+    renderPostJobPage('/jobs/post');
+
+    const form = await screen.findByRole('form', { name: 'Post job draft workflow' });
+    expect(screen.getByRole('region', { name: 'Post job workspace' })).toBeTruthy();
+    expect(within(form).getByRole('region', { name: 'Job template controls' })).toBeTruthy();
+    expect(within(form).getByRole('group', { name: 'Job template actions' })).toBeTruthy();
+    expect(within(form).getByRole('region', { name: 'Company context' })).toBeTruthy();
+    expect(within(form).getByRole('region', { name: 'Company profile details' })).toBeTruthy();
+    expect(within(form).getByRole('region', { name: 'Job draft fields' })).toBeTruthy();
+    expect(within(form).getByRole('group', { name: 'Post job draft actions' })).toBeTruthy();
+
+    const draftHistory = await screen.findByRole('region', { name: 'Recent draft versions' });
+    const draftHistoryList = within(draftHistory).getByRole('list', { name: 'Draft version history' });
+    expect(within(draftHistoryList).getByRole('listitem', {
+      name: 'Saved Platform Draft. Saved. Remote. Account synced',
+    })).toBeTruthy();
+    expectDecorativeSvgIcons(document.body);
+
+    fillRequiredJobDraftFields();
+    fireEvent.click(screen.getByRole('button', { name: 'Review Draft' }));
+
+    const review = await screen.findByRole('region', { name: 'Job draft review' });
+    const reviewMetadata = within(review).getByRole('list', { name: 'Job draft review metadata' });
+    expect(within(reviewMetadata).getByRole('listitem', {
+      name: 'Salary range: Not specified',
+    })).toBeTruthy();
+    expect(within(reviewMetadata).getByRole('listitem', {
+      name: 'Requirements: 2 listed',
+    })).toBeTruthy();
+    expect(within(reviewMetadata).getByRole('listitem', {
+      name: 'Company: Northstar Labs',
+    })).toBeTruthy();
+    expect(within(review).getByRole('region', { name: 'Job draft review description' })).toBeTruthy();
+
+    const requirements = within(review).getByRole('list', { name: 'Job draft requirement preview' });
+    expect(within(requirements).getByRole('listitem', { name: 'Requirement: React' })).toBeTruthy();
+    expect(within(requirements).getByRole('listitem', { name: 'Requirement: TypeScript' })).toBeTruthy();
+    expectDecorativeSvgIcons(review);
   });
 
   it('shows safe company creation failure copy and retries Create & Attach Company', async () => {

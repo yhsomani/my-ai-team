@@ -110,7 +110,12 @@ describe('aiService typed persistence', () => {
       reasoning: 'Strong skill overlap.',
     });
     await expect(aiService.generateCareerPath('user-1')).resolves.toEqual({ recommendedPath: 'Developer -> Architect' });
-    await expect(aiService.getChatResponse('Help me follow up')).resolves.toEqual({ message: 'Draft a concise follow-up.' });
+    await expect(aiService.getChatResponse('Help me follow up')).resolves.toMatchObject({
+      message: 'Draft a concise follow-up.',
+      provenanceMode: 'heuristic',
+      sourceLabel: 'Heuristic AI guidance',
+      providerBacked: false,
+    });
 
     expect(apiClient.post).toHaveBeenNthCalledWith(1, '/api/v1/ai/match-job', null, {
       params: { resumeText: 'resume text', jobDescription: 'job description' },

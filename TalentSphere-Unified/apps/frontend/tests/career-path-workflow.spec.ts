@@ -63,13 +63,23 @@ test.describe('Career Path workflow', () => {
     await page.goto('/career-path');
 
     await expect(page.getByRole('heading', { name: /^Career Paths$/ })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Career path workspace' })).toBeVisible();
     await expect(page.getByText('Generated Guidance', { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Frontend Platform Lead' })).toBeVisible();
+    const pathRegion = page.getByRole('region', { name: 'Generated career path: Frontend Platform Lead' });
+    await expect(pathRegion).toBeVisible();
+    await expect(pathRegion.getByRole('heading', { name: 'Frontend Platform Lead' })).toBeVisible();
     await expect(page.getByText('6-9 months')).toBeVisible();
-    await expect(page.getByText('React systems')).toBeVisible();
-    await expect(page.getByText('Accessibility reviews')).toBeVisible();
-    await expect(page.getByText('Audit current UI workflows')).toBeVisible();
-    await expect(page.getByText('Review Boundaries')).toBeVisible();
+    const skillsList = pathRegion.getByRole('list', { name: 'Required skills for Frontend Platform Lead' });
+    await expect(skillsList.getByRole('listitem', { name: 'Required skill: React systems' })).toBeVisible();
+    await expect(skillsList.getByRole('listitem', { name: 'Required skill: Accessibility reviews' })).toBeVisible();
+    await expect(skillsList.getByRole('listitem', { name: 'Required skill: Product analytics' })).toBeVisible();
+    const milestonesList = pathRegion.getByRole('list', { name: 'Milestones for Frontend Platform Lead' });
+    await expect(milestonesList.getByRole('listitem', { name: 'Completed milestone: Audit current UI workflows' })).toBeVisible();
+    await expect(milestonesList.getByRole('listitem', { name: 'Pending milestone: Choose one advanced learning path' })).toBeVisible();
+    await expect(milestonesList.getByRole('listitem', { name: 'Pending milestone: Review architecture evidence before changing durable records' })).toBeVisible();
+    const reviewRegion = page.getByRole('region', { name: 'Career path review boundaries' });
+    await expect(reviewRegion.getByText('Review Boundaries')).toBeVisible();
+    await expect(reviewRegion.getByRole('list', { name: 'Career path review boundaries' })).toBeVisible();
     await expect(page.getByText('Generated guidance does not change your profile')).toBeVisible();
     await expect.poll(() => captures.requests.length).toBeGreaterThanOrEqual(1);
     expect(captures.requests.every(request => request.userId === userId)).toBe(true);

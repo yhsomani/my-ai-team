@@ -13,6 +13,7 @@ npm run validate:data-ownership
 npm run validate:schema-authority-adr
 npm run report:db-types
 npm run validate:schema-migrations
+npm run validate:seed-data-safety
 npm run validate:legacy-schema-disposition
 ```
 
@@ -27,6 +28,7 @@ The validator fails when:
 - a manifest entry no longer matches the SQL files where the table is defined
 - a table is missing a domain, target owner, target access mode, migration status, RLS status, or index status
 - a table has no reviewed SQL source but is not marked with a missing migration status
+- destructive seed-data entry points are not explicitly scoped to local/dev/test/CI environments
 
 Current validated scope:
 
@@ -54,6 +56,7 @@ Current validated scope:
 - Resolved 2026-06-27 at decision level: ADR-003 accepts migration-first Supabase/Postgres authority, generated TypeScript types, backend validation, and `infra/db/README.md` as the schema authority workspace marker.
 - Resolved 2026-06-27 at source-validation level: `infra/db/migrations/0001_initial_baseline.sql` mirrors `supabase-schema.sql`, `infra/db/generated/database.types.ts` provides source-derived database types generated from that migration with 69 public FK relationships and mutual-count RPC metadata, `apps/frontend/src/lib/supabaseClient.ts` exports a generated-`Database` typed `typedSupabase` migration boundary, and `npm run validate:schema-migrations` checks the 49-table baseline, 38 source-level RLS-enabled tables, 46 indexed tables, generated relationship metadata, generated RPC metadata, generated type drift, and typed-client boundary.
 - Resolved 2026-06-27 at source-classification level: `infra/db/legacy-schema-disposition.json` classifies all 10 `legacy-master-only` tables and all 15 `multiple-reviewed-sql-sources` tables, including service-local migration evidence and required migration/retirement resolution.
+- Seed data safety source guard: `npm run validate:seed-data-safety` checks that `seed-data.sql` requires `app.seed_environment` plus destructive confirmation before `TRUNCATE`, that `scripts/seed_data.py` requires local/dev/test/CI environment confirmation before executing seed functions, and that `SEED_DATA_GUIDE.md`, package scripts, CI, and module manifest registration stay aligned.
 - Several tables exist in both `supabase-schema.sql` and `infra/supabase_master.sql`; their `migrationStatus` is `multiple-reviewed-sql-sources` until ADR-003 follow-up work migrates, retains with explicit status, or retires the legacy duplicate source.
 - Legacy identity and chat tables exist only in `infra/supabase_master.sql`; they are classified as `legacy-master-only`.
 - Live RLS policy behavior and query-plan/index adequacy remain `not-verified` until they are executed and reviewed table by table.
@@ -84,5 +87,6 @@ The manifest does not claim that production ownership is complete. It records th
 - New SQL tables must be added to the manifest before CI passes.
 - A table cannot be treated as production-ready while `migrationStatus`, `rlsStatus`, or `indexStatus` is unresolved.
 - Direct frontend writes remain migration debt unless explicitly retained behind a typed repository adapter and security policy decision.
+- Destructive seed scripts must remain local/dev/test/CI scoped and require explicit confirmation before truncating data.
 - Legacy-only and duplicate SQL-source tables must keep a disposition entry until each table is migrated, retained as service-private with explicit boundaries, or retired.
 - Live Supabase migration execution, Supabase CLI-generated types from a live migration-applied database, live RLS behavior, query-plan/index validation, and repository-wide replacement of untyped direct Supabase service access remain Not verified from the codebase.

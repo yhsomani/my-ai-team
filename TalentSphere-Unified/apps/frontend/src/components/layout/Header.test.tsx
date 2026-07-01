@@ -58,17 +58,72 @@ const notificationPageFixture: PaginatedNotificationsResult = {
   },
 };
 
-const renderHeader = () => {
-  render(
+const emptyNotificationPage: PaginatedNotificationsResult = {
+  notifications: [],
+  total: 0,
+  limit: 8,
+  offset: 0,
+  hasNext: false,
+  nextCursor: null,
+  metadata: {
+    source: 'account',
+    degraded: false,
+    message: 'Account notifications are synced.',
+  },
+};
+
+const renderHeader = ({
+  isSidebarOpen = false,
+  setIsSidebarOpen,
+}: {
+  isSidebarOpen?: boolean;
+  setIsSidebarOpen?: (open: boolean) => void;
+} = {}) => {
+  const result = render(
     <MemoryRouter>
-      <Header user={userFixture} />
+      <Header
+        user={userFixture}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
     </MemoryRouter>,
   );
+
+  return result;
 };
 
 describe('Header notifications', () => {
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('keeps shell controls named while hiding visual-only header icons', async () => {
+    const setIsSidebarOpen = vi.fn();
+    vi.mocked(notificationService.getNotificationsPage).mockResolvedValue(emptyNotificationPage);
+
+    const { container } = renderHeader({ isSidebarOpen: false, setIsSidebarOpen });
+
+    await waitFor(() => {
+      expect(notificationService.getNotificationsPage).toHaveBeenCalledTimes(1);
+    });
+
+    const menuButton = screen.getByRole('button', { name: 'Toggle navigation menu' });
+    const notificationsButton = screen.getByRole('button', { name: 'View notifications' });
+
+    expect(menuButton.getAttribute('type')).toBe('button');
+    expect(menuButton.getAttribute('aria-expanded')).toBe('false');
+    expect(menuButton.getAttribute('aria-controls')).toBe('app-shell-mobile-sidebar');
+    expect(notificationsButton.getAttribute('type')).toBe('button');
+    expect(notificationsButton.getAttribute('aria-controls')).toBe('app-shell-notifications');
+    expect(container.querySelector('.rounded-full[aria-hidden="true"]')?.textContent).toBe('T');
+
+    container.querySelectorAll('svg').forEach((icon) => {
+      expect(icon.getAttribute('aria-hidden')).toBe('true');
+      expect(icon.getAttribute('focusable')).toBe('false');
+    });
+
+    fireEvent.click(menuButton);
+    expect(setIsSidebarOpen).toHaveBeenCalledWith(true);
   });
 
   it('shows safe notification load failure copy and retries through the existing retry action', async () => {

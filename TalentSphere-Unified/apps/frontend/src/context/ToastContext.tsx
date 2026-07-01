@@ -25,6 +25,13 @@ const getToastStyles = (type: ToastType) => {
   return `${base} ${variants[type]}`;
 };
 
+const toastTypeLabels: Record<ToastType, string> = {
+  success: 'Success',
+  error: 'Error',
+  info: 'Information',
+  warning: 'Warning',
+};
+
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -44,16 +51,33 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container fixed bottom-4 right-4 z-50 space-y-2">
+      <div
+        role="region"
+        aria-label="Realtime toast notifications"
+        className="toast-container fixed bottom-4 right-4 z-50 space-y-2"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             role={toast.type === 'error' ? 'alert' : 'status'}
             aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
-            className={getToastStyles(toast.type)}
+            aria-atomic="true"
+            aria-label={`${toastTypeLabels[toast.type]} notification: ${toast.message}`}
+            className={`${getToastStyles(toast.type)} cursor-pointer`}
             onClick={() => removeToast(toast.id)}
           >
             <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              type="button"
+              aria-label={`Dismiss ${toast.message} notification`}
+              className="ml-auto rounded-md px-1.5 py-0.5 text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              onClick={(event) => {
+                event.stopPropagation();
+                removeToast(toast.id);
+              }}
+            >
+              Dismiss
+            </button>
           </div>
         ))}
       </div>

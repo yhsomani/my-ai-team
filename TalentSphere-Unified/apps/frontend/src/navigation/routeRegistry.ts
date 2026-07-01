@@ -272,4 +272,33 @@ export const getSearchDestinations = (roles: readonly string[] = []) => appRoute
     keywords: route.search?.keywords || '',
   }));
 
+const normalizePathname = (pathname: string) => {
+  const withoutHash = pathname.split('#')[0] || '/';
+  const withoutQuery = withoutHash.split('?')[0] || '/';
+  const withoutTrailingSlash = withoutQuery.replace(/\/+$/, '');
+
+  return withoutTrailingSlash || '/';
+};
+
+const routePathMatchesPathname = (routePath: string, pathname: string) => {
+  const routeSegments = normalizePathname(routePath).split('/').filter(Boolean);
+  const pathnameSegments = normalizePathname(pathname).split('/').filter(Boolean);
+
+  if (routeSegments.length !== pathnameSegments.length) return false;
+
+  return routeSegments.every((segment, index) => (
+    segment.startsWith(':') || segment === pathnameSegments[index]
+  ));
+};
+
+export const getRouteForPathname = (pathname: string) => (
+  appRouteRegistry.find((route) => routePathMatchesPathname(route.path, pathname))
+);
+
+export const getApplicationContentLabel = (pathname: string) => {
+  const route = getRouteForPathname(pathname);
+
+  return route ? `${route.label} application content` : 'Application content';
+};
+
 export const protectedAppRoutes = appRouteRegistry;

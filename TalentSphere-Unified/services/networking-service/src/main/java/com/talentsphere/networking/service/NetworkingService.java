@@ -41,14 +41,7 @@ public class NetworkingService {
 
     public Connection requestConnectionFallback(String requesterId, String receiverId, Throwable t) {
         log.error("Connection request failed for {} -> {}: {}", requesterId, receiverId, t.getMessage());
-        // Return a temporary connection object to indicate failure
-        Connection tempConn = Connection.builder()
-                .requesterId(requesterId)
-                .receiverId(receiverId)
-                .status(ConnectionStatus.PENDING)
-                .build();
-        tempConn.setId("TEMP_" + System.currentTimeMillis());
-        return tempConn;
+        throw new IllegalStateException("Connection request could not be persisted. Please retry.", t);
     }
 
     @Transactional
@@ -62,6 +55,7 @@ public class NetworkingService {
 
     public void acceptConnectionFallback(String id, Throwable t) {
         log.error("Failed to accept connection {}: {}", id, t.getMessage());
+        throw new IllegalStateException("Connection acceptance could not be persisted. Please retry.", t);
     }
 
     @Transactional
@@ -75,6 +69,7 @@ public class NetworkingService {
 
     public void blockConnectionFallback(String requesterId, String receiverId, Throwable t) {
         log.error("Failed to block connection {} -> {}: {}", requesterId, receiverId, t.getMessage());
+        throw new IllegalStateException("Connection block could not be persisted. Please retry.", t);
     }
 
     @CircuitBreaker(name = "getAcceptedConnections", fallbackMethod = "getAcceptedConnectionsFallback")

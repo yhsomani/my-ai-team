@@ -80,6 +80,16 @@ const getRouteSemanticIssues = async (page: Page): Promise<SemanticIssue[]> => p
     });
   }
 
+  if (visibleMainLandmarks.length > 1) {
+    for (const element of visibleMainLandmarks) {
+      issues.push({
+        issue: 'screen has multiple visible main landmarks',
+        selector: selectorPreview(element),
+        text: textPreview(element),
+      });
+    }
+  }
+
   const visibleH1s = Array.from(document.querySelectorAll('h1')).filter(isVisible);
   if (visibleH1s.length === 0) {
     issues.push({
@@ -87,6 +97,16 @@ const getRouteSemanticIssues = async (page: Page): Promise<SemanticIssue[]> => p
       selector: 'h1',
       text: '',
     });
+  }
+
+  if (visibleH1s.length > 1) {
+    for (const element of visibleH1s) {
+      issues.push({
+        issue: 'screen has multiple visible h1 headings',
+        selector: selectorPreview(element),
+        text: textPreview(element),
+      });
+    }
   }
 
   const interactiveSelector = [
@@ -135,14 +155,50 @@ const getRouteSemanticIssues = async (page: Page): Promise<SemanticIssue[]> => p
 
   const visibleNavigationLandmarks = Array.from(document.querySelectorAll('nav, [role="navigation"]')).filter(isVisible);
   if (visibleNavigationLandmarks.length > 1) {
+    const navigationNames = new Map<string, Element[]>();
+
     for (const element of visibleNavigationLandmarks) {
-      if (!accessibleName(element)) {
+      const name = accessibleName(element);
+
+      if (!name) {
         issues.push({
           issue: 'multiple visible navigation landmarks require accessible names',
           selector: selectorPreview(element),
           text: textPreview(element),
         });
+        continue;
       }
+
+      const normalizedName = name.toLowerCase().replace(/\s+/g, ' ').trim();
+      navigationNames.set(normalizedName, [
+        ...(navigationNames.get(normalizedName) || []),
+        element,
+      ]);
+    }
+
+    for (const [name, elements] of navigationNames) {
+      if (elements.length > 1) {
+        for (const element of elements) {
+          issues.push({
+            issue: 'multiple visible navigation landmarks require unique accessible names',
+            selector: selectorPreview(element),
+            text: name,
+          });
+        }
+      }
+    }
+  }
+
+  for (const element of Array.from(document.querySelectorAll('[role="status"], [role="alert"]'))) {
+    if (!isVisible(element) || element.closest('[aria-hidden="true"]')) continue;
+
+    const name = accessibleName(element);
+    if (!name) {
+      issues.push({
+        issue: 'visible feedback region is missing readable status or alert text',
+        selector: selectorPreview(element),
+        text: textPreview(element),
+      });
     }
   }
 
@@ -165,6 +221,7 @@ const getRouteSemanticIssues = async (page: Page): Promise<SemanticIssue[]> => p
 
 const expectRouteHasAccessibleSemantics = async (page: Page, routeCase: RouteAuditCase) => {
   await expect(page.getByRole('heading', { name: routeCase.heading }).first()).toBeVisible();
+  await expect(page.getByRole('main', { name: routeCase.mainName })).toBeVisible();
 
   const issues = await getRouteSemanticIssues(page);
   expect(issues).toEqual([]);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-28",
+  "updatedAt": "2026-06-30",
   "description": "Source ownership manifest for the TalentSphere-Unified repository. Paths are relative to this directory unless they begin with ../.",
   "applications": [
     {
@@ -168,6 +168,14 @@
   ],
   "tooling": [
     {
+      "id": "local-dev-setup",
+      "kind": "shell-script",
+      "status": "active",
+      "path": "scripts/setup-dev.sh",
+      "required": true,
+      "note": "Local setup helper anchored at the repository root; installs root npm workspace dependencies, labels apps/backend as a non-runnable ADR-002 target shell, and points backend validation at the current root Maven reactor."
+    },
+    {
       "id": "api-contract-report",
       "kind": "node-script",
       "status": "active",
@@ -232,6 +240,14 @@
       "required": true
     },
     {
+      "id": "seed-data-safety-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-seed-data-safety.mjs",
+      "required": true,
+      "note": "Guards destructive SQL and Python seed entry points with explicit local/dev/test/CI environment gates, destructive confirmation tokens, documentation, package, CI, and manifest registration."
+    },
+    {
       "id": "typed-supabase-boundary-validation",
       "kind": "node-script",
       "status": "active",
@@ -282,12 +298,28 @@
       "note": "Guards web and extension UI source against legacy theme tokens, decorative gradients, oversized radii, nonstandard letter spacing, and hard-coded black/white Tailwind utilities."
     },
     {
+      "id": "feature-flag-contract-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-feature-flags.mjs",
+      "required": true,
+      "note": "Guards stable lower-snake feature flag names, canonical 40-flag enum coverage, runtime YAML defaults, BOM YAML defaults, core enabled defaults, and source-level feature flag tests."
+    },
+    {
+      "id": "write-fallback-safety-validation",
+      "kind": "node-script",
+      "status": "active",
+      "path": "scripts/validate-write-fallback-safety.mjs",
+      "required": true,
+      "note": "Guards production Java source against temporary or buffered successful write fallbacks when persistence did not happen."
+    },
+    {
       "id": "frontend-feature-ownership-contract",
       "kind": "source-contract",
       "status": "active",
       "path": "apps/frontend/src/navigation/featureOwnership.ts",
       "required": true,
-      "note": "Source-backed IA ownership registry that keeps every major feature assigned to one primary route or surface and classifies secondary placements."
+      "note": "Source-backed IA ownership registry that keeps every major feature assigned to one primary route or surface, records user-journey value and merge evaluation, and classifies secondary placements."
     },
     {
       "id": "frontend-feature-ownership-validation",
@@ -295,7 +327,7 @@
       "status": "active",
       "path": "apps/frontend/src/navigation/featureOwnership.test.ts",
       "required": true,
-      "note": "Validated by npm run test:ia to prevent duplicate feature owners and route/role drift."
+      "note": "Validated by npm run test:ia to prevent duplicate feature owners, missing user-journey value, missing merge evaluation, unreviewed dashboard domain placements, primary-navigation drift, undocumented utility search destinations, and route/role drift."
     },
     {
       "id": "frontend-route-audit-fixtures",
@@ -311,7 +343,7 @@
       "status": "active",
       "path": "apps/frontend/tests/visual-layout.spec.ts",
       "required": true,
-      "note": "Guards major public, talent, recruiter, and admin routes, including public Not Found recovery, for headings, visible placeholder regressions, page exceptions, and horizontal overflow."
+      "note": "Guards major public, talent, recruiter, and admin routes, including public Not Found recovery, for headings, visible placeholder regressions, page exceptions, horizontal overflow, clipped interactive control text, undersized icon-only controls, and named icon-only controls without explicit focus styling."
     },
     {
       "id": "frontend-route-accessibility-validation",
@@ -319,7 +351,15 @@
       "status": "active",
       "path": "apps/frontend/tests/accessibility-semantics.spec.ts",
       "required": true,
-      "note": "Validated by npm run test:a11y to guard major public, talent, recruiter, and admin route semantics, including public Not Found recovery."
+      "note": "Validated by npm run test:a11y to guard major public, talent, recruiter, and admin route semantics, including public Not Found recovery, labeled controls, and unique names for multiple visible navigation landmarks."
+    },
+    {
+      "id": "frontend-route-color-contrast-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/color-contrast.spec.ts",
+      "required": true,
+      "note": "Validated by npm run test:contrast and npm run test:contrast:all to guard rendered major public, talent, recruiter, and admin route text contrast, including public Not Found recovery."
     },
     {
       "id": "frontend-error-boundary-recovery-validation",
@@ -330,12 +370,20 @@
       "note": "Guards safe global error recovery copy, service-unavailable variants, custom fallback passthrough, and reload recovery without exposing raw exception messages."
     },
     {
+      "id": "frontend-public-landing-semantics-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/auth.spec.ts",
+      "required": true,
+      "note": "Guards public landing role-entry destinations, named navigation/group/region/list/listitem structure, public stats visibility, and 390px mobile no-overflow rendering."
+    },
+    {
       "id": "frontend-auth-entry-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
       "path": "apps/frontend/tests/auth-entry-workflow.spec.ts",
       "required": true,
-      "note": "Guards deterministic public auth entry UX for configured email login, inactive provider-control removal, accessible login errors, and registration role-intent selection across browser projects."
+      "note": "Guards deterministic public auth entry UX for configured email login, named shell/form/account-type semantics, inactive provider-control removal, accessible login errors, and registration role-intent selection across browser projects."
     },
     {
       "id": "frontend-auth-entry-provider-recovery-validation",
@@ -346,6 +394,14 @@
       "note": "Guards safe Login/Register auth provider-failure copy, raw provider-error exclusion, preserved invalid-credential copy, weak-password guidance, and registration role-intent context."
     },
     {
+      "id": "frontend-auth-entry-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/auth/AuthEntry.test.tsx",
+      "required": true,
+      "note": "Guards named Login/Register shell, form, alternate-entry, account-type, and registration next-step semantics."
+    },
+    {
       "id": "frontend-not-found-recovery-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -354,12 +410,212 @@
       "note": "Guards deterministic public and authenticated wildcard-route recovery, public auth entry links, and role-filtered app recovery destinations across browser projects."
     },
     {
+      "id": "frontend-shared-toast-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/Toast.test.tsx",
+      "required": true,
+      "note": "Guards shared toast stack/item/subpart markers, compatibility slot metadata, toast-type metadata, named Toast notifications region, toast-type-specific status/alert labels, assertive atomic error toasts, non-submit notification-specific dismiss controls, and auto-dismiss timing."
+    },
+    {
+      "id": "frontend-legacy-toast-compatibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/context/ToastContext.test.tsx",
+      "required": true,
+      "note": "Guards compatibility showToast API semantics, named Realtime toast notifications region, toast-type-specific status/alert labels, notification-specific dismiss controls, click-to-dismiss compatibility, and 5-second auto-dismiss timing."
+    },
+    {
+      "id": "frontend-shared-modal-scroll-containment-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraModal.test.tsx",
+      "required": true,
+      "note": "Guards shared AuraModal structure markers, size metadata, non-submit close controls, dialog naming, body scroll lock while open, prior overflow restoration on close, Escape close behavior, and opener focus restoration."
+    },
+    {
+      "id": "frontend-shared-button-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraButton.test.tsx",
+      "required": true,
+      "note": "Guards the shared Button marker, loading disablement, busy/loading metadata, decorative loading icons, visible loading labels, wrapping-safe long-label sizing, caller-owned submit type preservation, caller prop preservation, variant/size metadata, and stable icon-button dimensions."
+    },
+    {
+      "id": "frontend-shared-page-header-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/PageHeader.test.tsx",
+      "required": true,
+      "note": "Guards shared PageHeader copy/title/action markers, title and description relationships, badge preservation, named page-action groups, and caller-owned action controls."
+    },
+    {
+      "id": "frontend-shared-card-containment-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/GlassCard.test.tsx",
+      "required": true,
+      "note": "Guards shared Card root/subpart markers, caller semantics, compatibility slot metadata, max-width/min-width constraints, wrapping-safe titles/descriptions, min-width-safe content, wrapping footers, and legacy AuraCard compatibility exports wired to the same primitives."
+    },
+    {
+      "id": "frontend-shared-design-system-barrel-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/index.test.tsx",
+      "required": true,
+      "note": "Guards canonical components/shared exports for shared primitives, typography helpers, compatibility PageTemplate, and compatibility aliases without adding route logic or alternate implementations."
+    },
+    {
+      "id": "frontend-shared-image-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraImage.test.tsx",
+      "required": true,
+      "note": "Guards shared AuraImage image/media/loading/fallback markers, compatibility slot metadata, lazy/async defaults, caller load/error handler preservation, decorative loading skeletons, named failed-image fallbacks, hidden decorative failed-image fallbacks, decorative fallback icons, and source-change recovery."
+    },
+    {
+      "id": "frontend-shared-tabs-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/Tabs.test.tsx",
+      "required": true,
+      "note": "Guards shared Tabs tablist/trigger/icon markers, compatibility slot metadata, selected-state metadata, labeled horizontal tablists, stable tab/panel relationships, decorative icon hiding, click selection, and Arrow/Home/End roving focus alignment."
+    },
+    {
+      "id": "frontend-legacy-helper-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/molecules/LegacyHelpers.test.tsx",
+      "required": true,
+      "note": "Guards exported legacy helper named stat metric groups, connected descriptions, auditable stat-card/post-card root and subpart markers with compatibility slot metadata, named post articles, decorative avatar initials, named status bars with compatibility slot metadata, and decorative status icons."
+    },
+    {
+      "id": "frontend-typography-helper-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/atoms/Typography.test.tsx",
+      "required": true,
+      "note": "Guards exported Typography native text semantics, caller prop passthrough, wrapping-safe defaults, and caller class preservation."
+    },
+    {
+      "id": "frontend-page-template-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/templates/PageTemplate.test.tsx",
+      "required": true,
+      "note": "Guards PageTemplate shared header rendering, named content landmarks, caller action preservation, class hooks, and header-hidden utility layouts."
+    },
+    {
+      "id": "frontend-responsive-layout-shell-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/ResponsiveLayout.test.tsx",
+      "required": true,
+      "note": "Guards ResponsiveLayout userless passthrough, keyboard skip-link targeting, named application content landmarks, shell root/skip-link/main/page markers, compatibility slot metadata, responsive sidebar offsets, header sidebar toggles, and logout routing."
+    },
+    {
+      "id": "frontend-legacy-navbar-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraNavbar.test.tsx",
+      "required": true,
+      "note": "Guards exported AuraNavbar named legacy navigation landmarks, public auth links, active-route current state, decorative icons, controlled mobile-menu relationships, profile/search/notification controls, and logout routing."
+    },
+    {
+      "id": "frontend-shared-theme-provider-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraThemeProvider.test.tsx",
+      "required": true,
+      "note": "Guards AuraThemeProvider stored-theme priority, system preference fallback, root light/dark class synchronization, aura-theme persistence, and current-session toggle behavior when browser storage is unavailable."
+    },
+    {
+      "id": "frontend-legacy-mobile-menu-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/layout/MobileMenu.test.tsx",
+      "required": true,
+      "note": "Guards exported MobileMenu named shortcut and expanded navigation landmarks, limited shortcut-route placement, active-route current state, decorative icons, expanded-menu description relationships, and unchanged close/theme/logout callbacks."
+    },
+    {
+      "id": "frontend-active-sidebar-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/layout/Sidebar.test.tsx",
+      "required": true,
+      "note": "Guards active Sidebar collapsed brand/home naming, primary and expanded mobile navigation landmarks, active-route current state, decorative shell icons/dividers, mobile overlay hiding, and unchanged close/theme/sign-out/collapse callbacks."
+    },
+    {
+      "id": "frontend-active-header-shell-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/layout/Header.test.tsx",
+      "required": true,
+      "note": "Guards active Header mobile-navigation and notification trigger naming, explicit button types, controlled relationships, decorative shell icons/unread dots/avatar initials, and unchanged menu-toggle/notification recovery behavior."
+    },
+    {
+      "id": "frontend-command-search-unit-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/layout/CommandSearch.test.tsx",
+      "required": true,
+      "note": "Guards CommandSearch named/described combobox and listbox semantics, decorative search/result/arrow icons, label-ranked route navigation, shell close callbacks, and role-filtered no-result behavior without navigation."
+    },
+    {
+      "id": "frontend-shared-input-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/AuraInput.test.tsx",
+      "required": true,
+      "note": "Guards shared Input root/subpart markers, compatibility slot metadata, label binding, helper/error description relationships, invalid-state semantics, caller-provided description preservation, decorative icon hiding, and unchanged field behavior."
+    },
+    {
+      "id": "frontend-shared-skeleton-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/Skeleton.test.tsx",
+      "required": true,
+      "note": "Guards the shared skeleton marker, decorative default skeleton semantics, preservation of explicit role/label loading semantics, reduced-motion-aware pulse styling, and caller-provided dimensions; validate-ui-design-system rejects static shared Skeleton usage without explicit layout-preserving dimensions."
+    },
+    {
+      "id": "frontend-shared-badge-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/Badge.test.tsx",
+      "required": true,
+      "note": "Guards the shared Badge marker, compact-label semantics, optional accessible descriptions, composed caller/generated description relationships, variant metadata, overflow-safe sizing, caller role/data passthrough, and absence of implicit live-region behavior."
+    },
+    {
+      "id": "frontend-shared-empty-state-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/EmptyState.test.tsx",
+      "required": true,
+      "note": "Guards shared EmptyState root/subpart markers, compatibility slot metadata, named region semantics, connected description text, decorative icon hiding, non-submit recovery action buttons, and preserved recovery action behavior; validate-ui-design-system rejects shared EmptyState usage without explanatory descriptions."
+    },
+    {
+      "id": "frontend-shared-toggle-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/components/shared/Toggle.test.tsx",
+      "required": true,
+      "note": "Guards shared Toggle markers, switch naming, description relationships, fallback aria-label support, checked state semantics, disabled behavior, non-submit switch buttons inside forms, and unchanged onChange payloads."
+    },
+    {
       "id": "frontend-keyboard-navigation-validation",
       "kind": "playwright-contract",
       "status": "active",
       "path": "apps/frontend/tests/keyboard-navigation.spec.ts",
       "required": true,
-      "note": "Validated by npm run test:keyboard to guard command search focus, result arrow selection, submit behavior, notification reminder/account action/read/load-more keyboard activation and focus restoration, mobile nav keyboard activation, shared tab roving focus, shared modal focus trap/restore behavior, and auth form Enter submit."
+      "note": "Validated by npm run test:keyboard to guard authenticated shell skip-to-content focus, command search focus, result arrow selection, submit behavior, notification reminder/account action/read/load-more keyboard activation and focus restoration, mobile bottom nav and slide-over navigation keyboard activation, collapsed desktop sidebar naming, shared tab roving focus, shared modal focus trap/restore behavior, and auth form Enter submit."
+    },
+    {
+      "id": "frontend-shell-navigation-semantics-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/keyboard-navigation.spec.ts",
+      "required": true,
+      "note": "Guards authenticated shell skip-to-content focus, Header mobile navigation trigger expanded/controlled state, named Expanded mobile navigation landmark, active-route state in the mobile slide-over, and accessible collapsed desktop sidebar route/footer controls."
     },
     {
       "id": "frontend-command-search-workflow-validation",
@@ -367,7 +623,15 @@
       "status": "active",
       "path": "apps/frontend/tests/command-search-workflow.spec.ts",
       "required": true,
-      "note": "Guards deterministic CommandSearch label-ranked route discovery, role-filtered utility destinations, no-result states, and recruiter command-route navigation across browser projects."
+      "note": "Guards deterministic CommandSearch named search/listbox/no-result semantics, label-ranked route discovery, role-filtered utility destinations, no-result states, and recruiter command-route navigation across browser projects."
+    },
+    {
+      "id": "frontend-command-search-semantics-validation",
+      "kind": "playwright-contract",
+      "status": "active",
+      "path": "apps/frontend/tests/command-search-workflow.spec.ts",
+      "required": true,
+      "note": "Guards named Command search landmark, destination listbox description, route-label/description option names, and named no-result status."
     },
     {
       "id": "frontend-notification-workflow-validation",
@@ -466,6 +730,22 @@
       "note": "Guards safe application draft browser-storage, draft-history browser-storage, and account-sync failure copy, raw quota/provider-error exclusion, preserved editable draft state, and Submit Application availability in the existing Review Application workflow."
     },
     {
+      "id": "frontend-jobs-result-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/jobs/JobsPage.test.tsx",
+      "required": true,
+      "note": "Guards named Jobs search surface/helper semantics, named Explore filter group/helper semantics, Jobs Explore result, Applied application, My Posts recruiter posting, and saved-search list semantics."
+    },
+    {
+      "id": "frontend-jobs-application-timeline-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/jobs/JobsPage.test.tsx",
+      "required": true,
+      "note": "Guards Applied application Details status timeline region, recorded status-event list, rejected fallback list, and inferred status-step list semantics."
+    },
+    {
       "id": "frontend-post-job-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -506,6 +786,14 @@
       "note": "Guards accurate Post Job template save/delete and draft-history browser-storage failure copy, raw quota/provider-error exclusion, preserved current-session form/review state, and failed account-sync or account-deleted/browser-unavailable fallback visibility."
     },
     {
+      "id": "frontend-post-job-section-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/jobs/PostJobPage.test.tsx",
+      "required": true,
+      "note": "Guards named Post Job workspace, form, template, draft-history, company, editable draft, review metadata, requirement preview, and action-group semantics."
+    },
+    {
       "id": "frontend-profile-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -528,6 +816,14 @@
       "path": "apps/frontend/src/pages/profile/ProfilePage.test.tsx",
       "required": true,
       "note": "Guards safe Profile basic-save, completion-row save, row-delete, avatar-upload, and avatar-removal failure copy, raw provider-error exclusion, and retry through the existing Profile action workflows."
+    },
+    {
+      "id": "frontend-profile-section-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/profile/ProfilePage.test.tsx",
+      "required": true,
+      "note": "Guards named Profile summary, skill, metric, completion, suggestion, tabpanel, experience-row, education-row, achievement-card, and progress semantics."
     },
     {
       "id": "frontend-profile-avatar-crop-contract",
@@ -560,6 +856,14 @@
       "path": "apps/frontend/src/pages/profile/ResumeBuilder.test.tsx",
       "required": true,
       "note": "Guards safe Resume Builder save, provider upload, uploaded-PDF delete, detected-skill save, and detected-profile-row save failure copy, raw provider-error exclusion, and retry through the existing Resume action workflows."
+    },
+    {
+      "id": "frontend-resume-editor-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/profile/ResumeBuilder.test.tsx",
+      "required": true,
+      "note": "Guards named Resume actions toolbar, Resume sections tabpanels, editor-field lists, import-review fields/skills/profile rows, export activity artifact/history lists, and preview section semantics."
     },
     {
       "id": "frontend-settings-workflow-validation",
@@ -610,6 +914,14 @@
       "note": "Guards safe Billing plan checkout and billing portal failure copy, raw provider-error exclusion, and retry through the existing Review Plan and Update Payment Method workflows."
     },
     {
+      "id": "frontend-billing-payment-history-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/billing/BillingPage.test.tsx",
+      "required": true,
+      "note": "Guards named Billing workspace, payment-method region/group, transaction-history region, and transaction listitem labels."
+    },
+    {
       "id": "frontend-ai-assistant-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -626,12 +938,28 @@
       "note": "Guards safe AI Assistant chat provider-failure copy, raw provider-error exclusion, and retry through the existing chat response workflow."
     },
     {
+      "id": "frontend-ai-assistant-review-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/ai/AIAssistant.test.tsx",
+      "required": true,
+      "note": "Guards AI Assistant prompt suggestion list semantics, the AI conversation live log with per-message article labels, and AI draft recommendation listitem labels."
+    },
+    {
+      "id": "frontend-ai-assistant-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/ai/AIAssistant.test.tsx",
+      "required": true,
+      "note": "Guards AI Assistant badge, review queue, recommendation, conversation-avatar, draft-prompt, and composer decorative icons, named prompt/review/chat/composer surfaces, review-first input helper wiring, and unchanged prompt selection, chat send/retry, review save/dismiss, clear-chat, and workflow handoff behavior."
+    },
+    {
       "id": "frontend-career-path-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
       "path": "apps/frontend/tests/career-path-workflow.spec.ts",
       "required": true,
-      "note": "Guards deterministic Career Path generated guidance, review boundaries, Learning and AI Assistant handoffs, malformed-data retry, retry success, and provider-unavailable state across browser projects."
+      "note": "Guards deterministic Career Path generated guidance, generated-guidance semantics, review boundaries, Learning and AI Assistant handoffs, malformed-data retry, retry success, and provider-unavailable state across browser projects."
     },
     {
       "id": "frontend-career-path-provider-recovery-validation",
@@ -640,6 +968,22 @@
       "path": "apps/frontend/src/pages/ai/AICareerPath.test.tsx",
       "required": true,
       "note": "Guards safe Career Path provider-unavailable copy, raw AI/provider-error exclusion, and retry through the existing career-path generation workflow."
+    },
+    {
+      "id": "frontend-career-path-guidance-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/ai/AICareerPath.test.tsx",
+      "required": true,
+      "note": "Guards named Career Path workspace, generated-path region, required-skill list, milestone list, and review-boundary semantics."
+    },
+    {
+      "id": "frontend-career-path-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/ai/AICareerPath.test.tsx",
+      "required": true,
+      "note": "Guards Career Path unavailable-state, retry, AI handoff, generated-path, milestone, Learning handoff, and review-boundary decorative icons plus unchanged generation, retry, Learning navigation, and AI Assistant navigation behavior."
     },
     {
       "id": "frontend-admin-operations-workflow-validation",
@@ -656,6 +1000,22 @@
       "path": "apps/frontend/src/pages/admin/AdminDashboard.test.tsx",
       "required": true,
       "note": "Guards safe Admin Console failed-load copy, raw error-message exclusion, and retry through the existing admin console refresh workflow."
+    },
+    {
+      "id": "frontend-admin-operational-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/admin/AdminDashboard.test.tsx",
+      "required": true,
+      "note": "Guards Admin summary metrics, product analytics, scheduled automation, service health, and audit log semantic structure."
+    },
+    {
+      "id": "frontend-admin-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/admin/AdminDashboard.test.tsx",
+      "required": true,
+      "note": "Guards Admin refresh, failed-load, degraded-state, metric, analytics, scheduler, service-health, observability-link, and audit-log decorative icons plus unchanged refresh, retry, scheduler, observability, audit, route, and analytics behavior."
     },
     {
       "id": "frontend-lms-workflow-validation",
@@ -690,6 +1050,14 @@
       "note": "Guards safe Learning enrollment and lesson-completion persistence failure copy, raw provider-error exclusion, unchanged progress state, and retry through the existing Enroll Now and Mark Complete workflows."
     },
     {
+      "id": "frontend-lms-catalog-search-control-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/lms/LMSPage.test.tsx",
+      "required": true,
+      "note": "Guards the named Learning catalog search surface, search helper relationship, named Learning catalog controls group, catalog-control helper relationship, and page-size/pagination containment."
+    },
+    {
       "id": "frontend-challenges-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -712,6 +1080,14 @@
       "path": "apps/frontend/src/pages/challenges/ChallengesPage.test.tsx",
       "required": true,
       "note": "Guards safe Challenges submission failure copy, raw provider-error exclusion, unchanged retry history after failed persistence, and retry through the existing Submit Solution workflow."
+    },
+    {
+      "id": "frontend-challenges-category-filter-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/challenges/ChallengesPage.test.tsx",
+      "required": true,
+      "note": "Guards the named Challenge category filters group, helper relationship, stable route marker, and pressed-state category buttons."
     },
     {
       "id": "frontend-candidates-workflow-validation",
@@ -738,6 +1114,22 @@
       "note": "Guards safe Candidates single-status and all-failed bulk status failure copy, raw provider-error exclusion, accurate all-failed bulk messaging, and retry through the existing Candidates confirmation workflows."
     },
     {
+      "id": "frontend-candidates-search-control-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/candidates/CandidatesPage.test.tsx",
+      "required": true,
+      "note": "Guards the named Candidate search surface, search helper relationship, named Candidate review controls group, review-control helper relationship, and focus/sort/page-size containment."
+    },
+    {
+      "id": "frontend-candidates-details-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/candidates/CandidatesPage.test.tsx",
+      "required": true,
+      "note": "Guards named Candidate Details regions/lists for queue navigation, identity summary, application metadata, advisory signal, submitted materials, review guidance, interview-plan slots, scorecard dimensions, and recruiter notes."
+    },
+    {
       "id": "frontend-messaging-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -762,6 +1154,22 @@
       "note": "Guards safe Messaging send, attachment upload, and visible mark-read failure copy, raw provider-error exclusion, failed-message retry, and unread-state preservation through existing Messaging action workflows."
     },
     {
+      "id": "frontend-messaging-conversation-list-semantics-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/messaging/MessagingPage.test.tsx",
+      "required": true,
+      "note": "Guards active Messaging conversation-row presence-status labels, decorative search/retry icons, decorative fallback initials and online dots, active-row current state, and unchanged conversation selection semantics."
+    },
+    {
+      "id": "frontend-messaging-thread-composer-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/messaging/MessagingPage.test.tsx",
+      "required": true,
+      "note": "Guards active Messaging thread and composer decorative icons, decorative thread avatar initials, decorative realtime status dots, named back/call/mark-read/attachment/upload/send/retry controls, named composer form semantics, review-before-send helper wiring, and unchanged message send, retry, upload, older-history, and read-state behavior."
+    },
+    {
       "id": "frontend-networking-workflow-validation",
       "kind": "playwright-contract",
       "status": "active",
@@ -784,6 +1192,22 @@
       "path": "apps/frontend/src/pages/networking/NetworkingPage.test.tsx",
       "required": true,
       "note": "Guards safe Networking connect, incoming accept, incoming decline, and sent-request withdraw failure copy, raw provider-error exclusion, and retry through the existing Networking action workflows."
+    },
+    {
+      "id": "frontend-networking-view-search-accessibility-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/networking/NetworkingPage.test.tsx",
+      "required": true,
+      "note": "Guards the named Network view controls group, view-control helper relationship, named Network search surface, search helper relationship, and tab/search containment."
+    },
+    {
+      "id": "frontend-networking-card-control-presentation-validation",
+      "kind": "vitest-contract",
+      "status": "active",
+      "path": "apps/frontend/src/pages/networking/NetworkingPage.test.tsx",
+      "required": true,
+      "note": "Guards Networking search, card, action, status, metadata, and preview-modal decorative icons, decorative avatar initials, person-specific control names, and unchanged suggestion search, preview, connect, accept, decline, reminder, and withdraw behavior."
     },
     {
       "id": "backend-topology-adr-validation",
@@ -850,22 +1274,6 @@
       "path": "apps/backend",
       "required": true,
       "note": "Modular-monolith shell exists, but root docs say the single backend rebuild is not implemented."
-    },
-    {
-      "id": "root-vite-shell",
-      "kind": "legacy-frontend-shell",
-      "status": "legacy",
-      "path": "index.html",
-      "required": true,
-      "note": "Root Vite shell duplicates the active apps/frontend app and remains a cleanup item."
-    },
-    {
-      "id": "root-vite-config",
-      "kind": "legacy-frontend-config",
-      "status": "legacy",
-      "path": "vite.config.ts",
-      "required": true,
-      "note": "Root Vite config duplicates the active apps/frontend Vite config."
     }
   ],
   "documentation": [
@@ -948,6 +1356,14 @@
       "path": "docs/FEATURES_AND_DASHBOARDS.md",
       "required": true,
       "note": "Current detailed feature, route, workflow, role, and UI reference."
+    },
+    {
+      "id": "user-workflow-automation-guide",
+      "kind": "current-user-guide",
+      "status": "current",
+      "path": "docs/USER_WORKFLOW_AUTOMATION_GUIDE.md",
+      "required": true,
+      "note": "Current step-by-step setup-mode, setup-to-execution checklist, self-service readiness, daily execution, user, recruiter, admin, extension, automation run-mode, feature-variation, repeatable automation blueprint, execution-recipe, goal-specific runbook, end-to-end automation example, validation-matrix, troubleshooting, issue-investigation, and workflow-streamlining guide."
     },
     {
       "id": "api-contract-report",
@@ -1365,6 +1781,86 @@
     {
       "path": "../project_structure.txt",
       "reason": "Stale UTF-16 Windows tree dump; removed in favor of module-manifest and source validators."
+    },
+    {
+      "path": "index.html",
+      "reason": "Stale root Vite shell referenced missing /src/main.tsx and duplicated the active apps/frontend Vite application."
+    },
+    {
+      "path": "vite.config.ts",
+      "reason": "Stale root Vite config duplicated the active apps/frontend Vite configuration and was not used by root npm scripts."
+    },
+    {
+      "path": "apps/frontend/src/components/organisms/TheNexusHeader.tsx",
+      "reason": "Unreferenced dashboard-like organism with static/non-wired action copy; active dashboard and navigation presentation are owned by route/shell components."
+    },
+    {
+      "path": "apps/frontend/src/pages/dashboard/components/ChallengesWidget.tsx",
+      "reason": "Unreferenced duplicate dashboard widget; active dashboard summaries are owned by DashboardPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/dashboard/components/JobsWidget.tsx",
+      "reason": "Unreferenced duplicate dashboard widget; active dashboard summaries are owned by DashboardPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/dashboard/components/ProfileResonanceWidget.tsx",
+      "reason": "Unreferenced duplicate dashboard widget; active dashboard summaries are owned by DashboardPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/dashboard/components/StatsGrid.tsx",
+      "reason": "Unreferenced duplicate dashboard widget; active dashboard summaries are owned by DashboardPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/dashboard/components/TelemetryWidget.tsx",
+      "reason": "Unreferenced duplicate dashboard widget; active dashboard summaries are owned by DashboardPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/ai/components/ChatHeader.tsx",
+      "reason": "Unreferenced legacy AI presentation component; active assistant presentation is owned by AIAssistant."
+    },
+    {
+      "path": "apps/frontend/src/pages/ai/components/ChatInput.tsx",
+      "reason": "Unreferenced legacy AI presentation component; active assistant presentation is owned by AIAssistant."
+    },
+    {
+      "path": "apps/frontend/src/pages/ai/components/ChatSidebar.tsx",
+      "reason": "Unreferenced legacy AI presentation component; active assistant presentation is owned by AIAssistant."
+    },
+    {
+      "path": "apps/frontend/src/pages/ai/components/MessageList.tsx",
+      "reason": "Unreferenced legacy AI presentation component; active assistant presentation is owned by AIAssistant."
+    },
+    {
+      "path": "apps/frontend/src/pages/messaging/components/ChatWindow.tsx",
+      "reason": "Unreferenced legacy messaging presentation component; active messaging presentation is owned by MessagingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/messaging/components/ConversationList.tsx",
+      "reason": "Unreferenced legacy messaging presentation component; active messaging presentation is owned by MessagingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/messaging/components/MessageBubble.tsx",
+      "reason": "Unreferenced legacy messaging presentation component; active messaging presentation is owned by MessagingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/messaging/components/MessagingInput.tsx",
+      "reason": "Unreferenced legacy messaging presentation component; active messaging presentation is owned by MessagingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/networking/components/NetworkConsole.tsx",
+      "reason": "Unreferenced legacy networking presentation component; active networking presentation is owned by NetworkingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/networking/components/NetworkingHeader.tsx",
+      "reason": "Unreferenced legacy networking presentation component; active networking presentation is owned by NetworkingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/networking/components/ProfileCard.tsx",
+      "reason": "Unreferenced legacy networking presentation component; active networking presentation is owned by NetworkingPage."
+    },
+    {
+      "path": "apps/frontend/src/pages/networking/components/ProfileGrid.tsx",
+      "reason": "Unreferenced legacy networking presentation component; active networking presentation is owned by NetworkingPage."
     }
   ]
 }

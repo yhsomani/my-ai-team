@@ -8,6 +8,7 @@ function cn(...inputs: ClassValue[]) {
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'default' | 'success' | 'warning' | 'destructive' | 'outline';
+  description?: React.ReactNode;
 }
 
 const badgeVariants: Record<string, string> = {
@@ -19,17 +20,34 @@ const badgeVariants: Record<string, string> = {
 };
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant = 'default', ...props }, ref) => (
-    <span
-      ref={ref}
-      className={cn(
-        'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors',
-        badgeVariants[variant],
-        className
-      )}
-      {...props}
-    />
-  )
+  ({ className, variant = 'default', description, children, 'aria-describedby': ariaDescribedBy, ...props }, ref) => {
+    const generatedDescriptionId = React.useId();
+    const descriptionId = description ? `${generatedDescriptionId}-description` : undefined;
+    const describedBy = [ariaDescribedBy, descriptionId].filter(Boolean).join(' ') || undefined;
+
+    return (
+      <span
+        ref={ref}
+        className={cn(
+          'inline-flex max-w-full min-w-0 items-center rounded-md border px-2 py-0.5 text-left text-xs font-medium leading-5 transition-colors',
+          badgeVariants[variant],
+          className
+        )}
+        data-ui="badge"
+        data-slot="badge"
+        data-variant={variant}
+        aria-describedby={describedBy}
+        {...props}
+      >
+        {children}
+        {description && (
+          <span id={descriptionId} className="sr-only">
+            {description}
+          </span>
+        )}
+      </span>
+    );
+  }
 );
 
 Badge.displayName = 'Badge';

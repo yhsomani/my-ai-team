@@ -23,11 +23,8 @@ public class ChatService {
     }
 
     public ChatMessage saveMessageFallback(ChatMessage message, Throwable t) {
-        log.error("Chat persistence failure for channel {}: {}. Message buffered for retry.", message.getChannelId(), t.getMessage());
-        // In a real implementation, this would save to a persistent buffer/queue for later retry
-        // For now, we mark the message with a temporary ID to indicate it wasn't persisted
-        message.setId("BUFFERED_" + System.currentTimeMillis());
-        return message;
+        log.error("Chat persistence failure for channel {}: {}", message.getChannelId(), t.getMessage());
+        throw new IllegalStateException("Chat message could not be persisted. Please retry.", t);
     }
 
     @CircuitBreaker(name = "chatHistory", fallbackMethod = "getChannelMessagesFallback")

@@ -14,9 +14,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-accent animate-spin" />
-        <span className="text-[var(--text-muted)] text-sm font-medium">Initializing TalentSphere...</span>
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--bg-primary)] px-6 text-center"
+        data-ui="protected-route-loading"
+      >
+        <Loader2
+          aria-hidden="true"
+          focusable="false"
+          className="h-8 w-8 animate-spin text-accent"
+          data-ui="protected-route-loading-spinner"
+        />
+        <span className="text-sm font-medium text-[var(--text-muted)]">Initializing TalentSphere...</span>
       </div>
     );
   }

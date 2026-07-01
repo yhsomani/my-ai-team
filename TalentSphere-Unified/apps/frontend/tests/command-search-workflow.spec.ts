@@ -13,13 +13,19 @@ test.describe('command search workflow', () => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /^Welcome back, E2E User$/ })).toBeVisible();
 
-    const searchInput = page.getByRole('combobox', { name: 'Search platform' });
+    const commandSearch = page.getByRole('search', { name: 'Command search' });
+    await expect(commandSearch).toBeVisible();
+    const searchInput = commandSearch.getByRole('combobox', { name: 'Search platform' });
     await page.keyboard.press('Control+KeyK');
     await expect(searchInput).toBeFocused();
     await expect(searchInput).toHaveAttribute('aria-keyshortcuts', 'Control+K Meta+K');
 
     await searchInput.fill('resume');
-    const resumeOption = page.getByRole('option', { name: /^Resume/ });
+    const results = page.getByRole('listbox', { name: 'Search destinations' });
+    await expect(results).toHaveAttribute('aria-describedby', /app-shell-search-status/);
+    const resumeOption = results.getByRole('option', {
+      name: 'Resume. Build, import, export, and manage resume artifacts',
+    });
     await expect(resumeOption).toBeVisible();
     await expect(resumeOption).toHaveAttribute('aria-selected', 'true');
 
@@ -33,12 +39,13 @@ test.describe('command search workflow', () => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /^Welcome back, E2E User$/ })).toBeVisible();
 
-    const searchInput = page.getByRole('combobox', { name: 'Search platform' });
+    const commandSearch = page.getByRole('search', { name: 'Command search' });
+    const searchInput = commandSearch.getByRole('combobox', { name: 'Search platform' });
     await page.keyboard.press('Control+KeyK');
     await searchInput.fill('post job');
 
     await expect(page.getByRole('option', { name: /^Post Job/ })).toHaveCount(0);
-    await expect(page.getByText('No matching destinations')).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Command search no results' })).toContainText('No matching destinations');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/dashboard$/);
   });
@@ -48,11 +55,14 @@ test.describe('command search workflow', () => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /^Recruiter Console$/ })).toBeVisible();
 
-    const searchInput = page.getByRole('combobox', { name: 'Search platform' });
+    const commandSearch = page.getByRole('search', { name: 'Command search' });
+    const searchInput = commandSearch.getByRole('combobox', { name: 'Search platform' });
     await page.keyboard.press('Control+KeyK');
     await searchInput.fill('post job');
 
-    const postJobOption = page.getByRole('option', { name: /^Post Job/ });
+    const postJobOption = page.getByRole('option', {
+      name: 'Post Job. Create recruiter job drafts and templates',
+    });
     await expect(postJobOption).toBeVisible();
     await expect(postJobOption).toHaveAttribute('aria-selected', 'true');
 

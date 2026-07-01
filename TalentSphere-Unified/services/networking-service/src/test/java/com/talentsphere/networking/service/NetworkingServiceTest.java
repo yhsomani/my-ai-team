@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -80,19 +81,16 @@ class NetworkingServiceTest {
     }
 
     @Test
-    void requestConnectionFallback_ShouldReturnTemporaryConnection_WhenServiceFails() {
+    void requestConnectionFallback_ShouldFail_WhenConnectionWasNotPersisted() {
         // Arrange
         String requesterId = "user1";
         String receiverId = "user2";
         Throwable error = new RuntimeException("Database unavailable");
 
-        // Act
-        Connection result = networkingService.requestConnectionFallback(requesterId, receiverId, error);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).startsWith("TEMP_");
-        assertThat(result.getStatus()).isEqualTo(ConnectionStatus.PENDING);
+        // Act & Assert
+        assertThatThrownBy(() -> networkingService.requestConnectionFallback(requesterId, receiverId, error))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be persisted");
     }
 
     @Test
@@ -134,13 +132,15 @@ class NetworkingServiceTest {
     }
 
     @Test
-    void acceptConnectionFallback_ShouldLogError_WhenServiceFails() {
+    void acceptConnectionFallback_ShouldFail_WhenStatusWasNotPersisted() {
         // Arrange
         String connectionId = "conn-123";
         Throwable error = new RuntimeException("Service unavailable");
 
-        // Act & Assert - should not throw exception
-        networkingService.acceptConnectionFallback(connectionId, error);
+        // Act & Assert
+        assertThatThrownBy(() -> networkingService.acceptConnectionFallback(connectionId, error))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be persisted");
     }
 
     @Test
@@ -169,14 +169,16 @@ class NetworkingServiceTest {
     }
 
     @Test
-    void blockConnectionFallback_ShouldLogError_WhenServiceFails() {
+    void blockConnectionFallback_ShouldFail_WhenBlockWasNotPersisted() {
         // Arrange
         String requesterId = "user1";
         String receiverId = "user2";
         Throwable error = new RuntimeException("Service unavailable");
 
-        // Act & Assert - should not throw exception
-        networkingService.blockConnectionFallback(requesterId, receiverId, error);
+        // Act & Assert
+        assertThatThrownBy(() -> networkingService.blockConnectionFallback(requesterId, receiverId, error))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("could not be persisted");
     }
 
     @Test

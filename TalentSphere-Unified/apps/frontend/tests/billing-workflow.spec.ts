@@ -185,7 +185,7 @@ test.describe('Billing workflow', () => {
     await expect(page.getByText('Demo billing mode')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Talent Free' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Talent Pro' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Current Plan' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Current plan: Talent Free' })).toBeDisabled();
     await expect(page.getByText('Visa ending in 4242')).toBeVisible();
     await expect(page.getByText('Talent Pro subscription')).toBeVisible();
     await expect(page.getByText('Plan adjustment credit')).toBeVisible();
@@ -195,7 +195,7 @@ test.describe('Billing workflow', () => {
     await expect(page.getByText('-$12')).toBeVisible();
     await expectAnalyticsAction(captures, 'billing_data_loaded');
 
-    await page.getByRole('button', { name: 'Review Plan' }).click();
+    await page.getByRole('button', { name: 'Review Talent Pro plan' }).click();
     const planDialog = page.getByRole('dialog', { name: 'Review Talent Pro' });
     await expect(planDialog).toBeVisible();
     await expect(planDialog.getByText('Current plan: Talent Free')).toBeVisible();
@@ -205,7 +205,7 @@ test.describe('Billing workflow', () => {
     await expect(planDialog).toBeHidden();
     await expectAnalyticsAction(captures, 'billing_plan_review_cancelled');
 
-    await page.getByRole('button', { name: 'Review Plan' }).click();
+    await page.getByRole('button', { name: 'Review Talent Pro plan' }).click();
     await page.getByRole('dialog', { name: 'Review Talent Pro' }).getByRole('button', { name: /Continue/ }).click();
 
     await expect(page.getByText('Checkout opened')).toBeVisible();
@@ -240,7 +240,7 @@ test.describe('Billing workflow', () => {
     await installBillingWorkflowStubs(page, captures, { failFirstCheckout: true });
 
     await page.goto('/billing');
-    await page.getByRole('button', { name: 'Review Plan' }).click();
+    await page.getByRole('button', { name: 'Review Talent Pro plan' }).click();
     const planDialog = page.getByRole('dialog', { name: 'Review Talent Pro' });
     await expect(planDialog).toBeVisible();
 
@@ -263,7 +263,7 @@ test.describe('Billing workflow', () => {
     await installBillingWorkflowStubs(page, captures);
 
     await page.goto('/billing');
-    await page.getByRole('button', { name: 'Review Plan' }).click();
+    await page.getByRole('button', { name: 'Review Talent Pro plan' }).click();
     const planDialog = page.getByRole('dialog', { name: 'Review Talent Pro' });
     await expect(planDialog).toBeVisible();
 
@@ -306,7 +306,7 @@ test.describe('Billing workflow', () => {
 
     await expect(page.getByRole('heading', { name: 'Talent Pro' })).toBeVisible();
     await expect(page.getByText('Billing provider unavailable')).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Current Plan' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Current plan: Talent Free' })).toBeDisabled();
     await expect(captures.functionInvokes).toEqual([]);
     await expectAnalyticsAction(captures, 'billing_retry_clicked');
     await expectAnalyticsAction(captures, 'billing_data_loaded');
