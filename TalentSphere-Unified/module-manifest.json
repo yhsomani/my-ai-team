@@ -11,7 +11,11 @@
       "packageName": "talentsphere-web",
       "workspacePackage": true,
       "required": true,
-      "validation": ["npm run lint", "npm run test:unit", "npm run build"]
+      "validation": [
+        "npm run lint",
+        "npm run test:unit",
+        "npm run build"
+      ]
     },
     {
       "id": "chrome-extension",
@@ -1564,6 +1568,22 @@
       "path": "docs/superpowers/plans/2026-04-13-alignment-and-decoupling.md",
       "required": true,
       "note": "Dated implementation plan note; not current completion evidence."
+    },
+    {
+      "id": "historical-audit",
+      "kind": "architecture-report",
+      "status": "historical-stale",
+      "path": "docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_AUDIT_2026-07-01.md",
+      "required": true,
+      "note": "Historical UX audit"
+    },
+    {
+      "id": "report-final",
+      "kind": "architecture-report",
+      "status": "current-reference",
+      "path": "REPORT_FINAL.md",
+      "required": true,
+      "note": "Current architecture report reference."
     }
   ],
   "developmentArtifacts": [

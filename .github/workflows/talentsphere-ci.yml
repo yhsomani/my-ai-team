@@ -28,6 +28,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: 24
+        with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
@@ -142,6 +144,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: 24
+        with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
@@ -172,6 +176,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: 24
+        with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ env.PROJECT_DIR }}/package-lock.json
@@ -191,7 +197,7 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Scan repository dependencies, configuration, and secrets
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: fs
           scan-ref: TalentSphere-Unified
@@ -209,7 +215,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: temurin
@@ -234,6 +240,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
+        with:
+          node-version: 24
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -284,7 +292,7 @@ jobs:
         run: docker build -f docker/Dockerfile.frontend -t talentsphere-frontend:${{ github.sha }} .
 
       - name: Scan frontend image
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: talentsphere-frontend:${{ github.sha }}
           scanners: vuln,secret
@@ -296,7 +304,7 @@ jobs:
         run: docker build --build-arg SERVICE_NAME=api-gateway -f docker/Dockerfile.service -t talentsphere-api-gateway:${{ github.sha }} .
 
       - name: Scan API gateway image
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: talentsphere-api-gateway:${{ github.sha }}
           scanners: vuln,secret
