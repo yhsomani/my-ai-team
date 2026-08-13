@@ -40,8 +40,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return;
     }
 
-    const SOCKET_URL = import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace('/api/v1', '')
+    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')
       : window.location.origin;
     const newSocket = io(SOCKET_URL, {
       auth: { token },
