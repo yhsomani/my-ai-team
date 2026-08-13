@@ -1,0 +1,1347 @@
+[
+  {
+    "id": "setupTests.ts",
+    "path": "./apps/frontend/src/setupTests.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "App.tsx",
+    "path": "./apps/frontend/src/App.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "vite-env.d.ts",
+    "path": "./apps/frontend/src/vite-env.d.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "main.test.tsx",
+    "path": "./apps/frontend/src/main.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "main.tsx",
+    "path": "./apps/frontend/src/main.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingService.ts",
+    "path": "./apps/frontend/src/services/messagingService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "recruiterService.ts",
+    "path": "./apps/frontend/src/services/recruiterService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationDigestService.ts",
+    "path": "./apps/frontend/src/services/notificationDigestService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "authService.ts",
+    "path": "./apps/frontend/src/services/authService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "paymentService.ts",
+    "path": "./apps/frontend/src/services/paymentService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "paymentService.test.ts",
+    "path": "./apps/frontend/src/services/paymentService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationDigestService.test.ts",
+    "path": "./apps/frontend/src/services/notificationDigestService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiService.ts",
+    "path": "./apps/frontend/src/services/aiService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "fileUploadService.ts",
+    "path": "./apps/frontend/src/services/fileUploadService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "gamificationService.test.ts",
+    "path": "./apps/frontend/src/services/gamificationService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobService.test.ts",
+    "path": "./apps/frontend/src/services/jobService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "gamificationService.ts",
+    "path": "./apps/frontend/src/services/gamificationService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "settingsService.test.ts",
+    "path": "./apps/frontend/src/services/settingsService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "adminService.test.ts",
+    "path": "./apps/frontend/src/services/adminService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobService.ts",
+    "path": "./apps/frontend/src/services/jobService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationService.ts",
+    "path": "./apps/frontend/src/services/notificationService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lmsService.ts",
+    "path": "./apps/frontend/src/services/lmsService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiService.test.ts",
+    "path": "./apps/frontend/src/services/aiService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileService.ts",
+    "path": "./apps/frontend/src/services/profileService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challengeService.test.ts",
+    "path": "./apps/frontend/src/services/challengeService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileService.test.ts",
+    "path": "./apps/frontend/src/services/profileService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "recruiterService.test.ts",
+    "path": "./apps/frontend/src/services/recruiterService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "fileUploadService.test.ts",
+    "path": "./apps/frontend/src/services/fileUploadService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileService.spec.ts",
+    "path": "./apps/frontend/src/services/profileService.spec.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingService.test.ts",
+    "path": "./apps/frontend/src/services/messagingService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challengeService.ts",
+    "path": "./apps/frontend/src/services/challengeService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "dashboardService.test.ts",
+    "path": "./apps/frontend/src/services/dashboardService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationService.test.ts",
+    "path": "./apps/frontend/src/services/notificationService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationService.ts",
+    "path": "./apps/frontend/src/services/applicationService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "dashboardService.ts",
+    "path": "./apps/frontend/src/services/dashboardService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingService.ts",
+    "path": "./apps/frontend/src/services/networkingService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "companyService.test.ts",
+    "path": "./apps/frontend/src/services/companyService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "adminService.ts",
+    "path": "./apps/frontend/src/services/adminService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationService.test.ts",
+    "path": "./apps/frontend/src/services/applicationService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "settingsService.ts",
+    "path": "./apps/frontend/src/services/settingsService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "companyService.ts",
+    "path": "./apps/frontend/src/services/companyService.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lmsService.test.ts",
+    "path": "./apps/frontend/src/services/lmsService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingService.test.ts",
+    "path": "./apps/frontend/src/services/networkingService.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PageTemplate.test.tsx",
+    "path": "./apps/frontend/src/components/templates/PageTemplate.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PageTemplate.tsx",
+    "path": "./apps/frontend/src/components/templates/PageTemplate.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LegacyHelpers.test.tsx",
+    "path": "./apps/frontend/src/components/molecules/LegacyHelpers.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SyncStatusBar.tsx",
+    "path": "./apps/frontend/src/components/molecules/SyncStatusBar.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "StatCard.tsx",
+    "path": "./apps/frontend/src/components/molecules/StatCard.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PostCard.tsx",
+    "path": "./apps/frontend/src/components/molecules/PostCard.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ErrorBoundary.test.tsx",
+    "path": "./apps/frontend/src/components/error/ErrorBoundary.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ErrorBoundary.tsx",
+    "path": "./apps/frontend/src/components/error/ErrorBoundary.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Skeleton.tsx",
+    "path": "./apps/frontend/src/components/shared/Skeleton.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraNavbar.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraNavbar.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SourceStatusBadge.tsx",
+    "path": "./apps/frontend/src/components/shared/SourceStatusBadge.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraCard.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraCard.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "index.test.tsx",
+    "path": "./apps/frontend/src/components/shared/index.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ResponsiveLayout.tsx",
+    "path": "./apps/frontend/src/components/shared/ResponsiveLayout.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Skeleton.test.tsx",
+    "path": "./apps/frontend/src/components/shared/Skeleton.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraButton.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraButton.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SourceStatusBadge.test.tsx",
+    "path": "./apps/frontend/src/components/shared/SourceStatusBadge.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraThemeProvider.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraThemeProvider.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Toast.test.tsx",
+    "path": "./apps/frontend/src/components/shared/Toast.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraStatusBar.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraStatusBar.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraInput.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraInput.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "EmptyState.test.tsx",
+    "path": "./apps/frontend/src/components/shared/EmptyState.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "index.ts",
+    "path": "./apps/frontend/src/components/shared/index.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "EmptyState.tsx",
+    "path": "./apps/frontend/src/components/shared/EmptyState.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Toggle.tsx",
+    "path": "./apps/frontend/src/components/shared/Toggle.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ResponsiveLayout.test.tsx",
+    "path": "./apps/frontend/src/components/shared/ResponsiveLayout.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Badge.test.tsx",
+    "path": "./apps/frontend/src/components/shared/Badge.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "GlassCard.tsx",
+    "path": "./apps/frontend/src/components/shared/GlassCard.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraNavbar.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraNavbar.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Toast.tsx",
+    "path": "./apps/frontend/src/components/shared/Toast.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraInput.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraInput.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "GlassCard.test.tsx",
+    "path": "./apps/frontend/src/components/shared/GlassCard.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraModal.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraModal.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Toggle.test.tsx",
+    "path": "./apps/frontend/src/components/shared/Toggle.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PageHeader.test.tsx",
+    "path": "./apps/frontend/src/components/shared/PageHeader.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraButton.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraButton.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraImage.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraImage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Tabs.tsx",
+    "path": "./apps/frontend/src/components/shared/Tabs.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraModal.test.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraModal.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Badge.tsx",
+    "path": "./apps/frontend/src/components/shared/Badge.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Tabs.test.tsx",
+    "path": "./apps/frontend/src/components/shared/Tabs.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraImage.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraImage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuraThemeProvider.tsx",
+    "path": "./apps/frontend/src/components/shared/AuraThemeProvider.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PageHeader.tsx",
+    "path": "./apps/frontend/src/components/shared/PageHeader.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Typography.tsx",
+    "path": "./apps/frontend/src/components/atoms/Typography.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Typography.test.tsx",
+    "path": "./apps/frontend/src/components/atoms/Typography.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "MobileMenu.tsx",
+    "path": "./apps/frontend/src/components/layout/MobileMenu.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "MobileMenu.test.tsx",
+    "path": "./apps/frontend/src/components/layout/MobileMenu.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Sidebar.tsx",
+    "path": "./apps/frontend/src/components/layout/Sidebar.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "CommandSearch.tsx",
+    "path": "./apps/frontend/src/components/layout/CommandSearch.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "CommandSearch.test.tsx",
+    "path": "./apps/frontend/src/components/layout/CommandSearch.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Header.test.tsx",
+    "path": "./apps/frontend/src/components/layout/Header.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Header.tsx",
+    "path": "./apps/frontend/src/components/layout/Header.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "Sidebar.test.tsx",
+    "path": "./apps/frontend/src/components/layout/Sidebar.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ProtectedRoute.test.tsx",
+    "path": "./apps/frontend/src/components/auth/ProtectedRoute.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ProtectedRoute.tsx",
+    "path": "./apps/frontend/src/components/auth/ProtectedRoute.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "routeRegistry.ts",
+    "path": "./apps/frontend/src/navigation/routeRegistry.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "featureOwnership.test.ts",
+    "path": "./apps/frontend/src/navigation/featureOwnership.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "featureOwnership.ts",
+    "path": "./apps/frontend/src/navigation/featureOwnership.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "routeRegistry.test.ts",
+    "path": "./apps/frontend/src/navigation/routeRegistry.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "useAuraTheme.ts",
+    "path": "./apps/frontend/src/hooks/useAuraTheme.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "useAuraTransition.ts",
+    "path": "./apps/frontend/src/hooks/useAuraTransition.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "axios.ts",
+    "path": "./apps/frontend/src/api/axios.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "axios.test.ts",
+    "path": "./apps/frontend/src/api/axios.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LandingPage.tsx",
+    "path": "./apps/frontend/src/pages/LandingPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LandingPage.test.tsx",
+    "path": "./apps/frontend/src/pages/LandingPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SettingsPage.test.tsx",
+    "path": "./apps/frontend/src/pages/settings/SettingsPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SettingsPage.tsx",
+    "path": "./apps/frontend/src/pages/settings/SettingsPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ProfileSettings.tsx",
+    "path": "./apps/frontend/src/pages/settings/components/ProfileSettings.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "SecuritySettings.tsx",
+    "path": "./apps/frontend/src/pages/settings/components/SecuritySettings.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "index.ts",
+    "path": "./apps/frontend/src/pages/settings/components/index.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "BillingSettings.tsx",
+    "path": "./apps/frontend/src/pages/settings/components/BillingSettings.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NotificationSettings.tsx",
+    "path": "./apps/frontend/src/pages/settings/components/NotificationSettings.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "DashboardPage.test.tsx",
+    "path": "./apps/frontend/src/pages/dashboard/DashboardPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "DashboardPage.tsx",
+    "path": "./apps/frontend/src/pages/dashboard/DashboardPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ResumeBuilder.test.tsx",
+    "path": "./apps/frontend/src/pages/profile/ResumeBuilder.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ProfilePage.tsx",
+    "path": "./apps/frontend/src/pages/profile/ProfilePage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ProfilePage.test.tsx",
+    "path": "./apps/frontend/src/pages/profile/ProfilePage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ResumeBuilder.tsx",
+    "path": "./apps/frontend/src/pages/profile/ResumeBuilder.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "BillingPage.test.tsx",
+    "path": "./apps/frontend/src/pages/billing/BillingPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "BillingPage.tsx",
+    "path": "./apps/frontend/src/pages/billing/BillingPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NotFound.test.tsx",
+    "path": "./apps/frontend/src/pages/error/NotFound.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NotFound.tsx",
+    "path": "./apps/frontend/src/pages/error/NotFound.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "CandidatesPage.test.tsx",
+    "path": "./apps/frontend/src/pages/candidates/CandidatesPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "CandidatesPage.tsx",
+    "path": "./apps/frontend/src/pages/candidates/CandidatesPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NetworkingPage.test.tsx",
+    "path": "./apps/frontend/src/pages/networking/NetworkingPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NetworkingPage.tsx",
+    "path": "./apps/frontend/src/pages/networking/NetworkingPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ChallengesPage.tsx",
+    "path": "./apps/frontend/src/pages/challenges/ChallengesPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ChallengesPage.test.tsx",
+    "path": "./apps/frontend/src/pages/challenges/ChallengesPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PostJobPage.tsx",
+    "path": "./apps/frontend/src/pages/jobs/PostJobPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "JobsPage.tsx",
+    "path": "./apps/frontend/src/pages/jobs/JobsPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "PostJobPage.test.tsx",
+    "path": "./apps/frontend/src/pages/jobs/PostJobPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "JobsPage.test.tsx",
+    "path": "./apps/frontend/src/pages/jobs/JobsPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AdminDashboard.test.tsx",
+    "path": "./apps/frontend/src/pages/admin/AdminDashboard.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AdminDashboard.tsx",
+    "path": "./apps/frontend/src/pages/admin/AdminDashboard.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AICareerPath.test.tsx",
+    "path": "./apps/frontend/src/pages/ai/AICareerPath.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AICareerPath.tsx",
+    "path": "./apps/frontend/src/pages/ai/AICareerPath.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AIAssistant.test.tsx",
+    "path": "./apps/frontend/src/pages/ai/AIAssistant.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AIAssistant.tsx",
+    "path": "./apps/frontend/src/pages/ai/AIAssistant.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LMSPage.tsx",
+    "path": "./apps/frontend/src/pages/lms/LMSPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LMSPage.test.tsx",
+    "path": "./apps/frontend/src/pages/lms/LMSPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "MessagingPage.tsx",
+    "path": "./apps/frontend/src/pages/messaging/MessagingPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "MessagingPage.test.tsx",
+    "path": "./apps/frontend/src/pages/messaging/MessagingPage.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "LoginPage.tsx",
+    "path": "./apps/frontend/src/pages/auth/LoginPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "authErrorCopy.ts",
+    "path": "./apps/frontend/src/pages/auth/authErrorCopy.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "RegisterPage.tsx",
+    "path": "./apps/frontend/src/pages/auth/RegisterPage.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuthEntry.test.tsx",
+    "path": "./apps/frontend/src/pages/auth/AuthEntry.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "AuthShell.tsx",
+    "path": "./apps/frontend/src/pages/auth/components/AuthShell.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "index.ts",
+    "path": "./apps/frontend/src/store/index.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "hooks.ts",
+    "path": "./apps/frontend/src/store/hooks.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challengeSlice.ts",
+    "path": "./apps/frontend/src/store/slices/challengeSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingSlice.test.ts",
+    "path": "./apps/frontend/src/store/slices/messagingSlice.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiSlice.ts",
+    "path": "./apps/frontend/src/store/slices/aiSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobSlice.ts",
+    "path": "./apps/frontend/src/store/slices/jobSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "authSlice.ts",
+    "path": "./apps/frontend/src/store/slices/authSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingSlice.ts",
+    "path": "./apps/frontend/src/store/slices/networkingSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lmsSlice.ts",
+    "path": "./apps/frontend/src/store/slices/lmsSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingSlice.ts",
+    "path": "./apps/frontend/src/store/slices/messagingSlice.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ToastContext.tsx",
+    "path": "./apps/frontend/src/context/ToastContext.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "NotificationContext.tsx",
+    "path": "./apps/frontend/src/context/NotificationContext.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ToastContext.test.tsx",
+    "path": "./apps/frontend/src/context/ToastContext.test.tsx",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ThemeContext.ts",
+    "path": "./apps/frontend/src/context/ThemeContext.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileAiDrafts.test.ts",
+    "path": "./apps/frontend/src/lib/profileAiDrafts.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "savedSearchAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/savedSearchAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostReview.test.ts",
+    "path": "./apps/frontend/src/lib/jobPostReview.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostReview.ts",
+    "path": "./apps/frontend/src/lib/jobPostReview.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lmsWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/lmsWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/applicationWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiAssistantWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/aiAssistantWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/networkingWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "onboardingAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/onboardingAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingReplySuggestions.ts",
+    "path": "./apps/frontend/src/lib/messagingReplySuggestions.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "savedSearchAnalytics.ts",
+    "path": "./apps/frontend/src/lib/savedSearchAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobRecommendationPreferenceAnalytics.ts",
+    "path": "./apps/frontend/src/lib/jobRecommendationPreferenceAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiAssistantWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/aiAssistantWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "websocket.ts",
+    "path": "./apps/frontend/src/lib/websocket.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostTemplates.test.ts",
+    "path": "./apps/frontend/src/lib/jobPostTemplates.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingAttachments.test.ts",
+    "path": "./apps/frontend/src/lib/messagingAttachments.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "companyProfileCompletion.ts",
+    "path": "./apps/frontend/src/lib/companyProfileCompletion.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challengeWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/challengeWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "supabaseClient.ts",
+    "path": "./apps/frontend/src/lib/supabaseClient.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/profileWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "recruiterPublishAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/recruiterPublishAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileAvatarCrop.test.ts",
+    "path": "./apps/frontend/src/lib/profileAvatarCrop.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeArtifactLibrary.ts",
+    "path": "./apps/frontend/src/lib/resumeArtifactLibrary.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/profileWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeExportHistory.ts",
+    "path": "./apps/frontend/src/lib/resumeExportHistory.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeImportDrafts.test.ts",
+    "path": "./apps/frontend/src/lib/resumeImportDrafts.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobRecommendationPreferenceAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/jobRecommendationPreferenceAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "productAnalytics.ts",
+    "path": "./apps/frontend/src/lib/productAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "candidateInterviewPlanner.ts",
+    "path": "./apps/frontend/src/lib/candidateInterviewPlanner.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challengeWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/challengeWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiProvenance.ts",
+    "path": "./apps/frontend/src/lib/aiProvenance.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiProvenance.test.ts",
+    "path": "./apps/frontend/src/lib/aiProvenance.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumePdfExport.test.ts",
+    "path": "./apps/frontend/src/lib/resumePdfExport.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "companyProfileCompletion.test.ts",
+    "path": "./apps/frontend/src/lib/companyProfileCompletion.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "automationSuggestionAudit.ts",
+    "path": "./apps/frontend/src/lib/automationSuggestionAudit.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileAvatarCrop.ts",
+    "path": "./apps/frontend/src/lib/profileAvatarCrop.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiWorkflowPrefillAudit.ts",
+    "path": "./apps/frontend/src/lib/aiWorkflowPrefillAudit.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "dashboardOperationalAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/dashboardOperationalAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobMatchExplanations.test.ts",
+    "path": "./apps/frontend/src/lib/jobMatchExplanations.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "productAnalyticsInsights.ts",
+    "path": "./apps/frontend/src/lib/productAnalyticsInsights.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationPreferences.test.ts",
+    "path": "./apps/frontend/src/lib/notificationPreferences.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingReminders.test.ts",
+    "path": "./apps/frontend/src/lib/networkingReminders.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "billingWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/billingWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeAiDrafts.ts",
+    "path": "./apps/frontend/src/lib/resumeAiDrafts.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeAiDrafts.test.ts",
+    "path": "./apps/frontend/src/lib/resumeAiDrafts.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "learningAiDrafts.test.ts",
+    "path": "./apps/frontend/src/lib/learningAiDrafts.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "candidateWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/candidateWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeExportHistory.test.ts",
+    "path": "./apps/frontend/src/lib/resumeExportHistory.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "candidateInterviewPlanner.test.ts",
+    "path": "./apps/frontend/src/lib/candidateInterviewPlanner.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingReplySuggestions.test.ts",
+    "path": "./apps/frontend/src/lib/messagingReplySuggestions.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostDraftHistory.ts",
+    "path": "./apps/frontend/src/lib/jobPostDraftHistory.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "registrationOnboarding.ts",
+    "path": "./apps/frontend/src/lib/registrationOnboarding.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/messagingWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "settingsWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/settingsWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationAiDrafts.ts",
+    "path": "./apps/frontend/src/lib/applicationAiDrafts.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "learningAiDrafts.ts",
+    "path": "./apps/frontend/src/lib/learningAiDrafts.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "candidateWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/candidateWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "onboardingAnalytics.ts",
+    "path": "./apps/frontend/src/lib/onboardingAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "notificationPreferences.ts",
+    "path": "./apps/frontend/src/lib/notificationPreferences.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/applicationWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingAttachments.ts",
+    "path": "./apps/frontend/src/lib/messagingAttachments.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeImportDrafts.ts",
+    "path": "./apps/frontend/src/lib/resumeImportDrafts.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "hiddenExploreJobs.ts",
+    "path": "./apps/frontend/src/lib/hiddenExploreJobs.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "dashboardOperationalAnalytics.ts",
+    "path": "./apps/frontend/src/lib/dashboardOperationalAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumePdfExport.ts",
+    "path": "./apps/frontend/src/lib/resumePdfExport.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/resumeWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "searchTokenizer.ts",
+    "path": "./apps/frontend/src/lib/searchTokenizer.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostTemplates.ts",
+    "path": "./apps/frontend/src/lib/jobPostTemplates.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationAiDrafts.test.ts",
+    "path": "./apps/frontend/src/lib/applicationAiDrafts.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "hiddenExplorePreferenceInsights.test.ts",
+    "path": "./apps/frontend/src/lib/hiddenExplorePreferenceInsights.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "registrationOnboarding.test.ts",
+    "path": "./apps/frontend/src/lib/registrationOnboarding.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "productAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/productAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/networkingWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messagingWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/messagingWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "oauth.ts",
+    "path": "./apps/frontend/src/lib/oauth.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobPostDraftHistory.test.ts",
+    "path": "./apps/frontend/src/lib/jobPostDraftHistory.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/resumeWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "jobMatchExplanations.ts",
+    "path": "./apps/frontend/src/lib/jobMatchExplanations.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingReminders.ts",
+    "path": "./apps/frontend/src/lib/networkingReminders.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lmsWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/lmsWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiSuggestionReviewQueue.ts",
+    "path": "./apps/frontend/src/lib/aiSuggestionReviewQueue.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "resumeArtifactLibrary.test.ts",
+    "path": "./apps/frontend/src/lib/resumeArtifactLibrary.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingProfilePreview.test.ts",
+    "path": "./apps/frontend/src/lib/networkingProfilePreview.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "billingWorkflowAnalytics.ts",
+    "path": "./apps/frontend/src/lib/billingWorkflowAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiWorkflowPrefillAudit.test.ts",
+    "path": "./apps/frontend/src/lib/aiWorkflowPrefillAudit.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationDraftHistory.ts",
+    "path": "./apps/frontend/src/lib/applicationDraftHistory.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "productAnalyticsInsights.test.ts",
+    "path": "./apps/frontend/src/lib/productAnalyticsInsights.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "hiddenExploreJobs.test.ts",
+    "path": "./apps/frontend/src/lib/hiddenExploreJobs.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "hiddenExplorePreferenceInsights.ts",
+    "path": "./apps/frontend/src/lib/hiddenExplorePreferenceInsights.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "applicationDraftHistory.test.ts",
+    "path": "./apps/frontend/src/lib/applicationDraftHistory.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "recruiterPublishAnalytics.ts",
+    "path": "./apps/frontend/src/lib/recruiterPublishAnalytics.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "automationSuggestionAudit.test.ts",
+    "path": "./apps/frontend/src/lib/automationSuggestionAudit.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "aiSuggestionReviewQueue.test.ts",
+    "path": "./apps/frontend/src/lib/aiSuggestionReviewQueue.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "settingsWorkflowAnalytics.test.ts",
+    "path": "./apps/frontend/src/lib/settingsWorkflowAnalytics.test.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networkingProfilePreview.ts",
+    "path": "./apps/frontend/src/lib/networkingProfilePreview.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profileAiDrafts.ts",
+    "path": "./apps/frontend/src/lib/profileAiDrafts.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "challenges.ts",
+    "path": "./apps/frontend/src/types/challenges.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "messaging.ts",
+    "path": "./apps/frontend/src/types/messaging.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "job.ts",
+    "path": "./apps/frontend/src/types/job.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "networking.ts",
+    "path": "./apps/frontend/src/types/networking.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "profile.ts",
+    "path": "./apps/frontend/src/types/profile.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "skills.ts",
+    "path": "./apps/frontend/src/types/skills.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "lms.ts",
+    "path": "./apps/frontend/src/types/lms.ts",
+    "type": "React Component/Service"
+  },
+  {
+    "id": "ai.ts",
+    "path": "./apps/frontend/src/types/ai.ts",
+    "type": "React Component/Service"
+  }
+]
