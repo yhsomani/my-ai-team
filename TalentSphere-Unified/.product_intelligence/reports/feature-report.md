@@ -1,3 +1,3 @@
 # Feature Intelligence Report
 
-Total potential features extracted: 449
+Total potential features extracted: 21

@@ -5,43 +5,42 @@ import argparse
 import subprocess
 from datetime import datetime
 
-# Safety Mechanism: ROOT_DIR is current working directory
 ROOT_DIR = '.'
 OUTPUT_DIR = '.product_intelligence'
 REPORTS_DIR = os.path.join(OUTPUT_DIR, 'reports')
-
-# Write Allowlist
 WRITE_ALLOWLIST = [OUTPUT_DIR]
 
 def safe_makedirs(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def enforce_safety():
-    """Ensure we only write to allowed directories."""
-    pass # Implementation of write checking would go in file opening wrappers, but we hardcode outputs anyway
-
 def snapshot():
     print("Creating git snapshot before analysis...")
     subprocess.run(["git", "status"], capture_output=True)
 
 def extract_features(file_path, content):
-    """Basic extraction of features from markdown headers/lists."""
+    """Improved extraction of features and requirements."""
     features = []
-    for i, line in enumerate(content.split('\n')):
-        if 'feature' in line.lower() and ('##' in line or '-' in line):
-            features.append({
-                "featureId": f"FEAT-{len(features)+1}",
-                "name": line.replace('#', '').replace('-', '').strip(),
-                "sources": {"documents": [os.path.basename(file_path)], "code": [], "tests": []},
-                "documentationStatus": "DOCUMENTED",
-                "implementationStatus": "NOT_VERIFIED",
-                "validationStatus": "NOT_VERIFIED",
-                "productStatus": "UNDECIDED",
-                "moduleCandidate": None,
-                "conflicts": [],
-                "evidence": [f"{os.path.basename(file_path)}:{i+1}"]
-            })
+    lines = content.split('\n')
+
+    # Try to find explicit feature lists or requirements
+    for i, line in enumerate(lines):
+        # Look for typical feature definitions like "- Feature:" or checkboxes
+        if re.search(r'^\s*[-*]\s+(feature|capability|user can|system must):?', line, re.IGNORECASE):
+            clean_name = re.sub(r'^\s*[-*]\s+(feature|capability|user can|system must):?\s*', '', line, flags=re.IGNORECASE).strip()
+            if len(clean_name) > 5 and len(clean_name) < 200:
+                features.append({
+                    "featureId": f"FEAT-{len(features)+1}",
+                    "name": clean_name,
+                    "sources": {"documents": [os.path.basename(file_path)], "code": [], "tests": []},
+                    "documentationStatus": "DOCUMENTED",
+                    "implementationStatus": "NOT_VERIFIED",
+                    "validationStatus": "NOT_VERIFIED",
+                    "productStatus": "UNDECIDED",
+                    "moduleCandidate": None,
+                    "conflicts": [],
+                    "evidence": [f"{os.path.basename(file_path)}:{i+1}"]
+                })
     return features
 
 def build_inventory():
@@ -93,7 +92,6 @@ def build_inventory():
                     "type": "React Component/Service"
                 })
 
-    # Output machine-readable JSON
     with open(os.path.join(OUTPUT_DIR, 'documents.json'), 'w', encoding='utf-8') as f:
         json.dump(docs, f, indent=2)
 
@@ -103,7 +101,6 @@ def build_inventory():
     with open(os.path.join(OUTPUT_DIR, 'frontend.json'), 'w', encoding='utf-8') as f:
         json.dump(frontend_files, f, indent=2)
 
-    # Create the most important artifact first
     with open(os.path.join(OUTPUT_DIR, 'FEATURE-RECONCILIATION.json'), 'w', encoding='utf-8') as f:
         json.dump(all_features, f, indent=2)
 
@@ -114,13 +111,10 @@ def generate_reports():
 
     with open(os.path.join(OUTPUT_DIR, 'documents.json'), 'r') as f:
         docs = json.load(f)
-
     with open(os.path.join(OUTPUT_DIR, 'services.json'), 'r') as f:
         services = json.load(f)
-
     with open(os.path.join(OUTPUT_DIR, 'frontend.json'), 'r') as f:
         frontend = json.load(f)
-
     with open(os.path.join(OUTPUT_DIR, 'FEATURE-RECONCILIATION.json'), 'r') as f:
         features = json.load(f)
 
@@ -131,7 +125,6 @@ def generate_reports():
         f.write(f"- Total Documentation Files: {len(docs)}\n")
         f.write(f"- Total Spring Boot Services: {len(services)}\n")
         f.write(f"- Total React Frontend Files: {len(frontend)}\n\n")
-
         f.write("## Services Discovered\n")
         for s in services:
             f.write(f"- {s['id']}\n")
@@ -152,17 +145,48 @@ def generate_reports():
 
     print(f"Generated analysis reports in {REPORTS_DIR}")
 
+def generate_candidate_ssot():
+    safe_makedirs(OUTPUT_DIR)
+
+    with open(os.path.join(OUTPUT_DIR, 'services.json'), 'r') as f:
+        services = json.load(f)
+    with open(os.path.join(OUTPUT_DIR, 'FEATURE-RECONCILIATION.json'), 'r') as f:
+        features = json.load(f)
+
+    candidate_path = os.path.join(OUTPUT_DIR, 'SSOT.CANDIDATE.md')
+    with open(candidate_path, 'w', encoding='utf-8') as f:
+        f.write("# SSOT Candidate\n\n")
+        f.write(f"> Reconciled and generated on: {datetime.now().isoformat()}\n\n")
+        f.write("## 1. Platform Overview\n")
+        f.write("TalentSphere is a distributed cloud-native career intelligence platform. The architecture follows a Modular Monolith target (ADR-002) backed by a unified Supabase Postgres schema.\n\n")
+
+        f.write("## 2. Microservices Architecture\n")
+        f.write(f"The system currently consists of {len(services)} active Spring Boot application modules. The `chat-service` is explicitly quarantined per ADR-004.\n\n")
+
+        f.write("| Service Name | Path |\n")
+        f.write("| --- | --- |\n")
+        for s in sorted(services, key=lambda x: x['id']):
+            f.write(f"| {s['id']} | `{s['path']}` |\n")
+
+        f.write("\n## 3. Extracted Features\n")
+        f.write(f"Total structured features found: {len(features)}\n")
+
+    print(f"Generated {candidate_path}")
+
 def main():
     parser = argparse.ArgumentParser(description="Product Intelligence Read-Only Analyzer")
-    parser.add_argument('--mode', choices=['analyze', 'reconcile', 'generate-candidate', 'implement'], default='analyze', help='Execution mode')
+    parser.add_argument('--mode', choices=['analyze', 'generate-candidate'], default='analyze', help='Execution mode')
     args = parser.parse_args()
 
     if args.mode == 'analyze':
         print("Running in read-only analysis mode.")
         build_inventory()
         generate_reports()
+    elif args.mode == 'generate-candidate':
+        print("Running in read-only candidate generation mode.")
+        generate_candidate_ssot()
     else:
-        print(f"Mode {args.mode} is not yet implemented or allowed in current context.")
+        print(f"Mode {args.mode} is not allowed.")
 
 if __name__ == "__main__":
     main()
