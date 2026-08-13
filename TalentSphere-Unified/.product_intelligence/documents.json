@@ -1,0 +1,2347 @@
+[
+  {
+    "id": "SEED_DATA_GUIDE.md",
+    "path": "./SEED_DATA_GUIDE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "GEMINI.md",
+    "path": "./GEMINI.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "task.md",
+    "path": "./task.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "REPORT_FINAL.md",
+    "path": "./REPORT_FINAL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "AGENT_OWNERSHIP.md",
+    "path": "./AGENT_OWNERSHIP.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "CLAUDE.md",
+    "path": "./CLAUDE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ISSUES.md",
+    "path": "./ISSUES.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SSOT.md",
+    "path": "./SSOT.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "comprehensive_todo.md",
+    "path": "./tasks/comprehensive_todo.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "next_gen_phase1.md",
+    "path": "./tasks/next_gen_phase1.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "todo.md",
+    "path": "./tasks/todo.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "lessons.md",
+    "path": "./tasks/lessons.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "UX_AUDIT_CHECKLIST.md",
+    "path": "./docs/UX_AUDIT_CHECKLIST.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md",
+    "path": "./docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ARCHITECTURE_AUDIT.md",
+    "path": "./docs/ARCHITECTURE_AUDIT.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "API_CONTRACT_MISMATCH_REPORT.md",
+    "path": "./docs/API_CONTRACT_MISMATCH_REPORT.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "MODULE_MANIFEST.md",
+    "path": "./docs/MODULE_MANIFEST.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "FEATURES_AND_DASHBOARDS.md",
+    "path": "./docs/FEATURES_AND_DASHBOARDS.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "DATA_OWNERSHIP.md",
+    "path": "./docs/DATA_OWNERSHIP.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "FEATURE_FLAG_SYSTEM.md",
+    "path": "./docs/FEATURE_FLAG_SYSTEM.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SERVICE_MIGRATION.md",
+    "path": "./docs/SERVICE_MIGRATION.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "DATABASE_SHARDING.md",
+    "path": "./docs/DATABASE_SHARDING.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "DESIGN_SYSTEM.md",
+    "path": "./docs/DESIGN_SYSTEM.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "unified-rebuild-roadmap.md",
+    "path": "./docs/unified-rebuild-roadmap.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "USER_WORKFLOW_AUTOMATION_GUIDE.md",
+    "path": "./docs/USER_WORKFLOW_AUTOMATION_GUIDE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "COMPREHENSIVE_PRODUCT_UX_TECHNICAL_AUDIT_2026-07-01.md",
+    "path": "./docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_AUDIT_2026-07-01.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ARCHITECTURE_STATUS_INDEX.md",
+    "path": "./docs/ARCHITECTURE_STATUS_INDEX.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ARCHITECTURE_PROPOSAL.md",
+    "path": "./docs/ARCHITECTURE_PROPOSAL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ARCHITECTURE_MIGRATION.md",
+    "path": "./docs/ARCHITECTURE_MIGRATION.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "PRODUCT_UX_AUTOMATION_AUDIT.md",
+    "path": "./docs/PRODUCT_UX_AUTOMATION_AUDIT.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "OPERATIONAL_RUNBOOK.md",
+    "path": "./docs/OPERATIONAL_RUNBOOK.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./docs/backend/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "INCIDENT_RUNBOOKS.md",
+    "path": "./docs/runbooks/INCIDENT_RUNBOOKS.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "2026-04-13-alignment-and-decoupling.md",
+    "path": "./docs/superpowers/plans/2026-04-13-alignment-and-decoupling.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "2025-05-22-service-parent-sync.md",
+    "path": "./docs/superpowers/plans/2025-05-22-service-parent-sync.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./docs/system/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./docs/frontend/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ADR-004-messaging-boundary.md",
+    "path": "./docs/adr/ADR-004-messaging-boundary.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ADR-002-backend-topology.md",
+    "path": "./docs/adr/ADR-002-backend-topology.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ADR-003-schema-authority.md",
+    "path": "./docs/adr/ADR-003-schema-authority.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ADR-001-primary-identity-provider.md",
+    "path": "./docs/adr/ADR-001-primary-identity-provider.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ADR-005-payment-mode.md",
+    "path": "./docs/adr/ADR-005-payment-mode.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TASK_STATUS.md",
+    "path": "./agent-tasks/TASK_STATUS.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "cloudfront-config.md",
+    "path": "./infra/cdn/cloudfront-config.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./infra/db/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/database-schema-validator/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/react-best-practices/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/license-header-adder/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/system-architect/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/refactor-engine/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/git-commit-formatter/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/agent-containerizer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/brainstorming/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/feature-completion/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/security-auditor/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/code-review/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/debugger/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/planning-with-files/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/performance-optimizer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/code-analyzer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/talentsphere-architect/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/architecture/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/ui-consistency/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/connect-mcp-server/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/mcp-connectors/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.agents/skills/planner/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-security-keyvault-secrets-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-cosmos-db-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-contentunderstanding-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-sql-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agents-v2-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventgrid-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-orchestration-improve-agent/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/audit-skills/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/auth-implementation-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/auth-implementation-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-wrapper-product/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-memory-mcp/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-md/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-security-best-practices/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-native-cli/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-communication-common-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/templates/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/flutter-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/nextjs-static/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/cli-tool/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/express-api/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/electron-desktop/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/python-fastapi/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/astro-static/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/react-native-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/nextjs-saas/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/nuxt-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/nextjs-fullstack/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/chrome-extension/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/templates/monorepo-turborepo/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-lead-generation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-documenter/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventhub-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-tool-builder/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-cosmos-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-testing-observability-api-mock/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/api-testing-observability-api-mock/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-identity-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/attack-tree-construction/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/attack-tree-construction/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-influencer-discovery/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-identity-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-documentation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-file-share-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/amplitude-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-appconfiguration-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-servicebus-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/async-python-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/async-python-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/astropy/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-appconfiguration-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-voicelive-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/airtable-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/analytics-tracking/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ask-questions-if-underspecified/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-data-tables-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-opentelemetry-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-playwright-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-cosmos-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/adhx/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/backend-security-coder/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-document-intelligence-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-blob-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/algolia-search/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/akf-trust-metadata/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/3d-web-experience/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-opentelemetry-exporter-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/blueprint/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-security-testing/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-endpoint-builder/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/api-endpoint-builder/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-orchestration-multi-agent-optimize/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/10-andruia-skill-smith/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-market-research/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/advanced-evaluation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-brand-reputation-monitoring/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/antigravity-skill-orchestrator/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/antigravity-skill-orchestrator/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-botservice-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-keys-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-ultimate-scraper/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/antigravity-workflows/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/antigravity-workflows/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-translation-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bats-testing-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/bats-testing-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bill-gates/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aws-serverless/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/algorithmic-art/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agentfolio/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/avoid-ai-writing/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bash-defensive-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/bash-defensive-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/behavioral-modes/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/audit-context-building/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-durabletask-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-blob-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-data-tables-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/analytics-product/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/awareness-stage-mapper/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-search-documents-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-voicelive-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agentflow/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/arm-cortex-expert/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/architecture-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/architecture-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/zustand-store-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/basecamp-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-translation-text-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/autonomous-agent-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-cosmos-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-applicationinsights-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-apimanagement-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-mysql-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-trend-analysis/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-blob-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/amazon-alexa/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-secrets-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/active-directory-attacks/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "advanced-attacks.md",
+    "path": "./.gemini/skills/active-directory-attacks/references/advanced-attacks.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-redis-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-fabric-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/blockchain-developer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/activecampaign-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/address-github-comments/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-memory-systems/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/android_ui_verification/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aws-cost-cleanup/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-fuzzing-bug-bounty/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-ml-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-projects-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/advogado-criminal/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-communication-callingserver-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-messaging-webpubsub-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/architect-review/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agentic-actions-auditor/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "CHANGELOG.md",
+    "path": "./.gemini/skills/audio-transcriber/CHANGELOG.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/audio-transcriber/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/audio-transcriber/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "tools-comparison.md",
+    "path": "./.gemini/skills/audio-transcriber/references/tools-comparison.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/backtesting-frameworks/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/backtesting-frameworks/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-contentsafety-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-messaging-webpubsubservice-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-secrets-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-ingestion-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-audience-analysis/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-botservice-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/analyze-project/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "sample_session_analysis_report.md",
+    "path": "./.gemini/skills/analyze-project/examples/sample_session_analysis_report.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azd-deployment/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "avalonia-reactive-rules.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/avalonia-reactive-rules.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "zafiro-shortcuts.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/zafiro-shortcuts.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "patterns.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "core-technical-skills.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/core-technical-skills.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "naming-standards.md",
+    "path": "./.gemini/skills/avalonia-zafiro-development/naming-standards.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-query-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-engineering-toolkit/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/advogado-especialista/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "fontes.md",
+    "path": "./.gemini/skills/advogado-especialista/references/fontes.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/android-jetpack-compose-expert/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventgrid-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/blockrun/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "HOW_TO_USE.md",
+    "path": "./.gemini/skills/app-store-optimization/HOW_TO_USE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/app-store-optimization/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/app-store-optimization/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-blob-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-communication-callautomation-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-agents-architect/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/airflow-dag-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/airflow-dag-patterns/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-transcription-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-queue-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-actor-development/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "logging.md",
+    "path": "./.gemini/skills/apify-actor-development/references/logging.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "output-schema.md",
+    "path": "./.gemini/skills/apify-actor-development/references/output-schema.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "key-value-store-schema.md",
+    "path": "./.gemini/skills/apify-actor-development/references/key-value-store-schema.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "input-schema.md",
+    "path": "./.gemini/skills/apify-actor-development/references/input-schema.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "standby-mode.md",
+    "path": "./.gemini/skills/apify-actor-development/references/standby-mode.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "actor-json.md",
+    "path": "./.gemini/skills/apify-actor-development/references/actor-json.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "dataset-schema.md",
+    "path": "./.gemini/skills/apify-actor-development/references/dataset-schema.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/appdeploy/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-formrecognizer-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-opentelemetry-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventgrid-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-vision-imageanalysis-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/angular-ui-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/angular-ui-patterns/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/biopython/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/angular-state-management/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/angular-state-management/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-postgresql-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventhub-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/backend-architect/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aegisops-ai/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-resource-manager-cosmosdb-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-functions/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-apicenter-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/blog-writing-guide/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bdi-mental-states/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-framework-azure-ai-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-communication-sms-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-search-documents-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-compute-batch-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/astro/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/20-andruia-niche-intelligence/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-agent-development/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-file-share-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-identity-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-mongodbatlas-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-certificates-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aws-skills/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/awt-e2e-testing/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-contentsafety-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-web-pubsub-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/beautiful-prose/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/app-store-changelog/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "release-notes-guidelines.md",
+    "path": "./.gemini/skills/app-store-changelog/references/release-notes-guidelines.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-agents-persistent-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-studio-image/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "setup-guide.md",
+    "path": "./.gemini/skills/ai-studio-image/references/setup-guide.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "prompt-engineering.md",
+    "path": "./.gemini/skills/ai-studio-image/references/prompt-engineering.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-engineer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-anomalydetector-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-manager-skill/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bitbucket-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-postgres-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-ingestion-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-weightsandbiases-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bash-linux/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-contentsafety-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/architecture-decision-records/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "pattern-selection.md",
+    "path": "./.gemini/skills/architecture/pattern-selection.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "trade-off-analysis.md",
+    "path": "./.gemini/skills/architecture/trade-off-analysis.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "patterns-reference.md",
+    "path": "./.gemini/skills/architecture/patterns-reference.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/architecture/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "examples.md",
+    "path": "./.gemini/skills/architecture/examples.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "context-discovery.md",
+    "path": "./.gemini/skills/architecture/context-discovery.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-fabric-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventhub-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "middleware-guide.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/middleware-guide.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "async-and-errors.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/async-and-errors.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "testing-guide.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/testing-guide.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "sentry-and-monitoring.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/sentry-and-monitoring.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "services-and-repositories.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/services-and-repositories.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "complete-examples.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/complete-examples.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "configuration.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/configuration.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "database-patterns.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/database-patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "architecture-overview.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/architecture-overview.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "routing-and-controllers.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/routing-and-controllers.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "validation-patterns.md",
+    "path": "./.gemini/skills/backend-dev-guidelines/resources/validation-patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-competitor-intelligence/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "behaviors.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/behaviors.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "containers.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/containers.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "themes.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/themes.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "components.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/components.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "icons.md",
+    "path": "./.gemini/skills/avalonia-layout-zafiro/icons.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-ecommerce/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-seo/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "platform-ranking-factors.md",
+    "path": "./.gemini/skills/ai-seo/references/platform-ranking-factors.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "content-patterns.md",
+    "path": "./.gemini/skills/ai-seo/references/content-patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agentmail/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-search-documents-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ad-creative/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "platform-specs.md",
+    "path": "./.gemini/skills/ad-creative/references/platform-specs.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "generative-tools.md",
+    "path": "./.gemini/skills/ad-creative/references/generative-tools.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-identity-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aws-cost-optimizer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/box-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-translation-document-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bazel-build-optimization/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/angular/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/angular/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-security-keyvault-keys-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-analyzer/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-identity-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventhub-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-design-principles/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "graphql-schema-design.md",
+    "path": "./.gemini/skills/api-design-principles/references/graphql-schema-design.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "rest-best-practices.md",
+    "path": "./.gemini/skills/api-design-principles/references/rest-best-practices.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "api-design-checklist.md",
+    "path": "./.gemini/skills/api-design-principles/assets/api-design-checklist.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/api-design-principles/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ab-test-setup/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-microsoft-playwright-testing-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-ml/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/angular-migration/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/billing-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/billing-automation/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bamboohr-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-speech-to-text-rest-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/angular-best-practices/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "README.md",
+    "path": "./.gemini/skills/angular-best-practices/README.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/aws-penetration-testing/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "advanced-aws-pentesting.md",
+    "path": "./.gemini/skills/aws-penetration-testing/references/advanced-aws-pentesting.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-maps-search-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/backend-development-feature-development/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-keyvault-keys-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-apimanagement-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/accessibility-compliance-accessibility-audit/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/accessibility-compliance-accessibility-audit/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/auri-core/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-evaluation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-apicenter-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-projects-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/baseline-ui/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-communication-chat-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/alpha-vantage/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-opentelemetry-exporter-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-voicelive-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-voicelive-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bash-scripting/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-actorization/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "schemas-and-output.md",
+    "path": "./.gemini/skills/apify-actorization/references/schemas-and-output.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "python-actorization.md",
+    "path": "./.gemini/skills/apify-actorization/references/python-actorization.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "js-ts-actorization.md",
+    "path": "./.gemini/skills/apify-actorization/references/js-ts-actorization.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "cli-actorization.md",
+    "path": "./.gemini/skills/apify-actorization/references/cli-actorization.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/andrej-karpathy/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-documentation-generator/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-file-datalake-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-security-keyvault-keys-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/binary-analysis-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agentphone/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-storage-queue-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "auth.md",
+    "path": "./.gemini/skills/api-patterns/auth.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "response.md",
+    "path": "./.gemini/skills/api-patterns/response.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "versioning.md",
+    "path": "./.gemini/skills/api-patterns/versioning.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "documentation.md",
+    "path": "./.gemini/skills/api-patterns/documentation.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "api-style.md",
+    "path": "./.gemini/skills/api-patterns/api-style.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "rate-limiting.md",
+    "path": "./.gemini/skills/api-patterns/rate-limiting.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "graphql.md",
+    "path": "./.gemini/skills/api-patterns/graphql.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "trpc.md",
+    "path": "./.gemini/skills/api-patterns/trpc.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "security-testing.md",
+    "path": "./.gemini/skills/api-patterns/security-testing.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/api-patterns/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "rest.md",
+    "path": "./.gemini/skills/api-patterns/rest.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/asana-automation/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/acceptance-orchestrator/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-appconfiguration-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-projects-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/007/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "incident-playbooks.md",
+    "path": "./.gemini/skills/007/references/incident-playbooks.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "api-security-patterns.md",
+    "path": "./.gemini/skills/007/references/api-security-patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "owasp-checklists.md",
+    "path": "./.gemini/skills/007/references/owasp-checklists.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "ai-agent-security.md",
+    "path": "./.gemini/skills/007/references/ai-agent-security.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "stride-pasta-guide.md",
+    "path": "./.gemini/skills/007/references/stride-pasta-guide.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agents-md/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/00-andruia-consultant/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-agents-persistent-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/anti-reversing-techniques/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "implementation-playbook.md",
+    "path": "./.gemini/skills/anti-reversing-techniques/resources/implementation-playbook.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bevy-ecs-expert/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-eventhub-rust/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-servicebus-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/apify-content-analytics/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-textanalytics-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/ai-product/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-monitor-query-java/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-document-intelligence-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-servicebus-ts/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "agent-coordination.md",
+    "path": "./.gemini/skills/app-builder/agent-coordination.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "tech-stack.md",
+    "path": "./.gemini/skills/app-builder/tech-stack.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "project-detection.md",
+    "path": "./.gemini/skills/app-builder/project-detection.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "scaffolding.md",
+    "path": "./.gemini/skills/app-builder/scaffolding.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "feature-building.md",
+    "path": "./.gemini/skills/app-builder/feature-building.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/app-builder/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/app-builder/templates/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/flutter-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/nextjs-static/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/cli-tool/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/express-api/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/electron-desktop/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/python-fastapi/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/astro-static/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/react-native-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/nextjs-saas/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/nuxt-app/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/nextjs-fullstack/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/chrome-extension/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "TEMPLATE.md",
+    "path": "./.gemini/skills/app-builder/templates/monorepo-turborepo/TEMPLATE.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "composition.md",
+    "path": "./.gemini/skills/avalonia-viewmodels-zafiro/composition.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "wizards.md",
+    "path": "./.gemini/skills/avalonia-viewmodels-zafiro/wizards.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/avalonia-viewmodels-zafiro/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "navigation_sections.md",
+    "path": "./.gemini/skills/avalonia-viewmodels-zafiro/navigation_sections.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "viewmodels.md",
+    "path": "./.gemini/skills/avalonia-viewmodels-zafiro/viewmodels.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-containerregistry-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-cosmos-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/application-performance-performance-optimization/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-vision-imageanalysis-py/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-mgmt-arizeaiobservabilityeval-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-projects-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/bash-pro/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/azure-ai-openai-dotnet/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/agent-orchestrator/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "capability-taxonomy.md",
+    "path": "./.gemini/skills/agent-orchestrator/references/capability-taxonomy.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "orchestration-patterns.md",
+    "path": "./.gemini/skills/agent-orchestrator/references/orchestration-patterns.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "SKILL.md",
+    "path": "./.gemini/skills/autonomous-agents/SKILL.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "sentinel.md",
+    "path": "./.jules/sentinel.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "bolt.md",
+    "path": "./.jules/bolt.md",
+    "type": "Markdown"
+  },
+  {
+    "id": "palette.md",
+    "path": "./.jules/palette.md",
+    "type": "Markdown"
+  }
+]
