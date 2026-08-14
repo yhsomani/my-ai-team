@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, Draft } from '@reduxjs/toolkit';
 import { Session } from '@supabase/supabase-js';
 
 interface User {
@@ -25,15 +25,15 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ user: User | null; session: Session | null }>) => {
+    setUser: (state: Draft<AuthState>, action: PayloadAction<{ user: User | null; session: Session | null }>) => {
       state.user = action.payload.user;
       state.session = action.payload.session as any; // Cast back to any internally if needed by RTK WritableDraft, but keep public API clean
       state.loading = false;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
+    setLoading: (state: Draft<AuthState>, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    logout: (state) => {
+    logout: (state: Draft<AuthState>) => {
       state.user = null;
       state.session = null;
     },
