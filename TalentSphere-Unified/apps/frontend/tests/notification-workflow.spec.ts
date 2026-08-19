@@ -45,7 +45,7 @@ const futureReminder = buildNotificationRow('00000000-0000-4000-8000-00000000000
     connectionId: 'connection-e2e-001',
     recipientId: 'network-target-e2e',
     recipientName: 'Lena Ortiz',
-    remindAt: '2026-07-01T09:00:00.000Z',
+    remindAt: new Date(Date.now() + 7 * 86400000).toISOString(),
   },
   title: 'Connection follow-up reminder',
   type: 'CONNECTION',

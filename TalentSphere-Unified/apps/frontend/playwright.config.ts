@@ -33,7 +33,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5174',
+    command: 'npx vite --host 127.0.0.1 --port 5174',
     url: 'http://127.0.0.1:5174',
     reuseExistingServer: !process.env.CI,
   },

@@ -254,8 +254,8 @@ describe('ChallengesPage', () => {
 
     await waitFor(() => {
       expect(challengeService.submitChallengeSolution).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('heading', { name: 'Submission failed' })).toBeTruthy();
     });
-    expect(screen.getByRole('heading', { name: 'Submission failed' })).toBeTruthy();
     expect(screen.getByText('Please review your solution and try again.')).toBeTruthy();
     expect(screen.getByRole('dialog', { name: 'String Normalizer' })).toBeTruthy();
     expect(screen.getByText('Attempt 1')).toBeTruthy();

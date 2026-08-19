@@ -46,12 +46,12 @@ No unmatched frontend API client calls were found against active controller rout
 | GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:469 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
 | POST | /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | POST /api/v1/lms/courses/{courseId}/lessons/{lessonId}/complete | apps/frontend/src/services/lmsService.ts:485 | completeLesson (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:63) |
 | GET | /api/v1/lms/courses/{courseId}/enrollment | GET /api/v1/lms/courses/{courseId}/enrollment | apps/frontend/src/services/lmsService.ts:886 | getEnrollment (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:71) |
-| POST | /api/v1/lms/courses | POST /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:1033 | create (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:26) |
+| POST | /api/v1/lms/courses | POST /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:1047 | create (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:26) |
 | GET | /api/v1/networking/suggestions/{encodeURIComponent(userId)} | GET /api/v1/networking/suggestions/{userId} | apps/frontend/src/services/networkingService.ts:259 | getSuggestions (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:39) |
 | GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:434 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
 | GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:507 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
 | GET | /api/v1/networking/connections/{param} | GET /api/v1/networking/connections/{userId} | apps/frontend/src/services/networkingService.ts:692 | getConnections (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:34) |
-| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:380 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
+| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:390 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
 
 ## Controller Routes Without Gateway Prefix
 
