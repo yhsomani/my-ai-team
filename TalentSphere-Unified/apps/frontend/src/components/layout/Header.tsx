@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, Settings, LogOut, User, CreditCard } from 'lucide-react';
 import {
   getNotificationReminderDueAt,
   getNotificationScheduleState,

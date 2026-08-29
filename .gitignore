@@ -1,107 +1,77 @@
+```
 # Dependencies
 node_modules/
-**/node_modules/
 
-# Build outputs
-dist/
-**/dist/
-build/
-**/build/
-target/
-**/target/
-out/
-**/out/
-
-# Test and coverage outputs
-coverage/
-**/coverage/
-.nyc_output/
-.vitest/
-junit.xml
-*.gcda
-*.gcno
-
-# Logs and runtime files
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pids/
-*.pid
-*.seed
-*.pid.lock
-tmp/
-temp/
-
-# Local environment and credentials
+# Environment
 .env
 .env.local
 *.env.*
-!.env.example
-notebooklm_cookies.txt
 
-# Editor and OS files
+# Logs
+*.log
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+
+# Build artifacts
+dist/
+build/
+*.out
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+
+# System
 .DS_Store
 Thumbs.db
 
-# Python cache
-__pycache__/
-*.py[cod]
-
-# Package archives
-*.tar*
-*.jar
-*.war
-*.ear
-*.zip
-*.rar
-*.7z
-*.gz
-*.bz2
-*.xz
-*.zst
-
-# Tool caches
-.turbo/
-.vite/
-.webpack/
-.sass-cache/
-.eslintcache
-
-# Cloud/local tool state
-.aws/
-.azure/
-.docker/
-.gcloud/
-.heroku/
-.kube/
-.netlify/
-.vercel/
-
-# Generated snapshots and local repair scratch files
-project_structure.txt
-pom_patch.xml
-fix_controller.py
-fix_test.py
-test_spel.py
-update_controller.py
-pr_description.md
-opencode.json
-tasks/todo.md
-TalentSphere-Unified/patch_remaining.py
-TalentSphere-Unified/clean.txt
-TalentSphere-Unified/pom_manifest.txt
-TalentSphere-Unified/pom_manifest_utf8.txt
-TalentSphere-Unified/DUPLICATION_REPORT.json
-TalentSphere-Unified/docs/CODE_ANALYZER_REPORT.json
-TalentSphere-Unified/task.md
-TalentSphere-Unified/tasks/todo.md
-TalentSphere-Unified/tasks/comprehensive_todo.md
-TalentSphere-Unified/tasks/lessons.md
-TalentSphere-Unified/tasks/next_gen_phase1.md
-TalentSphere-Unified/agent-tasks/TASK_STATUS.md
+# Cache
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
+```
