@@ -601,6 +601,18 @@ const JobsPage: React.FC = () => {
     }, [searchParams]);
 
     useEffect(() => {
+        const queryParam = searchParams.get('q');
+        if (!queryParam) return;
+
+        setSearchTerm(queryParam);
+        setJobsPage(1);
+
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('q');
+        setSearchParams(nextParams, { replace: true });
+    }, [searchParams, setSearchParams]);
+
+    useEffect(() => {
         if (!isRecruiter && activeTab === 'postings') {
             setActiveTab('explore');
         }

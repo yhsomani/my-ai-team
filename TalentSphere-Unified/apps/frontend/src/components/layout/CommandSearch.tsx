@@ -1,22 +1,57 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, Briefcase, GraduationCap, Loader2, Search, Trophy } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { getSearchDestinations } from '../../navigation/routeRegistry';
+import {
+  isUnifiedSearchTermValid,
+  runUnifiedSearch,
+} from '../../lib/unifiedSearch';
+import type { UnifiedSearchResponse } from '../../lib/unifiedSearch';
 
 type SearchDestination = ReturnType<typeof getSearchDestinations>[number];
+
+type SearchOptionGroup = 'pages' | 'jobs' | 'courses' | 'challenges';
+
+interface SearchOption {
+  key: string;
+  group: SearchOptionGroup;
+  label: string;
+  description: string;
+  path: string;
+  icon: LucideIcon;
+}
 
 interface CommandSearchProps {
   roles: readonly string[];
   onNavigate?: () => void;
 }
 
-const getSearchResultId = (path: string) => {
-  const normalizedPath = path.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home';
-  return `app-shell-search-result-${normalizedPath}`;
+const unifiedSearchDebounceMs = 250;
+
+const groupHeadings: Record<SearchOptionGroup, string> = {
+  pages: 'Pages',
+  jobs: 'Jobs',
+  courses: 'Courses',
+  challenges: 'Challenges',
 };
 
-const getSearchResultLabel = (destination: SearchDestination) => (
-  `${destination.label}. ${destination.description}`
+const contentGroupIcons = {
+  jobs: Briefcase,
+  courses: GraduationCap,
+  challenges: Trophy,
+} as const;
+
+const getOptionElementId = (option: Pick<SearchOption, 'key'>) => (
+  `app-shell-search-result-${option.key}`
+);
+
+const getOptionAriaLabel = (option: SearchOption) => (
+  `${option.label}. ${option.description}`
+);
+
+const normalizeKeyPart = (value: string) => (
+  value.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'item'
 );
 
 const getDestinationRank = (destination: SearchDestination, normalizedSearch: string) => {
@@ -33,33 +68,140 @@ const getDestinationRank = (destination: SearchDestination, normalizedSearch: st
   return Number.POSITIVE_INFINITY;
 };
 
-const getSearchResults = (destinations: SearchDestination[], searchTerm: string) => {
+const getPageOptions = (destinations: SearchDestination[], searchTerm: string): SearchOption[] => {
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  if (!normalizedSearch) return destinations.slice(0, 5);
 
-  return destinations
-    .map((destination, index) => ({
-      destination,
-      index,
-      rank: getDestinationRank(destination, normalizedSearch),
-    }))
-    .filter(result => Number.isFinite(result.rank))
-    .sort((left, right) => left.rank - right.rank || left.index - right.index)
-    .slice(0, 6)
-    .map(result => result.destination);
+  const matched = normalizedSearch
+    ? destinations
+        .map((destination, index) => ({
+          destination,
+          index,
+          rank: getDestinationRank(destination, normalizedSearch),
+        }))
+        .filter(result => Number.isFinite(result.rank))
+        .sort((left, right) => left.rank - right.rank || left.index - right.index)
+        .slice(0, 4)
+        .map(result => result.destination)
+    : destinations.slice(0, 5);
+
+  return matched.map(destination => ({
+    key: normalizeKeyPart(destination.path),
+    group: 'pages' as const,
+    label: destination.label,
+    description: destination.description,
+    path: destination.path,
+    icon: destination.icon,
+  }));
 };
+
+const buildContentOptions = (response: UnifiedSearchResponse): SearchOption[] => [
+  ...response.jobs.map(job => ({
+    key: `job-${normalizeKeyPart(job.id || job.title)}`,
+    group: 'jobs' as const,
+    label: job.title,
+    description: [job.companyName, job.location].filter(Boolean).join(' · ') || 'Open role',
+    path: `/jobs?q=${encodeURIComponent(job.title)}`,
+    icon: contentGroupIcons.jobs,
+  })),
+  ...response.courses.map(course => ({
+    key: `course-${normalizeKeyPart(course.id || course.title)}`,
+    group: 'courses' as const,
+    label: course.title,
+    description: [course.provider, course.category].filter(Boolean).join(' · ') || 'Course',
+    path: `/lms?q=${encodeURIComponent(course.title)}`,
+    icon: contentGroupIcons.courses,
+  })),
+  ...response.challenges.map(challenge => ({
+    key: `challenge-${normalizeKeyPart(challenge.id || challenge.title)}`,
+    group: 'challenges' as const,
+    label: challenge.title,
+    description: [challenge.difficulty, challenge.category].filter(Boolean).join(' · ') || 'Coding challenge',
+    path: '/challenges',
+    icon: contentGroupIcons.challenges,
+  })),
+];
+
+const groupOrder: SearchOptionGroup[] = ['pages', 'jobs', 'courses', 'challenges'];
 
 export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate }) => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLFormElement>(null);
+  const searchSequenceRef = useRef(0);
+  const debounceTimerRef = useRef<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedTerm, setDebouncedTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeResultIndex, setActiveResultIndex] = useState(0);
+  const [contentResults, setContentResults] = useState<UnifiedSearchResponse | null>(null);
+  const [isContentLoading, setIsContentLoading] = useState(false);
 
   const destinations = useMemo(() => getSearchDestinations(roles), [roles]);
-  const searchResults = useMemo(() => getSearchResults(destinations, searchTerm), [destinations, searchTerm]);
-  const activeResult = searchResults[activeResultIndex] || searchResults[0];
+
+  useEffect(() => {
+    debounceTimerRef.current = window.setTimeout(() => {
+      setDebouncedTerm(searchTerm);
+    }, unifiedSearchDebounceMs);
+
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const sequence = ++searchSequenceRef.current;
+
+    if (!isUnifiedSearchTermValid(debouncedTerm)) {
+      setContentResults(null);
+      setIsContentLoading(false);
+      return;
+    }
+
+    setIsContentLoading(true);
+    runUnifiedSearch(debouncedTerm)
+      .then(response => {
+        if (searchSequenceRef.current === sequence) {
+          setContentResults(response);
+          setIsContentLoading(false);
+        }
+      })
+      .catch(() => {
+        if (searchSequenceRef.current === sequence) {
+          setContentResults({ jobs: [], courses: [], challenges: [], errors: [] });
+          setIsContentLoading(false);
+        }
+      });
+  }, [debouncedTerm]);
+
+  useEffect(() => () => {
+    searchSequenceRef.current += 1;
+  }, []);
+
+  const pageOptions = useMemo(
+    () => getPageOptions(destinations, searchTerm),
+    [destinations, searchTerm],
+  );
+
+  const contentOptions = useMemo(
+    () => (contentResults ? buildContentOptions(contentResults) : []),
+    [contentResults],
+  );
+
+  const flatOptions = useMemo(() => (
+    [...pageOptions, ...contentOptions].sort(
+      (left, right) => groupOrder.indexOf(left.group) - groupOrder.indexOf(right.group),
+    )
+  ), [pageOptions, contentOptions]);
+
+  const activeResult = flatOptions[activeResultIndex] || flatOptions[0];
+  const showContentSection = isUnifiedSearchTermValid(searchTerm);
+  const hasAnyResult = flatOptions.length > 0;
+
+  useEffect(() => {
+    setActiveResultIndex(currentIndex => Math.min(currentIndex, Math.max(flatOptions.length - 1, 0)));
+  }, [flatOptions.length]);
 
   useEffect(() => {
     const handleGlobalKeydown = (event: KeyboardEvent) => {
@@ -91,39 +233,37 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
 
-  useEffect(() => {
-    setActiveResultIndex(currentIndex => Math.min(currentIndex, Math.max(searchResults.length - 1, 0)));
-  }, [searchResults.length]);
-
   const navigateTo = (path: string) => {
     navigate(path);
     setSearchTerm('');
+    setDebouncedTerm('');
+    setContentResults(null);
     setIsOpen(false);
     onNavigate?.();
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (activeResult) {
+    if (activeResult && isOpen) {
       navigateTo(activeResult.path);
     }
   };
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) return;
-    if (searchResults.length === 0) return;
+    if (flatOptions.length === 0) return;
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       setIsOpen(true);
-      setActiveResultIndex(index => (index + 1) % searchResults.length);
+      setActiveResultIndex(index => (index + 1) % flatOptions.length);
       return;
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       setIsOpen(true);
-      setActiveResultIndex(index => (index - 1 + searchResults.length) % searchResults.length);
+      setActiveResultIndex(index => (index - 1 + flatOptions.length) % flatOptions.length);
       return;
     }
 
@@ -131,6 +271,73 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
       event.preventDefault();
       navigateTo(activeResult.path);
     }
+  };
+
+  const statusMessage = !searchTerm.trim()
+    ? flatOptions.length > 0
+      ? `${flatOptions.length} destination${flatOptions.length === 1 ? '' : 's'} available`
+      : 'No destinations available'
+    : isContentLoading && !hasAnyResult
+      ? 'Searching jobs, courses, and challenges'
+      : hasAnyResult
+        ? `${flatOptions.length} result${flatOptions.length === 1 ? '' : 's'} available`
+        : 'No matching destinations';
+
+  const renderGroupedOptions = () => {
+    const sections: React.ReactNode[] = [];
+    let lastGroup: SearchOptionGroup | null = null;
+
+    flatOptions.forEach((option, index) => {
+      if (option.group !== lastGroup) {
+        lastGroup = option.group;
+        sections.push(
+          <div
+            key={`heading-${option.group}`}
+            aria-hidden="true"
+            className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase text-[var(--text-muted)]"
+          >
+            {groupHeadings[option.group]}
+          </div>,
+        );
+      }
+
+      const Icon = option.icon;
+      const isActiveResult = activeResultIndex === index;
+
+      sections.push(
+        <button
+          key={option.key}
+          id={getOptionElementId(option)}
+          type="button"
+          role="option"
+          aria-label={getOptionAriaLabel(option)}
+          aria-selected={isActiveResult}
+          onMouseDown={(event) => event.preventDefault()}
+          onMouseEnter={() => setActiveResultIndex(index)}
+          onFocus={() => setActiveResultIndex(index)}
+          onClick={() => navigateTo(option.path)}
+          className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+            isActiveResult ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'
+          }`}
+        >
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent"
+            aria-hidden="true"
+          >
+            <Icon size={15} aria-hidden="true" focusable="false" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-[var(--text-primary)]">{option.label}</span>
+            <span className="block truncate text-xs text-[var(--text-muted)]">{option.description}</span>
+          </span>
+          {option.group === 'pages' && (
+            <ArrowRight size={14} className="text-[var(--text-muted)]" aria-hidden="true" focusable="false" />
+          )}
+        </button>,
+      );
+    });
+
+    return sections;
   };
 
   return (
@@ -144,7 +351,7 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
       <input
         ref={inputRef}
         type="text"
-        placeholder="Search destinations"
+        placeholder="Search pages, jobs, courses"
         role="combobox"
         aria-label="Search platform"
         aria-autocomplete="list"
@@ -154,7 +361,7 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
         aria-describedby="app-shell-search-hint app-shell-search-status"
         aria-keyshortcuts="Control+K Meta+K"
         aria-activedescendant={
-          isOpen && activeResult ? getSearchResultId(activeResult.path) : undefined
+          isOpen && activeResult ? getOptionElementId(activeResult) : undefined
         }
         className="h-9 w-full rounded-md border border-[var(--border-default)] bg-[var(--bg-secondary)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         value={searchTerm}
@@ -167,12 +374,10 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
         }}
       />
       <span id="app-shell-search-hint" className="sr-only">
-        Route destinations only.
+        Searches pages plus live jobs, courses, and challenges.
       </span>
       <span id="app-shell-search-status" className="sr-only" aria-live="polite">
-        {searchResults.length > 0
-          ? `${searchResults.length} destination${searchResults.length === 1 ? '' : 's'} available`
-          : 'No destinations available'}
+        {statusMessage}
       </span>
 
       {isOpen && (
@@ -183,46 +388,33 @@ export const CommandSearch: React.FC<CommandSearchProps> = ({ roles, onNavigate 
           aria-describedby="app-shell-search-status"
           className="surface-card absolute left-0 right-0 top-11 z-50 overflow-hidden"
         >
-          {searchResults.length > 0 ? (
-            <div className="max-h-80 overflow-y-auto p-1.5">
-              {searchResults.map((result, index) => {
-                const Icon = result.icon;
-                const isActiveResult = activeResultIndex === index;
-
-                return (
-                  <button
-                    key={result.path}
-                    id={getSearchResultId(result.path)}
-                    type="button"
-                    role="option"
-                    aria-label={getSearchResultLabel(result)}
-                    aria-selected={isActiveResult}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onMouseEnter={() => setActiveResultIndex(index)}
-                    onFocus={() => setActiveResultIndex(index)}
-                    onClick={() => navigateTo(result.path)}
-                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-accent/20 ${
-                      isActiveResult ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'
-                    }`}
-                  >
-                    <span
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent"
-                      aria-hidden="true"
-                    >
-                      <Icon size={15} aria-hidden="true" focusable="false" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-[var(--text-primary)]">{result.label}</span>
-                      <span className="block truncate text-xs text-[var(--text-muted)]">{result.description}</span>
-                    </span>
-                    <ArrowRight size={14} className="text-[var(--text-muted)]" aria-hidden="true" focusable="false" />
-                  </button>
-                );
-              })}
+          {hasAnyResult ? (
+            <div className="max-h-96 overflow-y-auto p-1.5">
+              {renderGroupedOptions()}
+              {showContentSection && isContentLoading && (
+                <div
+                  role="status"
+                  aria-label="Content search loading"
+                  className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--text-muted)]"
+                >
+                  <Loader2 size={13} className="animate-spin" aria-hidden="true" focusable="false" />
+                  Searching jobs, courses, and challenges...
+                </div>
+              )}
+              {!isContentLoading && contentResults && contentResults.errors.length > 0 && contentOptions.length > 0 && (
+                <div role="status" className="px-3 py-2 text-xs text-[var(--text-muted)]">
+                  Some sources are unavailable; showing what loaded.
+                </div>
+              )}
+            </div>
+          ) : isContentLoading ? (
+            <div role="status" aria-label="Command search loading" className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-muted)]">
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" focusable="false" />
+              Searching jobs, courses, and challenges...
             </div>
           ) : (
             <div role="status" aria-label="Command search no results" className="px-3 py-4 text-sm text-[var(--text-muted)]">
-              No matching destinations
+              No matching destinations or content found.
             </div>
           )}
         </div>

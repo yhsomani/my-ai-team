@@ -80,7 +80,7 @@ assertContains(files.routeRegistry, routeRegistry, "recruiter: 'ROLE_RECRUITER'"
 assertContains(files.routeRegistry, routeRegistry, "admin: 'ROLE_ADMIN'", 'ROLE_ADMIN route role');
 
 const gatewayConfig = readText(files.gatewayConfig);
-assertContains(files.gatewayConfig, gatewayConfig, /^jwt:\n\s+secret:\s+\$\{JWT_SECRET\}/m, 'single HMAC JWT_SECRET verifier configuration');
+assertContains(files.gatewayConfig, gatewayConfig, /^jwt:\r?\n\s+secret:\s+\$\{JWT_SECRET\}/m, 'single HMAC JWT_SECRET verifier configuration');
 assertNotContains(files.gatewayConfig, gatewayConfig, 'jwk-set-uri', 'unused JWKS URI while JwtUtils uses HMAC validation');
 
 const gatewayPom = readText(files.gatewayPom);

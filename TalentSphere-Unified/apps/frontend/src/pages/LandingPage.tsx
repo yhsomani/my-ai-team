@@ -16,7 +16,7 @@ import {
 import { Button } from '../components/shared/AuraButton';
 import { typedSupabase as supabase } from '../lib/supabaseClient';
 
-const fallbackStats = { totalUsers: '12k+', activeJobs: '1k+', successRate: '94.2%', systemStatus: 'Optimal' };
+const fallbackStats = { totalUsers: '12k+', activeJobs: '1k+', openChallenges: '—', systemStatus: 'Optimal' };
 
 const platformPillars = [
   {
@@ -105,16 +105,21 @@ const LandingPage: React.FC = () => {
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'PUBLISHED');
 
-            if (usersError || jobsError) {
-                console.error("Failed to fetch stats", usersError || jobsError);
-                throw usersError || jobsError;
+            const { count: openChallenges, error: challengesError } = await supabase
+                .from('challenges')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_published', true);
+
+            if (usersError || jobsError || challengesError) {
+                console.error("Failed to fetch stats", usersError || jobsError || challengesError);
+                throw usersError || jobsError || challengesError;
             }
 
             const updatedAt = new Date();
             setStats({
                 totalUsers: formatPublicCount(totalUsers),
                 activeJobs: `${formatPublicCount(activeJobs)}+`,
-                successRate: '94.2%', // This would need to be calculated from applications
+                openChallenges: formatPublicCount(openChallenges),
                 systemStatus: 'Optimal'
             });
             setStatsMeta({
@@ -297,7 +302,7 @@ const LandingPage: React.FC = () => {
               {[
                 { label: 'Active Users', value: stats.totalUsers },
                 { label: 'Opportunities', value: stats.activeJobs },
-                { label: 'Match Rate', value: stats.successRate },
+                { label: 'Open Challenges', value: stats.openChallenges },
                 { label: 'System Status', value: stats.systemStatus }
               ].map((stat) => (
                 <div key={stat.label} role="listitem" aria-label={getPublicStatLabel(stat)} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">

@@ -292,6 +292,54 @@ Cron execution of Node.js scheduler scripts in `scripts/`.
 
 ---
 
+## Flow 13: UI/UX Design Prototyping, Validation & Implementation Sync (Stitch MCP)
+
+### Overview & Governance
+All UI/UX redesigns, new features, and screen iterations must strictly originate and be validated in **Stitch MCP** before code implementation.
+
+- **Primary Project**: `projects/13294456707000833829` (*TalentSphere - Unified AI Talent & Hiring Platform*)
+- **Design System Asset**: `assets/15084736413807790416` (*TalentSphere Aura Design System*)
+- **Theme Standard**: Dark Mode (`#0F172A` neutral canvas, `#6366F1` AI indigo accent, `#10B981` emerald status, `#8B5CF6` purple intelligence), Inter typography, 8px border radius, glassmorphic elevation layers.
+
+### UI Design Lifecycle
+1. **Explore & Generate**: Prototype user flow, layout variants, and screen alternatives in Stitch MCP via `generate_screen_from_text` and `generate_variants`.
+2. **Apply Design Tokens**: Bind the screen to `TalentSphere Aura Design System` using `apply_design_system`.
+3. **Multi-State Validation**: Validate default, loading skeletons, empty states, validation error banners, and mobile responsive breakpoints.
+4. **Architecture & Usability Review**: Ensure WCAG 2.1 AA accessibility (4.5:1 contrast, tap targets >= 44px, screen-reader semantics) and information architecture clarity.
+5. **Decision & Flow Recording**:
+   - Log design choice rationale and alternative explorations in `DECISION.md`.
+   - Update navigation path and screen references in `FLOW.md`.
+6. **Code Implementation Mapping**:
+   - Translate Stitch MCP layout to Atomic Aura primitives (`AuraButton`, `GlassCard`, `AuraInput`, `AuraModal`, `Tabs`).
+   - Maintain 1:1 fidelity with color tokens, padding scale, and interaction states.
+
+### Screen-to-Prototype Mapping Matrix
+
+| Screen / Flow | Route | Stitch MCP Screen Resource | Screen ID | Prototype Screenshot |
+| :--- | :--- | :--- | :--- | :--- |
+| **AI Talent Dashboard** | `/dashboard` | `projects/13294456707000833829/screens/e6514b16286547158187d105421d0d9e` | `e6514b16286547158187d105421d0d9e` | [View Prototype](https://lh3.googleusercontent.com/aida/AEtjO1Xg85pNJGQCiKhptE6wUV5WUIGUyWMNlRlvn-ZU_Te6UMgE-YPiQXcSbxiZZTm9LH81fNwSUOCX4wxj6Z3IOffYurXikOOxTaYhioEbv9Wqbc28aSC97xPG6Gftv7BQ1lds_zo6oXwWU3eeSEEUuLkqtSHNGMSFF2ycz467HZ_qiOyMYZTEoJ51xTV7vBxm1At4uGDB0jiJ58_qsKuvUynzVbNGcLXGZHYN-9cKhjfKlcY4HKKqpDLapx8) |
+| **Recruiter Pipeline & Sourcing Hub** | `/candidates`, `/pipeline` | `projects/13294456707000833829/screens/5e9559ab8b1f467bbbc5e409d817b0f2` | `5e9559ab8b1f467bbbc5e409d817b0f2` | [View Prototype](https://lh3.googleusercontent.com/aida/AEtjO1X4jIHkv3IO9dk5XVIKlPX0AT_CwDR26OOQ2sIBE5yi10hnPxElt9X7g-2UUhJj0zTihDykEQBpdlJRmpO6XdFnAVm7NcIv6jxas9Pi4TO2Z64FOvztkkCFbXd4jgbRHgkaa3a-Ht_0ZKZaNsukxYQDvuuM5C770PdKOIKJ8IjlTku6gvjEiAxIwadyE8tbNL9uqWKEXt8CxE39AuhdH3I7ZzPLcja782xuBwa85t1nwAXDN5R9b9h_Nxq_) |
+| **AI Resume Studio & ATS Optimization** | `/resume`, `/career-path` | `projects/13294456707000833829/screens/94b00d0dc49c4d37b172bde8abfedca8` | `94b00d0dc49c4d37b172bde8abfedca8` | [View Prototype](https://lh3.googleusercontent.com/aida/AEtjO1WXyuh1x1bQzyF7sfn-SkO3eZvwz34nxo0odxddhemIMlxYz9YGY8-vMgcYiaer9iIkbETgSif9PilSq-dxP856AGf83OigwNU2UWgJORvrQax3ZLgYY-7d3pPxsKqmJf2_ZDQJK5fdM_RLf9NzmmXHzszHxvl_X0fFQ83Q-pElZl3HJfdChwwtnA_VNip4B2PSlYy3zr5Awr7k5NGtEnHwnmxqJMJd1fdolciK2QxFLkcPi8VgF423KInR) |
+| **Skill Verification Arena & Coding IDE** | `/challenges`, `/learning` | `projects/13294456707000833829/screens/0ea2a1f0ca384ed5969244f3b2d8a889` | `0ea2a1f0ca384ed5969244f3b2d8a889` | [View Prototype](https://lh3.googleusercontent.com/aida/AEtjO1WNqRlMKbYQTLKuQY2OuBSDIMWh4ku4sqtW_8RLRKNX7PgdXdVva8Yzx8SnCf6CwB52_2vu3zzFeojrSpJaNR60kQDkEEQnCUl-4rZmaDVxm--3UUNKVqmpaJOwHrrfN8ajHnZfmKwJGtngzr9M9aJqar8Qp-2-172oB13OghmXCiJtiORDelw_TeAd-1a5jRNvZro9KHgGicOQXlLmjQQURTi54R5tSj8pDdb-H_Y5pReoq0Zse_aoweIB) |
+
+---
+
+## Flow 14: The Talent-Recruiter-Assessment Synergy Loop (Growth Flywheel)
+
+### Trigger
+Candidate reviews AI Job Recommendations on `/dashboard` or `/jobs` and notices a missing required skill.
+
+### Synergy Loop Execution Path
+1. **Gap Discovery**: AI match analysis flags missing competency (e.g. *Distributed Rate Limiting* or *Kafka Streaming*).
+2. **Instant Bridge**: Candidate clicks 'Take 15-min Verified Challenge' directly on the job card or resume editor.
+3. **Arena Assessment**: Candidate enters `/challenges` (Stitch Screen `0ea2a1f0ca384ed5969244f3b2d8a889`), writes code in Monaco IDE, and passes automated test suites.
+4. **Verified Credential Issuance**: System generates cryptographic verification hash and issues verified skill badge (`public.skill_badges`).
+5. **Resume & Match Auto-Boost**: Candidate's ATS match score for the target job jumps from 82% to 98%.
+6. **Recruiter Instant Signal**: Recruiter viewing `/candidates` (Stitch Screen `5e9559ab8b1f467bbbc5e409d817b0f2`) sees candidate ranked at the top of the Kanban with a green **'Verified 98% in Distributed Systems'** badge.
+7. **High-Velocity Action**: Recruiter clicks 1-click 'Invite to Technical Interview', cutting traditional screening delays from 14 days down to under 24 hours.
+
+---
+
 ## Current Modification Path
 
 ```markdown

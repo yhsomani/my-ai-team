@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Play, Clock, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Search, Circle, PlayCircle, Sparkles, X, RefreshCw } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
@@ -61,6 +61,7 @@ const LMSPage: React.FC = () => {
   const { addToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const routeState = location.state as LMSRouteState;
   const aiLearningDraftState = routeState?.aiLearningDraft;
   const courses = useAppSelector(selectAllCourses);
@@ -123,6 +124,18 @@ const LMSPage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchCourses(courseQueryParams));
   }, [courseQueryParams, dispatch]);
+
+  useEffect(() => {
+    const queryParam = searchParams.get('q');
+    if (!queryParam) return;
+
+    setSearchTerm(queryParam);
+    setCoursePage(1);
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('q');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!aiLearningDraftState?.recommendationText) {

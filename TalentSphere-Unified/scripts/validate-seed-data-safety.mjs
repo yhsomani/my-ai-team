@@ -74,7 +74,7 @@ assertContains(files.seedPython, seedPython, 'TALENTSPHERE_SEED_DB_PASSWORD', 'e
 assertContains(files.seedPython, seedPython, 'validate_seed_environment()', 'seed environment validator call');
 assertContains(files.seedPython, seedPython, 'sys.exit(', 'fail-closed Python seed guard');
 assertContains(files.seedPython, seedPython, confirmation, 'Python destructive seed confirmation phrase');
-assertContains(files.seedPython, seedPython, '        validate_seed_environment()\n        users = seed_users()', 'Python guard before seed execution');
+assertContains(files.seedPython, seedPython, /validate_seed_environment\(\)\r?\n\s+users = seed_users\(\)/, 'Python guard before seed execution');
 
 const seedGuide = readText(files.seedGuide);
 assertContains(files.seedGuide, seedGuide, 'Documentation status: Current seed-data guide', 'documentation status banner');

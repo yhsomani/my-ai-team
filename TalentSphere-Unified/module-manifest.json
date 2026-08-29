@@ -1584,6 +1584,38 @@
       "path": "REPORT_FINAL.md",
       "required": true,
       "note": "Current architecture report reference."
+    },
+    {
+      "id": "prd",
+      "kind": "current-feature-inventory",
+      "status": "current",
+      "path": "docs/PRD.md",
+      "required": true,
+      "note": "Current codebase-verified product requirements (v2.0) with feature inventory, functional rules, and roadmap."
+    },
+    {
+      "id": "brd",
+      "kind": "current-governance",
+      "status": "current",
+      "path": "docs/BRD.md",
+      "required": true,
+      "note": "Current codebase-verified business requirements (v2.0) with business rules, KPIs, and risk register."
+    },
+    {
+      "id": "codebase-traceability",
+      "kind": "current-audit",
+      "status": "current",
+      "path": "docs/CODEBASE_TRACEABILITY.md",
+      "required": true,
+      "note": "Current code-verified traceability matrix, user journeys, code index, discovery ledger, and gap analysis."
+    },
+    {
+      "id": "recommended-improvements",
+      "kind": "current-governance",
+      "status": "current",
+      "path": "docs/RECOMMENDED_IMPROVEMENTS.md",
+      "required": true,
+      "note": "Current quality-control register (v2.0) aligned to PRD v2.0 / BRD v2.0 / Codebase Traceability."
     }
   ],
   "developmentArtifacts": [

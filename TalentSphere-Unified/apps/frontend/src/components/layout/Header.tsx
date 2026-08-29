@@ -415,6 +415,21 @@ export const Header: React.FC<HeaderProps> = ({
                   </>
                 )}
               </div>
+              <div className="border-t border-[var(--border-default)] p-1.5">
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/notifications')}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium text-accent hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                  aria-label="View all notifications in the Notifications Center"
+                >
+                  View all notifications
+                  {notificationTotal !== null && notificationTotal > accountNotifications.length && (
+                    <span className="text-xs font-normal text-[var(--text-muted)]">
+                      {notificationTotal - accountNotifications.length} more in history
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>

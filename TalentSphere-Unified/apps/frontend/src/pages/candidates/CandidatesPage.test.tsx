@@ -225,6 +225,92 @@ describe('CandidatesPage', () => {
     expectDecorativeSvgIcons(document.body);
   });
 
+  it('ignores stale candidate responses when searches resolve out of order', async () => {
+    vi.mocked(recruiterService.getApplicationsPage).mockResolvedValue({
+      applications: [candidateFixture],
+      total: 1,
+      limit: 10,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+    });
+
+    renderCandidatesPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ava Candidate' })).toBeTruthy();
+    });
+
+    let resolveSlowSearch: (page: {
+      applications: Application[];
+      total: number;
+      limit: number;
+      offset: number;
+      hasNext: boolean;
+      nextCursor: null;
+    }) => void = () => undefined;
+    const slowSearchPromise = new Promise<{
+      applications: Application[];
+      total: number;
+      limit: number;
+      offset: number;
+      hasNext: boolean;
+      nextCursor: null;
+    }>(resolve => {
+      resolveSlowSearch = resolve;
+    });
+
+    const miaFixture = buildCandidateFixture({
+      id: 'application-candidate-002',
+      userId: 'candidate-user-002',
+      user: { fullName: 'Mia Quickbee', email: 'mia.quickbee@example.com' },
+      job: { title: 'Platform Engineer' },
+    });
+    const quickSearchResult = {
+      applications: [miaFixture],
+      total: 1,
+      limit: 10,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+    };
+
+    vi.mocked(recruiterService.getApplicationsPage).mockImplementation(async (_recruiterId, options) => {
+      if (options?.search === 'slowa') return slowSearchPromise;
+      return quickSearchResult;
+    });
+
+    const searchInput = screen.getByLabelText('Search candidates');
+    fireEvent.change(searchInput, { target: { value: 'slowa' } });
+
+    await waitFor(() => {
+      expect(vi.mocked(recruiterService.getApplicationsPage).mock.calls.some(
+        ([, options]) => options?.search === 'slowa',
+      )).toBe(true);
+    });
+
+    fireEvent.change(searchInput, { target: { value: 'quickb' } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Mia Quickbee' })).toBeTruthy();
+    });
+
+    resolveSlowSearch({
+      applications: [candidateFixture],
+      total: 1,
+      limit: 10,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+    });
+
+    await waitFor(() => {
+      expect(vi.mocked(recruiterService.getApplicationsPage).mock.calls.length).toBeGreaterThan(2);
+    });
+    expect(screen.getByRole('heading', { name: 'Mia Quickbee' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Ava Candidate' })).toBeNull();
+  });
+
   it('exposes Candidate Details sections with semantic structure', async () => {
     vi.mocked(recruiterService.getApplicationsPage).mockResolvedValue({
       applications: [candidateFixture],

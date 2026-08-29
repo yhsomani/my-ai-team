@@ -1,5 +1,7 @@
 const LOGIN_FALLBACK_MESSAGE = 'We could not sign you in right now. Check your email and password, then try again.';
 const REGISTRATION_FALLBACK_MESSAGE = 'We could not create your account right now. Check your details, then try again.';
+const RESET_REQUEST_FALLBACK_MESSAGE = 'We could not send a reset link right now. Please try again.';
+const PASSWORD_UPDATE_FALLBACK_MESSAGE = 'We could not update your password right now. The reset link may have expired — request a new one.';
 
 const extractRawAuthMessage = (error: unknown): string => {
   if (!error || typeof error !== 'object') return '';
@@ -56,4 +58,12 @@ export const getSafeLoginErrorMessage = (error: unknown): string => (
 
 export const getSafeRegistrationErrorMessage = (error: unknown): string => (
   toSafeAuthMessage(error, REGISTRATION_FALLBACK_MESSAGE)
+);
+
+export const getSafeResetRequestErrorMessage = (error: unknown): string => (
+  toSafeAuthMessage(error, RESET_REQUEST_FALLBACK_MESSAGE)
+);
+
+export const getSafePasswordUpdateErrorMessage = (error: unknown): string => (
+  toSafeAuthMessage(error, PASSWORD_UPDATE_FALLBACK_MESSAGE)
 );

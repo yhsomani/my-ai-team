@@ -86,6 +86,7 @@ const getDevAuthPayload = (): AppAuthPayload => getE2EAuthOverride() || {
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const NetworkingPage = lazy(() => import('./pages/networking/NetworkingPage'));
 const LMSPage = lazy(() => import('./pages/lms/LMSPage'));
@@ -101,6 +102,7 @@ const AICareerPath = lazy(() => import('./pages/ai/AICareerPath'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const CandidatesPage = lazy(() => import('./pages/candidates/CandidatesPage'));
 const PostJobPage = lazy(() => import('./pages/jobs/PostJobPage'));
+const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFound'));
 
 const protectedRouteComponents = {
@@ -120,6 +122,7 @@ const protectedRouteComponents = {
   admin: AdminDashboard,
   candidates: CandidatesPage,
   'job-post': PostJobPage,
+  notifications: NotificationsPage,
 };
 
 const PageLoader = () => (
@@ -247,6 +250,9 @@ function App() {
                   path="/register"
                   element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />}
                 />
+                {/* Public recovery route: reachable with or without an existing
+                    session so a stale sign-in never blocks a password reset. */}
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
                 {protectedAppRoutes.map((route) => {
                   const PageComponent = protectedRouteComponents[route.id as keyof typeof protectedRouteComponents];

@@ -109,7 +109,37 @@ const assertBuiltArtifact = () => {
 const candidateBrowserPaths = () => {
   if (forcedBrowser) return [forcedBrowser];
 
+  const windowsCandidates = [];
+  if (process.platform === 'win32') {
+    const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+    const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+    const localAppData = process.env.LOCALAPPDATA;
+    windowsCandidates.push(
+      path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    );
+    windowsCandidates.push(
+      path.join(programFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      path.join(programFilesX86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    );
+    if (localAppData) {
+      windowsCandidates.push(path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe'));
+      const playwrightRoot = path.join(localAppData, 'ms-playwright');
+      try {
+        for (const entry of fs.readdirSync(playwrightRoot)) {
+          if (!entry.startsWith('chromium')) continue;
+          for (const buildDir of ['chrome-win64', 'chrome-win']) {
+            windowsCandidates.push(path.join(playwrightRoot, entry, buildDir, 'chrome.exe'));
+          }
+        }
+      } catch {
+        // ms-playwright directory is optional.
+      }
+    }
+  }
+
   const candidates = [
+    ...windowsCandidates,
     '/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',

@@ -441,6 +441,33 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     behaviorPreservation: 'Preserve profile loading, edit modals, AI draft review, suggestions, avatar flows, row mutations, tabs, toasts, and analytics.',
   },
   {
+    id: 'notifications-center',
+    label: 'Notifications Center',
+    owner: { kind: 'route', routeId: 'notifications', routePath: '/notifications' },
+    necessity: 'necessary',
+    primaryPurpose: 'Own the complete account notification history with unread filtering, read actions, and cursor pagination.',
+    userJourneyValue: 'Lets users audit every alert, scheduled reminder, and activity update without the header popover size cap.',
+    mergeEvaluation: 'Keep separate as a route; the Header bell stays a compact preview and must not duplicate full history management.',
+    secondaryEntryPoints: [
+      {
+        surface: 'Header notification bell',
+        mode: 'link',
+        routeId: 'notifications',
+        routePath: '/notifications',
+        rationale: 'The bell previews recent notifications and hands off deep history review to the owning Notifications Center.',
+      },
+      {
+        surface: 'Header search',
+        mode: 'search-destination',
+        routeId: 'notifications',
+        routePath: '/notifications',
+        rationale: 'Route discovery can open the Notifications Center while reading, filtering, and mark-read actions stay owned here.',
+      },
+    ],
+    consolidationDecision: 'Keep the Notifications Center as the single owner of history; shell surfaces only preview and link.',
+    behaviorPreservation: 'Preserve notification loading, unread filter, mark-read and mark-all-read actions, load-more pagination, degraded-source messaging, and analytics.',
+  },
+  {
     id: 'profile-detail',
     label: 'Profile Detail',
     owner: { kind: 'route', routeId: 'profile-detail', routePath: '/profile/:userId' },

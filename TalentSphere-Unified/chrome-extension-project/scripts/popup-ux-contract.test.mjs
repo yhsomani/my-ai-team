@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
-const extensionRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const extensionRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-extension-popup-ux-'));
 
 const sourcePath = path.join(extensionRoot, 'src/lib/pageScanStatus.ts');

@@ -1,4 +1,5 @@
 import {
+  Bell,
   Briefcase,
   Cpu,
   CreditCard,
@@ -194,6 +195,17 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
     search: {
       description: 'Update profile, skills, experience, and education',
       keywords: 'profile skills experience education resume',
+    },
+  },
+  {
+    id: 'notifications',
+    path: '/notifications',
+    label: 'Notifications',
+    navSection: 'account',
+    icon: Bell,
+    search: {
+      description: 'Review the full notification history and unread activity',
+      keywords: 'notifications alerts inbox activity unread reminders bell history',
     },
   },
   {

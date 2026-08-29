@@ -19,7 +19,8 @@ export type ProductAnalyticsArea =
   | 'billing'
   | 'settings'
   | 'admin'
-  | 'extension';
+  | 'extension'
+  | 'notifications';
 
 export type ProductAnalyticsEventName =
   | 'task_started'
@@ -151,6 +152,7 @@ const productAnalyticsAreas = new Set<ProductAnalyticsArea>([
   'settings',
   'admin',
   'extension',
+  'notifications',
 ]);
 
 const isProductAnalyticsArea = (value: unknown): value is ProductAnalyticsArea => (

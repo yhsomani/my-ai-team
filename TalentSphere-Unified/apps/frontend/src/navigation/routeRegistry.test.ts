@@ -129,7 +129,7 @@ describe('routeRegistry', () => {
       'messaging',
       'admin',
     ]);
-    expect(accountNavigationIds).toEqual(['settings', 'profile']);
+    expect(accountNavigationIds).toEqual(['settings', 'profile', 'notifications']);
 
     for (const route of appRouteRegistry.filter((candidate) => candidate.navSection)) {
       const feature = getPrimaryFeatureForRoute(route.id);

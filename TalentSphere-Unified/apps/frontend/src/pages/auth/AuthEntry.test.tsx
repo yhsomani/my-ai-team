@@ -10,6 +10,7 @@ vi.mock('../../services/authService', () => ({
   authService: {
     login: vi.fn(),
     register: vi.fn(),
+    resetPassword: vi.fn(),
   },
 }));
 
@@ -158,5 +159,56 @@ describe('Auth entry error copy', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('Use a password with at least 8 characters.');
     });
+  });
+
+  it('offers locked-out users a recovery entry point and requests a reset link', async () => {
+    vi.mocked(authService.resetPassword).mockResolvedValueOnce(undefined);
+
+    renderWithRouter(<LoginPage />);
+
+    fireEvent.click(screen.getByTestId('forgot-password-link'));
+
+    const form = screen.getByRole('form', { name: 'Password reset request' });
+    fireEvent.change(within(form).getByLabelText('Email'), {
+      target: { value: 'lockedout@example.com' },
+    });
+    fireEvent.click(within(form).getByRole('button', { name: /send reset link/i }));
+
+    await waitFor(() => {
+      expect(authService.resetPassword).toHaveBeenCalledWith('lockedout@example.com');
+    });
+
+    const status = await screen.findByTestId('forgot-success');
+    expect(status.textContent).toContain('If an account exists for that email');
+
+    fireEvent.click(screen.getByTestId('forgot-back'));
+    expect(screen.getByRole('form', { name: 'Email sign in' })).toBeTruthy();
+  });
+
+  it('prefills the forgot-password email from the sign-in form', () => {
+    renderWithRouter(<LoginPage />);
+
+    fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'carryme@example.com' } });
+    fireEvent.click(screen.getByTestId('forgot-password-link'));
+
+    const form = screen.getByRole('form', { name: 'Password reset request' });
+    expect((within(form).getByLabelText('Email') as HTMLInputElement).value).toBe('carryme@example.com');
+  });
+
+  it('keeps reset-request failures safe without exposing provider details', async () => {
+    vi.mocked(authService.resetPassword).mockRejectedValueOnce(
+      new Error('Supabase reset failed with service_role_token=secret'),
+    );
+
+    renderWithRouter(<LoginPage />);
+
+    fireEvent.click(screen.getByTestId('forgot-password-link'));
+    fireEvent.change(screen.getByTestId('forgot-email-input'), { target: { value: 'lockedout@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('could not send a reset link');
+    expect(alert.textContent).not.toMatch(/service_role_token/i);
+    expect(alert.textContent).not.toMatch(/Supabase reset failed/i);
   });
 });

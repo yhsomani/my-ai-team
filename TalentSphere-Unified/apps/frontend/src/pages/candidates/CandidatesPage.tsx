@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -313,8 +313,10 @@ const CandidatesPage: React.FC = () => {
     }
   }, [scorecardsStorageKey]);
 
+  const candidatesRequestIdRef = useRef(0);
   const fetchCandidates = useCallback(async () => {
     if (!user?.id) return;
+    const requestId = ++candidatesRequestIdRef.current;
     try {
       setLoading(true);
       setCandidateLoadError(null);
@@ -325,6 +327,7 @@ const CandidatesPage: React.FC = () => {
         cursor: currentCandidateCursor
       });
 
+      if (requestId !== candidatesRequestIdRef.current) return;
       setCandidates(page.applications);
       setCandidateTotal(currentTotal => page.total !== null ? page.total : currentTotal);
       setCandidateHasNext(page.hasNext);
@@ -342,6 +345,7 @@ const CandidatesPage: React.FC = () => {
       });
     } catch (err) {
       console.error('Failed to fetch candidates:', err);
+      if (requestId !== candidatesRequestIdRef.current) return;
       setCandidates([]);
       setCandidateTotal(null);
       setCandidateHasNext(false);
@@ -352,7 +356,9 @@ const CandidatesPage: React.FC = () => {
         message: 'Retry candidates to reload the application review queue.',
       });
     } finally {
-      setLoading(false);
+      if (requestId === candidatesRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [addToast, candidatePage, candidatePageSize, currentCandidateCursor, normalizedSearchTerm, user?.id]);
 
@@ -1688,7 +1694,7 @@ const CandidatesPage: React.FC = () => {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`/profile/${selectedCandidate.userId}`, '_blank')}
+                  onClick={() => window.open(`/profile/${selectedCandidate.userId}`, '_blank', 'noopener,noreferrer')}
                 >
                   <ExternalLink {...decorativeIconProps} size={14} className="mr-1.5" /> Open Profile
                 </Button>

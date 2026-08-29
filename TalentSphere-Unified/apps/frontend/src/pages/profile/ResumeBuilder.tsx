@@ -136,9 +136,12 @@ const getFileTypeLabel = (file: Pick<File, 'name' | 'type'>) => {
   if (importType === 'text') return 'text';
   return file.type || 'unsupported';
 };
+const parseDateInput = (date: string) => (
+  /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? new Date(`${date.trim()}T00:00:00`) : new Date(date)
+);
 const formatResumeDate = (date?: string) => {
   if (!date) return '';
-  const parsed = new Date(date);
+  const parsed = parseDateInput(date);
   if (Number.isNaN(parsed.getTime())) return date;
   return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 };

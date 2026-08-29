@@ -65,9 +65,12 @@ const getSkillId = (skill: Record<string, any> | string) => typeof skill === 'st
 const getSkillProficiency = (skill: Record<string, any> | string) => typeof skill === 'string' ? 'INTERMEDIATE' : skill.proficiency || 'INTERMEDIATE';
 const getSkillYears = (skill: Record<string, any> | string) => typeof skill === 'string' ? undefined : skill.yearsOfExperience ?? skill.years_of_experience;
 const getProfileRowId = (row: Record<string, any>) => row?.id ? String(row.id) : undefined;
+const parseDateInput = (date: string) => (
+  /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? new Date(`${date.trim()}T00:00:00`) : new Date(date)
+);
 const formatProfileDate = (date?: string) => {
   if (!date) return '';
-  const parsed = new Date(date);
+  const parsed = parseDateInput(date);
   if (Number.isNaN(parsed.getTime())) return date;
   return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 };

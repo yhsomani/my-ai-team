@@ -203,7 +203,7 @@ test.describe('Dashboard workflow', () => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /^Welcome back, E2E User$/ })).toBeVisible();
     await expect(page.getByText('Dashboard data refreshed.')).toBeVisible();
-    await expect(page.getByText('Live')).toBeVisible();
+    await expect(page.getByText('Live', { exact: true })).toBeVisible();
     await expect(page.getByText('Design Systems Engineer')).toBeVisible();
     await expect(page.getByText('Frontend Refactor Sprint')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Applications: 1. View applications' })).toBeVisible();
@@ -262,7 +262,7 @@ test.describe('Dashboard workflow', () => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: /^Recruiter Console$/ })).toBeVisible();
     await expect(page.getByText('Recruiter dashboard data refreshed.')).toBeVisible();
-    await expect(page.getByText('Live')).toBeVisible();
+    await expect(page.getByText('Live', { exact: true })).toBeVisible();
     await expect(page.getByText('Mira Patel')).toBeVisible();
     await expect(page.getByText('Applied for Frontend Lead')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Active Jobs: 2. Open recruiter jobs' })).toBeVisible();

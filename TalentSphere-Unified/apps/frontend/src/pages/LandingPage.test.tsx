@@ -41,6 +41,7 @@ describe('LandingPage', () => {
     supabaseMock.from.mockImplementation((table: string) => {
       if (table === 'profiles') return createCountQuery(1280);
       if (table === 'jobs') return createCountQuery(42);
+      if (table === 'challenges') return createCountQuery(7);
       return createCountQuery(0);
     });
   });
@@ -71,6 +72,11 @@ describe('LandingPage', () => {
 
     expect(supabaseMock.from).toHaveBeenCalledWith('profiles');
     expect(supabaseMock.from).toHaveBeenCalledWith('jobs');
+    expect(supabaseMock.from).toHaveBeenCalledWith('challenges');
+
+    await waitFor(() => {
+      expect(screen.getByRole('listitem', { name: 'Open Challenges: 7' })).toBeTruthy();
+    });
   });
 
   it('keeps public landing icons decorative and focusless', async () => {
