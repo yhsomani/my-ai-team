@@ -41,7 +41,7 @@ if "%1"=="backend" goto success
 :frontend
 echo [2/3] Building Frontend...
 echo ========================================
-cd /d "%~dp0frontend"
+cd /d "%~dp0apps\frontend"
 call npm run build
 if errorlevel 1 (
     echo FAILED: Frontend build failed!
@@ -62,7 +62,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Frontend build (validate only)...
-cd /d "%~dp0frontend"
+cd /d "%~dp0apps\frontend"
 call npm run build -- --mode development
 echo Validation: SUCCESS
 goto end
@@ -72,7 +72,7 @@ echo Cleaning all build artifacts...
 echo ========================================
 cd /d "%~dp0"
 call mvn clean -q
-cd /d "%~dp0frontend"
+cd /d "%~dp0apps\frontend"
 call rm -rf dist node_modules/.vite
 echo Clean complete.
 
@@ -90,6 +90,6 @@ echo.
 echo To run the system:
 echo   1. docker-compose up -d
 echo   2. cd services ^&^& mvn spring-boot:run
-echo   3. cd frontend ^&^& npm run dev
+echo   3. cd apps\frontend ^&^& npm run dev
 echo.
 exit /b 0

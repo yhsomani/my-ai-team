@@ -1,6 +1,6 @@
 import { USER_ROLES, type AppRouteId, type UserRole } from './routeRegistry';
 
-export type PublicRoutePath = '/' | '/login' | '/register' | '*';
+export type PublicRoutePath = '/' | '/login' | '/register' | '/reset-password' | '*';
 export type ShellSurface = 'ResponsiveLayout' | 'Header' | 'Sidebar';
 export type ExtensionSurface = 'Popup' | 'Options';
 export type FeatureNecessity = 'necessary' | 'candidate-for-merge' | 'local-companion';
@@ -47,7 +47,7 @@ export interface FeatureOwnershipDefinition {
   behaviorPreservation: string;
 }
 
-export const publicRoutePaths = ['/', '/login', '/register', '*'] as const;
+export const publicRoutePaths = ['/', '/login', '/register', '/reset-password', '*'] as const;
 
 export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
   {
@@ -99,6 +99,25 @@ export const featureOwnershipRegistry: readonly FeatureOwnershipDefinition[] = [
     ],
     consolidationDecision: 'Keep Registration focused and separate from Login until product validation supports a unified auth surface.',
     behaviorPreservation: 'Preserve role query parameters, registration analytics, and existing auth-service submission flow.',
+  },
+  {
+    id: 'password-reset',
+    label: 'Password Reset',
+    owner: { kind: 'public-route', routePath: '/reset-password' },
+    necessity: 'necessary',
+    primaryPurpose: 'Allow users to securely reset their password via email verification and token-based credential update.',
+    userJourneyValue: 'Recovers locked-out users without support intervention by completing the self-service credential reset flow.',
+    mergeEvaluation: 'Keep separate from Login because the reset token verification and password update flow has different state, validation, and error handling.',
+    secondaryEntryPoints: [
+      {
+        surface: 'Login page forgot-password link',
+        mode: 'link',
+        routePath: '/login',
+        rationale: 'Login surfaces a forgot-password link that navigates to reset without duplicating the reset form.',
+      },
+    ],
+    consolidationDecision: 'Keep Password Reset as its own public route to maintain clear token verification and update lifecycle.',
+    behaviorPreservation: 'Preserve Supabase password reset flow, token validation, password strength requirements, and success redirect.',
   },
   {
     id: 'not-found-recovery',

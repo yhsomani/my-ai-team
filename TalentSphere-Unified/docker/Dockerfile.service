@@ -6,11 +6,16 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn install -N -DskipTests
 
-# Copy BOM and shared library
+# Copy BOM and shared libraries
 COPY services/bom/pom.xml services/bom/
 COPY services/contracts/pom.xml services/contracts/
 COPY services/shared/pom.xml services/shared/
-RUN mvn install -pl services/bom,services/contracts,services/shared -am -DskipTests
+COPY services/shared-security/pom.xml services/shared-security/
+COPY services/shared-messaging/pom.xml services/shared-messaging/
+COPY services/shared-resilience/pom.xml services/shared-resilience/
+COPY services/schemas/pom.xml services/schemas/
+COPY services/service-parent/pom.xml services/service-parent/
+RUN mvn install -pl services/bom,services/service-parent,services/contracts,services/shared,services/shared-security,services/shared-messaging,services/shared-resilience,services/schemas -am -DskipTests
 
 # Copy target service and build
 ARG SERVICE_NAME

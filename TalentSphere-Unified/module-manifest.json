@@ -1282,6 +1282,14 @@
   ],
   "documentation": [
     {
+      "id": "current-state-and-action-plan",
+      "kind": "current-action-plan",
+      "status": "current",
+      "path": "CURRENT_STATE_AND_ACTION_PLAN.md",
+      "required": true,
+      "note": "Current actionable state summary, status analysis, and autonomous implementation roadmap."
+    },
+    {
       "id": "readme",
       "kind": "onboarding",
       "status": "current",
@@ -1619,6 +1627,13 @@
     }
   ],
   "developmentArtifacts": [
+    {
+      "id": "root-migration-task-list",
+      "kind": "historical-task-list",
+      "path": "task.md",
+      "required": true,
+      "note": "Historical remediation and migration task list; dev-only."
+    },
     {
       "id": "root-controller-repair-script",
       "kind": "local-repair-script",

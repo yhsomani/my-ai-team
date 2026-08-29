@@ -54,7 +54,7 @@ const walk = (dir, extensions) => {
       }
 
       if (extensions.some((extension) => entry.name.endsWith(extension))) {
-        results.push(entryPath);
+        results.push(entryPath.replaceAll(path.sep, '/'));
       }
     }
   }

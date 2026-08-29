@@ -25,6 +25,11 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
   server: {
     port: 3001,
     proxy: {

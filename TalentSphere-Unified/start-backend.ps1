@@ -5,7 +5,7 @@ Write-Host "Initializing TalentSphere Unified Backend (Spring Boot Ecosystem)...
 
 # Ensure Docker is running
 Write-Host "`n[1/3] Starting Infrastructure (Postgres, MongoDB, Redis, RabbitMQ)..." -ForegroundColor Yellow
-docker-compose up -d postgres mongodb redis rabbitmq
+docker-compose up -d ts-postgres ts-mongodb ts-redis ts-rabbitmq
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Failed to start core Docker services! Ensure Docker Desktop is running." -ForegroundColor Red
     exit 1
@@ -37,6 +37,6 @@ Write-Host "Services will be available shortly at:" -ForegroundColor Green
 Write-Host " - API Gateway: http://localhost:8080" -ForegroundColor White
 Write-Host " - Auth Service: http://localhost:8081" -ForegroundColor White
 Write-Host " - User Service: http://localhost:8082" -ForegroundColor White
-Write-Host " - LMS Service:  http://localhost:8090" -ForegroundColor White
+Write-Host " - LMS Service:  http://localhost:8085" -ForegroundColor White
 Write-Host "=======================================================" -ForegroundColor Green
 Write-Host "Run 'docker-compose logs -f' to monitor startup." -ForegroundColor Cyan

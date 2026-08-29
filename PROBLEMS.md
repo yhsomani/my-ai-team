@@ -184,3 +184,94 @@ Standardized the Aura design token system (`--bg-primary`, `--text-primary`, `--
 
 ## Verification
 `npm run validate:ui-design-system` and `npm run test:contrast:all` pass across Chromium, Firefox, and WebKit.
+
+---
+
+# PROBLEM-0009 — Windows Cross-Platform Path Separator Normalization in Contract & OpenAPI Generators
+
+Severity: MEDIUM
+Category: BUILD / TOOLING
+Status: FIXED
+Affected Files: `scripts/generate-api-contract-report.mjs`, `scripts/generate-openapi-contract.mjs`
+
+## Problem
+Contract generation scripts relied on Unix-style `/src/main/java/` path filtering without normalizing Windows `\` path separators, causing `extractBackendRoutes` and `extractOperations` to return 0 active routes and schemas on Windows platforms.
+
+## Root Cause
+Direct path string substring comparisons on raw OS file paths without slash normalization.
+
+## Fix
+Updated `walk()` in both `generate-api-contract-report.mjs` and `generate-openapi-contract.mjs` to normalize all discovered file paths with `.replaceAll(path.sep, '/')`.
+
+## Verification
+`node scripts/generate-api-contract-report.mjs` and `node scripts/generate-openapi-contract.mjs` now correctly discover and generate all 123 active operations and 56 schemas across all platforms. `npm run validate:api-openapi-contract`, `npm run validate:messaging-boundary-adr`, and `npm run validate:payment-mode-adr` pass with exit code 0.
+
+---
+
+# PROBLEM-0010 — Documentation Lifecycle and Manifest Synchronization Gaps
+
+Severity: LOW
+Category: DOCUMENTATION / GOVERNANCE
+Status: FIXED
+Affected Files: `module-manifest.json`, `scripts/validate-docs-lifecycle.mjs`
+
+## Problem
+`CURRENT_STATE_AND_ACTION_PLAN.md` and `task.md` were present in the root directory but unclassified in `module-manifest.json`, triggering doc lifecycle validation failures.
+
+## Root Cause
+New documentation was authored without updating the central `module-manifest.json` registry.
+
+## Fix
+Classified `CURRENT_STATE_AND_ACTION_PLAN.md` as active documentation (`current-action-plan`) and `task.md` as a development artifact (`historical-task-list`) in `module-manifest.json`.
+
+## Verification
+`npm run validate:docs-lifecycle` passes with 43 classified Markdown documents.
+
+---
+
+# PROBLEM-0011 — Missing Public Route Registration for Password Reset Flow
+
+Severity: MEDIUM
+Category: FRONTEND / NAVIGATION
+Status: FIXED
+Affected Files: `apps/frontend/src/navigation/featureOwnership.ts`
+
+## Problem
+`PublicRoutePath` and `publicRoutePaths` in `featureOwnership.ts` omitted `'/reset-password'` even though it was actively routed in `App.tsx`, causing a discrepancy in feature ownership and route parity definitions.
+
+## Root Cause
+Route additions in `App.tsx` were not reflected in the centralized navigation metadata and ownership registry.
+
+## Fix
+Added `'/reset-password'` to `PublicRoutePath` union, `publicRoutePaths` array, and added a dedicated `password-reset` ownership definition documenting its purpose, journey value, and Supabase credential reset lifecycle.
+
+## Verification
+`npm run test:ia` and `npm run test:unit` in `apps/frontend` pass 100% (19/19 IA tests, 653/653 unit tests).
+
+---
+
+# PROBLEM-0012 — Container Build Layer Incompleteness & Local Script Path Alignment
+
+Severity: HIGH
+Category: DEPLOYMENT / BUILD
+Status: FIXED
+Affected Files: `docker/Dockerfile.service`, `build.bat`, `start-backend.ps1`, `services/bom/pom.xml`, `services/file-service/pom.xml`
+
+## Problem
+1. `docker/Dockerfile.service` omitted copying required shared modules (`shared-security`, `shared-messaging`, `shared-resilience`, `schemas`, `service-parent`), causing multi-stage Docker builds to fail.
+2. `build.bat` referenced outdated `frontend` paths instead of `apps/frontend`.
+3. `start-backend.ps1` referenced service `mongodb` instead of `ts-mongodb` and listed incorrect LMS port 8090.
+4. `services/file-service/pom.xml` hardcoded AWS SDK S3 `2.20.0` while `bom/pom.xml` used `2.29.35`.
+
+## Root Cause
+Repository restructuring to monorepo/workspace layout (`apps/frontend`) and shared library expansion left legacy references in auxiliary build scripts and Dockerfiles.
+
+## Fix
+1. Updated `docker/Dockerfile.service` to install all shared Maven modules (`bom`, `service-parent`, `contracts`, `shared`, `shared-security`, `shared-messaging`, `shared-resilience`, `schemas`).
+2. Updated `build.bat` to reference `apps/frontend`.
+3. Fixed `start-backend.ps1` service name to `ts-postgres ts-mongodb ts-redis ts-rabbitmq` and LMS port to `8085`.
+4. Aligned AWS SDK version across `services/bom/pom.xml` and `services/file-service/pom.xml`.
+
+## Verification
+All 20 architecture validators pass, frontend production build completes with 0 errors (`npm run build`), and IA tests pass.
+
