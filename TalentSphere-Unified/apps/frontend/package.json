@@ -14,7 +14,7 @@
     "docs:serve": "npx serve ../docs/frontend/html -l 3001",
     "generate-docs": "typedoc \"src/**/*.ts\" \"src/**/*.tsx\" --out ../docs/frontend/html --excludePrivate --name \"TalentSphere Frontend\"",
     "test:e2e": "playwright test",
-    "mock-server": "node scripts/mock-server.js",
+    "mock-server": "node scripts/mock-server.cjs",
     "dev:mock": "concurrently \"npm run mock-server\" \"npm run dev\"",
     "test:a11y": "playwright test tests/accessibility-semantics.spec.ts --project=chromium --reporter=line",
     "test:contrast": "playwright test tests/color-contrast.spec.ts --project=chromium --reporter=line",
