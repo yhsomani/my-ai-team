@@ -14,10 +14,10 @@ services = [
     {"name": "notification-service", "port": 8089},
     {"name": "search-service", "port": 8091},
     {"name": "gamification-service", "port": 8092},
+    {"name": "video-service", "port": 8093},
     {"name": "messaging-service", "port": 8094},
     {"name": "networking-service", "port": 8095},
     {"name": "ai-service", "port": 8096},
-    {"name": "chat-service", "port": 8097},
     {"name": "payment-service", "port": 8098},
     {"name": "file-service", "port": 8100}
 ]

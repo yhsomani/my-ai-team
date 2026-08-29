@@ -12,33 +12,9 @@ echo "Image Tag: $IMAGE_TAG"
 # Create namespace if it doesn't exist
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-# Apply manifests
-echo "Applying ConfigMap..."
-kubectl apply -f infra/k8s/configmap.yaml -n "$NAMESPACE"
-
-echo "Applying Secrets..."
-kubectl apply -f infra/k8s/secret.yaml -n "$NAMESPACE"
-
-echo "Applying RBAC..."
-kubectl apply -f infra/k8s/service-accounts.yaml -n "$NAMESPACE"
-
-echo "Applying ResourceQuota..."
-kubectl apply -f infra/k8s/resource-quota.yaml -n "$NAMESPACE"
-
-echo "Applying Backend Deployment..."
-kubectl apply -f infra/k8s/backend-deployment.yaml -n "$NAMESPACE"
-
-echo "Applying Ingress..."
-kubectl apply -f infra/k8s/ingress.yaml -n "$NAMESPACE"
-
-echo "Applying HPA..."
-kubectl apply -f infra/k8s/hpa.yaml -n "$NAMESPACE"
-
-echo "Applying PDB..."
-kubectl apply -f infra/k8s/pdb.yaml -n "$NAMESPACE"
-
-echo "Applying Network Policies..."
-kubectl apply -f infra/k8s/network-policy.yaml -n "$NAMESPACE"
+# Apply Kustomize manifests
+echo "Applying Kustomize resources (infrastructure, microservices, cronjobs)..."
+kubectl apply -k infra/k8s/overlays/prod -n "$NAMESPACE"
 
 # Wait for deployment
 echo "Waiting for backend deployment..."

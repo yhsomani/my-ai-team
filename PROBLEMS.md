@@ -275,3 +275,30 @@ Repository restructuring to monorepo/workspace layout (`apps/frontend`) and shar
 ## Verification
 All 20 architecture validators pass, frontend production build completes with 0 errors (`npm run build`), and IA tests pass.
 
+---
+
+# PROBLEM-0013 — Monitoring Host Configuration Mounts & K8s Deploy Script Modernization
+
+Severity: MEDIUM
+Category: INFRASTRUCTURE / OBSERVABILITY
+Status: FIXED
+Affected Files: `docker-compose.yml`, `docker/prometheus/prometheus.yml`, `docker/tempo/tempo.yaml`, `docker/otel/otel-collector-config.yaml`, `docker/promtail/promtail.yml`, `scripts/deploy-k8s.sh`, `scripts/teardown-k8s.sh`, `scripts/generate_k8s.py`, `scripts/check-ports.sh`
+
+## Problem
+1. `docker-compose.yml` monitoring profile mounted host configuration files (`docker/prometheus/prometheus.yml`, `docker/tempo/tempo.yaml`, `docker/otel/otel-collector-config.yaml`, `docker/promtail/promtail.yml`) that did not exist on disk.
+2. `scripts/deploy-k8s.sh` and `scripts/teardown-k8s.sh` attempted to apply non-existent flat YAML manifests instead of using the repository's Kustomize overlay structure (`infra/k8s/overlays/prod`).
+3. `scripts/generate_k8s.py` omitted `video-service` (port 8093) while including deprecated `chat-service`.
+4. `scripts/check-ports.sh` referenced obsolete port mappings that mismatched active service configurations.
+
+## Root Cause
+Observability configurations were specified in compose declarations without backing configuration templates, and legacy deployment scripts were not modernized during the Kustomize migration.
+
+## Fix
+1. Created all 4 missing monitoring configurations in `docker/` (Prometheus scrape configs, Tempo tracing storage, OpenTelemetry pipeline batch exporter, and Promtail log scrapers).
+2. Modernized `scripts/deploy-k8s.sh` and `scripts/teardown-k8s.sh` to apply and tear down manifests via `kubectl apply -k infra/k8s/overlays/prod`.
+3. Updated `scripts/generate_k8s.py` to include `video-service` (8093) across the 18 active microservices.
+4. Aligned `MASTER_PORTS` mapping table in `scripts/check-ports.sh` with the active microservice topology.
+
+## Verification
+`validate:infrastructure-manifest`, `validate:module-manifest`, `validate:observability-contract`, and `validate:security-contract` pass with 100% compliance.
+

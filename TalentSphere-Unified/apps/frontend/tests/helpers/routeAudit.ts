@@ -152,6 +152,7 @@ export const routeAuditCases: readonly RouteAuditCase[] = [
   { name: 'landing', path: '/', heading: /^TalentSphere$/, mainName: /^TalentSphere$/, roles: null, viewports: allViewports },
   { name: 'login', path: '/login', heading: /^Sign in to TalentSphere$/, mainName: /^Sign in to TalentSphere$/, roles: null, viewports: allViewports },
   { name: 'register', path: '/register', heading: /^Create your account$/, mainName: /^Create your account$/, roles: null, viewports: allViewports },
+  { name: 'password reset', path: '/reset-password', heading: /^Reset your password$/, mainName: /^Reset your password$/, roles: null, viewports: allViewports },
   { name: 'not found recovery', path: '/missing-route-for-audit', heading: /^Page not found$/, mainName: /^Page not found$/, roles: null, viewports: allViewports },
   { name: 'talent dashboard', path: '/dashboard', heading: /^Welcome back, E2E User$/, mainName: routeMainName('/dashboard'), roles: [USER_ROLES.user], viewports: allViewports },
   { name: 'talent jobs', path: '/jobs', heading: /^Jobs$/, mainName: routeMainName('/jobs'), roles: [USER_ROLES.user], viewports: allViewports },
