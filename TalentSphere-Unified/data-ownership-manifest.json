@@ -1,0 +1,763 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-27",
+  "description": "Source-validated data ownership matrix for Supabase/Postgres tables observed in frontend direct access and reviewed SQL files.",
+  "domains": {
+    "identity": {
+      "owner": "auth-boundary-decision",
+      "note": "Supabase Auth and auth-service ownership remains unresolved."
+    },
+    "profile": {
+      "owner": "profile-domain",
+      "note": "Profile-service or a generated Supabase repository must own durable profile writes after the schema authority decision."
+    },
+    "jobs": {
+      "owner": "job-domain",
+      "note": "Job-service should own job lifecycle and publishing policy after migration."
+    },
+    "applications": {
+      "owner": "application-domain",
+      "note": "Application-service should own application status lifecycle, drafts, and append-only events."
+    },
+    "recruiting": {
+      "owner": "recruiting-domain",
+      "note": "Recruiter candidate review data needs backend-owned permissions and audit."
+    },
+    "ai": {
+      "owner": "ai-domain",
+      "note": "AI outputs remain review-first suggestions until provider and persistence policy are finalized."
+    },
+    "analytics": {
+      "owner": "analytics-domain",
+      "note": "Append-only privacy-bounded analytics and audit ingestion."
+    },
+    "networking": {
+      "owner": "networking-domain",
+      "note": "Networking-service should own graph and request lifecycle."
+    },
+    "messaging": {
+      "owner": "messaging-domain",
+      "note": "Messaging-service and orphaned chat-service boundary remains an open decision."
+    },
+    "learning": {
+      "owner": "lms-domain",
+      "note": "LMS service should own course, enrollment, and progress writes."
+    },
+    "challenges": {
+      "owner": "challenge-domain",
+      "note": "Challenge-service should own submissions and judging lifecycle."
+    },
+    "gamification": {
+      "owner": "gamification-domain",
+      "note": "Gamification-service should own XP, badges, leaderboard, and achievements."
+    },
+    "notifications": {
+      "owner": "notification-domain",
+      "note": "Notification-service and scheduler jobs should own inbox and digest state."
+    },
+    "billing": {
+      "owner": "payment-domain",
+      "note": "Payment-service should own provider-backed checkout, webhooks, subscriptions, and invoices."
+    },
+    "admin": {
+      "owner": "admin-ops-domain",
+      "note": "Admin settings and audit logs require backend-owned authorization and redaction."
+    }
+  },
+  "tables": [
+    {
+      "name": "achievements",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "ai_analysis_results",
+      "domain": "ai",
+      "targetOwner": "ai-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "ai_sessions",
+      "domain": "ai",
+      "targetOwner": "ai-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/aiService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "application_draft_versions",
+      "domain": "applications",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/applicationService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "application_drafts",
+      "domain": "applications",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/applicationService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "application_status_events",
+      "domain": "applications",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/applicationService.ts, apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "audit_log",
+      "domain": "admin",
+      "targetOwner": "api-gateway",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/adminService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "automation_suggestion_audit_events",
+      "domain": "analytics",
+      "targetOwner": "ai-service",
+      "targetAccess": "append-only-ingestion",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/lib/automationSuggestionAudit.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "automation_suggestions",
+      "domain": "ai",
+      "targetOwner": "ai-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/aiService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "badges",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "candidate_notes",
+      "domain": "recruiting",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "candidate_scorecards",
+      "domain": "recruiting",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "certifications",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "challenge_submissions",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/challengeService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "challenge_test_cases",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "challenges",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/challengeService.ts, apps/frontend/src/services/dashboardService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "chat_messages",
+      "domain": "messaging",
+      "targetOwner": "messaging-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "companies",
+      "domain": "jobs",
+      "targetOwner": "company-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/companyService.ts, apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "connections",
+      "domain": "networking",
+      "targetOwner": "networking-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/networkingService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "conversation_participants",
+      "domain": "messaging",
+      "targetOwner": "messaging-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/messagingService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "conversations",
+      "domain": "messaging",
+      "targetOwner": "messaging-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/messagingService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "courses",
+      "domain": "learning",
+      "targetOwner": "lms-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/aiService.ts, apps/frontend/src/services/lmsService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "educations",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "enrollments",
+      "domain": "learning",
+      "targetOwner": "lms-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/lmsService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "experiences",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "hidden_explore_jobs",
+      "domain": "jobs",
+      "targetOwner": "job-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/jobService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "job_applications",
+      "domain": "applications",
+      "targetOwner": "application-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/adminService.ts, apps/frontend/src/services/applicationService.ts, apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "job_post_draft_versions",
+      "domain": "jobs",
+      "targetOwner": "job-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/jobService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "job_post_templates",
+      "domain": "jobs",
+      "targetOwner": "job-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/jobService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "jobs",
+      "domain": "jobs",
+      "targetOwner": "job-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/recruiterService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "languages",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "leaderboard",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/gamificationService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "lesson_progress",
+      "domain": "learning",
+      "targetOwner": "lms-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/lmsService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "lessons",
+      "domain": "learning",
+      "targetOwner": "lms-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/lmsService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "messages",
+      "domain": "messaging",
+      "targetOwner": "messaging-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/messagingService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "networking_suggestion_preferences",
+      "domain": "networking",
+      "targetOwner": "networking-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/networkingService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "notification_digest_items",
+      "domain": "notifications",
+      "targetOwner": "notification-service",
+      "targetAccess": "audited-service-role-job",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/notificationDigestService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "notification_settings",
+      "domain": "notifications",
+      "targetOwner": "notification-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/settingsService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "notifications",
+      "domain": "notifications",
+      "targetOwner": "notification-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/notificationService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "password_reset_tokens",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "payments",
+      "domain": "billing",
+      "targetOwner": "payment-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "source-validated-own-select",
+      "indexStatus": "source-validated-user-status-provider"
+    },
+    {
+      "name": "product_analytics_events",
+      "domain": "analytics",
+      "targetOwner": "analytics-domain",
+      "targetAccess": "append-only-ingestion",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/lib/productAnalytics.ts, apps/frontend/src/services/adminService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "profiles",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/adminService.ts, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/gamificationService.ts, apps/frontend/src/services/messagingService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/recruiterService.ts, apps/frontend/src/services/settingsService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "projects",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "refresh_tokens",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "resume_artifacts",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "resume_export_events",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "roles",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "saved_job_searches",
+      "domain": "jobs",
+      "targetOwner": "job-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/jobService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "skills",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "migrationStatus": "multiple-reviewed-sql-sources",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "submissions",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "subscription_plans",
+      "domain": "billing",
+      "targetOwner": "payment-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/paymentService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "source-validated-active-public-select",
+      "indexStatus": "source-validated-active-price"
+    },
+    {
+      "name": "subscriptions",
+      "domain": "billing",
+      "targetOwner": "payment-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "source-validated-own-select",
+      "indexStatus": "source-validated-user-status-provider"
+    },
+    {
+      "name": "system_settings",
+      "domain": "admin",
+      "targetOwner": "api-gateway",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/adminService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "token_denylist",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "user_badges",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/gamificationService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "user_profiles",
+      "domain": "profile",
+      "targetOwner": "profile-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "users",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "targetAccess": "backend-owned",
+      "directFrontendAccess": false,
+      "schemaSources": ["infra/supabase_master.sql"],
+      "migrationStatus": "legacy-master-only",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    },
+    {
+      "name": "xp_transactions",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "targetAccess": "repository-adapter",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/gamificationService.ts",
+      "schemaSources": ["supabase-schema.sql"],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "not-verified",
+      "indexStatus": "not-verified"
+    }
+  ]
+}

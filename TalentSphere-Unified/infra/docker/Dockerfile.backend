@@ -1,0 +1,15 @@
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+WORKDIR /app
+COPY pom.xml .
+COPY services/shared services/shared
+ARG SERVICE_NAME
+COPY services/${SERVICE_NAME} services/${SERVICE_NAME}
+RUN mvn clean package -pl services/${SERVICE_NAME} -am -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+ARG SERVICE_NAME
+COPY --from=build --chown=spring:spring /app/services/${SERVICE_NAME}/target/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]

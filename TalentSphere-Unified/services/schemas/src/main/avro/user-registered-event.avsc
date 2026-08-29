@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "UserRegisteredEvent",
+  "namespace": "com.talentsphere.events",
+  "doc": "Event fired when a new user registers",
+  "fields": [
+    {"name": "userId", "type": "string"},
+    {"name": "email", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "role", "type": {"type": "enum", "name": "UserRole", "symbols": ["JOB_SEEKER", "EMPLOYER"]}},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

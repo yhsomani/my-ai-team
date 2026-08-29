@@ -1,0 +1,3 @@
+## 2024-05-08 - Accessible Navigation Iteration
+**Learning:** Icon-only navigation components in complex responsive layouts (like sidebars and mobile bottom bars) often miss `aria-label`s and visible focus rings, making keyboard and screen reader navigation difficult.
+**Action:** Always ensure that icon-only `button` and `Link` components get an explicit `aria-label`, and interactive toggles (like collapse/expand buttons) receive `aria-expanded` attributes. Also ensure that visible focus rings (`focus-visible:ring-2`) are explicitly added if the default Tailwind styles obscure them.

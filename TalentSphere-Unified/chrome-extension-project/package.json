@@ -1,0 +1,34 @@
+{
+  "name": "talentsphere-companion",
+  "version": "1.0.0",
+  "description": "Chrome Extension Companion for TalentSphere",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test:messaging": "node scripts/messaging.test.mjs",
+    "test:portal-fixtures": "node scripts/portal-fixtures.test.mjs",
+    "test:options-ux": "node scripts/options-ux-contract.test.mjs",
+    "test:popup-ux": "node scripts/popup-ux-contract.test.mjs",
+    "test:contract": "node scripts/extension-contract.test.mjs",
+    "test:storage-migrations": "node scripts/storage-migrations.test.mjs",
+    "test:runtime-smoke": "node scripts/runtime-smoke.test.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^6.1.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.2.2",
+    "vite": "^8.2.2"
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "status": "source-level",
+  "updatedAt": "2026-06-27",
+  "description": "Source-level alert catalog for critical TalentSphere flows. Deployment to a live alert manager is Not verified from the codebase.",
+  "limitations": [
+    "Alert expressions are source-owned detection intent, not proof of a deployed Prometheus or Alertmanager stack; deployed alerting is Not verified from the codebase.",
+    "Runtime metric names, notification receivers, escalation policies, and alert-manager routing require environment verification.",
+    "Every alert must link to the current source-backed runbook until environment-specific runbooks are available."
+  ],
+  "alertGroups": [
+    {
+      "id": "api-contracts",
+      "owner": "platform",
+      "criticalFlow": "api_contract",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-api-route-contract-drift",
+      "alerts": [
+        {
+          "id": "api_contract_report_drift",
+          "severity": "critical",
+          "sourceCommand": "npm run report:api-contracts",
+          "signal": "ci.step.failed{name=\"Generate API contract report\"} or ci.step.failed{name=\"Verify generated API contract report is committed\"}",
+          "summary": "Generated API route contract report drifted or failed to regenerate.",
+          "response": "Regenerate the report, inspect unmatched frontend calls and Gateway coverage, then update PLAN.md if ownership changed."
+        }
+      ]
+    },
+    {
+      "id": "openapi-payload-contracts",
+      "owner": "platform",
+      "criticalFlow": "openapi_payload_contract",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-openapi-payload-contract-drift",
+      "alerts": [
+        {
+          "id": "openapi_payload_contract_invalid",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:api-openapi-contract",
+          "signal": "ci.step.failed{name=\"Validate OpenAPI payload contract\"} or ci.step.failed{name=\"Verify generated OpenAPI payload contract is committed\"}",
+          "summary": "Source-derived OpenAPI contract failed validation or committed artifact drifted.",
+          "response": "Regenerate the OpenAPI contract, resolve missing refs or parser warnings, and keep non-active modules out of deployable paths."
+        }
+      ]
+    },
+    {
+      "id": "auth-gateway",
+      "owner": "security",
+      "criticalFlow": "auth_gateway_contract",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-auth-or-gateway-security-contract-regression",
+      "alerts": [
+        {
+          "id": "auth_gateway_contract_regressed",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:auth-contract",
+          "signal": "ci.step.failed{name=\"Validate auth contract\"} or gateway.auth.public_route_matcher.regressed",
+          "summary": "Gateway auth source contract regressed.",
+          "response": "Restore Supabase primary auth assumptions, exact public-route matching, normalized ROLE_* forwarding, and sensitive-route rate limits."
+        }
+      ]
+    },
+    {
+      "id": "security-contract",
+      "owner": "security",
+      "criticalFlow": "security_contract",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-production-secret-or-safe-error-contract-regression",
+      "alerts": [
+        {
+          "id": "security_contract_regressed",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:security-contract",
+          "signal": "ci.step.failed{name=\"Validate security contract\"}",
+          "summary": "Production secret, safe error, file upload, scheduler audit, or CI security scan source guardrail regressed.",
+          "response": "Inspect the failing validator section and restore source-level guardrails before merge or deployment."
+        }
+      ]
+    },
+    {
+      "id": "file-upload-security",
+      "owner": "security",
+      "criticalFlow": "file_upload_security",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-file-upload-security-regression",
+      "alerts": [
+        {
+          "id": "file_upload_security_policy_regressed",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:security-contract",
+          "signal": "ci.validator.failed{validator=\"security-contract\", area=\"file-service\"} or file_upload.rejection_rate.unexpected_drop",
+          "summary": "File upload validation or scanner-hook coverage regressed.",
+          "response": "Restore MIME, extension, signature, active-content, scanner-hook, and sanitized error behavior."
+        }
+      ]
+    },
+    {
+      "id": "scheduler-automations",
+      "owner": "operations",
+      "criticalFlow": "scheduler_automations",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-scheduler-automation-failure",
+      "alerts": [
+        {
+          "id": "scheduler_audit_or_delivery_failed",
+          "severity": "warning",
+          "sourceCommand": "npm run test:scheduler-audit",
+          "signal": "ci.step.failed{name=\"Test scheduler audit helper\"} or scheduler.consecutive_failures > 0",
+          "summary": "Scheduler audit helper or scheduled automation behavior failed.",
+          "response": "Run scheduler tests, verify dry-run defaults, and inspect sanitized audit logging before commit-mode execution."
+        }
+      ]
+    },
+    {
+      "id": "extension-local-companion",
+      "owner": "extension",
+      "criticalFlow": "extension_contract",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-extension-regression",
+      "alerts": [
+        {
+          "id": "extension_contract_or_build_failed",
+          "severity": "warning",
+          "sourceCommand": "npm run test:extension-contract",
+          "signal": "ci.step.failed{name=\"Test extension contract\"} or ci.step.failed{name=\"Build extension\"}",
+          "summary": "Extension local-only, diagnostics, messaging, storage, or build contract failed.",
+          "response": "Run extension tests and restore local-only storage, bounded diagnostics, and MV3 source contracts."
+        }
+      ]
+    },
+    {
+      "id": "data-ownership",
+      "owner": "data",
+      "criticalFlow": "data_ownership",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-data-ownership-or-schema-drift",
+      "alerts": [
+        {
+          "id": "data_ownership_manifest_drifted",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:data-ownership",
+          "signal": "ci.step.failed{name=\"Validate data ownership\"}",
+          "summary": "Frontend Supabase table usage or reviewed SQL drifted from the data ownership manifest.",
+          "response": "Classify new tables, align direct-access flags, and update migration/RLS/index metadata."
+        }
+      ]
+    },
+    {
+      "id": "deployment-reference-drift",
+      "owner": "platform",
+      "criticalFlow": "deployment_reference",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-deployment-reference-drift",
+      "alerts": [
+        {
+          "id": "deployment_reference_drifted",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:infrastructure-manifest",
+          "signal": "ci.step.failed{name=\"Validate infrastructure manifest\"} or ci.step.failed{name=\"Validate module manifest\"}",
+          "summary": "Compose, Kustomize, Gateway, module, or scheduler references drifted from active module ownership.",
+          "response": "Restore references to active deployables only and keep orphaned modules out of runtime surfaces."
+        }
+      ]
+    },
+    {
+      "id": "frontend-validation",
+      "owner": "frontend",
+      "criticalFlow": "frontend_validation",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-frontend-validation-or-build-failure",
+      "alerts": [
+        {
+          "id": "frontend_lint_test_or_build_failed",
+          "severity": "critical",
+          "sourceCommand": "npm run test:unit",
+          "signal": "ci.step.failed{name=\"Lint frontend\"} or ci.step.failed{name=\"Unit test frontend\"} or ci.step.failed{name=\"Build frontend\"}",
+          "summary": "Frontend lint, unit, typecheck, or production build failed.",
+          "response": "Fix the failing source, update tests for intentional behavior changes, and rerun frontend validation."
+        }
+      ]
+    },
+    {
+      "id": "ci-security-scans",
+      "owner": "security",
+      "criticalFlow": "ci_security_scan",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-ci-security-scan-failure",
+      "alerts": [
+        {
+          "id": "ci_security_scan_failed",
+          "severity": "critical",
+          "sourceCommand": "npm run validate:security-contract",
+          "signal": "ci.job.failed{name=\"Security Scans\"} or trivy.high_critical_findings > 0 or npm.audit.high_critical_findings > 0",
+          "summary": "Dependency, secret, misconfiguration, or image security scan failed.",
+          "response": "Triage high/critical findings and preserve CI scan gates before merge."
+        }
+      ]
+    },
+    {
+      "id": "admin-operational-dashboard",
+      "owner": "operations",
+      "criticalFlow": "admin_operational_degradation",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-admin-operational-dashboard-degraded-or-misleading",
+      "alerts": [
+        {
+          "id": "admin_operational_dashboard_misleading",
+          "severity": "warning",
+          "sourceCommand": "npm run test:unit",
+          "signal": "admin.dashboard.degraded_without_source_label > 0 or product_analytics.unsafe_metadata_detected > 0",
+          "summary": "Admin operational dashboard source labels or privacy-bounded analytics regressed.",
+          "response": "Restore live/inferred/mock/degraded/not-configured labels and analytics redaction before operators rely on the view."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "id": "contracts",
+    "path": "./services/contracts",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "chat-service",
+    "path": "./services/chat-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "user-service",
+    "path": "./services/user-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "file-service",
+    "path": "./services/file-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "api-gateway",
+    "path": "./services/api-gateway",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "networking-service",
+    "path": "./services/networking-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "video-service",
+    "path": "./services/video-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "shared",
+    "path": "./services/shared",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "messaging-service",
+    "path": "./services/messaging-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "gamification-service",
+    "path": "./services/gamification-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "job-service",
+    "path": "./services/job-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "lms-service",
+    "path": "./services/lms-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "company-service",
+    "path": "./services/company-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "notification-service",
+    "path": "./services/notification-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "application-service",
+    "path": "./services/application-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "shared-security",
+    "path": "./services/shared-security",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "bom",
+    "path": "./services/bom",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "ai-service",
+    "path": "./services/ai-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "search-service",
+    "path": "./services/search-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "profile-service",
+    "path": "./services/profile-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "challenge-service",
+    "path": "./services/challenge-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "shared-resilience",
+    "path": "./services/shared-resilience",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "auth-service",
+    "path": "./services/auth-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "service-parent",
+    "path": "./services/service-parent",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "shared-messaging",
+    "path": "./services/shared-messaging",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "payment-service",
+    "path": "./services/payment-service",
+    "type": "Spring Boot Service"
+  },
+  {
+    "id": "schemas",
+    "path": "./services/schemas",
+    "type": "Spring Boot Service"
+  }
+]

@@ -1,0 +1,59 @@
+package com.talentsphere.apigateway.filter;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+@Component
+@RequiredArgsConstructor
+public class JwtAuthGatewayFilter implements GatewayFilter, Ordered {
+    // NOTE: This is a template. The actual implementation in api-gateway 
+    // will require the JwtService to be fully implemented.
+    private final Object jwtService; 
+    private final ReactiveRedisTemplate<String, String> redis;
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String auth = exchange.getRequest().getHeaders().getFirst("Authorization");
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
+        String token = auth.substring(7);
+        try {
+            // Claims claims = jwtService.validateAndExtract(token);
+            Claims claims = null; // To be implemented
+
+            // Check Redis denylist first (fast path)
+            return redis.hasKey("denylist:" + claims.getId())
+                .flatMap(isDenied -> {
+                    if (isDenied) {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    }
+                    // Inject user context headers for downstream services
+                    ServerHttpRequest enriched = exchange.getRequest().mutate()
+                        .header("X-User-Id",    claims.getSubject())
+                        .header("X-User-Email", claims.get("email", String.class))
+                        .header("X-User-Role",  claims.get("role", String.class))
+                        .build();
+                    return chain.filter(exchange.mutate().request(enriched).build());
+                });
+        } catch (JwtException e) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+    }
+
+    @Override public int getOrder() { return -100; }
+}

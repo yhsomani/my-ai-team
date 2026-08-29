@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "status": "source-level",
+  "updatedAt": "2026-06-27",
+  "title": "TalentSphere Critical Flows",
+  "description": "Source-level dashboard catalog for critical validation and operational flows. Deployment to Grafana or another dashboard runtime is Not verified from the codebase.",
+  "limitations": [
+    "Panels describe source-owned monitoring intent and required signals.",
+    "Runtime datasources, dashboard UIDs, service-level metric names, and dashboard provisioning are Not verified from the codebase."
+  ],
+  "panels": [
+    {
+      "id": "api-contract-drift",
+      "title": "API Route Contract Drift",
+      "criticalFlow": "api_contract",
+      "owner": "platform",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-api-route-contract-drift",
+      "signals": [
+        "npm run report:api-contracts",
+        "docs/API_CONTRACT_MISMATCH_REPORT.md diff status",
+        "unmatched frontend calls",
+        "active controller routes without Gateway prefix"
+      ]
+    },
+    {
+      "id": "openapi-payload-contract",
+      "title": "OpenAPI Payload Contract",
+      "criticalFlow": "openapi_payload_contract",
+      "owner": "platform",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-openapi-payload-contract-drift",
+      "signals": [
+        "npm run report:api-openapi",
+        "npm run validate:api-openapi-contract",
+        "missing schema refs",
+        "parser warnings"
+      ]
+    },
+    {
+      "id": "auth-gateway-contract",
+      "title": "Auth And Gateway Contract",
+      "criticalFlow": "auth_gateway_contract",
+      "owner": "security",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-auth-or-gateway-security-contract-regression",
+      "signals": [
+        "npm run validate:auth-contract",
+        "public route matcher mode",
+        "normalized ROLE_* forwarding",
+        "sensitive route rate-limit filters"
+      ]
+    },
+    {
+      "id": "security-contract",
+      "title": "Security Source Contract",
+      "criticalFlow": "security_contract",
+      "owner": "security",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-production-secret-or-safe-error-contract-regression",
+      "signals": [
+        "npm run validate:security-contract",
+        "production strict secret validation",
+        "safe public API error responses",
+        "runtime Secret manifest references"
+      ]
+    },
+    {
+      "id": "file-upload-security",
+      "title": "File Upload Security",
+      "criticalFlow": "file_upload_security",
+      "owner": "security",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-file-upload-security-regression",
+      "signals": [
+        "file-service MIME allowlists",
+        "content signature checks",
+        "active content rejection",
+        "scanner hook rejection"
+      ]
+    },
+    {
+      "id": "scheduler-automations",
+      "title": "Scheduler Automations",
+      "criticalFlow": "scheduler_automations",
+      "owner": "operations",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-scheduler-automation-failure",
+      "signals": [
+        "npm run test:scheduler-audit",
+        "npm run test:saved-search-digest-discovery",
+        "npm run test:notification-digests",
+        "npm run test:networking-reminders",
+        "commit-mode audit_log rows"
+      ]
+    },
+    {
+      "id": "extension-contracts",
+      "title": "Companion Extension Contracts",
+      "criticalFlow": "extension_contract",
+      "owner": "extension",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-extension-regression",
+      "signals": [
+        "npm run test:extension-messaging",
+        "npm run test:extension-storage-migrations",
+        "npm run test:extension-contract",
+        "chrome-extension-project build status"
+      ]
+    },
+    {
+      "id": "data-ownership",
+      "title": "Data Ownership And Schema Drift",
+      "criticalFlow": "data_ownership",
+      "owner": "data",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-data-ownership-or-schema-drift",
+      "signals": [
+        "npm run validate:data-ownership",
+        "direct frontend Supabase table count",
+        "reviewed SQL table count",
+        "migration/RLS/index status metadata"
+      ]
+    },
+    {
+      "id": "deployment-reference-drift",
+      "title": "Deployment Reference Drift",
+      "criticalFlow": "deployment_reference",
+      "owner": "platform",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-deployment-reference-drift",
+      "signals": [
+        "npm run validate:module-manifest",
+        "npm run validate:infrastructure-manifest",
+        "Gateway lb:// targets",
+        "Kustomize active services",
+        "scheduler CronJob commands"
+      ]
+    },
+    {
+      "id": "frontend-validation",
+      "title": "Frontend Validation",
+      "criticalFlow": "frontend_validation",
+      "owner": "frontend",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-frontend-validation-or-build-failure",
+      "signals": [
+        "npm run lint",
+        "npm run test:unit",
+        "npm run build",
+        "Vitest file and test counts"
+      ]
+    },
+    {
+      "id": "ci-security-scans",
+      "title": "CI Security Scans",
+      "criticalFlow": "ci_security_scan",
+      "owner": "security",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-ci-security-scan-failure",
+      "signals": [
+        "npm audit --audit-level=high",
+        "extension npm audit --audit-level=high",
+        "Trivy filesystem scan",
+        "Trivy image scan"
+      ]
+    },
+    {
+      "id": "admin-operational-dashboard",
+      "title": "Admin Operational Dashboard",
+      "criticalFlow": "admin_operational_degradation",
+      "owner": "operations",
+      "runbook": "docs/runbooks/INCIDENT_RUNBOOKS.md#incident-admin-operational-dashboard-degraded-or-misleading",
+      "signals": [
+        "admin service source labels",
+        "scheduler provider status fields",
+        "dashboard operational analytics privacy filters",
+        "audit pagination and retry states"
+      ]
+    }
+  ]
+}

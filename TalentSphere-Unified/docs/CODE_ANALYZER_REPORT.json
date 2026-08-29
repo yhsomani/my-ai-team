@@ -1,0 +1,68 @@
+{
+  "report_metadata": {
+    "project": "TalentSphere",
+    "phase": "1 - Assessment & Discovery",
+    "status": "COMPLETED",
+    "timestamp": "2026-04-15T23:30:00Z"
+  },
+  "findings": [
+    {
+      "id": "ANLYZ-001",
+      "vulnerability": "Missing Transactional Outbox Pattern",
+      "severity": "HIGH",
+      "category": "Reliability",
+      "description": "Services (Auth, Job, Application) publish events to RabbitMQ directly within @Service methods. Fallbacks only log errors or save locally without guaranteed eventual consistency. If the message broker is unavailable during a database commit, events are lost.",
+      "locations": [
+        "services/job-service/src/main/java/com/talentsphere/job/service/JobService.java",
+        "services/auth-service/src/main/java/com/talentsphere/auth/service/AuthService.java",
+        "services/application-service/src/main/java/com/talentsphere/application/service/ApplicationService.java"
+      ],
+      "recommendation": "Implement the Transactional Outbox pattern. Save events to an 'outbox' table in the same transaction as the business data, and use a background poller to publish to RabbitMQ."
+    },
+    {
+      "id": "ANLYZ-002",
+      "vulnerability": "Unversioned & Hardcoded Event Schemas",
+      "severity": "MEDIUM",
+      "category": "Architectural Alignment",
+      "description": "Events are constructed as untyped Maps (Map<String, Object>) with hardcoded routing keys ('job.created', 'user.registered'). This prevents schema evolution and increases the risk of downstream consumer breakage during upgrades.",
+      "locations": [
+        "services/job-service/src/main/java/com/talentsphere/job/service/JobService.java",
+        "services/auth-service/src/main/java/com/talentsphere/auth/service/AuthService.java"
+      ],
+      "recommendation": "Adopt a Centralized Schema Registry (e.g., Spring Cloud Stream Schema Registry) and use versioned POJOs for all events."
+    },
+    {
+      "id": "ANLYZ-003",
+      "vulnerability": "Missing Dead Letter Queues (DLQ)",
+      "severity": "HIGH",
+      "category": "Resilience",
+      "description": "RabbitMQ configurations in application.yml lack 'dead-letter-exchange' or 'auto-bind-dlq' settings. Failed message processing will either be lost (if not requeued) or cause 'poison pill' retry loops that exhaust resources.",
+      "locations": [
+        "services/*/src/main/resources/application.yml"
+      ],
+      "recommendation": "Configure standard DLQ patterns for all RabbitMQ listeners with exponential backoff retries."
+    },
+    {
+      "id": "ANLYZ-004",
+      "vulnerability": "MongoDB Unbounded Embedded Arrays",
+      "severity": "MEDIUM",
+      "category": "Performance",
+      "description": "The 'Course' entity embeds a List of 'Lesson' objects directly. If courses grow large, this risk hitting the 16MB document limit and causes significant I/O overhead for partial updates.",
+      "locations": [
+        "services/lms-service/src/main/java/com/talentsphere/lms/entity/Course.java"
+      ],
+      "recommendation": "Migrate large child collections to separate documents with ID references or use MongoDB '$push' with slice limits."
+    },
+    {
+      "id": "ANLYZ-005",
+      "vulnerability": "Permissive Shared CORS Configuration",
+      "severity": "LOW",
+      "category": "Security",
+      "description": "SharedSecurityConfig allows all origins ('*'). While the API Gateway should handle strict CORS, the individual services should still have a defense-in-depth configuration.",
+      "locations": [
+        "services/shared/src/main/java/com/talentsphere/shared/config/SharedSecurityConfig.java"
+      ],
+      "recommendation": "Restrict allowed origins to the specific API Gateway and Frontend internal URLs."
+    }
+  ]
+}

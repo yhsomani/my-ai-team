@@ -1,0 +1,154 @@
+# TalentSphere Per-Service Database Configuration
+# Version: 3.0.1
+# Each service owns its dedicated database
+
+databases:
+  auth_service:
+    name: auth_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${AUTH_DB_USER:auth_user}
+    password: ${AUTH_DB_PASSWORD}
+    pool_size: 20
+    
+  user_service:
+    name: user_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${USER_DB_USER:user_user}
+    password: ${USER_DB_PASSWORD}
+    pool_size: 20
+    
+  profile_service:
+    name: profile_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${PROFILE_DB_USER:profile_user}
+    password: ${PROFILE_DB_PASSWORD}
+    pool_size: 15
+    
+  job_service:
+    name: job_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${JOB_DB_USER:job_user}
+    password: ${JOB_DB_PASSWORD}
+    pool_size: 25
+    
+  application_service:
+    name: application_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${APPLICATION_DB_USER:application_user}
+    password: ${APPLICATION_DB_PASSWORD}
+    pool_size: 20
+    
+  company_service:
+    name: company_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${COMPANY_DB_USER:company_user}
+    password: ${COMPANY_DB_PASSWORD}
+    pool_size: 15
+    
+  notification_service:
+    name: notification_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${NOTIFICATION_DB_USER:notification_user}
+    password: ${NOTIFICATION_DB_PASSWORD}
+    pool_size: 10
+    
+  search_service:
+    name: elasticsearch
+    host: ${ES_HOST:localhost}
+    port: 9200
+    # No SQL database for search
+    
+  analytics_service:
+    name: analytics_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${ANALYTICS_DB_USER:analytics_user}
+    password: ${ANALYTICS_DB_PASSWORD}
+    pool_size: 10
+    
+  gamification_service:
+    name: gamification_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${GAMIFICATION_DB_USER:gamification_user}
+    password: ${GAMIFICATION_DB_PASSWORD}
+    pool_size: 10
+    
+  challenge_service:
+    name: challenge_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${CHALLENGE_DB_USER:challenge_user}
+    password: ${CHALLENGE_DB_PASSWORD}
+    pool_size: 10
+    
+  lms_service:
+    name: lms_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${LMS_DB_USER:lms_user}
+    password: ${LMS_DB_PASSWORD}
+    pool_size: 15
+    
+  video_service:
+    name: video_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${VIDEO_DB_USER:video_user}
+    password: ${VIDEO_DB_PASSWORD}
+    pool_size: 10
+    
+  file_service:
+    name: file_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${FILE_DB_USER:file_user}
+    password: ${FILE_DB_PASSWORD}
+    pool_size: 10
+    
+  email_service:
+    name: email_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${EMAIL_DB_USER:email_user}
+    password: ${EMAIL_DB_PASSWORD}
+    pool_size: 10
+    
+  messaging_service:
+    name: messaging_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${MESSAGING_DB_USER:messaging_user}
+    password: ${MESSAGING_DB_PASSWORD}
+    pool_size: 20
+    
+  networking_service:
+    name: networking_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${NETWORKING_DB_USER:networking_user}
+    password: ${NETWORKING_DB_PASSWORD}
+    pool_size: 15
+    
+  payment_service:
+    name: payment_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${PAYMENT_DB_USER:payment_user}
+    password: ${PAYMENT_DB_PASSWORD}
+    pool_size: 15
+    
+  ai_service:
+    name: ai_db
+    host: ${DB_HOST:localhost}
+    port: 5432
+    user: ${AI_DB_USER:ai_user}
+    password: ${AI_DB_PASSWORD}
+    pool_size: 10
