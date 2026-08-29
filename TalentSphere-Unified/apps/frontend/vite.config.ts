@@ -31,16 +31,16 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3001,
+    port: 3000,
     proxy: {
-      // Proxy all /api/* calls to the API gateway
+      // Proxy all /api/* calls to the mock API server
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
         configure: (proxy) => {
           proxy.on('error', (err) => {
-            console.warn('[Vite Proxy] API gateway unreachable:', err.message);
+            console.warn('[Vite Proxy] Mock API server unreachable:', err.message);
           });
         },
       },

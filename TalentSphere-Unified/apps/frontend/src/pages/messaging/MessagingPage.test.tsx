@@ -172,13 +172,13 @@ describe('MessagingPage', () => {
     renderMessagingPage();
 
     await waitFor(() => {
-      expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('Messages could not load'))).toBe(true);
+      expect(screen.getAllByRole('alert').some((alert: HTMLElement) => alert.textContent?.includes('Messages could not load'))).toBe(true);
     });
 
     expect(screen.getAllByText(/conversation data did not respond/i).length).toBeGreaterThan(0);
     const retryButtons = screen.getAllByRole('button', { name: 'Retry conversations' });
     expect(retryButtons.length).toBeGreaterThan(0);
-    retryButtons.forEach((button) => {
+    retryButtons.forEach((button: HTMLElement) => {
       expect(button.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
       expect(button.querySelector('svg')?.getAttribute('focusable')).toBe('false');
     });
