@@ -14,6 +14,8 @@
     "docs:serve": "npx serve ../docs/frontend/html -l 3001",
     "generate-docs": "typedoc \"src/**/*.ts\" \"src/**/*.tsx\" --out ../docs/frontend/html --excludePrivate --name \"TalentSphere Frontend\"",
     "test:e2e": "playwright test",
+    "mock-server": "node scripts/mock-server.js",
+    "dev:mock": "concurrently \"npm run mock-server\" \"npm run dev\"",
     "test:a11y": "playwright test tests/accessibility-semantics.spec.ts --project=chromium --reporter=line",
     "test:contrast": "playwright test tests/color-contrast.spec.ts --project=chromium --reporter=line",
     "test:contrast:all": "playwright test tests/color-contrast.spec.ts --reporter=line",
@@ -61,6 +63,7 @@
     "typescript-eslint": "^8.21.0",
     "vite": "^7.0.0",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "concurrently": "^9.1.2"
   }
 }
