@@ -122,7 +122,7 @@ Surface: `pages/LoginPage.tsx`, `RegisterPage.tsx`, `services/authService.ts` (p
 |---|---|---|
 | Email/password register & login | Implemented [VC] | Register accepts `?role=` param for recruiter signup [VC] |
 | Logout | Implemented [VC] | Sidebar + mobile menu; **header avatar has no menu** (gap) |
-| Password reset | **Partially Implemented** [VC] | `authService.resetPassword` exists; **no `/reset-password` route registered** — recovery dead-ends |
+| Password reset | Implemented [VC] | `authService.resetPassword` + `/reset-password` route + `ResetPasswordPage` component all wired and tested |
 | Session restore & 401 recovery | Implemented [VC] | Axios interceptor promise-queue prevents refresh races; dispatches logout → `/login` |
 | Registration onboarding signals | Implemented but Not Documented [VC] | `lib/registrationOnboarding.ts` post-registration flow |
 | OAuth providers | Documented but Not Implemented [VC] | `lib/oauth.ts` is orphaned/dead code |
