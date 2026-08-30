@@ -209,6 +209,7 @@ const NetworkingPage: React.FC = () => {
   }, [dispatch, status, user]);
 
   useEffect(() => {
+    let isActive = true;
     const fetchConnectionState = async () => {
       if (!user?.id) return;
       setIsNetworkLoading(true);
@@ -217,6 +218,7 @@ const NetworkingPage: React.FC = () => {
           networkingService.getConnectionRequests(user.id),
           networkingService.getConnections(user.id),
         ]);
+        if (!isActive) return;
         setIncomingRequests(requests.incoming);
         setSentRequests(requests.sent);
         setConnections(acceptedConnections);
@@ -229,6 +231,7 @@ const NetworkingPage: React.FC = () => {
           pendingRequestCount: requests.sent.length,
         });
       } catch (networkError) {
+        if (!isActive) return;
         console.error('Failed to load networking requests:', networkError);
         recordNetworkingAction('networking_connection_state_load_failed', {
           entryPoint: 'page_load',
@@ -236,11 +239,16 @@ const NetworkingPage: React.FC = () => {
         });
         addToast({ type: 'error', title: 'Network load failed', message: 'Request state could not be loaded.' });
       } finally {
-        setIsNetworkLoading(false);
+        if (isActive) {
+          setIsNetworkLoading(false);
+        }
       }
     };
 
     fetchConnectionState();
+    return () => {
+      isActive = false;
+    };
   }, [addToast, recordNetworkingAction, user?.id]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-package com.talentsphere.shared.config;
+package com.talentsphere.shared.messaging;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;

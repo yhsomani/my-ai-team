@@ -1,4 +1,4 @@
-package com.talentsphere.shared.config;
+package com.talentsphere.shared.security;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;

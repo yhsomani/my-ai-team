@@ -148,7 +148,7 @@ const SettingsPage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    loadSettingsData();
+    void loadSettingsData();
   }, [loadSettingsData]);
 
   const handleProfileSave = async () => {

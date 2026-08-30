@@ -1282,6 +1282,22 @@
   ],
   "documentation": [
     {
+      "id": "local-setup-guide",
+      "kind": "setup-guide",
+      "status": "current",
+      "path": "LOCAL_SETUP_GUIDE.md",
+      "required": true,
+      "note": "Local development and Supabase environment setup guide."
+    },
+    {
+      "id": "quick-preview-guide",
+      "kind": "setup-guide",
+      "status": "current",
+      "path": "QUICK_PREVIEW.md",
+      "required": true,
+      "note": "Quick preview and mock server guide for rapid frontend verification."
+    },
+    {
       "id": "current-state-and-action-plan",
       "kind": "current-action-plan",
       "status": "current",

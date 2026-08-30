@@ -1,4 +1,8 @@
-package com.talentsphere.shared.config;
+package com.talentsphere.shared.resilience;
+
+import com.talentsphere.shared.config.EnabledForFeature;
+import com.talentsphere.shared.config.Feature;
+import com.talentsphere.shared.config.FeatureFlagService;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

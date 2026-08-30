@@ -1,5 +1,7 @@
 # Local Supabase Setup Guide (15 Minutes)
 
+> Documentation status: Current local development and Supabase setup guide.
+
 ## Quick Start
 
 This guide will get your TalentSphere frontend running locally with a real PostgreSQL database in under 15 minutes.

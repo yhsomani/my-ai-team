@@ -100,20 +100,25 @@ public class ChallengeService {
     @io.github.resilience4j.retry.annotation.Retry(name = "neuralExecutor")
     private boolean validateWithPiston(String language, String code, String input, String expected) {
         try {
+            String safeLanguage = language != null ? language : "python";
+            String safeCode = code != null ? code : "";
+            String safeInput = input != null ? input : "";
+            String safeExpected = expected != null ? expected.trim() : "";
+
             Map<String, Object> request = Map.of(
-                "language", language,
+                "language", safeLanguage,
                 "version", "*",
-                "files", List.of(Map.of("content", code)),
-                "stdin", input
+                "files", List.of(Map.of("content", safeCode)),
+                "stdin", safeInput
             );
-            
+
             Map<String, Object> response = restTemplate.exchange(
-                PISTON_URL, 
-                HttpMethod.POST, 
-                new HttpEntity<>(request), 
+                PISTON_URL,
+                HttpMethod.POST,
+                new HttpEntity<>(request),
                 new ParameterizedTypeReference<Map<String, Object>>() {}
             ).getBody();
-            
+
             if (response == null) return false;
 
             @SuppressWarnings("unchecked")
@@ -123,8 +128,8 @@ public class ChallengeService {
             Object outputObj = run.get("output");
             if (!(outputObj instanceof String)) return false;
             String output = ((String) outputObj).trim();
-            
-            return output.equals(expected.trim());
+
+            return output.equals(safeExpected);
         } catch (Exception e) {
             throw e; // Rethrow to trigger circuit breaker
         }

@@ -22,8 +22,8 @@ public class OutboxPublisher {
     @Scheduled(fixedRateString = "${talentsphere.outbox.poll-interval-ms:1000}")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void pollAndPublish() {
-        List<OutboxEvent> events = repository.findByStatusOrderByCreatedAtAsc(
-                OutboxEvent.OutboxStatus.PENDING, 100);
+        List<OutboxEvent> events = repository.findTop100ByStatusOrderByCreatedAtAsc(
+                OutboxEvent.OutboxStatus.PENDING);
         
         for (OutboxEvent event : events) {
             try {

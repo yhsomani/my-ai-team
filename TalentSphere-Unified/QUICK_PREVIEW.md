@@ -1,5 +1,7 @@
 # Quick Preview Guide (5 Minutes)
 
+> Documentation status: Current quick preview and mock server setup guide.
+
 ## Fastest Way to See TalentSphere Running
 
 This guide gets the frontend preview running in under 5 minutes **without requiring Supabase, Docker, or backend services**.
