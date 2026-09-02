@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, Code2, FileText, Play, RefreshCw, RotateCcw, Send, Trophy, Users, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Code2, FileText, Play, RefreshCw, RotateCcw, Send, Trophy, Users, XCircle, Zap } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -11,6 +11,8 @@ import { Skeleton } from '../../components/shared/Skeleton';
 import { useToast } from '../../components/shared/Toast';
 import { AuraModal } from '../../components/shared/AuraModal';
 import { challengeService } from '../../services/challengeService';
+import { gamificationService } from '../../services/gamificationService';
+import { getChallengeXpReward } from '../../lib/xpLedger';
 import { Challenge, ChallengeSubmission, ChallengeTestCase } from '../../types/challenges';
 import {
   recordChallengeWorkflowAnalytics,
@@ -600,6 +602,39 @@ const ChallengesPage: React.FC = () => {
         title: 'Solution submitted',
         message: 'Your challenge attempt has been saved.',
       });
+
+      if (submission.status === 'ACCEPTED' || submission.status === 'COMPLETED' || (typeof submission.score === 'number' && submission.score > 0)) {
+        const xpReward = getChallengeXpReward(
+          selectedChallenge.difficulty,
+          (selectedChallenge as any).xp_reward || (selectedChallenge as any).xpReward
+        );
+        try {
+          const xpResult = await gamificationService.awardXP({
+            userId: user.id,
+            amount: xpReward,
+            reason: `Completed challenge: ${selectedChallenge.title}`,
+            referenceType: 'challenge',
+            referenceId: selectedChallenge.id,
+          });
+          if (xpResult.awarded) {
+            if (xpResult.didLevelUp) {
+              addToast({
+                type: 'success',
+                title: `🎉 Level Up! Level ${xpResult.newLevel}`,
+                message: `You earned +${xpResult.amount} XP and advanced to Level ${xpResult.newLevel}!`,
+              });
+            } else {
+              addToast({
+                type: 'success',
+                title: `+${xpResult.amount} XP Earned!`,
+                message: `Great job! Your total XP is now ${xpResult.newXP}.`,
+              });
+            }
+          }
+        } catch (xpError) {
+          console.warn('Failed to record challenge XP award:', xpError);
+        }
+      }
     } catch (submitError) {
       console.error('Challenge submission failed:', submitError);
       recordChallengeAction('challenge_submission_failed', {
@@ -742,6 +777,7 @@ const ChallengesPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-3 text-[10px] text-[var(--text-muted)]">
                   <span className="flex items-center gap-1" aria-label={`${getParticipantCount(challenge)} participants`}><Users {...decorativeIconProps} size={12} /> {getParticipantCount(challenge)}</span>
                   <span className="flex items-center gap-1" aria-label={`Duration ${challenge.duration || challenge.timeLimit || 'N/A'}`}><Clock {...decorativeIconProps} size={12} /> {challenge.duration || challenge.timeLimit || 'N/A'}</span>
+                  <span className="flex items-center gap-1 font-semibold text-amber-500" aria-label={`Reward ${getChallengeXpReward(challenge.difficulty, challenge.xpReward || (challenge as any).xp_reward)} XP`}><Zap {...decorativeIconProps} size={12} /> {getChallengeXpReward(challenge.difficulty, challenge.xpReward || (challenge as any).xp_reward)} XP</span>
                 </div>
                 <Button
                   size="sm"

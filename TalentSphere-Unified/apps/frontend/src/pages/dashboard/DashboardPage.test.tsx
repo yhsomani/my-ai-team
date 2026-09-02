@@ -222,4 +222,75 @@ describe('DashboardPage', () => {
     })).toBeTruthy();
     expectDecorativeSvgIcons(document.body);
   });
+
+  it('renders staged activation nudge card and stage tab filters', async () => {
+    vi.mocked(dashboardService.fetchDashboardData).mockResolvedValue(liveDashboardData);
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard data refreshed.')).toBeTruthy();
+    });
+
+    // Verify active stage nudge region (Foundation is complete since profile details + 3 skills are present, so Discovery is active)
+    expect(screen.getByRole('region', { name: /Current activation stage: Discovery & Proof/i })).toBeTruthy();
+    expect(screen.getByText(/Stage 2 of 3: Discovery & Proof/i)).toBeTruthy();
+    expect(screen.getByText('Verified Skill Proof')).toBeTruthy();
+
+    // Verify stage filters tablist
+    const tablist = screen.getByRole('tablist', { name: 'Activation stage filters' });
+    expect(tablist).toBeTruthy();
+    expect(within(tablist).getByRole('tab', { name: /All Stages/i })).toBeTruthy();
+    expect(within(tablist).getByRole('tab', { name: /Stage 1: Foundation/i })).toBeTruthy();
+    expect(within(tablist).getByRole('tab', { name: /Stage 2: Discovery & Proof/i })).toBeTruthy();
+    expect(within(tablist).getByRole('tab', { name: /Stage 3: Engagement & Growth/i })).toBeTruthy();
+
+    // Filter by Stage 1: Foundation
+    fireEvent.click(within(tablist).getByRole('tab', { name: /Stage 1: Foundation/i }));
+    const taskList = screen.getByRole('list', { name: 'Activation checklist tasks' });
+    expect(within(taskList).getByRole('listitem', { name: /Build your profile/i })).toBeTruthy();
+    expect(within(taskList).queryByRole('listitem', { name: /Attempt a challenge/i })).toBeNull();
+    expect(within(taskList).queryByRole('listitem', { name: /Start a course/i })).toBeNull();
+
+    // Filter by Stage 2: Discovery & Proof
+    fireEvent.click(within(tablist).getByRole('tab', { name: /Stage 2: Discovery & Proof/i }));
+    expect(within(taskList).queryByRole('listitem', { name: /Build your profile/i })).toBeNull();
+    expect(within(taskList).getByRole('listitem', { name: /Save a job search/i })).toBeTruthy();
+    expect(within(taskList).getByRole('listitem', { name: /Attempt a challenge/i })).toBeTruthy();
+
+    // Filter back to All Stages
+    fireEvent.click(within(tablist).getByRole('tab', { name: /All Stages/i }));
+    expect(within(taskList).getByRole('listitem', { name: /Build your profile/i })).toBeTruthy();
+    expect(within(taskList).getByRole('listitem', { name: /Save a job search/i })).toBeTruthy();
+    expect(within(taskList).getByRole('listitem', { name: /Attempt a challenge/i })).toBeTruthy();
+    expect(within(taskList).getByRole('listitem', { name: /Submit your first application/i })).toBeTruthy();
+    expect(within(taskList).getByRole('listitem', { name: /Start a course/i })).toBeTruthy();
+  });
+
+  it('renders 100% complete celebration banner when all activation tasks are completed', async () => {
+    const allCompletedData: DashboardData = {
+      ...liveDashboardData,
+      onboarding: {
+        hasProfileDetails: true,
+        skillCount: 5,
+        applicationCount: 3,
+        savedSearchCount: 2,
+        enrollmentCount: 1,
+        challengeSubmissionCount: 2,
+      },
+    };
+
+    vi.mocked(dashboardService.fetchDashboardData).mockResolvedValue(allCompletedData);
+
+    renderDashboardPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard data refreshed.')).toBeTruthy();
+    });
+
+    expect(screen.getByRole('region', { name: 'Profile activation completed banner' })).toBeTruthy();
+    expect(screen.getByText('All Milestones Complete — 100% Profile Activation')).toBeTruthy();
+    expect(screen.getByText('Maximum Match Visibility')).toBeTruthy();
+    expect(screen.getByText('Activation Complete')).toBeTruthy();
+  });
 });

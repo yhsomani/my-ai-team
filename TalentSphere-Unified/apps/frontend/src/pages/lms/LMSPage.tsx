@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, Play, Clock, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Search, Circle, PlayCircle, Sparkles, X, RefreshCw } from 'lucide-react';
+import { AlertCircle, Play, Clock, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Search, Circle, PlayCircle, Sparkles, X, RefreshCw, Zap } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
@@ -13,6 +13,8 @@ import { Skeleton } from '../../components/shared/Skeleton';
 import { AuraModal } from '../../components/shared/AuraModal';
 import { Course, Enrollment, Lesson } from "../../types/lms";
 import { lmsService, type CourseProgressFilter, type CourseQueryParams } from '../../services/lmsService';
+import { gamificationService } from '../../services/gamificationService';
+import { getLessonXpReward, COURSE_COMPLETION_MILESTONE_XP } from '../../lib/xpLedger';
 import { useToast } from '../../components/shared/Toast';
 import {
   buildLearningAiDraftSuggestion,
@@ -369,6 +371,43 @@ const LMSPage: React.FC = () => {
         autoEnrolled: !wasEnrolled,
         completionStatus: nextProgress === 100 ? 'course_completed' : 'lesson_completed',
       });
+
+      // Award Gamification XP for lesson and course milestone completions
+      const lessonXpReward = getLessonXpReward((activeLesson as any).xpReward || (activeLesson as any).xp_reward);
+      const isCourseMilestone = nextProgress === 100 && enrollment?.status !== 'COMPLETED';
+
+      try {
+        const xpResult = await gamificationService.awardXP({
+          userId: user.id,
+          amount: lessonXpReward,
+          reason: `Completed lesson: ${activeLesson.title}`,
+          referenceType: 'lesson',
+          referenceId: activeLesson.id,
+        });
+
+        if (isCourseMilestone) {
+          await gamificationService.awardXP({
+            userId: user.id,
+            amount: COURSE_COMPLETION_MILESTONE_XP,
+            reason: `Completed course: ${selectedCourse.title}`,
+            referenceType: 'course_completion',
+            referenceId: selectedCourse.id,
+          });
+        }
+
+        if (xpResult.awarded) {
+          if (xpResult.didLevelUp) {
+            addToast({
+              type: 'success',
+              title: `🎉 Level Up! Level ${xpResult.newLevel}`,
+              message: `You earned +${xpResult.amount} XP and advanced to Level ${xpResult.newLevel}!`,
+            });
+          }
+        }
+      } catch (xpError) {
+        console.warn('Failed to record LMS XP award:', xpError);
+      }
+
       addToast({
         type: 'success',
         title: nextProgress === 100 ? 'Course completed' : 'Lesson completed',

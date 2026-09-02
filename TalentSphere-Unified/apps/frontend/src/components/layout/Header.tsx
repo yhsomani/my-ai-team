@@ -11,6 +11,7 @@ import {
 import type { NotificationRecord, PaginatedNotificationsResult } from '../../services/notificationService';
 import { USER_ROLES } from '../../navigation/routeRegistry';
 import { CommandSearch } from './CommandSearch';
+import { GamificationHeaderBadge } from '../gamification/GamificationHeaderBadge';
 
 const notificationPageSize = 8;
 
@@ -267,6 +268,8 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right: Actions */}
       <div className="flex shrink-0 items-center gap-2">
+        <GamificationHeaderBadge userId={user?.id} />
+
         <div className="relative">
           <button
             type="button"

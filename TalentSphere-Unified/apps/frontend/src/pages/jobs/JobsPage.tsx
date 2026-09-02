@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Briefcase, Building2, Filter, DollarSign, CheckCircle2, Circle, XCircle, Bookmark, BookmarkCheck, Trash2, Sparkles, Eraser, Bell, BellOff, ChevronLeft, ChevronRight, Pencil, Clock, EyeOff, Undo2, SlidersHorizontal, AlertCircle, Flag } from 'lucide-react';
 import { applicationService } from '../../services/applicationService';
 import type { ApplicationDraftRecord, ApplicationDraftSource } from '../../services/applicationService';
 import { getJobPublishPolicyErrorMessage, jobService, type SavedJobSearchRecord } from '../../services/jobService';
@@ -9,6 +9,7 @@ import { profileService } from '../../services/profileService';
 import { recruiterService } from '../../services/recruiterService';
 import { settingsService } from '../../services/settingsService';
 import { notificationDigestService } from '../../services/notificationDigestService';
+import { ReportContentModal } from '../../components/trust/ReportContentModal';
 import { ApplicationStatusEvent, Job, JobApplication } from '../../types/job';
 import { buildRecruiterPostingPublishIssues } from '../../lib/jobPostReview';
 import {
@@ -562,6 +563,7 @@ const JobsPage: React.FC = () => {
     const [savedSearchName, setSavedSearchName] = useState('');
     const [savedSearchAlertEnabled, setSavedSearchAlertEnabled] = useState(false);
     const [savedSearchDeleteReview, setSavedSearchDeleteReview] = useState<SavedJobSearch | null>(null);
+    const [reportingJob, setReportingJob] = useState<Job | null>(null);
     const [jobsPage, setJobsPage] = useState(1);
     const [jobsPageSize, setJobsPageSize] = useState(defaultJobsPageSize);
     const [jobsPageCursors, setJobsPageCursors] = useState<Record<number, string>>({});
@@ -3050,16 +3052,29 @@ const JobsPage: React.FC = () => {
 
                                 <div className="mt-4 pt-4 border-t border-[var(--border-default)]">
                                     {activeTab === 'explore' ? (
-                                        <Button
-                                            variant={existingApplication ? 'outline' : 'default'}
-                                            size="sm"
-                                            className="w-full"
-                                            disabled={isApplying === job.id}
-                                            onClick={() => openApplicationModal(job)}
-                                            isLoading={isApplying === job.id}
-                                        >
-                                            {existingApplication ? 'View Application' : 'Apply Now'}
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant={existingApplication ? 'outline' : 'default'}
+                                                size="sm"
+                                                className="flex-1"
+                                                disabled={isApplying === job.id}
+                                                onClick={() => openApplicationModal(job)}
+                                                isLoading={isApplying === job.id}
+                                            >
+                                                {existingApplication ? 'View Application' : 'Apply Now'}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-9 px-2.5 text-xs text-[var(--text-muted)] hover:text-destructive"
+                                                onClick={() => setReportingJob(job)}
+                                                aria-label={`Report ${job.title}`}
+                                            >
+                                                <Flag {...decorativeIconProps} size={13} />
+                                                Report
+                                            </Button>
+                                        </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
                                             <Badge variant={getApplicationStatusVariant(item.status)}>
@@ -3613,6 +3628,22 @@ const JobsPage: React.FC = () => {
                     </div>
                 )}
             </AuraModal>
+
+            <ReportContentModal
+                isOpen={Boolean(reportingJob)}
+                onClose={() => setReportingJob(null)}
+                targetType="job_posting"
+                targetId={reportingJob?.id || ''}
+                targetTitle={reportingJob ? `${reportingJob.title}${reportingJob.companyName ? ` at ${reportingJob.companyName}` : ''}` : undefined}
+                reporterId={user?.id}
+                onReportSubmitted={() => {
+                    addToast({
+                        type: 'success',
+                        title: 'Report Submitted',
+                        message: 'Thank you for reporting. Our Trust & Safety team will review this job listing.',
+                    });
+                }}
+            />
         </div>
     );
 };

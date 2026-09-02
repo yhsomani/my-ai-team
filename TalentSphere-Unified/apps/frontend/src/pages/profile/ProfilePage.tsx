@@ -32,6 +32,7 @@ import {
   normalizeProfileAvatarCrop,
   type ProfileAvatarCrop,
 } from '../../lib/profileAvatarCrop';
+import { formatDateInput, formatMonthYear, parseDateInput } from '../../lib/dateUtils';
 
 type CompletionTaskType = 'skill' | 'experience' | 'education';
 type EditingProfileRow = { type: CompletionTaskType; id: string } | null;
@@ -65,20 +66,12 @@ const getSkillId = (skill: Record<string, any> | string) => typeof skill === 'st
 const getSkillProficiency = (skill: Record<string, any> | string) => typeof skill === 'string' ? 'INTERMEDIATE' : skill.proficiency || 'INTERMEDIATE';
 const getSkillYears = (skill: Record<string, any> | string) => typeof skill === 'string' ? undefined : skill.yearsOfExperience ?? skill.years_of_experience;
 const getProfileRowId = (row: Record<string, any>) => row?.id ? String(row.id) : undefined;
-const parseDateInput = (date: string) => (
-  /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? new Date(`${date.trim()}T00:00:00`) : new Date(date)
-);
-const formatProfileDate = (date?: string) => {
-  if (!date) return '';
-  const parsed = parseDateInput(date);
-  if (Number.isNaN(parsed.getTime())) return date;
-  return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-};
+const formatProfileDate = (date?: string) => formatMonthYear(date, date || '');
 const getExperienceStartDate = (experience: Record<string, any>) => experience.startDate || experience.start_date;
 const getExperienceEndDate = (experience: Record<string, any>) => experience.endDate || experience.end_date;
 const getEducationStartDate = (education: Record<string, any>) => education.startDate || education.start_date;
 const getEducationEndDate = (education: Record<string, any>) => education.endDate || education.end_date;
-const formatDateInput = (date?: string) => date ? String(date).slice(0, 10) : '';
+const formatProfileDateInput = (date?: string) => formatDateInput(date);
 const formatProfileTextToken = (value?: string | number | null) => String(value ?? '').trim();
 const formatSkillProficiency = (proficiency: string) => {
   const normalized = proficiency.toLowerCase().replace(/_/g, ' ');

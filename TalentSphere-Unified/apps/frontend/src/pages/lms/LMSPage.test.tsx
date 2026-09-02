@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../components/shared/Toast';
 import { lmsService } from '../../services/lmsService';
+import { gamificationService } from '../../services/gamificationService';
 import authReducer from '../../store/slices/authSlice';
 import lmsReducer from '../../store/slices/lmsSlice';
 import type { Course, Enrollment } from '../../types/lms';
@@ -17,6 +18,26 @@ vi.mock('../../services/lmsService', () => ({
     getUserEnrollments: vi.fn(),
     enrollInCourse: vi.fn(),
     markLessonComplete: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/gamificationService', () => ({
+  gamificationService: {
+    getLeaderboard: vi.fn().mockResolvedValue([]),
+    getUserXP: vi.fn().mockResolvedValue(0),
+    getUserBadges: vi.fn().mockResolvedValue([]),
+    getXPTransactions: vi.fn().mockResolvedValue([]),
+    awardXP: vi.fn().mockResolvedValue({
+      awarded: true,
+      amount: 10,
+      previousXP: 0,
+      newXP: 10,
+      previousLevel: 1,
+      newLevel: 1,
+      didLevelUp: false,
+      skipReason: 'none',
+      message: 'XP awarded',
+    }),
   },
 }));
 

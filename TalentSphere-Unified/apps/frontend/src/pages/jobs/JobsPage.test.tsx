@@ -74,6 +74,12 @@ vi.mock('../../services/notificationService', () => ({
   },
 }));
 
+vi.mock('../../services/trustAndSafetyService', () => ({
+  trustAndSafetyService: {
+    submitContentReport: vi.fn(),
+  },
+}));
+
 vi.mock('../../services/notificationDigestService', () => ({
   notificationDigestService: {
     queueSavedSearchDigestItem: vi.fn(),
@@ -956,5 +962,36 @@ describe('JobsPage', () => {
       expect(jobService.updateJob).toHaveBeenCalledTimes(2);
       expect(screen.queryByRole('dialog', { name: 'Review Before Publishing' })).toBeNull();
     });
+  });
+
+  it('opens report content modal from job card and displays job context', async () => {
+    jobsPageQueryResponse = {
+      data: {
+        jobs: [jobFixture],
+        total: 1,
+        limit: 12,
+        offset: 0,
+        hasNext: false,
+        nextCursor: null,
+      },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      refetch: refetchJobsMock,
+    };
+
+    renderJobsPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Frontend Platform Engineer')).toBeTruthy();
+    });
+
+    const reportButton = screen.getByRole('button', { name: 'Report Frontend Platform Engineer' });
+    fireEvent.click(reportButton);
+
+    const modal = await screen.findByRole('dialog', { name: 'Report Job Posting' });
+    expect(modal).toBeTruthy();
+    expect(screen.getByText('ID: job-explore-001')).toBeTruthy();
+    expect(screen.getByText('Frontend Platform Engineer at Northstar Labs')).toBeTruthy();
   });
 });

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mvn clean *)"
+      "Bash(mvn clean *)",
+      "PowerShell(Get-ChildItem -Path \"TalentSphere-Unified\" -Filter \"package.json\" -Recurse | Where-Object { $_.FullName -notmatch \"node_modules\" } | Select-Object FullName)",
+      "PowerShell(npm *)",
+      "PowerShell(node \"TalentSphere-Unified/scripts/scheduler-audit.test.mjs\"; node \"TalentSphere-Unified/scripts/discover-saved-search-digests.test.mjs\"; node \"TalentSphere-Unified/scripts/run-notification-digests.test.mjs\"; node \"TalentSphere-Unified/scripts/run-networking-reminders.test.mjs\")"
     ]
   }
 }

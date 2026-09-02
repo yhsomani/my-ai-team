@@ -7,6 +7,7 @@
     "apps/frontend"
   ],
   "scripts": {
+    "test": "npm run test:unit && npm run test:scheduler-audit && npm run test:notification-digests && npm run test:networking-reminders && npm run test:saved-search-digest-discovery",
     "dev": "npm run dev --workspace talentsphere-web",
     "build": "npm run build --workspace talentsphere-web",
     "lint": "npm run lint --workspace talentsphere-web",

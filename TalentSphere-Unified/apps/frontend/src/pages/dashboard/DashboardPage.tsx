@@ -4,7 +4,8 @@ import { dashboardService, DashboardOnboardingSignals, DashboardStats } from '..
 import { recruiterService, RecruiterOnboardingSignals, RecruiterStats } from '../../services/recruiterService';
 import {
   Briefcase, MessageSquare, TrendingUp, Award,
-  AlertTriangle, ArrowUpRight, Users, CheckCircle, Clock, Plus, RefreshCw, Circle
+  AlertTriangle, ArrowUpRight, Users, CheckCircle, Clock, Plus, RefreshCw, Circle,
+  Sparkles, Target, Compass, Zap
 } from 'lucide-react';
 import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
@@ -59,7 +60,81 @@ type OnboardingTask = {
   complete: boolean;
   route: string;
   action: string;
+  stage: ActivationStageId;
+  impact?: string;
 };
+
+export type ActivationStageId = 'foundation' | 'discovery' | 'growth' | 'sourcing' | 'engagement';
+
+export interface ActivationStage {
+  id: ActivationStageId;
+  stageNumber: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  nudge: string;
+  impactBadge: string;
+}
+
+export const TALENT_ACTIVATION_STAGES: ActivationStage[] = [
+  {
+    id: 'foundation',
+    stageNumber: 1,
+    title: 'Foundation',
+    subtitle: 'Profile & Skills Setup',
+    description: 'Set up your headline, target role, location, and verified skills to activate match scoring.',
+    nudge: 'Complete your profile foundation to achieve up to 3.5x higher search ranking in recruiter searches.',
+    impactBadge: 'Core Match Baseline',
+  },
+  {
+    id: 'discovery',
+    stageNumber: 2,
+    title: 'Discovery & Proof',
+    subtitle: 'Search Alerts & Skill Proof',
+    description: 'Save search criteria for instant role alerts and solve challenges to prove coding capability.',
+    nudge: 'Save a search and attempt a challenge to showcase verified problem-solving ability to hiring teams.',
+    impactBadge: 'Verified Skill Proof',
+  },
+  {
+    id: 'growth',
+    stageNumber: 3,
+    title: 'Engagement & Growth',
+    subtitle: 'Applications & Upskilling',
+    description: 'Submit targeted applications and complete LMS courses to accelerate role readiness.',
+    nudge: 'Submit role applications and enroll in targeted learning paths to advance your career trajectory.',
+    impactBadge: 'Pipeline Acceleration',
+  },
+];
+
+export const RECRUITER_ACTIVATION_STAGES: ActivationStage[] = [
+  {
+    id: 'foundation',
+    stageNumber: 1,
+    title: 'Foundation',
+    subtitle: 'Company Identity',
+    description: 'Set up company details and employer brand so candidates understand your mission.',
+    nudge: 'Add company details to build candidate trust and improve application completion rates.',
+    impactBadge: 'Verified Employer Brand',
+  },
+  {
+    id: 'discovery',
+    stageNumber: 2,
+    title: 'Sourcing & Roles',
+    subtitle: 'Role Publishing',
+    description: 'Publish active job requisitions to allow candidates to discover and match with your openings.',
+    nudge: 'Post your first role to start receiving AI-matched candidate applications.',
+    impactBadge: 'AI Match Indexing',
+  },
+  {
+    id: 'growth',
+    stageNumber: 3,
+    title: 'Talent Engagement',
+    subtitle: 'Candidate Outreach',
+    description: 'Review incoming talent dossiers and initiate direct outreach to accelerate hiring cycles.',
+    nudge: 'Review incoming candidate pipelines and message top applicants to advance hiring velocity.',
+    impactBadge: 'Direct Talent Outreach',
+  },
+];
 
 type DashboardMetric = {
   label: string;
@@ -169,21 +244,48 @@ interface OnboardingChecklistProps {
   title: string;
   description: string;
   tasks: OnboardingTask[];
+  stages?: ActivationStage[];
   onNavigate: (task: OnboardingTask, entryPoint: 'checklist_primary' | 'checklist_item') => void;
 }
 
-const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, description, tasks, onNavigate }) => {
-  const completedCount = tasks.filter(task => task.complete).length;
-  const nextTask = tasks.find(task => !task.complete);
+const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
+  title,
+  description,
+  tasks,
+  stages = [],
+  onNavigate,
+}) => {
+  const [selectedStage, setSelectedStage] = useState<ActivationStageId | 'all'>('all');
+  const completedCount = tasks.filter((task) => task.complete).length;
+  const nextTask = tasks.find((task) => !task.complete);
   const progress = tasks.length === 0 ? 100 : Math.round((completedCount / tasks.length) * 100);
+  const isComplete = progress === 100;
+
+  // Compute active stage (earliest stage with incomplete tasks, or the last stage if all complete)
+  const activeStage = stages.find((stage) => {
+    const stageTasks = tasks.filter((t) => t.stage === stage.id);
+    return stageTasks.some((t) => !t.complete);
+  }) || stages[stages.length - 1] || null;
+
+  // Filter tasks based on selected stage tab
+  const displayedTasks = selectedStage === 'all'
+    ? tasks
+    : tasks.filter((task) => task.stage === selectedStage);
 
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <Card className="p-4 sm:p-5 space-y-4">
+      {/* Header & Overall Progress */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h3>
-            <Badge variant={progress === 100 ? 'success' : 'outline'}>{completedCount}/{tasks.length}</Badge>
+            <Badge variant={isComplete ? 'success' : 'outline'}>{completedCount}/{tasks.length}</Badge>
+            {isComplete && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                <CheckCircle {...decorativeIconProps} size={13} />
+                Activation Complete
+              </span>
+            )}
           </div>
           <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
         </div>
@@ -194,8 +296,9 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
           </Button>
         )}
       </div>
+
       <div
-        className="mb-4 h-2 overflow-hidden rounded-md bg-[var(--bg-secondary)]"
+        className="h-2 overflow-hidden rounded-md bg-[var(--bg-secondary)]"
         role="progressbar"
         aria-label={`${title} progress`}
         aria-valuenow={progress}
@@ -204,8 +307,122 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
       >
         <div className="h-full rounded-md bg-accent transition-all" style={{ width: `${progress}%` }} />
       </div>
+
+      {/* Dynamic Staged Nudge Card */}
+      {isComplete ? (
+        <div
+          role="region"
+          aria-label="Profile activation completed banner"
+          className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 p-3.5"
+        >
+          <Sparkles {...decorativeIconProps} size={18} className="mt-0.5 shrink-0 text-success" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-[var(--text-primary)]">
+                All Milestones Complete — 100% Profile Activation
+              </span>
+              <Badge variant="success">Maximum Match Visibility</Badge>
+            </div>
+            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+              Your profile is fully optimized for top recruiter discovery, verified skill ranking, and instant opportunity matches.
+            </p>
+          </div>
+        </div>
+      ) : activeStage ? (
+        <div
+          role="region"
+          aria-label={`Current activation stage: ${activeStage.title}`}
+          className="flex flex-col gap-3 rounded-lg border border-accent/30 bg-accent/5 p-3.5 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3 min-w-0">
+            <Compass {...decorativeIconProps} size={18} className="mt-0.5 shrink-0 text-accent" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-[var(--text-primary)]">
+                  Stage {activeStage.stageNumber} of {stages.length}: {activeStage.title}
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)]">({activeStage.subtitle})</span>
+                <Badge variant="outline" className="text-[10px] py-0">{activeStage.impactBadge}</Badge>
+              </div>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                {activeStage.nudge}
+              </p>
+            </div>
+          </div>
+          {nextTask && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 text-xs"
+              onClick={() => onNavigate(nextTask, 'checklist_primary')}
+            >
+              <Zap {...decorativeIconProps} size={13} className="mr-1 text-accent" />
+              {nextTask.action}
+            </Button>
+          )}
+        </div>
+      ) : null}
+
+      {/* Interactive Stage Filters */}
+      {stages.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-1.5 border-b border-[var(--border-default)] pb-2"
+          role="tablist"
+          aria-label="Activation stage filters"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={selectedStage === 'all'}
+            onClick={() => setSelectedStage('all')}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              selectedStage === 'all'
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            All Stages ({completedCount}/{tasks.length})
+          </button>
+          {stages.map((stage) => {
+            const stageTasks = tasks.filter((t) => t.stage === stage.id);
+            const stageCompleted = stageTasks.filter((t) => t.complete).length;
+            const isStageDone = stageTasks.length > 0 && stageCompleted === stageTasks.length;
+            const isSelected = selectedStage === stage.id;
+
+            return (
+              <button
+                key={stage.id}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setSelectedStage(stage.id)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  isSelected
+                    ? 'bg-accent text-white shadow-sm'
+                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <span>Stage {stage.stageNumber}: {stage.title}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : isStageDone
+                        ? 'bg-success/15 text-success'
+                        : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {stageCompleted}/{stageTasks.length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Task Grid */}
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2" role="list" aria-label={`${title} tasks`}>
-        {tasks.map(task => (
+        {displayedTasks.map((task) => (
           <div key={task.id} role="listitem" aria-label={`${task.label}. ${task.complete ? 'Completed' : 'Not completed'}. ${task.action}`}>
             <button
               type="button"
@@ -218,8 +435,15 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({ title, descri
               ) : (
                 <Circle {...decorativeIconProps} size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
               )}
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-[var(--text-primary)]">{task.label}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="block text-sm font-medium text-[var(--text-primary)]">{task.label}</span>
+                  {task.impact && (
+                    <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                      {task.impact}
+                    </span>
+                  )}
+                </span>
                 <span className="mt-1 block text-xs text-[var(--text-muted)]">{task.description}</span>
               </span>
             </button>
@@ -611,7 +835,9 @@ const DashboardPage: React.FC = () => {
         : 'Add your headline, role, location, and at least three skills.',
       complete: talentOnboarding.hasProfileDetails && talentOnboarding.skillCount >= 3,
       route: '/profile',
-      action: 'Update profile'
+      action: 'Update profile',
+      stage: 'foundation',
+      impact: '+35% Match Baseline',
     },
     {
       id: 'saved-search',
@@ -621,27 +847,9 @@ const DashboardPage: React.FC = () => {
         : 'Save filters once so you can return to relevant jobs faster.',
       complete: talentOnboarding.savedSearchCount > 0,
       route: '/jobs',
-      action: 'Find jobs'
-    },
-    {
-      id: 'apply',
-      label: 'Submit your first application',
-      description: talentOnboarding.applicationCount > 0
-        ? 'Your application pipeline has started.'
-        : 'Review a job-specific draft and submit only when ready.',
-      complete: talentOnboarding.applicationCount > 0,
-      route: '/jobs',
-      action: 'Apply to jobs'
-    },
-    {
-      id: 'learning',
-      label: 'Start a course',
-      description: talentOnboarding.enrollmentCount > 0
-        ? 'Learning progress is underway.'
-        : 'Enroll in a course tied to your next role target.',
-      complete: talentOnboarding.enrollmentCount > 0,
-      route: '/lms',
-      action: 'Browse learning'
+      action: 'Find jobs',
+      stage: 'discovery',
+      impact: 'Instant Alerts',
     },
     {
       id: 'challenge',
@@ -651,8 +859,34 @@ const DashboardPage: React.FC = () => {
         : 'Run a challenge to build proof of skill.',
       complete: talentOnboarding.challengeSubmissionCount > 0,
       route: '/challenges',
-      action: 'Try challenge'
-    }
+      action: 'Try challenge',
+      stage: 'discovery',
+      impact: 'Skill Proof',
+    },
+    {
+      id: 'apply',
+      label: 'Submit your first application',
+      description: talentOnboarding.applicationCount > 0
+        ? 'Your application pipeline has started.'
+        : 'Review a job-specific draft and submit only when ready.',
+      complete: talentOnboarding.applicationCount > 0,
+      route: '/jobs',
+      action: 'Apply to jobs',
+      stage: 'growth',
+      impact: 'Pipeline Entry',
+    },
+    {
+      id: 'learning',
+      label: 'Start a course',
+      description: talentOnboarding.enrollmentCount > 0
+        ? 'Learning progress is underway.'
+        : 'Enroll in a course tied to your next role target.',
+      complete: talentOnboarding.enrollmentCount > 0,
+      route: '/lms',
+      action: 'Browse learning',
+      stage: 'growth',
+      impact: 'Certification',
+    },
   ];
   const recruiterOnboardingTasks: OnboardingTask[] = [
     {
@@ -663,7 +897,9 @@ const DashboardPage: React.FC = () => {
         : 'Set up company details so job posts and candidates have context.',
       complete: recruiterOnboarding.companyCount > 0,
       route: '/jobs/post?companySetup=1',
-      action: recruiterOnboarding.companyCount > 0 ? 'Review company' : 'Add company'
+      action: recruiterOnboarding.companyCount > 0 ? 'Review company' : 'Add company',
+      stage: 'foundation',
+      impact: 'Brand Verification',
     },
     {
       id: 'job',
@@ -673,7 +909,9 @@ const DashboardPage: React.FC = () => {
         : 'Create a role so candidates can enter your pipeline.',
       complete: recruiterOnboarding.activeJobs > 0,
       route: '/jobs/post',
-      action: 'Post job'
+      action: 'Post job',
+      stage: 'sourcing',
+      impact: 'AI Match Indexing',
     },
     {
       id: 'candidates',
@@ -683,7 +921,9 @@ const DashboardPage: React.FC = () => {
         : 'Once applications arrive, review status, notes, and next steps here.',
       complete: recruiterOnboarding.totalApplications > 0,
       route: '/candidates',
-      action: 'Open candidates'
+      action: 'Open candidates',
+      stage: 'engagement',
+      impact: 'Applicant Pipeline',
     },
     {
       id: 'messages',
@@ -693,8 +933,10 @@ const DashboardPage: React.FC = () => {
         : 'Keep candidate outreach ready before the first applications arrive.',
       complete: recruiterOnboarding.hasRecentApplications,
       route: '/messaging',
-      action: 'Open messages'
-    }
+      action: 'Open messages',
+      stage: 'engagement',
+      impact: 'Direct Outreach',
+    },
   ];
 
   if (isRecruiter) {
@@ -733,6 +975,7 @@ const DashboardPage: React.FC = () => {
           title="Recruiter setup"
           description="Recommended steps for a usable hiring workflow."
           tasks={recruiterOnboardingTasks}
+          stages={RECRUITER_ACTIVATION_STAGES}
           onNavigate={(task, entryPoint) => handleOnboardingNavigate(task, entryPoint, recruiterOnboardingTasks)}
         />
 
@@ -850,6 +1093,7 @@ const DashboardPage: React.FC = () => {
         title="Activation checklist"
         description="Recommended steps to make job matching, applications, and learning work better."
         tasks={talentOnboardingTasks}
+        stages={TALENT_ACTIVATION_STAGES}
         onNavigate={(task, entryPoint) => handleOnboardingNavigate(task, entryPoint, talentOnboardingTasks)}
       />
 

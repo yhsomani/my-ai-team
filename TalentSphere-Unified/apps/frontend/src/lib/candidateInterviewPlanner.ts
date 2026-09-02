@@ -98,12 +98,14 @@ export interface CandidateScorecardAnalytics {
   localCount: number;
 }
 
-export type CandidateReviewFocus = 'all' | 'needs_scorecard' | 'high_signal';
+export type CandidateReviewFocus = 'all' | 'needs_scorecard' | 'high_signal' | 'sla_breached' | 'sla_warning';
 
 export interface CandidateReviewFocusItem {
   id: string;
   hasScorecard?: boolean;
   advisoryScore?: number | null;
+  isSlaBreached?: boolean;
+  isSlaWarning?: boolean;
 }
 
 export interface CandidateReviewFocusActionInput {
@@ -111,6 +113,8 @@ export interface CandidateReviewFocusActionInput {
   totalCount: number;
   unscoredCount: number;
   highSignalCount: number;
+  slaBreachCount?: number;
+  slaWarningCount?: number;
 }
 
 export interface CandidateReviewFocusAction {
@@ -475,6 +479,10 @@ export const filterCandidatesByReviewFocus = <T extends CandidateReviewFocusItem
       return uniqueCandidates.filter(candidate => !candidate.hasScorecard);
     case 'high_signal':
       return uniqueCandidates.filter(candidate => Number(candidate.advisoryScore) >= 80);
+    case 'sla_breached':
+      return uniqueCandidates.filter(candidate => Boolean(candidate.isSlaBreached));
+    case 'sla_warning':
+      return uniqueCandidates.filter(candidate => Boolean(candidate.isSlaWarning));
     case 'all':
     default:
       return uniqueCandidates;
@@ -490,10 +498,14 @@ export const buildCandidateReviewFocusActions = ({
   totalCount,
   unscoredCount,
   highSignalCount,
+  slaBreachCount = 0,
+  slaWarningCount = 0,
 }: CandidateReviewFocusActionInput): CandidateReviewFocusAction[] => {
   const safeTotalCount = normalizeActionCount(totalCount);
   const safeUnscoredCount = normalizeActionCount(unscoredCount);
   const safeHighSignalCount = normalizeActionCount(highSignalCount);
+  const safeSlaBreachCount = normalizeActionCount(slaBreachCount);
+  const safeSlaWarningCount = normalizeActionCount(slaWarningCount);
   const isScoped = currentFocus !== 'all';
 
   return [
@@ -508,6 +520,18 @@ export const buildCandidateReviewFocusActions = ({
       label: 'Review high signal',
       count: safeHighSignalCount,
       disabled: isScoped || safeHighSignalCount === 0,
+    },
+    {
+      focus: 'sla_breached',
+      label: 'SLA Breaches',
+      count: safeSlaBreachCount,
+      disabled: isScoped || safeSlaBreachCount === 0,
+    },
+    {
+      focus: 'sla_warning',
+      label: 'SLA Warnings',
+      count: safeSlaWarningCount,
+      disabled: isScoped || safeSlaWarningCount === 0,
     },
     {
       focus: 'all',

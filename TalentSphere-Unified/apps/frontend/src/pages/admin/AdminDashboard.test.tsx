@@ -11,6 +11,10 @@ import {
   type AdminScheduledAutomationStatusResult,
   type PaginatedAuditLogsResult,
 } from '../../services/adminService';
+import {
+  trustAndSafetyService,
+  type PaginatedModerationReportsResult,
+} from '../../services/trustAndSafetyService';
 import AdminDashboard from './AdminDashboard';
 
 vi.mock('../../services/adminService', () => ({
@@ -19,6 +23,16 @@ vi.mock('../../services/adminService', () => ({
     getAuditLogsPage: vi.fn(),
     getProductAnalyticsInsights: vi.fn(),
     getScheduledAutomationStatus: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/trustAndSafetyService', () => ({
+  REPORT_SUBMITTED_EVENT: 'talentsphere:report-submitted',
+  REPORT_RESOLVED_EVENT: 'talentsphere:report-resolved',
+  trustAndSafetyService: {
+    getModerationReports: vi.fn(),
+    updateReportStatus: vi.fn(),
+    submitContentReport: vi.fn(),
   },
 }));
 
@@ -212,6 +226,26 @@ describe('AdminDashboard', () => {
     vi.mocked(adminService.getAuditLogsPage).mockResolvedValue(auditLogResult);
     vi.mocked(adminService.getProductAnalyticsInsights).mockResolvedValue(analyticsInsights);
     vi.mocked(adminService.getScheduledAutomationStatus).mockResolvedValue(schedulerStatus);
+    vi.mocked(trustAndSafetyService.getModerationReports).mockResolvedValue({
+      reports: [
+        {
+          id: 'rep-001',
+          target_type: 'job_posting',
+          target_id: 'job-101',
+          target_title: 'Suspicious Crypto Trading Role',
+          reason: 'scam',
+          details: 'Asks for upfront payment.',
+          status: 'pending',
+          created_at: '2026-06-28T10:00:00.000Z',
+          updated_at: '2026-06-28T10:00:00.000Z',
+        },
+      ],
+      total: 1,
+      pendingCount: 1,
+      underReviewCount: 0,
+      resolvedCount: 0,
+      dismissedCount: 0,
+    });
   });
 
   afterEach(() => {
@@ -282,6 +316,8 @@ describe('AdminDashboard', () => {
     expect(screen.getByRole('row', {
       name: 'API Gateway: Running, uptime 100%, source Live.',
     })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /Trust & Safety Moderation Queue/i })).toBeTruthy();
+    expect(screen.getByRole('table', { name: 'Content moderation reports' })).toBeTruthy();
     expect(screen.getByRole('table', { name: 'Audit log events' })).toBeTruthy();
     expect(screen.getByRole('row', {
       name: 'admin.settings.reviewed: system_settings · settings-001 by admin-user.',

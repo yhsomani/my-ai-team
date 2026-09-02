@@ -251,15 +251,17 @@ describe('candidateInterviewPlanner', () => {
 
   it('filters current-page candidates by review focus without mutating records', () => {
     const candidates = [
-      { id: 'app-1', hasScorecard: true, advisoryScore: 92, label: 'Ava' },
-      { id: 'app-2', hasScorecard: false, advisoryScore: 72, label: 'Ben' },
-      { id: 'app-3', hasScorecard: true, advisoryScore: 45, label: 'Cara' },
-      { id: 'app-1', hasScorecard: false, advisoryScore: 20, label: 'Duplicate Ava' },
+      { id: 'app-1', hasScorecard: true, advisoryScore: 92, label: 'Ava', isSlaBreached: false, isSlaWarning: false },
+      { id: 'app-2', hasScorecard: false, advisoryScore: 72, label: 'Ben', isSlaBreached: true, isSlaWarning: false },
+      { id: 'app-3', hasScorecard: true, advisoryScore: 45, label: 'Cara', isSlaBreached: false, isSlaWarning: true },
+      { id: 'app-1', hasScorecard: false, advisoryScore: 20, label: 'Duplicate Ava', isSlaBreached: false, isSlaWarning: false },
     ];
 
     expect(filterCandidatesByReviewFocus(candidates, 'all').map(candidate => candidate.id)).toEqual(['app-1', 'app-2', 'app-3']);
     expect(filterCandidatesByReviewFocus(candidates, 'needs_scorecard').map(candidate => candidate.id)).toEqual(['app-2']);
     expect(filterCandidatesByReviewFocus(candidates, 'high_signal').map(candidate => candidate.id)).toEqual(['app-1']);
+    expect(filterCandidatesByReviewFocus(candidates, 'sla_breached').map(candidate => candidate.id)).toEqual(['app-2']);
+    expect(filterCandidatesByReviewFocus(candidates, 'sla_warning').map(candidate => candidate.id)).toEqual(['app-3']);
     expect(candidates).toHaveLength(4);
   });
 
@@ -269,11 +271,15 @@ describe('candidateInterviewPlanner', () => {
       totalCount: 8,
       unscoredCount: 3,
       highSignalCount: 2,
+      slaBreachCount: 1,
+      slaWarningCount: 2,
     });
 
     expect(actions).toEqual([
       { focus: 'needs_scorecard', label: 'Review gaps', count: 3, disabled: false },
       { focus: 'high_signal', label: 'Review high signal', count: 2, disabled: false },
+      { focus: 'sla_breached', label: 'SLA Breaches', count: 1, disabled: false },
+      { focus: 'sla_warning', label: 'SLA Warnings', count: 2, disabled: false },
       { focus: 'all', label: 'Show all', count: 8, disabled: true },
     ]);
 

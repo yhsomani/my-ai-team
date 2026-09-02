@@ -3,13 +3,18 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
-import { Search, Filter, User, Mail, Download, ExternalLink, CheckCircle, XCircle, Eye, RefreshCw, Briefcase, Calendar, StickyNote, Save, AlertTriangle, ChevronLeft, ChevronRight, CheckSquare, ClipboardCheck, TrendingUp } from 'lucide-react';
+import { Search, Filter, User, Mail, Download, ExternalLink, CheckCircle, XCircle, Eye, RefreshCw, Briefcase, Calendar, StickyNote, Save, AlertTriangle, ChevronLeft, ChevronRight, CheckSquare, ClipboardCheck, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { recruiterService, Application, CandidateNote, CandidateScorecard } from '../../services/recruiterService';
 import { useAppSelector } from '../../store/hooks';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Skeleton } from '../../components/shared/Skeleton';
 import { AuraModal } from '../../components/shared/AuraModal';
 import { useToast } from '../../components/shared/Toast';
+import {
+  evaluateCandidateSla,
+  calculateRecruiterFunnelSummary,
+  type CandidateSlaInfo,
+} from '../../lib/recruiterFunnelAnalytics';
 import {
   buildCandidateBulkInterviewSummary,
   buildCandidateBulkStatusSummary,
@@ -130,6 +135,8 @@ const candidateReviewFocusOptions: Array<{ value: CandidateReviewFocus; label: s
   { value: 'all', label: 'All visible' },
   { value: 'needs_scorecard', label: 'Needs scorecard' },
   { value: 'high_signal', label: 'High signal' },
+  { value: 'sla_breached', label: 'SLA Breaches (≥7d idle)' },
+  { value: 'sla_warning', label: 'SLA Warnings (4-6d idle)' },
 ];
 const candidatePanelClassName = 'surface-panel p-3';
 const candidateMetricCardClassName = 'surface-panel flex min-h-32 flex-col justify-between px-4 py-3';
@@ -738,6 +745,21 @@ const CandidatesPage: React.FC = () => {
     }, {})
   ), [candidateNotes, candidateScorecards, candidates]);
 
+  const candidateSlaMap = useMemo<Record<string, CandidateSlaInfo>>(() => (
+    candidates.reduce<Record<string, CandidateSlaInfo>>((acc, candidate) => {
+      acc[candidate.id] = evaluateCandidateSla({
+        candidate,
+        note: candidateNotes[candidate.id],
+        scorecard: candidateScorecards[candidate.id],
+      });
+      return acc;
+    }, {})
+  ), [candidateNotes, candidateScorecards, candidates]);
+
+  const recruiterFunnelSummary = useMemo(() => (
+    calculateRecruiterFunnelSummary(candidates, candidateNotes, candidateScorecards)
+  ), [candidateNotes, candidateScorecards, candidates]);
+
   // ⚡ Bolt: Memoize filtered candidates and hoist lowercasing to prevent O(N) recalculations on every render
   const filtered = useMemo(() => {
     const lowerSearch = normalizedSearchTerm.toLowerCase();
@@ -754,6 +776,8 @@ const CandidatesPage: React.FC = () => {
         ...candidate,
         hasScorecard: Boolean(candidateScorecards[candidate.id]),
         advisoryScore: candidateAdvisorySignals[candidate.id]?.score ?? null,
+        isSlaBreached: candidateSlaMap[candidate.id]?.isSlaBreached ?? false,
+        isSlaWarning: candidateSlaMap[candidate.id]?.isSlaWarning ?? false,
       })),
       candidateReviewFocus
     );
@@ -765,7 +789,7 @@ const CandidatesPage: React.FC = () => {
       if (signalDelta !== 0) return signalDelta;
       return new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime();
     });
-  }, [candidateAdvisorySignals, candidateReviewFocus, candidateScorecards, candidateSortMode, candidates, normalizedSearchTerm]);
+  }, [candidateAdvisorySignals, candidateReviewFocus, candidateScorecards, candidateSlaMap, candidateSortMode, candidates, normalizedSearchTerm]);
 
   const selectedCandidateSet = useMemo(() => new Set(selectedCandidateIds), [selectedCandidateIds]);
   const selectedCandidates = useMemo(
@@ -809,6 +833,12 @@ const CandidatesPage: React.FC = () => {
   const visibleHighSignalCount = useMemo(() => (
     filtered.filter(candidate => (candidateAdvisorySignals[candidate.id]?.score || 0) >= 80).length
   ), [candidateAdvisorySignals, filtered]);
+  const visibleSlaBreachCount = useMemo(() => (
+    filtered.filter(candidate => Boolean(candidateSlaMap[candidate.id]?.isSlaBreached)).length
+  ), [candidateSlaMap, filtered]);
+  const visibleSlaWarningCount = useMemo(() => (
+    filtered.filter(candidate => Boolean(candidateSlaMap[candidate.id]?.isSlaWarning)).length
+  ), [candidateSlaMap, filtered]);
   const visibleScorecardAnalytics = useMemo(() => buildCandidateScorecardAnalytics(
     filtered.map(candidate => {
       const scorecard = candidateScorecards[candidate.id];
@@ -835,9 +865,13 @@ const CandidatesPage: React.FC = () => {
     totalCount: visibleScorecardAnalytics.totalCount,
     unscoredCount: visibleScorecardAnalytics.unscoredCount,
     highSignalCount: visibleHighSignalCount,
-  }), [candidateReviewFocus, visibleHighSignalCount, visibleScorecardAnalytics]);
+    slaBreachCount: visibleSlaBreachCount,
+    slaWarningCount: visibleSlaWarningCount,
+  }), [candidateReviewFocus, visibleHighSignalCount, visibleScorecardAnalytics, visibleSlaBreachCount, visibleSlaWarningCount]);
   const reviewGapsFocusAction = candidateReviewFocusActions.find(action => action.focus === 'needs_scorecard');
   const reviewHighSignalFocusAction = candidateReviewFocusActions.find(action => action.focus === 'high_signal');
+  const reviewSlaBreachesFocusAction = candidateReviewFocusActions.find(action => action.focus === 'sla_breached');
+  const reviewSlaWarningsFocusAction = candidateReviewFocusActions.find(action => action.focus === 'sla_warning');
   const showAllFocusAction = candidateReviewFocusActions.find(action => action.focus === 'all');
   const candidateReviewQueueItems = useMemo(() => filtered.map(candidate => ({
     id: candidate.id,
@@ -1323,7 +1357,7 @@ const CandidatesPage: React.FC = () => {
       </Card>
 
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="list" aria-label="Candidate review metrics">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" role="list" aria-label="Candidate review metrics">
           <div
             className={candidateMetricCardClassName}
             role="listitem"
@@ -1340,6 +1374,25 @@ const CandidatesPage: React.FC = () => {
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
                 {visibleScorecardAnalytics.coveragePercent}% reviewed
+              </p>
+            </div>
+          </div>
+          <div
+            className={candidateMetricCardClassName}
+            role="listitem"
+            aria-label={getCandidateMetricLabel(
+              'Evidence Gaps',
+              `${visibleScorecardAnalytics.needsEvidenceCount}`,
+              `${visibleScorecardAnalytics.unscoredCount} without scorecards`
+            )}
+          >
+            <div>
+              <p className="text-xs font-medium text-[var(--text-muted)]">Evidence Gaps</p>
+              <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
+                {visibleScorecardAnalytics.needsEvidenceCount}
+              </p>
+              <p className="text-xs text-[var(--text-secondary)]">
+                {visibleScorecardAnalytics.unscoredCount} without scorecards
               </p>
             </div>
             {candidateReviewFocus === 'all' && (
@@ -1394,37 +1447,56 @@ const CandidatesPage: React.FC = () => {
             className={candidateMetricCardClassName}
             role="listitem"
             aria-label={getCandidateMetricLabel(
-              'Evidence Gaps',
-              visibleScorecardAnalytics.needsEvidenceCount,
-              `${visibleScorecardAnalytics.unscoredCount} without scorecards`
+              '7-Day Review SLA',
+              `${visibleSlaBreachCount} Breached`,
+              `${visibleSlaWarningCount} Warnings`
             )}
           >
             <div>
-              <p className="text-xs font-medium text-[var(--text-muted)]">Evidence Gaps</p>
-              <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
-                {visibleScorecardAnalytics.needsEvidenceCount}
-              </p>
+              <p className="text-xs font-medium text-[var(--text-muted)]">7-Day Idle SLA (R-05)</p>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className={`text-xl font-semibold ${visibleSlaBreachCount > 0 ? 'text-destructive' : 'text-[var(--text-primary)]'}`}>
+                  {visibleSlaBreachCount} Breaches
+                </span>
+                <span className="text-xs font-medium text-warning">
+                  {visibleSlaWarningCount} Warnings
+                </span>
+              </div>
               <p className="text-xs text-[var(--text-secondary)]">
-                {visibleScorecardAnalytics.unscoredCount} without scorecards
+                {visibleSlaBreachCount === 0 && visibleSlaWarningCount === 0 ? 'All candidates within SLA' : 'Action required on idle candidates'}
               </p>
             </div>
+            {candidateReviewFocus === 'all' && (visibleSlaBreachCount > 0 || visibleSlaWarningCount > 0) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full border-destructive/40 text-destructive hover:bg-destructive/10"
+                onClick={() => applyCandidateReviewFocus(visibleSlaBreachCount > 0 ? 'sla_breached' : 'sla_warning')}
+                disabled={visibleSlaBreachCount === 0 && visibleSlaWarningCount === 0}
+                aria-label={`Review ${visibleSlaBreachCount > 0 ? reviewSlaBreachesFocusAction?.count : reviewSlaWarningsFocusAction?.count} SLA overdue candidates`}
+              >
+                <AlertCircle {...decorativeIconProps} size={14} />
+                {visibleSlaBreachCount > 0 ? 'Review SLA breaches' : 'Review SLA warnings'}
+              </Button>
+            )}
           </div>
           <div
             className={candidateMetricCardClassName}
             role="listitem"
             aria-label={getCandidateMetricLabel(
-              'Scorecard Sync',
-              `${visibleScorecardAnalytics.syncedCount} synced`,
-              `${visibleScorecardAnalytics.localCount} local`
+              'Funnel Conversion',
+              `${recruiterFunnelSummary.overallOfferRate}% Offer Rate`,
+              `${recruiterFunnelSummary.appliedToInterviewRate}% Interview Rate`
             )}
           >
             <div>
-              <p className="text-xs font-medium text-[var(--text-muted)]">Scorecard Sync</p>
+              <p className="text-xs font-medium text-[var(--text-muted)]">Funnel Conversion (R-05)</p>
               <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
-                {visibleScorecardAnalytics.syncedCount} synced
+                {recruiterFunnelSummary.overallOfferRate}% Offer Rate
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                {visibleScorecardAnalytics.localCount} local
+                {recruiterFunnelSummary.appliedToInterviewRate}% reach Interview · {recruiterFunnelSummary.activeJobsCount} jobs
               </p>
             </div>
             {candidateReviewFocus !== 'all' && (
@@ -1443,6 +1515,45 @@ const CandidatesPage: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {!loading && filtered.length > 0 && recruiterFunnelSummary.totalApplicants > 0 && (
+        <Card className="surface-panel p-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <TrendingUp {...decorativeIconProps} size={16} className="text-accent" />
+                Recruitment Funnel Progression (R-05)
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Conversion across {recruiterFunnelSummary.activeJobsCount} active postings ({recruiterFunnelSummary.totalApplicants} total candidates)
+              </p>
+            </div>
+            {recruiterFunnelSummary.topDropoffStage && (
+              <span className="text-xs rounded bg-warning/10 px-2.5 py-1 font-medium text-warning self-start md:self-auto">
+                Highest drop-off stage: {recruiterFunnelSummary.topDropoffStage.toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {recruiterFunnelSummary.overallStages.map((st) => (
+              <div key={st.id} className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)]/50 p-3">
+                <p className="text-xs font-medium text-[var(--text-muted)]">{st.label}</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-lg font-bold text-[var(--text-primary)]">{st.count}</span>
+                  {st.id !== 'applied' && (
+                    <span className="text-xs text-accent font-medium">{st.conversionFromPrevious}% from prev</span>
+                  )}
+                </div>
+                {st.id !== 'offer' ? (
+                  <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">{st.dropoffRate}% drop-off</p>
+                ) : (
+                  <p className="text-[10px] text-success mt-0.5">Final offer stage</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {!loading && filtered.length > 0 && (
@@ -1583,6 +1694,22 @@ const CandidatesPage: React.FC = () => {
                       <Badge variant={statusVariant(candidate.status) as any}>
                         {candidate.status || 'PENDING'}
                       </Badge>
+                      {candidateSlaMap[candidate.id] && (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            candidateSlaMap[candidate.id].isSlaBreached
+                              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                              : candidateSlaMap[candidate.id].isSlaWarning
+                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              : candidateSlaMap[candidate.id].slaStatus === 'resolved'
+                              ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          }`}
+                          title={`Last activity: ${candidateSlaMap[candidate.id].lastActivityDate.toLocaleDateString()} — ${candidateSlaMap[candidate.id].recommendedAction}`}
+                        >
+                          {candidateSlaMap[candidate.id].slaBadgeLabel}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-[var(--text-secondary)]">
                       {candidate.job?.title || `Job #${candidate.jobId}`} ·{' '}
@@ -1862,6 +1989,39 @@ const CandidatesPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {selectedCandidate && candidateSlaMap[selectedCandidate.id] && (
+              <div
+                role="region"
+                aria-label="Candidate SLA status and recommended action"
+                className={`p-4 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  candidateSlaMap[selectedCandidate.id].isSlaBreached
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                    : candidateSlaMap[selectedCandidate.id].isSlaWarning
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                    : candidateSlaMap[selectedCandidate.id].slaStatus === 'resolved'
+                    ? 'bg-slate-500/10 border-slate-500/20 text-slate-300'
+                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">
+                      {candidateSlaMap[selectedCandidate.id].slaBadgeLabel}
+                    </span>
+                    <span className="text-xs opacity-75">
+                      ({candidateSlaMap[selectedCandidate.id].daysIdle} days since last activity)
+                    </span>
+                  </div>
+                  <p className="text-xs mt-1 opacity-90">
+                    {candidateSlaMap[selectedCandidate.id].recommendedAction}
+                  </p>
+                </div>
+                <div className="text-xs opacity-75 shrink-0">
+                  Last activity: {candidateSlaMap[selectedCandidate.id].lastActivityDate.toLocaleDateString()}
+                </div>
+              </div>
+            )}
 
             <div role="list" aria-label="Candidate application metadata" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div role="listitem" aria-label={getCandidateMetadataLabel('Application ID', selectedCandidate.id)} className={candidateReviewSectionClassName}>

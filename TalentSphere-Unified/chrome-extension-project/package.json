@@ -4,6 +4,7 @@
   "description": "Chrome Extension Companion for TalentSphere",
   "type": "module",
   "scripts": {
+    "test": "npm run test:messaging && npm run test:portal-fixtures && npm run test:options-ux && npm run test:popup-ux && npm run test:contract && npm run test:storage-migrations && npm run test:runtime-smoke",
     "dev": "vite",
     "build": "tsc && vite build",
     "test:messaging": "node scripts/messaging.test.mjs",

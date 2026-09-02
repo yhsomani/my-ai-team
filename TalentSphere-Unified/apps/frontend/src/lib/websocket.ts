@@ -28,6 +28,10 @@ export const useChatWebSocket = (userId: string | null) => {
     if (!userId) return;
 
     try {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       const ws = new WebSocket(WS_URL);
 
       ws.onopen = () => {
@@ -67,10 +71,14 @@ export const useChatWebSocket = (userId: string | null) => {
   }, []);
 
   const sendMessage = useCallback((receiverId: string, content: string, type: 'text' | 'file' | 'image' = 'text') => {
+    if (!userId) return;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const messageId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const message: ChatMessage = {
-        id: crypto.randomUUID(),
-        senderId: userId!,
+        id: messageId,
+        senderId: userId,
         receiverId,
         content,
         timestamp: new Date().toISOString(),

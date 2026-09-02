@@ -44,6 +44,7 @@ import {
   type ResumeWorkflowSourceType,
 } from '../../lib/resumeWorkflowAnalytics';
 import { buildResumePdfBlob, type ResumePdfDocumentData } from '../../lib/resumePdfExport';
+import { formatDateTimeDisplay, formatMonthYear, parseDateInput } from '../../lib/dateUtils';
 import {
   addResumeArtifactRecord,
   addResumeArtifactTombstone,
@@ -136,21 +137,8 @@ const getFileTypeLabel = (file: Pick<File, 'name' | 'type'>) => {
   if (importType === 'text') return 'text';
   return file.type || 'unsupported';
 };
-const parseDateInput = (date: string) => (
-  /^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? new Date(`${date.trim()}T00:00:00`) : new Date(date)
-);
-const formatResumeDate = (date?: string) => {
-  if (!date) return '';
-  const parsed = parseDateInput(date);
-  if (Number.isNaN(parsed.getTime())) return date;
-  return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-};
-
-const formatExportTime = (date: string) => {
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return date;
-  return parsed.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-};
+const formatResumeDate = (date?: string) => formatMonthYear(date, date || '');
+const formatExportTime = (date: string) => formatDateTimeDisplay(date, date);
 
 const formatResumeTextToken = (value?: string | number | null) => String(value ?? '').trim();
 const getResumeExperienceLabel = (experience: Record<string, any>) => {

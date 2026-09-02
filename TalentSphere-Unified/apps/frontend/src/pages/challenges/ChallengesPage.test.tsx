@@ -7,6 +7,7 @@ import { ToastProvider } from '../../components/shared/Toast';
 import authReducer from '../../store/slices/authSlice';
 import challengeReducer from '../../store/slices/challengeSlice';
 import { challengeService } from '../../services/challengeService';
+import { gamificationService } from '../../services/gamificationService';
 import ChallengesPage from './ChallengesPage';
 
 vi.mock('../../services/challengeService', () => ({
@@ -14,6 +15,26 @@ vi.mock('../../services/challengeService', () => ({
     getChallenges: vi.fn(),
     getUserSubmissions: vi.fn(),
     submitChallengeSolution: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/gamificationService', () => ({
+  gamificationService: {
+    getLeaderboard: vi.fn().mockResolvedValue([]),
+    getUserXP: vi.fn().mockResolvedValue(0),
+    getUserBadges: vi.fn().mockResolvedValue([]),
+    getXPTransactions: vi.fn().mockResolvedValue([]),
+    awardXP: vi.fn().mockResolvedValue({
+      awarded: true,
+      amount: 80,
+      previousXP: 0,
+      newXP: 80,
+      previousLevel: 1,
+      newLevel: 1,
+      didLevelUp: false,
+      skipReason: 'none',
+      message: 'XP awarded',
+    }),
   },
 }));
 

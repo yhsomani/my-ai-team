@@ -1,4 +1,18 @@
 import { typedSupabase as supabase, type Database } from '../lib/supabaseClient';
+import {
+  calculateLevel,
+  calculateLevelProgress,
+  evaluateXpAwardEligibility,
+  type LevelProgressInfo,
+  type XpSkipReason,
+} from '../lib/xpLedger';
+
+export const GAMIFICATION_UPDATED_EVENT = 'talentsphere:gamification-updated';
+
+const emitGamificationChange = (userId: string, detail?: Record<string, unknown>) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(GAMIFICATION_UPDATED_EVENT, { detail: { userId, ...detail } }));
+};
 
 type LeaderboardRow = Database['public']['Tables']['leaderboard']['Row'] & {
   profiles?: {
@@ -6,6 +20,7 @@ type LeaderboardRow = Database['public']['Tables']['leaderboard']['Row'] & {
     avatar_url?: string | null;
   } | null;
 };
+
 type UserBadgeRow = Database['public']['Tables']['user_badges']['Row'] & {
   badges?: {
     name?: string | null;
@@ -13,6 +28,7 @@ type UserBadgeRow = Database['public']['Tables']['user_badges']['Row'] & {
     icon_url?: string | null;
   } | null;
 };
+
 type XPTransactionRow = Database['public']['Tables']['xp_transactions']['Row'];
 export type XPTransaction = XPTransactionRow;
 
@@ -33,6 +49,37 @@ export interface UserBadge {
   badge_description: string;
   badge_icon: string;
   earned_at: string;
+}
+
+export interface AwardXpInput {
+  userId: string;
+  amount: number;
+  reason: string;
+  referenceType?: string;
+  referenceId?: string;
+  now?: Date;
+}
+
+export interface XPAwardResult {
+  awarded: boolean;
+  amount: number;
+  previousXP: number;
+  newXP: number;
+  previousLevel: number;
+  newLevel: number;
+  didLevelUp: boolean;
+  skipReason: XpSkipReason | 'auth_required';
+  message: string;
+  transactionId?: string;
+}
+
+export interface UserGamificationProfile {
+  userId: string;
+  totalXp: number;
+  level: number;
+  progress: LevelProgressInfo;
+  badges: UserBadge[];
+  recentTransactions: XPTransaction[];
 }
 
 export const gamificationService = {
@@ -64,8 +111,8 @@ export const gamificationService = {
         user_id: entry.user_id,
         full_name: entry.profiles?.full_name || 'Unknown',
         total_xp: totalXp,
-        level: Math.floor(totalXp / 100) + 1,
-        badge_count: 0
+        level: calculateLevel(totalXp),
+        badge_count: 0,
       };
     });
   },
@@ -99,7 +146,7 @@ export const gamificationService = {
       badge_name: item.badges?.name || 'Unknown',
       badge_description: item.badges?.description || '',
       badge_icon: item.badges?.icon_url || '',
-      earned_at: item.earned_at || ''
+      earned_at: item.earned_at || '',
     }));
   },
 
@@ -120,7 +167,7 @@ export const gamificationService = {
 
   getUserLevel: async (userId: string): Promise<number> => {
     const xp = await gamificationService.getUserXP(userId);
-    return Math.floor(xp / 100) + 1;
+    return calculateLevel(xp);
   },
 
   getXPTransactions: async (userId: string, limit: number = 20): Promise<XPTransaction[]> => {
@@ -137,5 +184,170 @@ export const gamificationService = {
     }
 
     return (data || []) as XPTransactionRow[];
-  }
+  },
+
+  /**
+   * Awards XP to a user with anti-farm validation, transaction ledger recording, and leaderboard synchronization.
+   */
+  awardXP: async ({
+    userId,
+    amount,
+    reason,
+    referenceType,
+    referenceId,
+    now = new Date(),
+  }: AwardXpInput): Promise<XPAwardResult> => {
+    if (!userId) {
+      return {
+        awarded: false,
+        amount: 0,
+        previousXP: 0,
+        newXP: 0,
+        previousLevel: 1,
+        newLevel: 1,
+        didLevelUp: false,
+        skipReason: 'auth_required',
+        message: 'Sign in to earn and record XP.',
+      };
+    }
+
+    // 1. Fetch user's existing transactions to check anti-farm rules
+    const existingTransactions = await gamificationService.getXPTransactions(userId, 100);
+
+    // 2. Evaluate eligibility against XP-once and daily cap rules
+    const eligibility = evaluateXpAwardEligibility({
+      existingTransactions,
+      amount,
+      referenceType,
+      referenceId,
+      now,
+    });
+
+    // 3. Fetch current user XP from leaderboard
+    const previousXP = await gamificationService.getUserXP(userId);
+    const previousLevel = calculateLevel(previousXP);
+
+    if (!eligibility.eligible || eligibility.grantedAmount <= 0) {
+      return {
+        awarded: false,
+        amount: 0,
+        previousXP,
+        newXP: previousXP,
+        previousLevel,
+        newLevel: previousLevel,
+        didLevelUp: false,
+        skipReason: eligibility.skipReason,
+        message: eligibility.message,
+      };
+    }
+
+    const grantedAmount = eligibility.grantedAmount;
+    const newXP = previousXP + grantedAmount;
+    const newLevel = calculateLevel(newXP);
+    const didLevelUp = newLevel > previousLevel;
+
+    // 4. Record transaction in canonical xp_transactions table
+    const { data: txData, error: txError } = await supabase
+      .from('xp_transactions')
+      .insert({
+        user_id: userId,
+        amount: grantedAmount,
+        reason: reason.trim() || 'Activity completed',
+        reference_type: referenceType || null,
+        reference_id: referenceId || null,
+        created_at: now.toISOString(),
+      })
+      .select()
+      .maybeSingle();
+
+    if (txError) {
+      console.error('Failed to insert XP transaction:', txError);
+      throw new Error(`Failed to record XP transaction: ${txError.message}`);
+    }
+
+    // 5. Update/Upsert user leaderboard record
+    const { error: leaderboardError } = await supabase
+      .from('leaderboard')
+      .upsert(
+        {
+          user_id: userId,
+          total_xp: newXP,
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (leaderboardError) {
+      console.warn('Leaderboard update encountered an issue:', leaderboardError);
+    }
+
+    emitGamificationChange(userId, {
+      amount: grantedAmount,
+      previousXP,
+      newXP,
+      previousLevel,
+      newLevel,
+      didLevelUp,
+    });
+
+    return {
+      awarded: true,
+      amount: grantedAmount,
+      previousXP,
+      newXP,
+      previousLevel,
+      newLevel,
+      didLevelUp,
+      skipReason: eligibility.skipReason,
+      message: eligibility.message,
+      transactionId: (txData as any)?.id,
+    };
+  },
+
+  /**
+   * Fetches unified gamification profile for user including XP, level, progress, badges, and transactions.
+   */
+  getUserGamificationProfile: async (userId: string): Promise<UserGamificationProfile> => {
+    if (!userId) {
+      const defaultProgress = calculateLevelProgress(0);
+      return {
+        userId: '',
+        totalXp: 0,
+        level: 1,
+        progress: defaultProgress,
+        badges: [],
+        recentTransactions: [],
+      };
+    }
+
+    try {
+      const [totalXp, badges, recentTransactions] = await Promise.all([
+        gamificationService.getUserXP(userId).catch(() => 0),
+        gamificationService.getUserBadges(userId).catch(() => []),
+        gamificationService.getXPTransactions(userId, 10).catch(() => []),
+      ]);
+
+      const level = calculateLevel(totalXp);
+      const progress = calculateLevelProgress(totalXp);
+
+      return {
+        userId,
+        totalXp,
+        level,
+        progress,
+        badges,
+        recentTransactions,
+      };
+    } catch (error) {
+      console.error('Failed to load gamification profile:', error);
+      const fallbackProgress = calculateLevelProgress(0);
+      return {
+        userId,
+        totalXp: 0,
+        level: 1,
+        progress: fallbackProgress,
+        badges: [],
+        recentTransactions: [],
+      };
+    }
+  },
 };

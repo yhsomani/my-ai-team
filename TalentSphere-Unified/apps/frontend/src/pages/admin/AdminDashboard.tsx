@@ -6,6 +6,7 @@ import { Skeleton } from '../../components/shared/Skeleton';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Users, Server, ShieldCheck, Activity, AlertTriangle, RefreshCw, Database, FileText, ExternalLink, BarChart3, TrendingUp, Clock } from 'lucide-react';
 import { Button } from '../../components/shared/AuraButton';
+import { TrustAndSafetyModerationQueue } from '../../components/trust/TrustAndSafetyModerationQueue';
 import { adminService, type AdminDashboardData, type AdminProductAnalyticsInsightsResult, type AdminScheduledAutomationStatusResult, type AuditLogEntry, type ScheduledAutomationRolloutStatus, type ScheduledAutomationRunStatus, type ServiceHealth, type ServiceObservabilityLink } from '../../services/adminService';
 import { useAppSelector } from '../../store/hooks';
 import { recordDashboardOperationalAnalytics } from '../../lib/dashboardOperationalAnalytics';
@@ -866,6 +867,8 @@ const AdminDashboard: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      <TrustAndSafetyModerationQueue />
 
       <Card role="region" aria-label="Audit Log">
         <div className="p-5 border-b border-[var(--border-default)] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
