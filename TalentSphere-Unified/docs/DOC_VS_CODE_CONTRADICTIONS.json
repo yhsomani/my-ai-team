@@ -1,0 +1,319 @@
+{
+  "auditDate": "2026-09-08",
+  "auditScope": "Documentation-vs-implementation read-only audit of 7 canonical project documents",
+  "canonicalCounts": {
+    "features": 25,
+    "featuresImplemented": 22,
+    "testFiles": 136,
+    "unitTests": 824,
+    "e2eTests": 235,
+    "dbTables": 60,
+    "rlsPolicies": 119,
+    "stack": "React 19.2.x + Vite + TypeScript + Tailwind + Redux Toolkit + React Router 7 + @supabase/supabase-js + Spring Boot (Java) secondary"
+  },
+  "documents": [
+    {
+      "path": "docs/CURRENT_STATE_AND_ACTION_PLAN.md",
+      "hasStatusBanner": true,
+      "version": "1.0 (v3.0-rebased, 2026-09-07)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": true,
+      "hasCorrectTestCounts": true,
+      "hasCorrectDBCounts": true,
+      "hasCorrectRLSCount": true,
+      "staleClaims": [
+        {
+          "location": "Action Plan item #3, line ~161",
+          "claim": "Smoke test all 21 features",
+          "correctValue": "22 fully implemented features (or 25 canonical features total)",
+          "severity": "LOW"
+        },
+        {
+          "location": "FULLY IMPLEMENTED table, line ~48",
+          "claim": "F-16 Billing (Demo Mode) listed under FULLY IMPLEMENTED while note on line 61 says '22 fully implemented features include F-01..F-25 minus F-16'",
+          "correctValue": "F-16 should be excluded from the 22-count; internal inconsistency in same document",
+          "severity": "MEDIUM"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "internal_inconsistency",
+          "description": "F-16 Billing is listed in the FULLY IMPLEMENTED table (line 48) but the reconciliation note (line 61) states '22 fully implemented features include F-01..F-25 minus F-16'. Either the table or the note is wrong.",
+          "severity": "MEDIUM"
+        },
+        {
+          "type": "internal_inconsistency",
+          "description": "Metrics table (line 245) says 'Partially Implemented: 1 (Billing F-16 demo mode per ADR-005)' but Completion Gates table (line 264) says '23/25 canonical features fully implemented (2 demo/deferred)'. These counts don't match.",
+          "severity": "LOW"
+        }
+      ],
+      "needsUpdate": true,
+      "priority": "MEDIUM"
+    },
+    {
+      "path": "docs/PLAN.md",
+      "hasStatusBanner": true,
+      "version": "none (living plan, no version number)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": false,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": false,
+      "hasCorrectRLSCount": false,
+      "staleClaims": [
+        {
+          "location": "Line ~72",
+          "claim": "npm run test:unit --workspace talentsphere-web with 112 test files / 626 tests (dated 2026-06-30)",
+          "correctValue": "136 test files / 824 unit tests",
+          "severity": "HIGH"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "stale_test_counts",
+          "description": "Claims 112 test files / 626 tests as of 2026-06-30. Current canonical count is 136 files / 824 tests. Differs by 24 files and 198 tests.",
+          "severity": "HIGH"
+        },
+        {
+          "type": "missing_db_rls_counts",
+          "description": "As the 'single source of truth living plan', it should reflect canonical 60 tables / 119 RLS policies but contains no such counts in scanned content.",
+          "severity": "MEDIUM"
+        }
+      ],
+      "needsUpdate": true,
+      "priority": "HIGH"
+    },
+    {
+      "path": "docs/archive/SSOT.md",
+      "hasStatusBanner": true,
+      "version": "6.1.0 (Historical / Archived)",
+      "hasCorrectStack": false,
+      "hasCorrectFeatureCount": false,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": false,
+      "hasCorrectRLSCount": false,
+      "staleClaims": [
+        {
+          "location": "Tech stack table",
+          "claim": "19 active services with per-service database isolation; MongoDB 8.2.7 for job/company/notification/chat services; Redis, Elasticsearch, RabbitMQ",
+          "correctValue": "Supabase-first unified 60-table PostgreSQL schema; no per-service DB isolation; Spring Boot secondary",
+          "severity": "CRITICAL (historical)"
+        },
+        {
+          "location": "Throughout document",
+          "claim": "Per-service DB isolation (auth_db, user_db, job_db, company_db, notification_db, messaging_db, chat_db, analytics_db, payment_db, compliance_db, file_db, ai_db, search_db, cache_db, monitoring_db, task_db, recommendation_db, integration_db, profile_db)",
+          "correctValue": "Unified Supabase PostgreSQL schema with 60 tables",
+          "severity": "CRITICAL (historical)"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "architecture_mismatch",
+          "description": "Describes 19-service microservices architecture with per-service MongoDB/PostgreSQL database isolation. Current architecture is Supabase-first with a single unified 60-table PostgreSQL schema and secondary Spring Boot services.",
+          "severity": "CRITICAL",
+          "mitigated": true,
+          "mitigation": "Document is properly archived with banner: 'Historical/archived reference... Status: Archived / Non-Authoritative'. Superseded by PRD v3.0 / BRD v3.0."
+        }
+      ],
+      "needsUpdate": false,
+      "priority": "NONE",
+      "note": "Already archived and flagged as non-authoritative. No update needed."
+    },
+    {
+      "path": "docs/ARCHITECTURE_STATUS_INDEX.md",
+      "hasStatusBanner": true,
+      "version": "none (reviewed 2026-09-06)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": true,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": false,
+      "hasCorrectRLSCount": false,
+      "staleClaims": [],
+      "contradictions": [],
+      "needsUpdate": false,
+      "priority": "LOW",
+      "note": "Correctly marks SSOT.md as historical/stale. References F-01..F-25 from PRD v3.0. No test/DB/RLS counts stated in scanned content."
+    },
+    {
+      "path": "docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md",
+      "hasStatusBanner": true,
+      "version": "baseline PRD v3.0 + BRD v3.0 (2026-08-30, commit d4ef1a6)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": true,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": true,
+      "hasCorrectRLSCount": true,
+      "staleClaims": [
+        {
+          "location": "Section 5 table (line ~144)",
+          "claim": "CURRENT_STATE_AND_ACTION_PLAN.md has 'Measured 827 frontend unit tests'",
+          "correctValue": "824 unit tests (as stated elsewhere in same document at B-18)",
+          "severity": "LOW"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "internal_inconsistency",
+          "description": "Section 5 table claims '827 frontend unit tests' but B-18 in same document correctly states '136 test files (824 unit tests)'. Off by 3 tests.",
+          "severity": "LOW"
+        }
+      ],
+      "needsUpdate": true,
+      "priority": "LOW"
+    },
+    {
+      "path": "docs/PRD.md",
+      "hasStatusBanner": true,
+      "version": "3.0 (2026-08-30)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": true,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": false,
+      "hasCorrectRLSCount": false,
+      "staleClaims": [
+        {
+          "location": "Section 0.1",
+          "claim": "~126 Vitest test files, ~28 Playwright E2E/a11y/UX specs",
+          "correctValue": "136 Vitest test files, 45 E2E/A11y specs (235 scenarios)",
+          "severity": "HIGH"
+        },
+        {
+          "location": "Section 2 (out of scope)",
+          "claim": "leaderboard UI (orphaned gamification)",
+          "correctValue": "F-23 gamification is now fully wired: GamificationHeaderBadge + LeaderboardModal in Header.tsx, XP award loops in ChallengesPage.tsx:612 and LMSPage.tsx:380/389. Resolved in GAP doc B-9.",
+          "severity": "HIGH"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "stale_test_counts",
+          "description": "Claims ~126 Vitest test files. Actual count is 136. Off by ~10 files.",
+          "severity": "HIGH"
+        },
+        {
+          "type": "stale_feature_status",
+          "description": "Section 2 lists 'leaderboard UI (orphaned gamification)' as out of scope. This is stale -- F-23 gamification is fully wired with UI components and XP award loops (verified in GAP doc B-9).",
+          "severity": "HIGH"
+        }
+      ],
+      "needsUpdate": true,
+      "priority": "HIGH"
+    },
+    {
+      "path": "docs/BRD.md",
+      "hasStatusBanner": true,
+      "version": "3.0 (2026-08-30)",
+      "hasCorrectStack": true,
+      "hasCorrectFeatureCount": false,
+      "hasCorrectTestCounts": false,
+      "hasCorrectDBCounts": true,
+      "hasCorrectRLSCount": true,
+      "staleClaims": [
+        {
+          "location": "Section 2 test counts",
+          "claim": "~126 Vitest files / ~736 unit tests [CONFLICT] -- doc acknowledges cross-document conflict",
+          "correctValue": "136 Vitest files / 824 unit tests",
+          "severity": "HIGH"
+        },
+        {
+          "location": "Section 2 feature reach",
+          "claim": "'24 of 25 complete or substantial, billing demo-by-design (F-17), gamification orphaned (F-23)'",
+          "correctValue": "22 of 25 fully implemented; billing is F-16 (not F-17); gamification F-23 is now fully wired",
+          "severity": "HIGH"
+        },
+        {
+          "location": "Section 2 feature numbering",
+          "claim": "Billing numbered F-17",
+          "correctValue": "Billing is F-16 in PRD v3.0 and CURRENT_STATE",
+          "severity": "MEDIUM"
+        }
+      ],
+      "contradictions": [
+        {
+          "type": "stale_test_counts",
+          "description": "Claims ~126/~736 test files/tests. Actual is 136/824. Acknowledges conflict via [CONFLICT] tag but still states wrong numbers.",
+          "severity": "HIGH"
+        },
+        {
+          "type": "stale_feature_status",
+          "description": "'gamification orphaned (F-23)' is stale -- F-23 is fully wired (verified in GAP doc B-9). Also claims '24 of 25' complete but canonical count is '22 of 25' fully implemented.",
+          "severity": "HIGH"
+        },
+        {
+          "type": "feature_numbering_mismatch",
+          "description": "Billing is labeled F-17 in this document but is F-16 in PRD v3.0 and CURRENT_STATE_AND_ACTION_PLAN.md.",
+          "severity": "MEDIUM"
+        }
+      ],
+      "needsUpdate": true,
+      "priority": "HIGH"
+    }
+  ],
+  "summary": {
+    "totalDocs": 7,
+    "docsNeedingUpdate": 4,
+    "docsNeedingUpdateList": [
+      "docs/PLAN.md",
+      "docs/PRD.md",
+      "docs/BRD.md",
+      "docs/CURRENT_STATE_AND_ACTION_PLAN.md"
+    ],
+    "docsNoUpdateNeeded": [
+      {
+        "path": "docs/archive/SSOT.md",
+        "reason": "Already archived with proper status banner"
+      },
+      {
+        "path": "docs/ARCHITECTURE_STATUS_INDEX.md",
+        "reason": "No stale counts in scanned content; correctly references PRD v3.0"
+      },
+      {
+        "path": "docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md",
+        "reason": "Minor internal inconsistency (827 vs 824) only; priorities HIGH for other docs"
+      }
+    ],
+    "criticalContradictions": [
+      {
+        "description": "Test counts are inconsistent across 4 documents: PLAN.md (112/626), PRD.md (~126/~736), BRD.md (~126/~736 with [CONFLICT] tag), GAP doc (827 internal vs 824 elsewhere). Canonical: 136 files / 824 tests.",
+        "affectedDocs": ["PLAN.md", "PRD.md", "BRD.md", "GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md"]
+      },
+      {
+        "description": "Gamification (F-23) is described as 'orphaned' or 'out of scope' in PRD.md and BRD.md, but is fully wired with UI components and XP award loops. GAP doc B-9 already resolved this but the canonical docs (PRD/BRD) have not been updated.",
+        "affectedDocs": ["PRD.md", "BRD.md"]
+      },
+      {
+        "description": "Feature count inconsistencies: BRD says '24 of 25 complete' (wrong, should be 22 of 25 fully implemented); CURRENT_STATE has internal tension between F-16 listed in fully implemented table vs note excluding it; action plan says '21 features' (stale).",
+        "affectedDocs": ["BRD.md", "CURRENT_STATE_AND_ACTION_PLAN.md"]
+      },
+      {
+        "description": "Billing feature numbering mismatch: BRD.md calls it F-17, PRD.md and CURRENT_STATE call it F-16.",
+        "affectedDocs": ["BRD.md"]
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "HIGH",
+        "action": "Sweep all stale test counts to canonical 136 files / 824 unit tests across PLAN.md (currently 112/626), PRD.md (currently ~126/~736), BRD.md (currently ~126/~736), and GAP doc (fix 827 to 824 in section 5 table)"
+      },
+      {
+        "priority": "HIGH",
+        "action": "Update PRD.md and BRD.md to remove 'gamification orphaned' claims -- F-23 is fully wired. Reference GAP doc B-9 resolution."
+      },
+      {
+        "priority": "HIGH",
+        "action": "Fix BRD.md feature count from '24 of 25' to '22 of 25' fully implemented"
+      },
+      {
+        "priority": "MEDIUM",
+        "action": "Fix BRD.md billing feature numbering from F-17 to F-16 to match PRD v3.0 canonical IDs"
+      },
+      {
+        "priority": "MEDIUM",
+        "action": "Resolve CURRENT_STATE internal inconsistency: F-16 Billing should NOT be in the FULLY IMPLEMENTED table since it is excluded from the 22-count, OR the reconciliation note needs updating"
+      },
+      {
+        "priority": "LOW",
+        "action": "Update CURRENT_STATE action plan item #3 from '21 features' to correct count (22 fully implemented)"
+      }
+    ]
+  }
+}

@@ -42,6 +42,7 @@
     "report:api-openapi": "node scripts/generate-openapi-contract.mjs",
     "report:db-types": "node scripts/generate-db-types.mjs",
     "validate:api-openapi-contract": "node scripts/validate-openapi-contract.mjs",
+    "validate:all": "npm run validate:module-manifest && npm run validate:infrastructure-manifest && npm run validate:docs-lifecycle && npm run validate:runbooks && npm run validate:observability-contract && npm run validate:ui-design-system && npm run validate:feature-flags && npm run validate:backend-topology-adr && npm run validate:schema-authority-adr && npm run validate:schema-migrations && npm run validate:seed-data-safety && npm run validate:typed-supabase-boundary && npm run validate:legacy-schema-disposition && npm run validate:messaging-boundary-adr && npm run validate:payment-mode-adr && npm run validate:data-ownership && npm run validate:auth-contract && npm run validate:security-contract && npm run validate:write-fallback-safety && npm run validate:api-openapi-contract",
     "test:scheduler-audit": "node scripts/scheduler-audit.test.mjs",
     "discover:saved-search-digests": "node scripts/discover-saved-search-digests.mjs",
     "test:saved-search-digest-discovery": "node scripts/discover-saved-search-digests.test.mjs",

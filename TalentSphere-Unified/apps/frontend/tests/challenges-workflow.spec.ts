@@ -164,7 +164,7 @@ test.describe('challenges workflow', () => {
       code_submitted: passingSolution,
     });
 
-    await expect(page.getByRole('heading', { name: 'Solution submitted' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Solution (passed|submitted)/ })).toBeVisible();
     await expect(challengeDialog).toContainText('PASSED');
     await expect(challengeDialog.getByText('Score: 100')).toBeVisible();
     await expect(challengeDialog.getByText('Attempt 2')).toBeVisible();

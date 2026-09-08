@@ -46,6 +46,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
     <div className="app-shell flex" data-ui="responsive-layout" data-slot="responsive-layout">
       <a
         href="#application-content"
+        tabIndex={0}
         data-ui="responsive-layout-skip-link"
         data-slot="responsive-layout-skip-link"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-[var(--bg-panel)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)]"

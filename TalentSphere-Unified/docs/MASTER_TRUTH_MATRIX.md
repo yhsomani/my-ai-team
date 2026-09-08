@@ -5,7 +5,7 @@
 > **Document**: Authoritative Project Baseline Reconciliation (ULTIMATE MASTER PROMPT response)
 > **Date**: 2026-09-07
 > **Status**: ACTIVE — produced by direct codebase inspection, no subagents
-> **Headline**: 25 features declared; 22 fully implemented, 3 partial (demo/deferred), 10 absent by design.
+> **Headline**: 26 features (25 canonical + 1 newly introduced); 22 fully implemented, 1 partial (demo/deferred), 10 absent by design.
 > **SSOT version under audit**: PROJECT_MASTER_DOCUMENT.md v3.1.0 (pasted into conversation)
 > **Canonical docs under audit**: docs/PRD.md (PRD v3.0), docs/BRD.md (BRD v3.0), CURRENT_STATE_AND_ACTION_PLAN.md, docs/RECONCILIATION_TRUTH_BASELINE.md, SSOT.md (archived)
 
@@ -616,7 +616,7 @@ All 27 Java services have `src/` directories with `pom.xml`, Flyway migrations, 
 |---|--------------|------------|--------|
 | C-1 | `CURRENT_STATE` P-03 (OAuth): says `lib/oauth.ts` exists as dead code | File absent from tree (Glob-verified). Doc is stale. | ✅ Resolved — delete row |
 | C-2 | `CURRENT_STATE` P-05 (DELIVERED): says enum unused in flow | Used in `types/messaging.ts:16`, `MessagingPage.tsx:599`, tests. Doc is stale. | ✅ Resolved — delete row |
-| C-3 | `CURRENT_STATE` F-count: lists 21 implemented but metrics say 23 | Tree has 22 fully implemented + 1 partial. Count should be 22. | ⚠️ Doc needs update |
+| C-3 | `CURRENT_STATE` F-count: lists 21 implemented but metrics say 23 | Tree has 22 fully implemented + 1 partial. Count should be 22. | ✅ Resolved — CURRENT_STATE updated to 22 |
 
 ### 16.2 NEW Contradictions Found in This Audit
 
@@ -758,7 +758,7 @@ The SSOT v3.1.0 document describes a **historically planned** Express 4/tRPC/MyS
 1. **Backend tests**: Not runnable locally (no Maven wrapper / Docker); need CI verification
 2. **Live Supabase runtime**: Token validation unverified from codebase alone
 3. **SSOT v3.1.0 reconciliation**: 2 HIGH-severity contradictions (architecture + table count) need doc update
-4. **F-count inconsistency**: CURRENT_STATE lists 21 but metrics say 23; truth baseline says 22
+4. ~~**F-count inconsistency**~~: RESOLVED — CURRENT_STATE updated to 22 fully implemented, matching truth baseline
 
 ### 20.4 Recommended Next Actions
 

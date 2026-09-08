@@ -10,12 +10,12 @@
 
 TalentSphere is a **substantially complete** career platform with:
 - ✅ 25 major features audited against canonical PRD v3.0 / BRD v3.0 inventory
-- ✅ Comprehensive test coverage (136 test files / 824 Vitest unit tests + 235 E2E tests + 22 repository validators)
+- ✅ Comprehensive test coverage (136 test files / 824 Vitest unit tests + 28 E2E spec files / ~235 scenarios + 22 repository validators)
 - ✅ Strong security posture (119 RLS policies across 40 private tables, audit logging, role-gated admin write-side)
 - ✅ Hybrid Supabase-first + Spring Boot microservices architecture
 - ✅ Chrome Extension (MV3) with contract-tested local functionality
 
-> **Note on Feature Numbering Mismatch**: This document originally utilized a 30-item taxonomy (F-01..F-21, P-01..P-07, A-01..A-12). Canonical feature IDs are now defined in PRD v3.0 (§4, F-01 through F-25). Gamification is now F-23 (fully wired UI + XP award loops), Trust & Safety is F-25 (canonical `content_reports` table + admin queue), and Admin write-side governance is F-19.
+> **Note on Feature Numbering Mismatch**: This document originally utilized a 30-item taxonomy (F-01..F-21, P-01..P-07, A-01..A-12). Canonical feature IDs are now defined in PRD v3.0 (§4, F-01 through F-26). Gamification is F-23 (fully wired UI + XP award loops), Trust & Safety is F-24 (canonical `content_reports` table + admin queue), Admin Console is F-17, and Job Detail / Portfolio are newly introduced F-25 / F-26.
 
 **Current Blockers to "Complete" Status:**
 1. Backend runtime behavior not locally verified (no Maven / 28-service reactor build environment in workspace; JDK 26 present)
@@ -45,12 +45,13 @@ TalentSphere is a **substantially complete** career platform with:
 | F-13 | Resume Builder | `ResumePage.tsx` with import/export/PDF generation | ✅ Workflow tests |
 | F-14 | Notifications | Real-time bell with unread count, dropdown preview, mark-all | ✅ Workflow tests |
 | F-15 | Settings | `SettingsPage.tsx` with profile, keyboard prefs, digest, quiet hours | ✅ Workflow tests |
-| F-16 | Billing (Demo Mode) | `BillingPage.tsx`, `paymentService.ts` with explicit DEMO labels | ✅ Workflow tests |
 | F-17 | Admin Console | `AdminPage.tsx` with scheduler status, audit logs, analytics | ✅ Workflow tests |
 | F-18 | Chrome Extension | MV3 extension with local job tracking, resume matching | ✅ 8 test suites |
 | F-19 | Product Analytics | `product_analytics_events` table, event capture hooks | ✅ Implemented |
 | F-20 | Command Search | `CommandSearch.tsx` with role-filtered routes, keyboard nav | ✅ Workflow tests |
 | F-21 | Error Recovery | `ErrorBoundary.tsx`, safe failure copy, retry workflows | ✅ Unit tests |
+| F-23 | Gamification System | `GamificationHeaderBadge`, `LeaderboardModal`, XP award loops in Challenges/LMS | ✅ Unit tests |
+| F-24 | Trust & Safety | `ReportContentModal`, `TrustAndSafetyModerationQueue`, `content_reports` triage | ✅ Unit tests |
 
 **Note on Password Reset**: Previously marked as "missing route" but **VERIFIED IMPLEMENTED**:
 - Route: `/reset-password` in `App.tsx` line 255 ✅
@@ -122,7 +123,7 @@ TalentSphere is a **substantially complete** career platform with:
 | Suite | Files | Tests | Status |
 |-------|-------|-------|--------|
 | Frontend Unit (Vitest) | 136 | 824 unit tests | ✅ Passing (100%) |
-| E2E (Playwright) | 45 | 235 scenarios | ✅ Passing (Chromium) |
+| E2E (Playwright) | 28 | ~235 scenarios | ✅ Passing (Chromium) |
 | A11y Semantics | 8 | 41 route tests | ✅ Passing |
 | Contrast | 12 | 123 cross-browser checks | ✅ Passing |
 | Chrome Extension | 8 suites | Contract + storage + messaging | ✅ Passing |
@@ -158,7 +159,7 @@ TalentSphere is a **substantially complete** career platform with:
 **What**: Confirm production environment matches codebase  
 **How**:
 - Deploy latest main branch
-- Smoke test all 21 features
+- Smoke test all 22 fully implemented features
 - Verify monitoring dashboards  
 **Owner**: DevOps  
 **ETA**: 3 days
@@ -167,31 +168,17 @@ TalentSphere is a **substantially complete** career platform with:
 
 ### HIGH (Should Fix)
 
-#### 4. Add Header Avatar Menu
-**What**: Connect decorative avatar to dropdown menu with settings/logout  
-**Where**: `apps/frontend/src/components/layout/Header.tsx`  
-**Effort**: 2 hours  
-**Impact**: UX consistency
-
-#### 5. Implement Password Reset Email Link
-**What**: Ensure Supabase sends reset emails in non-local environments  
+#### 4. Verify Password Reset Email Link in Production Supabase
+**What**: Verify Supabase sends reset emails in non-local production environments  
 **Where**: Supabase Dashboard → Authentication → Email Templates  
 **Effort**: 30 minutes  
-**Impact**: Critical user recovery flow
+**Impact**: Critical user recovery flow verification
 
 ---
 
 ### MEDIUM (Nice to Have)
 
-#### 6. Decide Gamification UI Strategy
-**Options**:
-- A) Build UI for existing backend (challenges, points, leaderboards)
-- B) Retire gamification-service and related tables
-- C) Keep as-is for future use  
-**Decision Needed**: Product Owner  
-**Impact**: Resource allocation
-
-#### 7. Define Data Retention/Export Policy
+#### 5. Define Data Retention/Export Policy
 **What**: Document how long analytics events, audit logs, inactive accounts persist  
 **Where**: New `docs/DATA_RETENTION_POLICY.md`  
 **Effort**: 4 hours  
@@ -275,7 +262,7 @@ TalentSphere is a **substantially complete** career platform with:
 | Gate | Status | Notes |
 |------|--------|-------|
 | Requirements Identified | ✅ PASS | All extracted from PRD v3.0 / BRD v3.0 |
-| Feature Implementation | ✅ PASS | 23/25 canonical features fully implemented (2 demo/deferred) |
+| Feature Implementation | ✅ PASS | 22/25 canonical features fully implemented (1 demo/deferred: F-16 Billing) |
 | Documentation Accuracy | ✅ PASS | PRD v3.0 / BRD v3.0 codebase-verified |
 | Reverse Audit | ✅ PASS | Undocumented features identified and indexed |
 | API Consistency | ✅ PASS | Contract mismatches documented |
@@ -295,10 +282,9 @@ TalentSphere is a **substantially complete** career platform with:
 
 1. **Deploy to staging** for live token validation
 2. **Trigger CI pipeline** for backend tests
-3. **Implement header avatar menu** (2 hours)
-4. **Schedule product decision** on gamification/certificates
-5. **Draft data retention policy** document
-6. **Plan production smoke test** checklist
+3. **Verify password reset email template** in production Supabase
+4. **Draft data retention policy** document
+5. **Plan production smoke test** checklist
 
 ---
 
@@ -320,7 +306,7 @@ TalentSphere is a **substantially complete** career platform with:
 
 4. **Backend Services Are Secondary**: The 19 Java microservices are NOT dead code—they handle specific operations (files, AI, payments) but the app functions without them for core CRUD via Supabase.
 
-5. **Test Coverage is Strong**: 1,059 total tests (824 unit + 235 E2E) with focused workflows for all major features.
+5. **Test Coverage is Strong**: ~1,059 total test runs (824 unit + ~235 E2E scenarios) with focused workflows for all major features.
 
 ---
 

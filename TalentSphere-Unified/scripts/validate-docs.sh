@@ -65,8 +65,8 @@ echo "Checking documentation structure..."
 
 REQUIRED_DOCS=(
     "README.md"
-    "CLAUDE.md"
-    "ISSUES.md"
+    "docs/PRD.md"
+    "docs/MASTER_TRUTH_MATRIX.md"
 )
 
 for doc in "${REQUIRED_DOCS[@]}"; do

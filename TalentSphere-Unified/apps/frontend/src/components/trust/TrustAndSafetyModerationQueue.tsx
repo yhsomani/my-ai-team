@@ -318,10 +318,10 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
             >
               <span>{tab.label}</span>
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                className={`rounded-full px-1.5 py-0.2 text-[10px] font-medium ${
                   statusFilter === tab.id
                     ? 'bg-accent-foreground/20 text-accent-foreground'
-                    : 'bg-[var(--border-default)] text-[var(--text-muted)]'
+                    : 'bg-[var(--border-default)] text-[var(--text-secondary)]'
                 }`}
               >
                 {tab.count}

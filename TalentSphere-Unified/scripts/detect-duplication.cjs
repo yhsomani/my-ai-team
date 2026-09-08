@@ -4,7 +4,7 @@ const path = require('path');
 console.log('--- Component Duplication Detection Report ---');
 
 const componentsDir = path.join(__dirname, '../apps/frontend/src/components');
-const reportFile = path.join(__dirname, '../DUPLICATION_REPORT.json');
+const reportFile = path.join(__dirname, '../docs/DUPLICATION_REPORT.json');
 
 function getFiles(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;

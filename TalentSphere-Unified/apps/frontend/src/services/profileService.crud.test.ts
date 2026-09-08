@@ -51,7 +51,11 @@ describe('profileService', () => {
       expect(supabase.from).toHaveBeenCalledWith('user_profiles');
       expect(mockSelect).toHaveBeenCalled();
       expect(mockEq).toHaveBeenCalledWith('user_id', mockUserId);
-      expect(result).toEqual(mockData);
+      expect(result).toEqual({
+        ...mockData,
+        fullName: 'John',
+        full_name: 'John',
+      });
     });
 
     it('should throw an error if supabase returns an error', async () => {

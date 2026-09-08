@@ -13,7 +13,7 @@
 
 | ID | Gap | Source | State |
 |---|---|---|---|
-| M-01 | `content_reports` table, RLS policies, and shared-queue provisioning — TRUST & SAFETY runs best-effort with `localStorage` fallback | Q-14, GA-15, RK-14, F-25 | **Resolved [VC]** — Canonical `content_reports` table + enums + triggers + 119 RLS policies in `0001_initial_baseline.sql` / `supabase-schema.sql`; typed client in `trustAndSafetyService.ts` |
+| M-01 | `content_reports` table, RLS policies, and shared-queue provisioning — TRUST & SAFETY runs best-effort with `localStorage` fallback | Q-14, GA-15, RK-14, F-24 | **Resolved [VC]** — Canonical `content_reports` table + enums + triggers + 119 RLS policies in `0001_initial_baseline.sql` / `supabase-schema.sql`; typed client in `trustAndSafetyService.ts` |
 | M-02 | RLS policies for `experiences`, `educations`, `conversation_participants` | GA-01/GA-03/GA-11, Q-11 | **Resolved [VC]** — Owner CRUD + public read policies added to experiences/educations; RLS enabled on conversation_participants with participant SELECT & creator INSERT |
 | M-03 | Seed data compatible with the unified schema | GA-06, Q-12 | **Resolved [VC]** — `seed-data.sql` re-authored (v8.0.0: 50 tables truncated, 32 seeded); `seed_data.py` + `SEED_DATA_GUIDE.md` aligned |
 | M-04 | XP award loop — `gamificationService.awardXp()` has **zero callers**; nothing inserts into `xp_transactions` | GA-05, RK-10, F-23 | **Resolved [VC]** — `GamificationHeaderBadge` & `LeaderboardModal` wired in `Header.tsx`; XP award loops wired in `ChallengesPage.tsx:612` (50 XP) and `LMSPage.tsx:380/389` (25 XP); `UNIQUE(user_id, reference_type, reference_id)` DB constraint on `xp_transactions` |
@@ -141,7 +141,7 @@ Ordered by dependency; each row = why / where / expected behavior / priority.
 | Document | Current state vs v3.0 baseline | Key findings | Action |
 |---|---|---|---|
 | `PRD.md`, `BRD.md` (v3.0) | Canonical baseline | See §3.2 B-9…B-11 | **Aligned** — F-23, validator count (22 total), BRD §15/§16 reconciled |
-| `CURRENT_STATE_AND_ACTION_PLAN.md` | v3.0-rebased | Measured 827 frontend unit tests, canonical feature IDs | **Aligned** — Test counts and feature references reconciled |
+| `CURRENT_STATE_AND_ACTION_PLAN.md` | v3.0-rebased | Measured 824 frontend unit tests, canonical feature IDs | **Aligned** — Test counts and feature references reconciled |
 | `RECOMMENDED_IMPROVEMENTS.md` | v3.0-aligned | QC-5 done (F-25); QC-9/QC-10 aligned | **Aligned** — Rebased to v3.0 |
 | `CODEBASE_TRACEABILITY.md` | v3.0-aligned | Current routes, BRD aliases, gamification status | **Aligned** — Rebased to v3.0 |
 | `ARCHITECTURE_STATUS_INDEX.md` | Canonical in `docs/` | Root-vs-docs path references | **Aligned** — Canonical path codified |

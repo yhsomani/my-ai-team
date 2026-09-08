@@ -209,7 +209,7 @@ test.describe('Dashboard workflow', () => {
     await expect(page.getByRole('button', { name: 'Applications: 1. View applications' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Messages: 2. Open messages' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'XP Earned: 240. Earn more XP' })).toBeVisible();
-    await expect(page.getByText('2/5')).toBeVisible();
+    await expect(page.getByText('2/5', { exact: true })).toBeVisible();
     await waitForDashboardAction(analyticsEvents, 'dashboard_data_loaded', metadata => metadata.role === 'talent');
 
     await page.getByRole('button', { name: /^Browse Jobs$/ }).click();

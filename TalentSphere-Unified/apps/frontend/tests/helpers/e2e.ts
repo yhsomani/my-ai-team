@@ -1750,10 +1750,19 @@ const fulfillRestFixture = async (
 
       if (tableName === 'notifications') {
         if (method === 'PATCH' || method === 'PUT') {
+          const id = getEqFilterValue(url, 'id');
+          const userId = getEqFilterValue(url, 'user_id');
+          if (fixtures.notifications) {
+            fixtures.notifications = fixtures.notifications.map((row) => {
+              if (id && row.id !== id) return row;
+              if (userId && row.user_id !== userId) return row;
+              return { ...row, ...payload };
+            });
+          }
           const response = fixtures.onNotificationUpdate?.(payload, {
-            id: getEqFilterValue(url, 'id'),
+            id,
             isRead: getEqFilterValue(url, 'is_read'),
-            userId: getEqFilterValue(url, 'user_id'),
+            userId,
           }) || payload;
           await fulfillJson(route, response, 200);
           return;
