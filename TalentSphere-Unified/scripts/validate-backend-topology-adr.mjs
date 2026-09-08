@@ -6,7 +6,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
 const adrPath = path.join(repoRoot, 'docs', 'adr', 'ADR-002-backend-topology.md');
 const manifestPath = path.join(repoRoot, 'module-manifest.json');
-const planPath = path.resolve(repoRoot, '..', 'PLAN.md');
+const planPath = path.join(repoRoot, 'docs', 'PLAN.md');
 const architectureIndexPath = path.join(repoRoot, 'docs', 'ARCHITECTURE_STATUS_INDEX.md');
 const setupDevPath = path.join(repoRoot, 'scripts', 'setup-dev.sh');
 

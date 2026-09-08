@@ -40,7 +40,7 @@ const confirmation = 'I_UNDERSTAND_SEED_DATA_WILL_TRUNCATE_LOCAL_DATA';
 const files = {
   seedSql: 'seed-data.sql',
   seedPython: 'scripts/seed_data.py',
-  seedGuide: 'SEED_DATA_GUIDE.md',
+  seedGuide: 'docs/SEED_DATA_GUIDE.md',
   packageJson: 'package.json',
   moduleManifest: 'module-manifest.json',
   moduleManifestDoc: 'docs/MODULE_MANIFEST.md',

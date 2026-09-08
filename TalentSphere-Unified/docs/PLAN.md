@@ -1,5 +1,7 @@
 # TalentSphere Redesign and Rebuild Plan
 
+> Documentation status: Current living plan. Single source of truth for the production-grade redesign and rebuild.
+
 This file is the single source of truth for a production-grade redesign and rebuild of the repository in this workspace. It is based on repository evidence only. When a capability, runtime state, vendor integration, production deployment, or operational behavior was not proven from local source, this plan says: Not verified from the codebase.
 
 ## Table of Contents

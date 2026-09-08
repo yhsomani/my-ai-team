@@ -47,4 +47,7 @@ Thumbs.db
 .mypy_cache/
 .coverage
 coverage.xml
+
+# Sensitive / personal data
+notebooklm_cookies.txt
 ```

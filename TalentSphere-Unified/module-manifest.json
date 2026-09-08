@@ -486,14 +486,6 @@
       "note": "Guards shared Tabs tablist/trigger/icon markers, compatibility slot metadata, selected-state metadata, labeled horizontal tablists, stable tab/panel relationships, decorative icon hiding, click selection, and Arrow/Home/End roving focus alignment."
     },
     {
-      "id": "frontend-legacy-helper-presentation-validation",
-      "kind": "vitest-contract",
-      "status": "active",
-      "path": "apps/frontend/src/components/molecules/LegacyHelpers.test.tsx",
-      "required": true,
-      "note": "Guards exported legacy helper named stat metric groups, connected descriptions, auditable stat-card/post-card root and subpart markers with compatibility slot metadata, named post articles, decorative avatar initials, named status bars with compatibility slot metadata, and decorative status icons."
-    },
-    {
       "id": "frontend-typography-helper-validation",
       "kind": "vitest-contract",
       "status": "active",
@@ -532,14 +524,6 @@
       "path": "apps/frontend/src/components/shared/AuraThemeProvider.test.tsx",
       "required": true,
       "note": "Guards AuraThemeProvider stored-theme priority, system preference fallback, root light/dark class synchronization, aura-theme persistence, and current-session toggle behavior when browser storage is unavailable."
-    },
-    {
-      "id": "frontend-legacy-mobile-menu-validation",
-      "kind": "vitest-contract",
-      "status": "active",
-      "path": "apps/frontend/src/components/layout/MobileMenu.test.tsx",
-      "required": true,
-      "note": "Guards exported MobileMenu named shortcut and expanded navigation landmarks, limited shortcut-route placement, active-route current state, decorative icons, expanded-menu description relationships, and unchanged close/theme/logout callbacks."
     },
     {
       "id": "frontend-active-sidebar-validation",
@@ -1282,10 +1266,82 @@
   ],
   "documentation": [
     {
+      "id": "architecture-master",
+      "kind": "current-architecture-master",
+      "status": "current",
+      "path": "docs/ARCHITECTURE.md",
+      "required": true,
+      "note": "Current living master architecture document for the TalentSphere Platform."
+    },
+    {
+      "id": "decision-log-master",
+      "kind": "current-decision-log",
+      "status": "current",
+      "path": "docs/DECISION.md",
+      "required": true,
+      "note": "Current living engineering decision log preserving architectural context, reasoning, trade-offs, impact, validation, and rollback plans."
+    },
+    {
+      "id": "flow-model-master",
+      "kind": "current-flow-model",
+      "status": "current",
+      "path": "docs/FLOW.md",
+      "required": true,
+      "note": "Current living execution model documenting runtime triggers, call chains, data transformations, state mutations, and error recovery."
+    },
+    {
+      "id": "implementation-plan-master",
+      "kind": "current-implementation-plan",
+      "status": "current",
+      "path": "docs/IMPLEMENTATION-PLAN.md",
+      "required": true,
+      "note": "Current living implementation roadmap tracking transformation tasks, milestones, verification commands, and production readiness gates."
+    },
+    {
+      "id": "master-truth-matrix",
+      "kind": "current-truth-matrix",
+      "status": "current",
+      "path": "docs/MASTER_TRUTH_MATRIX.md",
+      "required": true,
+      "note": "Authoritative project baseline reconciliation matrix produced by direct codebase inspection."
+    },
+    {
+      "id": "plan-master",
+      "kind": "current-plan-master",
+      "status": "current",
+      "path": "docs/PLAN.md",
+      "required": true,
+      "note": "Single source of truth for the production-grade redesign and rebuild, based on repository evidence only."
+    },
+    {
+      "id": "problems-register-master",
+      "kind": "current-problem-register",
+      "status": "current",
+      "path": "docs/PROBLEMS.md",
+      "required": true,
+      "note": "Current living problem register classifying defects, architecture risks, code quality issues, security vulnerabilities, and verification statuses."
+    },
+    {
+      "id": "project-boundaries-master",
+      "kind": "current-decomposition-architecture",
+      "status": "current",
+      "path": "docs/PROJECT-BOUNDARIES.md",
+      "required": true,
+      "note": "Current living decomposition architecture defining bounded contexts, interface contracts, data ownership, extraction order, and multi-team distribution."
+    },
+    {
+      "id": "reconciliation-truth-baseline",
+      "kind": "current-truth-baseline",
+      "status": "current",
+      "path": "docs/RECONCILIATION_TRUTH_BASELINE.md",
+      "required": true,
+      "note": "Mandatory non-negotiable truth baseline for the reconstruction lifecycle, classified against actual codebase state."
+    },
+    {
       "id": "local-setup-guide",
       "kind": "setup-guide",
       "status": "current",
-      "path": "LOCAL_SETUP_GUIDE.md",
+      "path": "docs/LOCAL_SETUP_GUIDE.md",
       "required": true,
       "note": "Local development and Supabase environment setup guide."
     },
@@ -1293,7 +1349,7 @@
       "id": "quick-preview-guide",
       "kind": "setup-guide",
       "status": "current",
-      "path": "QUICK_PREVIEW.md",
+      "path": "docs/QUICK_PREVIEW.md",
       "required": true,
       "note": "Quick preview and mock server guide for rapid frontend verification."
     },
@@ -1301,7 +1357,7 @@
       "id": "current-state-and-action-plan",
       "kind": "current-action-plan",
       "status": "current",
-      "path": "CURRENT_STATE_AND_ACTION_PLAN.md",
+      "path": "docs/CURRENT_STATE_AND_ACTION_PLAN.md",
       "required": true,
       "note": "Current actionable state summary, status analysis, and autonomous implementation roadmap."
     },
@@ -1317,7 +1373,7 @@
       "id": "seed-data-guide",
       "kind": "seed-data-guide",
       "status": "current",
-      "path": "SEED_DATA_GUIDE.md",
+      "path": "docs/SEED_DATA_GUIDE.md",
       "required": true,
       "note": "Guide for seed-data.sql. Validate coverage claims against seed-data.sql and current schema before production use."
     },
@@ -1325,7 +1381,7 @@
       "id": "agent-ownership-map",
       "kind": "historical-agent-context",
       "status": "historical-stale",
-      "path": "AGENT_OWNERSHIP.md",
+      "path": "docs/archive/AGENT_OWNERSHIP.md",
       "required": true,
       "note": "Historical multi-agent ownership map with stale service/module references."
     },
@@ -1333,7 +1389,7 @@
       "id": "claude-agent-context",
       "kind": "historical-agent-context",
       "status": "historical-stale",
-      "path": "CLAUDE.md",
+      "path": "docs/archive/CLAUDE.md",
       "required": true,
       "note": "Historical agent context with stale environment and Maven-wrapper assumptions."
     },
@@ -1341,7 +1397,7 @@
       "id": "gemini-agent-context",
       "kind": "historical-agent-context",
       "status": "historical-stale",
-      "path": "GEMINI.md",
+      "path": "docs/archive/GEMINI.md",
       "required": true,
       "note": "Historical assistant context with stale stack and architecture assumptions."
     },
@@ -1349,7 +1405,7 @@
       "id": "issues-tracker",
       "kind": "historical-issue-tracker",
       "status": "historical-stale",
-      "path": "ISSUES.md",
+      "path": "docs/archive/ISSUES.md",
       "required": true,
       "note": "Historical issue tracker with stale fixed/completion claims; use PLAN.md for current work tracking."
     },
@@ -1357,7 +1413,7 @@
       "id": "historical-ssot",
       "kind": "historical-reference",
       "status": "historical-stale",
-      "path": "SSOT.md",
+      "path": "docs/archive/SSOT.md",
       "required": true,
       "note": "Historical consolidated reference with stale completion claims; not current architecture authority."
     },
@@ -1605,7 +1661,7 @@
       "id": "report-final",
       "kind": "architecture-report",
       "status": "current-reference",
-      "path": "REPORT_FINAL.md",
+      "path": "docs/REPORT_FINAL.md",
       "required": true,
       "note": "Current architecture report reference."
     },
@@ -1615,7 +1671,7 @@
       "status": "current",
       "path": "docs/PRD.md",
       "required": true,
-      "note": "Current codebase-verified product requirements (v2.0) with feature inventory, functional rules, and roadmap."
+      "note": "Current codebase-verified product requirements (v3.0) with feature inventory, functional rules, and roadmap."
     },
     {
       "id": "brd",
@@ -1623,7 +1679,7 @@
       "status": "current",
       "path": "docs/BRD.md",
       "required": true,
-      "note": "Current codebase-verified business requirements (v2.0) with business rules, KPIs, and risk register."
+      "note": "Current codebase-verified business requirements (v3.0) with business rules, KPIs, and risk register."
     },
     {
       "id": "codebase-traceability",
@@ -1639,70 +1695,80 @@
       "status": "current",
       "path": "docs/RECOMMENDED_IMPROVEMENTS.md",
       "required": true,
-      "note": "Current quality-control register (v2.0) aligned to PRD v2.0 / BRD v2.0 / Codebase Traceability."
+      "note": "Current quality-control register (v3.0) aligned to PRD v3.0 / BRD v3.0 / Codebase Traceability."
+    },
+    {
+      "id": "gap-analysis-and-implementation-plan",
+      "kind": "current-implementation-plan",
+      "status": "current",
+      "path": "docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md",
+      "required": true,
+      "note": "Current cross-document gap analysis and implementation plan baseline driving the feature roadmap."
+    },
+    {
+      "id": "lifecycle-state",
+      "kind": "current-lifecycle-state",
+      "status": "current",
+      "path": "docs/LIFECYCLE_STATE.md",
+      "required": true,
+      "note": "Single source of truth for product lifecycle stage, verification state, and document reconciliation."
+    },
+    {
+      "id": "master-todo-tracker",
+      "kind": "current-task-tracker",
+      "status": "current",
+      "path": "docs/MASTER_TODO_TRACKER.md",
+      "required": true,
+      "note": "Canonical dependency-ordered tracker for implementing gap-analysis TODOs."
     }
   ],
   "developmentArtifacts": [
     {
       "id": "root-migration-task-list",
       "kind": "historical-task-list",
-      "path": "task.md",
+      "path": "docs/archive/task.md",
       "required": true,
       "note": "Historical remediation and migration task list; dev-only."
     },
     {
       "id": "root-controller-repair-script",
       "kind": "local-repair-script",
-      "path": "../fix_controller.py",
+      "path": "scripts/archive/fix_controller.py",
       "required": true,
       "note": "Workspace-root helper script; classified as dev-only and not production source."
     },
     {
       "id": "root-test-repair-script",
       "kind": "local-repair-script",
-      "path": "../fix_test.py",
+      "path": "scripts/archive/fix_test.py",
       "required": true,
       "note": "Workspace-root helper script; classified as dev-only and not production source."
     },
     {
       "id": "root-spel-test-helper",
       "kind": "local-test-helper",
-      "path": "../test_spel.py",
+      "path": "scripts/archive/test_spel.py",
       "required": true,
       "note": "Workspace-root helper script; classified as dev-only and not production source."
     },
     {
       "id": "root-controller-update-script",
       "kind": "local-repair-script",
-      "path": "../update_controller.py",
+      "path": "scripts/archive/update_controller.py",
       "required": true,
       "note": "Workspace-root helper script; classified as dev-only and not production source."
     },
     {
-      "id": "root-pom-patch",
-      "kind": "local-patch-fragment",
-      "path": "../pom_patch.xml",
-      "required": true,
-      "note": "Workspace-root repair fragment; classified as dev-only and not production source."
-    },
-    {
       "id": "root-pr-description-draft",
       "kind": "local-review-note",
-      "path": "../pr_description.md",
+      "path": "docs/archive/pr_description.md",
       "required": true,
       "note": "Workspace-root review draft; classified as dev-only and not product documentation."
     },
     {
-      "id": "root-opencode-config",
-      "kind": "local-agent-config",
-      "path": "../opencode.json",
-      "required": true,
-      "note": "Workspace-root local agent configuration; classified as dev-only and not production source."
-    },
-    {
       "id": "root-task-todo",
       "kind": "local-task-note",
-      "path": "../tasks/todo.md",
+      "path": "docs/tasks/todo.md",
       "required": true,
       "note": "Workspace-root task note; classified as dev-only and not product documentation."
     },
@@ -1716,30 +1782,9 @@
     {
       "id": "patch-remaining-helper",
       "kind": "local-repair-script",
-      "path": "patch_remaining.py",
+      "path": "scripts/archive/patch_remaining.py",
       "required": true,
       "note": "Repository-local helper script; classified as dev-only and not production source."
-    },
-    {
-      "id": "clean-snapshot",
-      "kind": "generated-text-snapshot",
-      "path": "clean.txt",
-      "required": true,
-      "note": "UTF-16 repository snapshot; classified as dev-only/generated evidence."
-    },
-    {
-      "id": "pom-manifest-snapshot",
-      "kind": "generated-text-snapshot",
-      "path": "pom_manifest.txt",
-      "required": true,
-      "note": "UTF-16 Maven manifest snapshot; classified as dev-only/generated evidence."
-    },
-    {
-      "id": "pom-manifest-utf8-snapshot",
-      "kind": "generated-text-snapshot",
-      "path": "pom_manifest_utf8.txt",
-      "required": true,
-      "note": "Maven manifest snapshot; classified as dev-only/generated evidence."
     },
     {
       "id": "duplication-report",
@@ -1758,7 +1803,7 @@
     {
       "id": "task-root-note",
       "kind": "local-task-note",
-      "path": "task.md",
+      "path": "docs/archive/task.md",
       "required": true,
       "note": "Local task note; classified as dev-only and not product documentation."
     },
@@ -1793,7 +1838,7 @@
     {
       "id": "agent-task-status-note",
       "kind": "local-agent-task-note",
-      "path": "agent-tasks/TASK_STATUS.md",
+      "path": "docs/archive/agent-tasks/TASK_STATUS.md",
       "required": true,
       "note": "Agent task status note; classified as dev-only and not product documentation."
     }

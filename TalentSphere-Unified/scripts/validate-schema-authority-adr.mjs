@@ -7,7 +7,7 @@ const repoRoot = path.resolve(scriptDir, '..');
 const adrPath = path.join(repoRoot, 'docs', 'adr', 'ADR-003-schema-authority.md');
 const manifestPath = path.join(repoRoot, 'module-manifest.json');
 const dataOwnershipPath = path.join(repoRoot, 'data-ownership-manifest.json');
-const planPath = path.resolve(repoRoot, '..', 'PLAN.md');
+const planPath = path.join(repoRoot, 'docs', 'PLAN.md');
 const architectureIndexPath = path.join(repoRoot, 'docs', 'ARCHITECTURE_STATUS_INDEX.md');
 const moduleManifestDocPath = path.join(repoRoot, 'docs', 'MODULE_MANIFEST.md');
 const dataOwnershipDocPath = path.join(repoRoot, 'docs', 'DATA_OWNERSHIP.md');
@@ -243,8 +243,8 @@ const duplicateSourceCount = tables.filter((entry) => entry.migrationStatus === 
 const unresolvedRlsCount = tables.filter((entry) => entry.rlsStatus === 'not-verified').length;
 const unresolvedIndexCount = tables.filter((entry) => entry.indexStatus === 'not-verified').length;
 
-if (tables.length !== 59) fail(`data ownership manifest table count changed without ADR-003 validator update: ${tables.length}`);
-if (directFrontendCount !== 45) fail(`direct frontend table count changed without ADR-003 validator update: ${directFrontendCount}`);
+if (tables.length !== 60) fail(`data ownership manifest table count changed without ADR-003 validator update: ${tables.length}`);
+if (directFrontendCount !== 46) fail(`direct frontend table count changed without ADR-003 validator update: ${directFrontendCount}`);
 if (legacyOnlyCount !== 10) fail(`legacy-master-only table count changed without ADR-003 validator update: ${legacyOnlyCount}`);
 if (duplicateSourceCount !== 15) fail(`multiple-reviewed-sql-sources table count changed without ADR-003 validator update: ${duplicateSourceCount}`);
 if (unresolvedRlsCount < 1) fail('ADR-003 validator expected unresolved RLS work until table-by-table validation is complete');
