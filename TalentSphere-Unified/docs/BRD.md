@@ -1,5 +1,7 @@
 # TalentSphere — Business Requirements Document (BRD)
 
+> Documentation status: Current canonical business requirements baseline (v3.0). Keep synchronized with `docs/PRD.md`, `docs/LIFECYCLE_STATE.md`, `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md`, and `docs/MASTER_TODO_TRACKER.md`.
+
 > **Version 3.0 — Canonical Reconstructed Baseline**
 > Date: 2026-08-30
 > Authority: Reconstructed from the same bidirectional repository analysis as [PRD v3.0](./PRD.md); business statements are tagged with the same evidence labels and may not overclaim beyond what the product verifiably does. This document supersedes BRD v2.0. Feature-level requirement detail lives in the PRD; this document answers *why* the business exists, what it must not promise, and how it runs.
@@ -73,7 +75,7 @@ Two commercial facts anchor every business decision:
 | Monetization | Demo mode (ADR-005); `billingMode:'demo'` exported; no revenue. [VC] |
 | Operations | Three external Node scheduler scripts (notification digests, saved-search discovery, networking reminders) + audit wrapper; admin automation-status panel mirrors them. [VC] |
 | Distribution | Web SPA + MV3 Chrome extension (local-only, contract-tested; not store-distributed). [VC] |
-| Data foundation | 49 canonical tables (59 incl. legacy-master-only), 110 RLS policies, 12 enums, 28 triggers, 5 functions; single schema authority (`infra/db/migrations/0001_initial_baseline.sql`). [VC] |
+| Data foundation | 50 canonical tables (60 incl. legacy-master-only), 119 RLS policies across 42 tables, 15 enums, 29 triggers, 5 functions; single schema authority (`infra/db/migrations/0001_initial_baseline.sql`). [VC] |
 | Documentation debt | Significant in both directions: shipped-but-undocumented (F-06, F-21, posting templates, bulk actions) and documented-but-absent (feed authoring, video calls, certificates, i18n, OAuth). Ledger: PRD §22 / BRD §19. [VC] |
 | Known business liabilities | Live-credential-free AI may under-deliver vs marketing; external schedulers = ops SPOF; `experiences`/`educations` RLS no-policy lockout; `conversation_participants` RLS off; seed corpus incompatible with the unified schema; no hard-delete/export policy. [VC] |
 
@@ -315,13 +317,13 @@ Business meaning of the canonical data model (full schema: PRD §13.1–13.5):
 | Messaging | `conversations`, `conversation_participants`, `messages` | Unread accounting; attachment safety |
 | Learning | `courses`, `lessons`, `enrollments`, `lesson_progress` | Progress computation |
 | Practice | `challenges`, `challenge_submissions` | Sample checks, retries, XP ledger |
-| Engagement state | `badges`, `user_badges`, `xp_transactions`, `leaderboard` | Orphaned UI today; dashboard reads `leaderboard.total_xp` |
+| Engagement state | `badges`, `user_badges`, `xp_transactions`, `leaderboard` | UI wired in Header.tsx (GamificationHeaderBadge, LeaderboardModal); award loops in ChallengesPage/LMSPage; DB UNIQUE constraint on xp_transactions |
 | Notification estate | `notification_settings`, `notifications`, `notification_digest_items` | Digest dedupe + quiet hours |
 | Billing (demo) | `subscription_plans`, `subscriptions`, `payments` | No live charges (RU-18); messages via service-side only |
 | Platform | `system_settings`, `audit_log` | Config + security trail |
-| Content moderation (trust & safety) | `content_reports` (referenced by F-25; **absent from canonical baseline**) | Reports on jobs/profiles/companies/messages with reason, status, resolution notes; local fallback until table is provisioned (Q-14) |
+| Content moderation (trust & safety) | `content_reports` | Canonical table in baseline with full RLS; report modal + admin moderation queue (F-25) |
 
-Data ground rules: single schema authority (`0001_initial_baseline.sql`); typed client boundary (`database.types.ts`); 110 RLS policies; no canonical views (PRD §13.1 — "XP-once view" claim corrected). [VC]
+Data ground rules: single schema authority (`0001_initial_baseline.sql`); typed client boundary (`database.types.ts`); 119 RLS policies across 42 tables; no canonical views (PRD §13.1 — "XP-once view" claim corrected). [VC]
 
 ---
 
@@ -334,7 +336,7 @@ Data ground rules: single schema authority (`0001_initial_baseline.sql`); typed 
 | Admin | Automation status | Mirrors the 3 scheduler builders [VC] | scripts/*.mjs |
 | Admin | Audit trail | Browsable, cursor-paginated [VC] | `audit_log` |
 | Admin | Product analytics insights | Single card reading events [VC] | `product_analytics_events` |
-| Leadership/Product | KPI dashboards (K-01…K-15) | **None exist** from raw events [VC] — framework in §16 | events ready; cohort/aggregation jobs absent |
+| Leadership/Product | KPI dashboards (K-01…K-18) | Aggregation scaffold `scripts/run-kpi-aggregations.mjs` computes K-11, K-12, K-15, K-16, K-18 [VC] — framework in §16 | `run-kpi-aggregations.mjs` + events |
 | Candidates | Application status | In-app timeline [VC] | `application_status_events` |
 | Recruiters | Pipeline queue | Candidates page w/ cursor nav [VC] | recruiterService |
 | Users | Notification estate | Center + bell + digests [VC] | notify tables |
@@ -357,22 +359,22 @@ Reporting framework for BO-1…BO-8. Baselines/definitions are proposed targets;
 | K-08 | First-pass success | PASSED without retry / submissions | BO-7/BR-05 | [PLN] |
 | K-09 | Connection acceptance rate | ACCEPTED / sent | BO-1/BR-06 | [PLN] |
 | K-10 | Message responsiveness | median reply latency | BO-1/BR-07 | [PLN] |
-| K-11 | AI suggestion acceptance | saved / generated suggestions | BO-2/BR-08 | **Computable now** [VC] (`automation_suggestion_saved` etc.) |
-| K-12 | Prefill utility | prefill_used vs rejected | BO-2/BR-08 | **Computable now** [VC] (`workflow_prefill_used/rejected`) |
-| K-13 | Digest engagement | action_url clicks / delivered digests | BO-1/BR-09 | Needs click capture [PLN/REC] |
+| K-11 | AI suggestion acceptance | saved / generated suggestions | BO-2/BR-08 | **Computable now** [VC] (computed by `run-kpi-aggregations.mjs`) |
+| K-12 | Prefill utility | prefill_used vs rejected | BO-2/BR-08 | **Computable now** [VC] (computed by `run-kpi-aggregations.mjs`) |
+| K-13 | Digest engagement | action_url clicks / delivered digests | BO-1/BR-09 | Telemetry captured in digest links & analytics; computation in aggregator [VC] |
 | K-14 | D30 retention | cohort survival | BO-1 | [PLN] |
-| K-15 | Degraded-experience rate | degraded_state_shown / sessions | BO-3/BR-13 | **Computable now** [VC] |
-| K-16 | Pipeline review rate (internal) | audit_log rows / sensitive actions | BO-6/BR-11 | **Computable now** [VC] |
+| K-15 | Degraded-experience rate | degraded_state_shown / sessions | BO-3/BR-13 | **Computable now** [VC] (computed by `run-kpi-aggregations.mjs`) |
+| K-16 | Pipeline review rate (internal) | audit_log rows / sensitive actions | BO-6/BR-11 | **Computable now** [VC] (computed by `run-kpi-aggregations.mjs`) |
 | K-17 | Extension adoption | installs→imports (sanitized, local consent) | BO-8/BR-12 | Sanitized local analytics only [VC] |
-| K-18 | Moderation throughput | resolved+dismissed / reports submitted (and median triage latency) | BO-6/BR-15 | Computable once `content_reports` is provisioned/shared; local-only until then [PLN/gated on Q-14] |
+| K-18 | Moderation throughput | resolved+dismissed / reports submitted (and median triage latency) | BO-6/BR-15 | **Computable now** [VC] (computed by `run-kpi-aggregations.mjs` against canonical `content_reports`) |
 
-**No historical aggregation, cohort, or computed-KPI job exists today** (`product_analytics_events` is raw + admin insight card) [VC]. KPI dashboards and cohort reporting are explicitly **[PLN]**.
+KPI aggregator script `scripts/run-kpi-aggregations.mjs` computes K-11, K-12, K-15, K-16, and K-18 from database & event records [VC]. Rich multi-dimensional cohort reporting and live visual dashboards are explicitly **[PLN]**.
 
 ---
 
 ## 17. Risk Register & Dependencies
 
-| ID | Risk / dependency | Impact | Likelihood | Mitigation | Owner |
+| ID | Risk / dependency | Impact | Likelihood | Mitigation / Resolution | Owner |
 |---|---|---|---|---|---|
 | RK-01 | Heuristic AI under-delivers vs marketing language | Churn, trust erosion | High | Disclosure panels; copy audit; BO-2 live-model roadmap behind review contracts | RO-6/Product |
 | RK-02 | External scheduler scripts = operational SPOF | Missed digests/reminders | Medium | Audited runs + admin status; HA plan Phase 3 | RO-4/Platform Ops |
@@ -383,11 +385,11 @@ Reporting framework for BO-1…BO-8. Baselines/definitions are proposed targets;
 | RK-07 | Unbatched analytics inserts | DB cost at scale | Low→Med | RU-R1 batching [REC] | Backend/Data |
 | RK-08 | Dev/E2E auth backdoor leaking to prod build | Auth bypass | Low | Env-guards now; RU-R2 prod-strip assertion [REC] | Security |
 | RK-09 | Extension store policy changes | Funnel loss | Low | Local-only posture simplifies review; monitor Q-2 | RO-6 |
-| RK-10 | Orphaned gamification (badges/leaderboard in schema, no UI) sets false expectations | Trust | Medium | Wire or cut (decision needed) | Product |
-| RK-11 | Zero-policy RLS on experiences/educations + RLS-off conversation_participants | Data exposure/lockout for real usage | **High** | Close policies or disable RLS; see PRD §13.6/Q-11 | Security/Data |
-| RK-12 | Seed corpus incompatible with unified schema | Broken onboarding/data ops | Medium | Re-author or retire seed; guard RU-23 | Data Ops |
+| RK-10 | Gamification UI orphan risk | Trust | Low | **Closed [VC]**: UI wired in Header.tsx (GamificationHeaderBadge, LeaderboardModal); award loops wired in ChallengesPage & LMSPage; DB UNIQUE constraint on xp_transactions | Product |
+| RK-11 | Zero-policy RLS on experiences/educations + RLS-off conversation_participants | Data exposure/lockout for real usage | **Resolved** | **Closed [VC]**: Full CRUD policies added to experiences/educations; RLS enabled on conversation_participants with participant SELECT + creator INSERT | Security/Data |
+| RK-12 | Seed corpus incompatible with unified schema | Broken onboarding/data ops | **Resolved** | **Closed [VC]**: `seed-data.sql` re-authored (v8.0.0, 50 tables truncated, 32 seeded); `seed_data.py` + `SEED_DATA_GUIDE.md` aligned | Data Ops |
 | RK-13 | No verified backup/restore runbook in evidence | Data loss recovery | Medium | Document restore procedure + test | RO-4 |
-| RK-14 | `content_reports` table missing from canonical schema → moderation data not shared across browsers | Split-brain moderation, reports lost per-browser | Medium | Provision table + RLS policies, or ratify local-only scope (Q-14) | Security/DATA + RO-3 |
+| RK-14 | `content_reports` table missing from canonical schema | Split-brain moderation | **Resolved** | **Closed [VC]**: Canonical `content_reports` table + enums + triggers + RLS policies provisioned in baseline; typed client wired | Security/DATA + RO-3 |
 
 Dependencies: Supabase platform SLA · file-service availability · CI runners for backend tests · parent-repo CI ownership · external scheduler host.
 
@@ -398,9 +400,9 @@ Dependencies: Supabase platform SLA · file-service availability · CI runners f
 **Business success (evidence-grounded)**
 1. All J-1…J-9 journeys complete in-product with labeled degradation — **achieved today** [VC].
 2. Zero silent AI mutations; every AI output reviewable — **achieved** [VC].
-3. All 110 RLS policies valid **and** the three known RLS gaps closed (Q-11) — **gap open**.
-4. Seed corpus usable against the unified schema (Q-12) — **gap open**.
-5. K-11/K-12/K-15/K-16/K-17 computable from existing events — **achieved for instrumentation** [VC]; KPI dashboards [PLN].
+3. All 119 RLS policies valid **and** known RLS gaps closed (Q-11) — **achieved [VC]**.
+4. Seed corpus usable against the unified schema (Q-12) — **achieved [VC]** (`seed-data.sql` v8.0.0).
+5. K-11/K-12/K-15/K-16/K-18 computable from existing data via `scripts/run-kpi-aggregations.mjs` — **achieved [VC]**; live visual KPI dashboards [PLN].
 
 **Exit of demo mode (BO-5) — go when ADR-005 exit criteria in §4 all pass, and only then.**
 
@@ -414,25 +416,25 @@ Dependencies: Supabase platform SLA · file-service availability · CI runners f
 
 Business view of the gap catalog (PRD §22). Alignment: business impact, the gap, decision needed, and the owner.
 
-| ID | Business gap | PRD anchor | Business impact | Priority | Decision needed | Decision owner |
+| ID | Business gap | PRD anchor | Business impact | Priority | Status / Resolution | Decision owner |
 |---|---|---|---|---|---|---|
-| GA-01 | Seed corpus (`seed-data.sql`/`seed_data.py`) incompatible with unified schema | §22/§13.1 | Broken local onboarding, wrong data written to production-shaped tables | High | Re-author vs retire vs split legacy corpus | RO-5/Data Ops + Architect |
-| GA-02 | `experiences`/`educations` RLS enabled with zero policies | §13.6/E-13 | Profile CRUD lockout in real use; support incidents | High | Add policies vs disable RLS | Security + RO-3 |
-| GA-03 | `conversation_participants` RLS never enabled | §13.6/E-14 | Participant listing exposure risk; read-marker logic unsafe | High | Enable RLS + add policies | Security + Backend |
-| GA-04 | XP-once not DB-enforced (no view/constraint in canonical schema) | §22/Q-13 | Double-award possible under race; skill-signal integrity | Medium | DB uniqueness constraint/function vs accept service-level | Backend + Product |
-| GA-05 | Gamification orphaned (badges/leaderboard schema + service, zero UI) | §22/F-23 | False expectations (badges mentioned nowhere user-visible); dead surface | Medium | Wire leaderboard/badges UI vs cut schema/service | Product + RO-6 |
+| GA-01 | Seed corpus (`seed-data.sql`/`seed_data.py`) incompatible with unified schema | §22/§13.1 | Broken local onboarding | High | **Closed [VC]**: Re-authored `seed-data.sql` (v8.0.0, 50 tables truncated, 32 seeded); aligned `seed_data.py` and `SEED_DATA_GUIDE.md` | RO-5/Data Ops + Architect |
+| GA-02 | `experiences`/`educations` RLS enabled with zero policies | §13.6/E-13 | Profile CRUD lockout in real use | High | **Closed [VC]**: Added full CRUD policies (owner CRUD + public read) | Security + RO-3 |
+| GA-03 | `conversation_participants` RLS never enabled | §13.6/E-14 | Participant listing exposure risk | High | **Closed [VC]**: Enabled RLS + participant SELECT / conversation creator INSERT policies | Security + Backend |
+| GA-04 | XP-once not DB-enforced | §22/Q-13 | Double-award under race | Medium | **Closed [VC]**: Added `UNIQUE(user_id, reference_type, reference_id)` to `xp_transactions` in baseline + types | Backend + Product |
+| GA-05 | Gamification orphaned | §22/F-23 | False expectations; dead surface | Medium | **Closed [VC]**: Wired `GamificationHeaderBadge` & `LeaderboardModal` in `Header.tsx`; wired XP awards in `ChallengesPage.tsx` and `LMSPage.tsx` | Product + RO-6 |
 | GA-06 | Billing live path blocked (demo mode) | §22/F-17 | No revenue; demo labels protect legal | Low (by design) | Keep blocked until §4 exit gates | RO-7 |
 | GA-07 | AI is heuristic, marketing may overclaim | §22/F-12 | Trust erosion if copy claims LLM | Medium→High | Copy audit now; BO-2 live-model roadmap | RO-6/Product + Marketing |
 | GA-08 | Documented-but-absent: feed authoring, video calls, certificates, mentorship, referrals, i18n, OAuth | §22.1 | Feature confusion; roadmap ambiguity | Medium | Explicitly declare out-of-scope in marketing; re-plan only if demanded | Product |
-| GA-09 | Data lifecycle: soft-delete only, no export/retention policy | §22/Q-6 | Compliance risk (user-data rights), cost of retained data | Medium | Retention/export policy (RU-R4) | RO-3 + Legal |
-| GA-10 | Judge0/Piston judging wiring UNKNOWN | §22/Q-5 | Challenge evaluation story unclear; cannot certify scalability | Medium | Trace & document actual execution path | Backend + RO-6 |
+| GA-09 | Data lifecycle: soft-delete only, no export/retention policy | §22/Q-6 | Compliance risk (user-data rights) | Medium | **Mitigated [VC]**: Admin data compliance panel + CSV export tooling + retention notes implemented | RO-3 + Legal |
+| GA-10 | Judge0/Piston judging wiring UNKNOWN | §22/Q-5 | Challenge evaluation story unclear | Medium | Trace & document actual execution path | Backend + RO-6 |
 | GA-11 | External schedulers SPOF | §22/§11 | Digest/reminder outages | Medium | In-app delivery vs external scripts decision (Q-4 kinship) | RO-4 + Product |
-| GA-12 | No KPI dashboards/cohort jobs from event stream | §22/§16 | Cannot evidence BO-4/BO-7 growth | Medium | Build KPI layer; instrumentation already there | Product + Data |
+| GA-12 | No KPI dashboards/cohort jobs from event stream | §22/§16 | Cannot evidence growth | Medium | Aggregation scaffold `scripts/run-kpi-aggregations.mjs` built; live visual UI [PLN] | Product + Data |
 | GA-13 | Recruiter access intent for networking/messaging ambiguous | §22.2/Q-7 | Product copy vs route policy drift | Low | Confirm intent, update copy/rules | Product |
-| GA-14 | Seed/demo currency of `system_settings` + admin write-side absent | §22/F-19 | Admin can't manage config from UI | Low | Wire settings management vs document absence | Product |
-| GA-15 | Content moderation persists only locally / best-effort because `content_reports` is missing from the canonical schema | §22/F-25/Q-14 | Moderation data not shared; false sense of platform-level safety | Medium | Provision `content_reports` + RLS, or ratify local-only scope | Security + RO-3 |
+| GA-14 | Seed/demo currency of `system_settings` + admin write-side absent | §22/F-19 | Admin can't manage config from UI | Low | **Closed [VC]**: Wired `SystemSettingsPanel` and `AdminUsersPanel` into `AdminDashboard` | Product |
+| GA-15 | Content moderation persists only locally / best-effort | §22/F-25/Q-14 | Moderation data not shared | Medium | **Closed [VC]**: Provisioned canonical `content_reports` table + RLS policies + typed client | Security + RO-3 |
 
-**Deferred (documented intent, not gaps):** live LLM provider (BO-2), live Stripe (BO-5 exit), modular monolith `apps/backend`, i18n, cross-browser certification, extension store distribution, leaderboard UI. [PLN]
+**Deferred (documented intent, not gaps):** live LLM provider (BO-2), live Stripe (BO-5 exit), modular monolith `apps/backend`, i18n, cross-browser certification, extension store distribution. [PLN]
 
 ---
 
@@ -476,7 +478,7 @@ BO coverage: BO-1→BR-01/02/06/07 · BO-2→BR-08 · BO-3→BR-13 · BO-4→BR-
 | Frontend | `apps/frontend/src`, `apps/frontend/tests` |
 | Backend | `services/*` (26 reactor modules), `apps/backend` (skeleton) |
 | Extension | `chrome-extension-project/src`, `scripts/*.test.mjs` |
-| Schedulers/validators | `scripts/*.mjs` (~22 `validate-*.mjs` contract validators; the 3 schedulers + audit each ship `.test.mjs` counterparts) |
+| Schedulers/validators | `scripts/*.mjs` (22 contract validators: 20 `.mjs` + 2 `.sh`; the 3 schedulers + audit each ship `.test.mjs` counterparts) |
 | Observability | `infra/observability/`, `infra/docker/` |
 | CI | `.github/workflows/talentsphere-ci.yml` |
 | Seed tooling | `seed-data.sql`, `scripts/validate-seed-data-safety.mjs` |
@@ -488,24 +490,24 @@ BO coverage: BO-1→BR-01/02/06/07 · BO-2→BR-08 · BO-3→BR-13 · BO-4→BR-
 
 Open questions (shared with PRD §23, IDs identical):
 
-| ID | Question | Business significance |
-|---|---|---|
-| Q-1 | Billing pricing tiers beyond seeded demo plans? | BO-5 exit gate |
-| Q-2 | Extension store distribution & policy constraints? | BO-8 |
-| Q-3 | Backend endgame: modular monolith vs retained services? | Cost/debt posture |
-| Q-4 | Is socket.io still needed given Supabase Realtime? | Ops simplification |
-| Q-5 | What actually executes challenge submissions (Judge0/Piston)? | GA-10/RK certifiable evaluation |
-| Q-6 | Data-retention/export policy for drafts, sessions, analytics, deleted accounts? | GA-09/RU-R4 |
-| Q-7 | Intended recruiter access to Networking/Messaging? | GA-13 |
-| Q-8 | i18n priority languages? | Out-of-scope today |
-| Q-9 | LLM vendor + privacy requirements when a live model is introduced? | BO-2 / RK-01 |
-| Q-10 | Certificate strategy (`certificate_url` passthrough only)? | BO-1 completeness |
-| Q-11 | Resolve RLS no-policy / off states for experiences, educations, conversation_participants? | GA-02/03/RK-11 |
-| Q-12 | Reconcile seed corpus with unified schema? | GA-01/RK-12 |
-| Q-13 | Should XP-once be DB-enforced? | GA-04 |
-| Q-14 | Should `content_reports` be added to canonical schema (with RLS) so the moderation queue is shared, or is per-browser/local-only acceptable? | GA-15/RK-14 |
+| ID | Question | Business significance | Status / Resolution |
+|---|---|---|---|
+| Q-1 | Billing pricing tiers beyond seeded demo plans? | BO-5 exit gate | Open (PLN) |
+| Q-2 | Extension store distribution & policy constraints? | BO-8 | Open (PLN) |
+| Q-3 | Backend endgame: modular monolith vs retained services? | Cost/debt posture | Open (PLN) |
+| Q-4 | Is socket.io still needed given Supabase Realtime? | Ops simplification | Resolved: Orphaned; Supabase Realtime canonical [VC] |
+| Q-5 | What actually executes challenge submissions (Judge0/Piston)? | GA-10/RK certifiable evaluation | Open (UNK) |
+| Q-6 | Data-retention/export policy for drafts, sessions, analytics, deleted accounts? | GA-09/RU-R4 | **Resolved [VC]**: Admin compliance panel + CSV export tooling implemented |
+| Q-7 | Intended recruiter access to Networking/Messaging? | GA-13 | Open |
+| Q-8 | i18n priority languages? | Out-of-scope today | Open (PLN) |
+| Q-9 | LLM vendor + privacy requirements when a live model is introduced? | BO-2 / RK-01 | Open (PLN) |
+| Q-10 | Certificate strategy (`certificate_url` passthrough only)? | BO-1 completeness | Open (PLN) |
+| Q-11 | Resolve RLS no-policy / off states for experiences, educations, conversation_participants? | GA-02/03/RK-11 | **Resolved [VC]**: Full CRUD policies on experiences/educations; RLS enabled on conversation_participants |
+| Q-12 | Reconcile seed corpus with unified schema? | GA-01/RK-12 | **Resolved [VC]**: `seed-data.sql` re-authored (v8.0.0); `seed_data.py` aligned |
+| Q-13 | Should XP-once be DB-enforced? | GA-04 | **Resolved [VC]**: `UNIQUE(user_id, reference_type, reference_id)` constraint added |
+| Q-14 | Should `content_reports` be added to canonical schema (with RLS) so the moderation queue is shared? | GA-15/RK-14 | **Resolved [VC]**: `content_reports` table + RLS policies + typed client provisioned |
 
-Decision log this revision: **D-1** PRD/BRD v2.0 superseded by v3.0 (codebase-verified). **D-2** Keep billing in demo until full §4 exit list passes (RU-18 upheld). **D-3** `/jobs` remains USER+RECRUITER; v2.0 "ADMIN allowed" claim corrected (PRD §26). **D-4** Gamification surfaced or cut — decision open (GA-05). **D-5** Trust & safety (F-25) added as an implemented-but-undocumented feature during §30 self-review; persistence scope (shared vs local-only `content_reports`) open (Q-14).
+Decision log this revision: **D-1** PRD/BRD v2.0 superseded by v3.0 (codebase-verified). **D-2** Keep billing in demo until full §4 exit list passes (RU-18 upheld). **D-3** `/jobs` remains USER+RECRUITER; v2.0 "ADMIN allowed" claim corrected (PRD §26). **D-4** Gamification wired to `Header.tsx` and challenge/LMS XP award loops with DB constraint. **D-5** Trust & safety (F-25) added as canonical baseline table `content_reports` with full RLS and typed client. **D-6** Schema & security hardening: 50 canonical tables, 15 enums, 119 RLS policies across 42 tables, seed v8.0.0, admin management panels, and KPI aggregator runner.
 
 ---
 

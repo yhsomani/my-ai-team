@@ -32,6 +32,7 @@ const leaderboardFixture: LeaderboardEntry[] = [
     total_xp: 500,
     rank: 1,
     level: 6,
+    badge_count: 0,
   },
   {
     user_id: 'user-silver',
@@ -39,6 +40,7 @@ const leaderboardFixture: LeaderboardEntry[] = [
     total_xp: 350,
     rank: 2,
     level: 4,
+    badge_count: 0,
   },
   {
     user_id: 'user-bronze',
@@ -46,6 +48,7 @@ const leaderboardFixture: LeaderboardEntry[] = [
     total_xp: 220,
     rank: 3,
     level: 3,
+    badge_count: 0,
   },
   {
     user_id: 'current-user',
@@ -53,6 +56,7 @@ const leaderboardFixture: LeaderboardEntry[] = [
     total_xp: 180,
     rank: 4,
     level: 2,
+    badge_count: 0,
   },
 ];
 

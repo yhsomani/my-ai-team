@@ -1,8 +1,8 @@
 # TalentSphere User Workflow And Automation Guide
 
-> Documentation status: Current user workflow and automation guide. Keep synchronized with `../README.md`, `docs/FEATURES_AND_DASHBOARDS.md`, `docs/PRODUCT_UX_AUTOMATION_AUDIT.md`, and `../../PLAN.md`.
+> Documentation status: Current user workflow and automation guide (rebased to PRD v3.0 / BRD v3.0 / Unified Schema Baseline). Keep synchronized with `../README.md`, `docs/FEATURES_AND_DASHBOARDS.md`, `docs/PRODUCT_UX_AUTOMATION_AUDIT.md`, and `docs/PRD.md`.
 
-Last reviewed from source: 2026-06-30
+Last reviewed from source: 2026-09-06
 
 This guide teaches users, recruiters, admins, operators, and contributors how to set up TalentSphere, use each major workflow, and streamline repeated work with built-in automation. It is source-backed documentation for the current repository state. If runtime provider behavior, hosted deployment state, or production scheduler state is not proven locally, this guide says so explicitly.
 
@@ -164,10 +164,10 @@ Use the anon key only in frontend environment files. Never place a Supabase serv
 For a Supabase-backed setup:
 
 1. Open the SQL editor for a reviewed local, development, test, or CI project.
-2. Apply `supabase-schema.sql`.
-3. Optionally seed demo data with `seed-data.sql`.
+2. Apply the canonical schema baseline: `infra/db/migrations/0001_initial_baseline.sql` (mirrored in `supabase-schema.sql`).
+3. Optionally seed demo data using `seed-data.sql` or run `python scripts/seed_data.py`.
 
-The seed script is destructive and must only run against reviewed non-production targets. Before running it in the same SQL session, declare the scope and confirmation:
+The seed script is destructive and must only run against reviewed non-production targets. Before running `seed-data.sql` in the same SQL session, declare the scope and confirmation:
 
 ```sql
 SET app.seed_environment = 'development';
@@ -184,7 +184,7 @@ If Supabase blocks direct `auth.users` inserts, manually create these test users
 | `david.power@talentsphere.test` | `password123` | Power user with stronger profile data |
 | `eve.admin@talentsphere.test` | `password123` | Admin console scenario |
 
-For full seed instructions, use `SEED_DATA_GUIDE.md`.
+For full seed instructions and Python seeding options, refer to `SEED_DATA_GUIDE.md`.
 
 ### 2.6 Start the web app
 
@@ -435,18 +435,24 @@ Practical example: Before submitting, run local sample checks to catch simple ou
 
 ### 4.7 AI Assistant And Career Path
 
-Purpose: Draft guidance and reviewed handoffs to owning workflows.
+Purpose: Draft guidance, career-path planning, and reviewed handoffs to owning workflows.
+
+Execution Architecture:
+The AI Assistant operates via a deterministic, client-side heuristic engine (`aiService.ts` and `aiSlice.ts`). It generates recommendations, draft revisions, cover letters, and career roadmaps with provenance tracking. No external cloud LLM credentials are required for local execution.
 
 Steps:
 
 1. Open `/ai` for chat-style guidance or `/career-path` for career-path generation.
 2. Choose a prompt suggestion or type a prompt.
 3. Send the draft prompt.
-4. Review assistant output as draft guidance.
+4. Review assistant output as draft guidance (provenance clearly labeled).
 5. Save, dismiss, or open a workflow handoff from the recommendation queue.
 6. In the destination workflow, review the proposed changes before applying them.
 
 Important rule: AI output must not mutate Profile, Resume, Jobs, or Learning records automatically. It creates draft recommendations and handoffs that users explicitly review.
+
+File Attachments & Resumes:
+Resume and media file uploads route through REST multipart endpoints backed by AWS S3 / backend `file-service` or local storage fallbacks. Supabase Storage buckets are not utilized in the unified architecture.
 
 ### 4.8 Networking
 
@@ -752,7 +758,27 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
 node scripts/run-networking-reminders.mjs --commit --max-items=200
 ```
 
-### 8.5 Use validation commands before relying on a workflow
+### 8.5 Use product KPI aggregation automation
+
+Operators can run the KPI aggregation engine to compute platform metrics (K-01 through K-18), including AI suggestion acceptance (K-11), prefill utilization (K-12), degradation rates (K-15), feature flag health (K-16), and Trust & Safety resolution SLA (K-18).
+
+Dry-run:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
+node scripts/run-kpi-aggregations.mjs
+```
+
+Commit aggregated KPIs to `kpi_metrics_snapshots`:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
+node scripts/run-kpi-aggregations.mjs --commit
+```
+
+### 8.6 Use validation commands before relying on a workflow
 
 Common local validation:
 
@@ -787,7 +813,7 @@ npm run test:notification-digests
 npm run test:networking-reminders
 ```
 
-### 8.6 Advanced automation run modes
+### 8.7 Advanced automation run modes
 
 All current server-side automation is explicit and reviewable. The scripts are safe to inspect in dry-run mode and mutating only when `--commit` is supplied from a trusted server-side context.
 
@@ -796,6 +822,7 @@ All current server-side automation is explicit and reviewable. The scripts are s
 | Saved-search discovery | Reads alert-enabled saved searches and matching jobs, reports candidate digest items | Queues digest items and updates saved-search baselines | Confirm project, search/job limits, preference behavior, and scheduler audit output |
 | Notification digest delivery | Reads queued digest items and reports grouped delivery candidates | Creates grouped `JOB_ALERT` notifications and marks eligible items delivered or skipped | Confirm digest frequency, notification settings, item counts, and sanitized audit output |
 | Networking reminders | Reads unread reminder notifications and reports due/future/invalid counts | Promotes due unread reminders into visible account notifications | Confirm reminder timing, invalid metadata counts, and scheduler audit output |
+| KPI Aggregations | Aggregates product events and computes K-01..K-18 metrics, reporting summary tables | Stores aggregated metrics snapshots to `kpi_metrics_snapshots` | Confirm time window, event ingestion health, and degradation metrics |
 | Extension diagnostics | Reviews local diagnostic state and local operational events when enabled | Exports or clears local diagnostic data after inline review | Confirm no raw resume, job, URL, prep topic, or provider error data is included |
 
 Operator checklist before using `--commit`:
@@ -810,7 +837,7 @@ Operator checklist before using `--commit`:
 8. Review audit output after the committed run.
 9. Check the Admin Console source labels before calling the run production evidence.
 
-### 8.7 Workflow streamlining patterns
+### 8.8 Workflow streamlining patterns
 
 Use these patterns to speed up work while preserving the product's review-first safety model.
 
@@ -823,7 +850,7 @@ Use these patterns to speed up work while preserving the product's review-first 
 | Use scoped retries | Jobs, Messaging, Billing, Admin, Learning, Challenges, Profile, Resume | Recovers failed sub-workflows without refreshing the whole app | Keep raw provider errors hidden from users |
 | Run local checks before provider calls | Challenge sample checks, extension Resume Match, scheduler dry-runs | Catches obvious issues before persistence or provider handoff | Treat local checks as advisory unless the owning workflow persists state |
 
-### 8.8 Execution-ready workflow recipes
+### 8.9 Execution-ready workflow recipes
 
 Use these recipes when the goal is to complete a multi-step workflow with the fewest context switches while keeping every mutation reviewed.
 
@@ -837,7 +864,7 @@ Use these recipes when the goal is to complete a multi-step workflow with the fe
 | Extension user captures and prepares from a job portal | 1. Build and load the extension. 2. Open a supported job portal page. 3. Open popup. 4. Scan active page. 5. Review scanned draft. 6. Save locally. 7. Open Resume Match in options. 8. Paste job and resume text. 9. Create Interview Planner prep cards. 10. Export diagnostics only after review. | Data is local-first; scan draft can be discarded; Resume Match is keyword-overlap preview, not cloud AI. |
 | Contributor verifies a UI/documentation-only change | 1. Run focused unit or route tests for touched surfaces. 2. Run `npm run test:ia`. 3. Run `npm run test:a11y`. 4. Run `npm run validate:ui-design-system`. 5. Run `npm run validate:docs-lifecycle`. 6. Run `npm run validate:module-manifest`. 7. Run `git diff --check`. | Documentation status banners and manifest classification remain current; UI changes preserve route ownership and existing behavior. |
 
-### 8.9 Validation command matrix
+### 8.10 Validation command matrix
 
 Choose validation based on the evidence you need. Passing a narrower command does not prove the broader environment.
 
@@ -855,7 +882,7 @@ Choose validation based on the evidence you need. Passing a narrower command doe
 | Scheduler scripts | `npm run test:scheduler-audit`, `npm run test:saved-search-digest-discovery`, `npm run test:notification-digests`, `npm run test:networking-reminders` | Source-level scheduler logic and dry-run/commit contract behavior | Production CronJob image, secret, pod, and run history |
 | Backend/API contracts | `npm run report:api-openapi`, `npm run validate:api-openapi-contract`, `npm run validate:auth-contract`, `npm run validate:security-contract` | Source-derived API/auth/security contract consistency | Live Gateway/service integration and provider identity tokens |
 
-### 8.10 Automation trigger and data-safety reference
+### 8.11 Automation trigger and data-safety reference
 
 Use this reference before trying to streamline repeated work.
 
@@ -867,10 +894,11 @@ Use this reference before trying to streamline repeated work.
 | Job saved searches | User saves search criteria | Yes, preference/search state | Save only reviewed criteria | Confirm alert preference and restore/delete behavior |
 | Scheduler discovery/delivery | Operator or scheduler script | Dry-run writes nothing; `--commit` mutates queued items or notifications | Run without `--commit` | Confirm project, service-role secret scope, counts, skipped items, and tests |
 | Networking reminders | User reminder setting plus operator scheduler run | User action stores reminder; scheduler commit creates due notifications | Dry-run scheduler first | Confirm due dates, invalid metadata, notification preferences, and Admin labels |
+| KPI Aggregation | Operator or KPI scheduler script | Aggregates product event metrics; `--commit` records snapshot | Run without `--commit` | Confirm time window, event ingestion health, and metrics coverage |
 | Extension tracker/planner | Extension popup/options actions | Local browser storage only | Review local draft before saving | Confirm data is local-only and export diagnostics only after review |
 | Validation commands | Contributor or CI | No product data mutation | Focused command first, then broader suites | Match command scope to the evidence you need |
 
-### 8.11 Build a repeatable workflow automation blueprint
+### 8.12 Build a repeatable workflow automation blueprint
 
 Use this blueprint when a user, recruiter, operator, or team wants to streamline repeated work without changing product behavior.
 
@@ -897,7 +925,7 @@ Blueprint examples:
 
 Do not add a new dashboard, shortcut, script, or automation entry point until this blueprint shows the existing owner cannot serve the workflow clearly. If a new surface is required, document the ownership decision in `docs/FEATURES_AND_DASHBOARDS.md`, update this guide, and keep the old feature location as a summary or handoff only.
 
-### 8.12 Workflow automation catalog and runbooks
+### 8.13 Workflow automation catalog and runbooks
 
 Use this catalog when a user knows the outcome but not the exact screen, setup mode, script, or validation command. Each row preserves the existing feature owner and points to the first failure check to run before escalating.
 

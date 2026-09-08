@@ -155,8 +155,6 @@ Current local UI validation evidence as of 2026-06-30: `npm run validate:ui-desi
 
 `apps/frontend/src/components/shared/Tabs.test.tsx` validates the shared tabs semantics contract. It checks shared tablist/trigger/icon markers with compatibility slot metadata, selected-state metadata, labeled horizontal tablists, stable tab/panel relationships when `idPrefix` is supplied, decorative icon hiding, click selection, and Arrow/Home/End roving focus alignment.
 
-`apps/frontend/src/components/molecules/LegacyHelpers.test.tsx` validates exported legacy helper presentation contracts. It checks named metric groups with auditable stat-card root/header/icon/trend/body/label/value/description markers and compatibility slot metadata, connected stat descriptions, named post articles with auditable post-card root/header/avatar/meta/content/action markers and compatibility slot metadata, decorative avatar initials, named status bars rendered through shared `StatusBarSurface`, shared status-bar root/subpart markers with compatibility slot metadata, preserved Sync/System defaults, and decorative status icons while keeping existing helper props, compatibility exports, status labels, status defaults, and actions intact.
-
 `apps/frontend/src/components/atoms/Typography.test.tsx` validates exported typography helper contracts. It checks native heading/body/metadata elements, caller prop passthrough, wrapping-safe defaults, and caller class preservation.
 
 `apps/frontend/src/components/templates/PageTemplate.test.tsx` validates the compatibility page-template contract. It checks shared page-template shell/content markers, shared page-header rendering, named content landmarks, caller class hooks, caller action preservation, and header-hidden utility layouts.
@@ -166,8 +164,6 @@ Current local UI validation evidence as of 2026-06-30: `npm run validate:ui-desi
 `apps/frontend/src/components/shared/AuraNavbar.test.tsx` validates the exported legacy navbar contract. It checks named legacy navigation landmarks, public auth links, active-route `aria-current` state, decorative nav/action icons, controlled mobile menu relationships, animated mobile-menu close behavior, profile/search/notification controls, and logout through the existing auth service and `/login` route.
 
 `apps/frontend/src/components/shared/AuraThemeProvider.test.tsx` validates the shared theme provider resilience contract. It checks stored theme priority, system preference fallback, root `light`/`dark` class synchronization, preserved `aura-theme` persistence, and current-session toggle behavior when browser storage is unavailable.
-
-`apps/frontend/src/components/layout/MobileMenu.test.tsx` validates the exported legacy mobile menu contract. It checks named shortcut and expanded navigation landmarks, limited shortcut-route placement, active-route `aria-current` state, decorative icon treatment, expanded-menu description relationships, and unchanged close/theme/logout callbacks.
 
 `apps/frontend/src/components/layout/Sidebar.test.tsx` validates the active sidebar shell contract. It checks collapsed brand/home naming, primary and expanded mobile navigation landmarks, active-route state, decorative shell icons and dividers, mobile overlay hiding, and unchanged close/theme/sign-out/collapse callbacks.
 

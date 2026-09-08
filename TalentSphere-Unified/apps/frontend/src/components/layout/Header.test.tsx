@@ -5,6 +5,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Header } from './Header';
 import { notificationService } from '../../services/notificationService';
 import type { NotificationRecord, PaginatedNotificationsResult } from '../../services/notificationService';
+import { recordNotificationsWorkflowAnalytics } from '../../lib/notificationsWorkflowAnalytics';
+
+vi.mock('../../lib/notificationsWorkflowAnalytics', () => ({
+  recordNotificationsWorkflowAnalytics: vi.fn(),
+}));
 
 vi.mock('./CommandSearch', () => ({
   CommandSearch: () => <div role="search" aria-label="Command search" />,
@@ -191,5 +196,71 @@ describe('Header notifications', () => {
     });
     expect(screen.queryByRole('button', { name: 'Mark read' })).toBeNull();
     expect(screen.getByRole('button', { name: 'View notifications' })).toBeTruthy();
+  });
+
+  it('records digest click-through telemetry with K-13 metadata when a digest notification is clicked in header', async () => {
+    const digestNotification: NotificationRecord = {
+      id: 'digest-notif-001',
+      userId: 'test-user',
+      type: 'JOB_ALERT',
+      title: 'Weekly Digest: 5 New Matches',
+      message: '5 new matches found for your saved searches.',
+      isRead: false,
+      actionUrl: '/jobs?savedSearchId=search-weekly',
+      createdAt: '2026-06-28T06:00:00.000Z',
+      metadata: {
+        kind: 'saved_search_digest',
+        digestFrequency: 'weekly',
+        digestItemIds: ['item-1', 'item-2'],
+        itemCount: 2,
+        totalNewMatches: 5,
+      },
+    };
+
+    vi.mocked(notificationService.getNotificationsPage).mockResolvedValue({
+      notifications: [digestNotification],
+      total: 1,
+      limit: 8,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+      metadata: {
+        source: 'account',
+        degraded: false,
+        message: 'Account notifications are synced.',
+      },
+    });
+    vi.mocked(notificationService.markNotificationRead).mockResolvedValue(undefined);
+
+    renderHeader();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'View notifications, 1 unread' })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'View notifications, 1 unread' }));
+
+    const notifButton = screen.getByRole('button', { name: /Weekly Digest: 5 New Matches/ });
+    expect(notifButton).toBeTruthy();
+
+    fireEvent.click(notifButton);
+
+    await waitFor(() => {
+      expect(notificationService.markNotificationRead).toHaveBeenCalledWith('test-user', 'digest-notif-001');
+    });
+
+    expect(recordNotificationsWorkflowAnalytics).toHaveBeenCalledWith({
+      userId: 'test-user',
+      action: 'notification_opened',
+      notificationId: 'digest-notif-001',
+      notificationType: 'JOB_ALERT',
+      notificationKind: 'saved_search_digest',
+      digestFrequency: 'weekly',
+      digestItemIds: ['item-1', 'item-2'],
+      digestItemCount: 2,
+      digestTotalNewMatches: 5,
+      actionUrl: '/jobs?savedSearchId=search-weekly',
+      isDigestClick: true,
+    });
   });
 });

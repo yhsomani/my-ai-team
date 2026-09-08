@@ -125,6 +125,7 @@ describe('routeRegistry', () => {
       'learning',
       'challenges',
       'networking',
+      'portfolio',
       'ai',
       'messaging',
       'admin',

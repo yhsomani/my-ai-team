@@ -53,12 +53,7 @@ type ReviewedAIStatus = Exclude<AIReviewStatus, 'draft'>;
 type ChatPersistenceState = 'local' | 'syncing' | 'account';
 const decorativeIconProps = { 'aria-hidden': true, focusable: 'false' as const };
 
-const createMessageId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
+const createMessageId = () => crypto.randomUUID();
 
 const createWelcomeMessage = (): Message => ({
   id: 'welcome',
@@ -150,7 +145,7 @@ const AIAssistant: React.FC = () => {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const storageKey = useMemo(() => `talentsphere.ai.chat.${user?.id || 'guest'}`, [user?.id]);
-  const [sessionId, setSessionId] = useState(createMessageId);
+  const [sessionId, setSessionId] = useState<string>(() => createMessageId());
   const [messages, setMessages] = useState<Message[]>([createWelcomeMessage()]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);

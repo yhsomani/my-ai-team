@@ -312,7 +312,7 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
               onClick={() => setStatusFilter(tab.id)}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 statusFilter === tab.id
-                  ? 'bg-accent text-white shadow-sm'
+                  ? 'bg-accent text-accent-foreground shadow-sm'
                   : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-panel)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -320,7 +320,7 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
               <span
                 className={`rounded-full px-1.5 py-0.2 text-[10px] ${
                   statusFilter === tab.id
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-accent-foreground/20 text-accent-foreground'
                     : 'bg-[var(--border-default)] text-[var(--text-muted)]'
                 }`}
               >
@@ -509,7 +509,7 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
         size="md"
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-xs">
+          <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3 text-xs">
             <p className="font-semibold text-[var(--text-primary)]">
               {resolutionModal.report?.target_title || resolutionModal.report?.target_id}
             </p>
@@ -521,7 +521,7 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
           <div className="space-y-1.5">
             <label
               htmlFor="resolution-notes"
-              className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+              className="text-xs font-semibold uppercase text-[var(--text-secondary)]"
             >
               {resolutionModal.action === 'resolve'
                 ? 'Resolution Notes / Actions Taken'
@@ -539,7 +539,7 @@ export const TrustAndSafetyModerationQueue: React.FC = () => {
                   ? 'e.g., Content removed, user warned or account suspended for scam violation.'
                   : 'e.g., Verified company authenticity. No policy violation identified.'
               }
-              className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-panel)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 

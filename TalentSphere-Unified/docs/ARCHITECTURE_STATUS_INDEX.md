@@ -1,8 +1,8 @@
 # TalentSphere Architecture Status Index
 
-> Documentation status: Current architecture status and documentation precedence index. Keep synchronized with `../../PLAN.md`.
+> Documentation status: Current architecture status and documentation precedence index. Keep synchronized with `../PLAN.md` and workspace `PLAN.md`.
 
-Date reviewed: 2026-06-29
+Date reviewed: 2026-09-06
 
 This file is the current planning entry point for architecture status. It reconciles older architecture documents against the current repository state so product, UX, QA, and engineering work from the same assumptions.
 
@@ -12,23 +12,27 @@ Use these documents in this order:
 
 | Rank | Document | Use for |
 |---:|---|---|
-| 1 | `../../PLAN.md` | Rebuild execution SSOT, progress ledger, validation checklist, technical debt, and target architecture |
-| 2 | `docs/ARCHITECTURE_STATUS_INDEX.md` | Current architecture status, document precedence, and open architecture decisions |
-| 3 | `docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md` | Product, UX, workflow, automation, technical roadmap, and implementation backlog |
-| 4 | `docs/FEATURES_AND_DASHBOARDS.md` | Current feature inventory, routes, workflows, UI contents, data inputs, outputs, and role access |
-| 5 | `docs/API_CONTRACT_MISMATCH_REPORT.md` | Generated frontend/backend/gateway/security route inventory |
-| 6 | `docs/API_OPENAPI_CONTRACT.json` | Generated source-derived OpenAPI 3.1 route, parameter, request-body, response-body, and component-schema contract |
-| 7 | `docs/runbooks/INCIDENT_RUNBOOKS.md` | Current source-backed incident runbooks for source validation, CI, scheduler, extension, API, auth, security, data, and admin degradation failures |
-| 8 | `infra/observability/alerts/critical-alerts.json` and `infra/observability/dashboards/critical-flows-dashboard.json` | Source-level critical alert and dashboard coverage catalogs |
-| 9 | `docs/PRODUCT_UX_AUTOMATION_AUDIT.md` | Running implementation history and UX automation audit notes |
-| 10 | `docs/UX_AUDIT_CHECKLIST.md` | Current route, dashboard, and major-screen UX audit checklist for validated UI restructuring |
-| 11 | `docs/DESIGN_SYSTEM.md` | Current design-system implementation guide for tokens, shared components, layout, navigation, and interaction patterns |
-| 12 | `docs/MODULE_MANIFEST.md` | Source ownership, infrastructure, generated/dev artifact, and documentation lifecycle validation |
-| 13 | `docs/adr/ADR-001-primary-identity-provider.md` | Accepted primary identity-provider decision and token-contract migration plan |
-| 14 | `docs/adr/ADR-002-backend-topology.md` | Accepted backend topology decision: modular monolith first with extractable service boundaries |
-| 15 | `docs/adr/ADR-003-schema-authority.md` | Accepted schema authority decision: migration-first Supabase/Postgres with generated TypeScript types and backend validation |
-| 16 | `docs/adr/ADR-004-messaging-boundary.md` | Accepted messaging boundary decision: one messaging domain boundary with chat-service orphaned until retirement or adapter merge |
-| 17 | `docs/adr/ADR-005-payment-mode.md` | Accepted payment mode decision: explicit demo billing mode until provider-backed checkout and webhook-owned state are verified |
+| 1 | `docs/PRD.md` | Canonical Product Requirements Document v3.0 (feature inventory F-01..F-25, functional rules, verification evidence) |
+| 2 | `docs/BRD.md` | Canonical Business Requirements Document v3.0 (business rules RU-01..RU-30, KPIs K-01..K-18, risk register) |
+| 3 | `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md` | Master gap analysis, defects ledger, and implementation roadmap |
+| 4 | `docs/MASTER_TODO_TRACKER.md` | Master task execution tracker and completion gates |
+| 5 | `../PLAN.md` / `PLAN.md` | Rebuild execution SSOT, progress ledger, validation checklist, technical debt, and target architecture |
+| 6 | `docs/ARCHITECTURE_STATUS_INDEX.md` | Current architecture status, document precedence, and open architecture decisions |
+| 7 | `docs/COMPREHENSIVE_PRODUCT_UX_TECHNICAL_ANALYSIS_2026-06-26.md` | Product, UX, workflow, automation, technical roadmap, and implementation backlog |
+| 8 | `docs/FEATURES_AND_DASHBOARDS.md` | Current feature inventory, routes, workflows, UI contents, data inputs, outputs, and role access |
+| 9 | `docs/API_CONTRACT_MISMATCH_REPORT.md` | Generated frontend/backend/gateway/security route inventory |
+| 10 | `docs/API_OPENAPI_CONTRACT.json` | Generated source-derived OpenAPI 3.1 route, parameter, request-body, response-body, and component-schema contract |
+| 11 | `docs/runbooks/INCIDENT_RUNBOOKS.md` | Current source-backed incident runbooks for source validation, CI, scheduler, extension, API, auth, security, data, and admin degradation failures |
+| 12 | `infra/observability/alerts/critical-alerts.json` and `infra/observability/dashboards/critical-flows-dashboard.json` | Source-level critical alert and dashboard coverage catalogs |
+| 13 | `docs/PRODUCT_UX_AUTOMATION_AUDIT.md` | Running implementation history and UX automation audit notes |
+| 14 | `docs/UX_AUDIT_CHECKLIST.md` | Current route, dashboard, and major-screen UX audit checklist for validated UI restructuring |
+| 15 | `docs/DESIGN_SYSTEM.md` | Current design-system implementation guide for tokens, shared components, layout, navigation, and interaction patterns |
+| 16 | `docs/MODULE_MANIFEST.md` | Source ownership, infrastructure, generated/dev artifact, and documentation lifecycle validation |
+| 17 | `docs/adr/ADR-001-primary-identity-provider.md` | Accepted primary identity-provider decision and token-contract migration plan |
+| 18 | `docs/adr/ADR-002-backend-topology.md` | Accepted backend topology decision: modular monolith first with extractable service boundaries |
+| 19 | `docs/adr/ADR-003-schema-authority.md` | Accepted schema authority decision: migration-first Supabase/Postgres with generated TypeScript types and backend validation |
+| 20 | `docs/adr/ADR-004-messaging-boundary.md` | Accepted messaging boundary decision: one messaging domain boundary with chat-service orphaned until retirement or adapter merge |
+| 21 | `docs/adr/ADR-005-payment-mode.md` | Accepted payment mode decision: explicit demo billing mode until provider-backed checkout and webhook-owned state are verified |
 
 Older architecture docs remain useful as historical context, but they should not be treated as current completion evidence unless this index confirms the same claim.
 

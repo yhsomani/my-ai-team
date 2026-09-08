@@ -27,6 +27,7 @@ import {
 } from '../../lib/applicationAiDrafts';
 import { recordAiWorkflowPrefillDecision } from '../../lib/aiWorkflowPrefillAudit';
 import { recordRecruiterPublishAnalytics } from '../../lib/recruiterPublishAnalytics';
+import { getAIProvenanceSourceStatus, normalizeAIProvenance } from '../../lib/aiProvenance';
 import { buildJobMatchExplanation } from '../../lib/jobMatchExplanations';
 import { recordJobRecommendationPreferenceAnalytics } from '../../lib/jobRecommendationPreferenceAnalytics';
 import { recordSavedSearchAnalytics } from '../../lib/savedSearchAnalytics';
@@ -55,6 +56,7 @@ import { useGetJobsPageQuery, useGetJobsQuery } from '../../store/slices/jobSlic
 import type { RootState } from '../../store';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { Badge } from '../../components/shared/Badge';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { Button } from '../../components/shared/AuraButton';
 import Card from '../../components/shared/GlassCard';
 import { Skeleton } from '../../components/shared/Skeleton';
@@ -397,13 +399,7 @@ const getRecruiterPostingStatusVariant = (status?: string): BadgeVariant => {
     }
 };
 
-const createSavedSearchId = () => {
-    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-        return crypto.randomUUID();
-    }
-
-    return `search-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-};
+const createSavedSearchId = () => crypto.randomUUID();
 
 const hasMatchingSavedSearch = (savedSearches: SavedJobSearch[], candidate: SavedJobSearch) => {
     const candidateSignature = getSavedSearchSignature(candidate.searchTerm, candidate.filters);
@@ -2994,7 +2990,13 @@ const JobsPage: React.FC = () => {
                                         </div>
                                         <div className="flex shrink-0 flex-col items-end gap-2">
                                             {job.matchScore && (
-                                                <Badge variant="success">{job.matchScore}%</Badge>
+                                                <Badge
+                                                    variant="success"
+                                                    title="AI-generated match score (heuristic guidance)"
+                                                    aria-label={`${job.matchScore}% AI match score (heuristic guidance)`}
+                                                >
+                                                    {job.matchScore}%
+                                                </Badge>
                                             )}
                                             {activeTab === 'explore' && (
                                                 <Button
@@ -3441,9 +3443,19 @@ const JobsPage: React.FC = () => {
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div className="min-w-0">
                                             <p className="text-sm font-medium text-[var(--text-primary)]">AI application draft</p>
-                                            <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-                                                Source: {pendingAiApplicationDraft.sourceLabel || 'TalentSphere AI assistant'}. Applying copies these fields into the editable draft only.
-                                            </p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                                                <SourceStatusBadge
+                                                    status={getAIProvenanceSourceStatus(normalizeAIProvenance({
+                                                        sourceLabel: pendingAiApplicationDraft.sourceLabel,
+                                                        sourceDetail: pendingAiApplicationDraft.sourceDetail,
+                                                    }).provenanceMode)}
+                                                    label={pendingAiApplicationDraft.sourceLabel || 'TalentSphere AI assistant'}
+                                                    description={pendingAiApplicationDraft.sourceDetail}
+                                                />
+                                                <span className="text-xs leading-relaxed text-[var(--text-secondary)]">
+                                                    Applying copies these fields into the editable draft only.
+                                                </span>
+                                            </div>
                                         </div>
                                         <Badge variant="warning" className="w-fit shrink-0">Review before submit</Badge>
                                     </div>

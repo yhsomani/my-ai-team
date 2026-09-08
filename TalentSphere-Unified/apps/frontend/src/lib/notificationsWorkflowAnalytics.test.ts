@@ -106,4 +106,45 @@ describe('notificationsWorkflowAnalytics', () => {
       }),
     }));
   });
+
+  it('records digest click-through with K-13 tracking metadata when a saved-search digest is opened', () => {
+    recordNotificationsWorkflowAnalytics({
+      userId: 'usr-123',
+      action: 'notification_opened',
+      notificationId: 'notif-digest-789',
+      notificationType: 'JOB_ALERT',
+      notificationKind: 'saved_search_digest',
+      digestFrequency: 'daily',
+      digestItemIds: ['item-1', 'item-2'],
+      digestItemCount: 2,
+      digestTotalNewMatches: 5,
+      actionUrl: '/jobs',
+      isDigestClick: true,
+    });
+
+    expect(productAnalytics.trackEvent).toHaveBeenCalledWith({
+      userId: 'usr-123',
+      area: 'notifications',
+      eventName: 'task_completed',
+      source: 'notifications_center',
+      objectType: 'notification',
+      objectId: 'notif-digest-789',
+      metadata: {
+        action: 'notification_opened',
+        notificationType: 'JOB_ALERT',
+        notificationKind: 'saved_search_digest',
+        digestFrequency: 'daily',
+        digestItemIds: ['item-1', 'item-2'],
+        digestItemCount: 2,
+        digestTotalNewMatches: 5,
+        actionUrl: '/jobs',
+        isDigestClick: true,
+        unreadCount: undefined,
+        loadedCount: undefined,
+        errorCategory: undefined,
+        userControl: 'explicit',
+        mutationScope: 'notification_history',
+      },
+    });
+  });
 });

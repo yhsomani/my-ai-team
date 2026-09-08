@@ -110,6 +110,18 @@ describe('AICareerPath', () => {
     expectSvgIconsDecorative(document.body);
   });
 
+  it('discloses AI provenance with a source-status label on generated guidance', async () => {
+    renderCareerPathPage();
+
+    await screen.findByRole('heading', { name: 'Frontend Platform Lead' });
+
+    const sourceBadge = screen.getByText('Heuristic AI guidance').closest('span[data-ui="source-status-badge"]');
+    expect(sourceBadge).toBeTruthy();
+    expect(sourceBadge?.getAttribute('data-source-status')).toBe('heuristic');
+    expect(sourceBadge?.getAttribute('data-variant')).toBe('default');
+    expectSvgIconsDecorative(document.body);
+  });
+
   it('shows safe provider-unavailable copy without exposing raw AI provider errors', async () => {
     vi.mocked(aiService.generateCareerPath).mockRejectedValue(
       new Error('OpenAI career path provider failed with service_role_token=secret'),

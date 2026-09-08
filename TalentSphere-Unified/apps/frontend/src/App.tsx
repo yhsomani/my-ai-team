@@ -102,7 +102,9 @@ const AICareerPath = lazy(() => import('./pages/ai/AICareerPath'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const CandidatesPage = lazy(() => import('./pages/candidates/CandidatesPage'));
 const PostJobPage = lazy(() => import('./pages/jobs/PostJobPage'));
+const JobDetailPage = lazy(() => import('./pages/jobs/JobDetailPage'));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'));
+const PortfolioPage = lazy(() => import('./pages/portfolio/PortfolioPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFound'));
 
 const protectedRouteComponents = {
@@ -122,7 +124,9 @@ const protectedRouteComponents = {
   admin: AdminDashboard,
   candidates: CandidatesPage,
   'job-post': PostJobPage,
+  'job-detail': JobDetailPage,
   notifications: NotificationsPage,
+  portfolio: PortfolioPage,
 };
 
 const PageLoader = () => (

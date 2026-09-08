@@ -15,6 +15,7 @@ vi.mock('../../services/challengeService', () => ({
     getChallenges: vi.fn(),
     getUserSubmissions: vi.fn(),
     submitChallengeSolution: vi.fn(),
+    updateSubmissionResult: vi.fn(),
   },
 }));
 
@@ -296,5 +297,115 @@ describe('ChallengesPage', () => {
     expect(screen.getByText('Attempt 2')).toBeTruthy();
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/Submission provider failed/i)).toBeNull();
+  });
+
+  it('runs visible sample cases on submit, persists evaluation, and awards XP on pass', async () => {
+    class FakeWorker {
+      onmessage: ((event: MessageEvent<{ actual?: string; error?: string }>) => void) | null = null;
+      constructor(public url: string) {}
+      postMessage(payload: { code: string; input: string }) {
+        setTimeout(() => {
+          let actual = '';
+          let error: string | undefined;
+          try {
+            const runner = new Function('input', `"use strict";\n${payload.code}\nreturn solve(input);`);
+            actual = String(runner(payload.input));
+          } catch (err) {
+            error = err instanceof Error ? err.message : String(err);
+          }
+          this.onmessage?.({ data: error ? { error } : { actual } } as MessageEvent<{ actual?: string; error?: string }>);
+        }, 0);
+      }
+      terminate() {}
+    }
+
+    const originalWorker = globalThis.Worker;
+    const originalCreateObjUrl = window.URL.createObjectURL;
+    const originalRevokeObjUrl = window.URL.revokeObjectURL;
+    (globalThis as { Worker?: unknown }).Worker = FakeWorker;
+    window.URL.createObjectURL = vi.fn(() => 'blob:fake-worker');
+    window.URL.revokeObjectURL = vi.fn();
+
+    const challengeWithSamples = {
+      ...challengeFixture,
+      testCases: [
+        {
+          id: 'case-1',
+          input: 'hello',
+          expectedOutput: 'HELLO',
+        },
+      ],
+      test_cases: [
+        {
+          id: 'case-1',
+          input: 'hello',
+          expected_output: 'HELLO',
+        },
+      ],
+    };
+
+    const rawSubmission = {
+      id: 'sub-raw',
+      challenge_id: challengeFixture.id,
+      user_id: 'test-user',
+      language: 'javascript',
+      code: 'function solve(input) { return input.toUpperCase(); }',
+      status: 'SUBMITTED' as const,
+      submitted_at: '2026-06-28T09:00:00.000Z',
+    };
+
+    const evaluatedSubmission = {
+      ...rawSubmission,
+      id: 'sub-raw',
+      status: 'PASSED' as const,
+      score: 100,
+      feedback: 'All 1 visible sample case matched.',
+    };
+
+    vi.mocked(challengeService.getUserSubmissions).mockResolvedValue([]);
+    vi.mocked(challengeService.submitChallengeSolution).mockResolvedValue(rawSubmission);
+    vi.mocked(challengeService.updateSubmissionResult).mockResolvedValue(evaluatedSubmission);
+
+    renderChallengesPage({
+      ...baseChallengeState,
+      status: 'succeeded',
+      error: null,
+      ids: [challengeWithSamples.id],
+      entities: {
+        [challengeWithSamples.id]: challengeWithSamples,
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Solve String Normalizer' }));
+    await screen.findByRole('dialog', { name: 'String Normalizer' });
+
+    fireEvent.change(screen.getByLabelText('Solution code'), {
+      target: { value: 'function solve(input) { return input.toUpperCase(); }' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Solution' }));
+
+    await waitFor(() => {
+      expect(challengeService.submitChallengeSolution).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(gamificationService.awardXP).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'test-user',
+          amount: 80,
+          referenceType: 'challenge',
+          referenceId: challengeFixture.id,
+        })
+      );
+    });
+
+    if (originalWorker === undefined) {
+      delete (globalThis as { Worker?: unknown }).Worker;
+    } else {
+      (globalThis as { Worker?: unknown }).Worker = originalWorker;
+    }
+    window.URL.createObjectURL = originalCreateObjUrl;
+    window.URL.revokeObjectURL = originalRevokeObjUrl;
   });
 });

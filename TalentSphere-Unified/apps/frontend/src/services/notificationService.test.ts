@@ -5,6 +5,7 @@ import {
   getNotificationReminderDueAt,
   getNotificationScheduleState,
   isNotificationUrgentUnread,
+  NOTIFICATIONS_CHANGED_EVENT,
   notificationService,
 } from './notificationService';
 
@@ -413,5 +414,19 @@ describe('notificationService', () => {
     expect(localNotifications[0].isRead).toBe(true);
     expect(queryBuilder.update).toHaveBeenCalledWith({ is_read: true });
     expect(queryBuilder.eq).toHaveBeenCalledWith('id', 'notification-existing');
+  });
+
+  it('dispatches the notification-changed realtime event after a mutation', async () => {
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, listener);
+
+    await notificationService.markAllRead('user-1');
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0][0]).toMatchObject({
+      type: 'talentsphere.notifications.changed',
+      detail: { userId: 'user-1' },
+    });
+    window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, listener);
   });
 });

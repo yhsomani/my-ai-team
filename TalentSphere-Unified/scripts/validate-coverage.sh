@@ -25,10 +25,13 @@ ERRORS=0
 # Check if coverage reports exist
 check_coverage() {
     local service=$1
+    if [ "$service" = "default" ]; then
+        return 0
+    fi
     local target=${COVERAGE_TARGETS[$service]:-${COVERAGE_TARGETS[default]}}
-    
+
     echo "Checking $service (target: ${target}%)..."
-    
+
     # In a real implementation, this would read JaCoCo or similar reports
     # For now, we just validate the structure exists
     if [ -d "services/$service/src/test" ]; then
@@ -37,11 +40,11 @@ check_coverage() {
             echo "  OK: $tests test files found"
         else
             echo "  WARNING: No test files found"
-            ((ERRORS++))
+            ERRORS=$((ERRORS + 1))
         fi
     else
         echo "  WARNING: No test directory"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
     fi
 }
 

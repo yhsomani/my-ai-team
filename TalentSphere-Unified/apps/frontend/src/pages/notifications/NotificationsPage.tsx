@@ -228,11 +228,19 @@ export const NotificationsPage: React.FC = () => {
       }
     }
 
+    const isDigest = notification.metadata?.kind === 'saved_search_digest';
     recordNotificationsWorkflowAnalytics({
       userId,
       action: 'notification_opened',
       notificationId: notification.id,
       notificationType: notification.type,
+      notificationKind: typeof notification.metadata?.kind === 'string' ? notification.metadata.kind : undefined,
+      digestFrequency: typeof notification.metadata?.digestFrequency === 'string' ? notification.metadata.digestFrequency : undefined,
+      digestItemIds: Array.isArray(notification.metadata?.digestItemIds) ? (notification.metadata.digestItemIds as string[]) : undefined,
+      digestItemCount: typeof notification.metadata?.itemCount === 'number' ? notification.metadata.itemCount : undefined,
+      digestTotalNewMatches: typeof notification.metadata?.totalNewMatches === 'number' ? notification.metadata.totalNewMatches : undefined,
+      actionUrl: notification.actionUrl,
+      isDigestClick: isDigest,
     });
 
     navigate(notification.actionUrl || '/dashboard');

@@ -377,7 +377,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
             onClick={() => setSelectedStage('all')}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               selectedStage === 'all'
-                ? 'bg-accent text-white shadow-sm'
+                ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
@@ -398,7 +398,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
                 onClick={() => setSelectedStage(stage.id)}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                   isSelected
-                    ? 'bg-accent text-white shadow-sm'
+                    ? 'bg-accent text-accent-foreground shadow-sm'
                     : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
@@ -406,7 +406,7 @@ const OnboardingChecklist: React.FC<OnboardingChecklistProps> = ({
                 <span
                   className={`rounded-full px-1.5 py-0.2 text-[10px] ${
                     isSelected
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-accent-foreground/20 text-accent-foreground'
                       : isStageDone
                         ? 'bg-success/15 text-success'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
@@ -1144,7 +1144,14 @@ const DashboardPage: React.FC = () => {
                     <p className="truncate text-xs text-[var(--text-muted)]">{job.companyName || 'Company'} · {job.location}</p>
                   </div>
                 </div>
-                <Badge className="shrink-0" variant="success">{job.matchScore || 85}% match</Badge>
+                <Badge
+                  className="shrink-0"
+                  variant="success"
+                  title="AI-generated match score (heuristic guidance)"
+                  aria-label={`${job.matchScore || 85}% AI match score (heuristic guidance)`}
+                >
+                  {job.matchScore || 85}% match
+                </Badge>
               </div>
             )) : (
               <div className="p-8 text-center">

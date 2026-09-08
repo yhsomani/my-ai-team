@@ -12,6 +12,7 @@ import type { NotificationRecord, PaginatedNotificationsResult } from '../../ser
 import { USER_ROLES } from '../../navigation/routeRegistry';
 import { CommandSearch } from './CommandSearch';
 import { GamificationHeaderBadge } from '../gamification/GamificationHeaderBadge';
+import { recordNotificationsWorkflowAnalytics } from '../../lib/notificationsWorkflowAnalytics';
 
 const notificationPageSize = 8;
 
@@ -222,6 +223,21 @@ export const Header: React.FC<HeaderProps> = ({
         console.warn('Unable to mark notification as read:', error);
       }
     }
+
+    const isDigest = notification.metadata?.kind === 'saved_search_digest';
+    recordNotificationsWorkflowAnalytics({
+      userId: user?.id,
+      action: 'notification_opened',
+      notificationId: notification.id,
+      notificationType: notification.type,
+      notificationKind: typeof notification.metadata?.kind === 'string' ? notification.metadata.kind : undefined,
+      digestFrequency: typeof notification.metadata?.digestFrequency === 'string' ? notification.metadata.digestFrequency : undefined,
+      digestItemIds: Array.isArray(notification.metadata?.digestItemIds) ? (notification.metadata.digestItemIds as string[]) : undefined,
+      digestItemCount: typeof notification.metadata?.itemCount === 'number' ? notification.metadata.itemCount : undefined,
+      digestTotalNewMatches: typeof notification.metadata?.totalNewMatches === 'number' ? notification.metadata.totalNewMatches : undefined,
+      actionUrl: notification.actionUrl,
+      isDigestClick: isDigest,
+    });
 
     navigateTo(notification.actionUrl || '/jobs');
   };

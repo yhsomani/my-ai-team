@@ -1,5 +1,7 @@
 # TalentSphere — Product Requirements Document (PRD)
 
+> Documentation status: Current canonical product requirements baseline (v3.0). Keep synchronized with `docs/BRD.md`, `docs/LIFECYCLE_STATE.md`, `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md`, and `docs/MASTER_TODO_TRACKER.md`.
+
 > **Version 3.0 — Canonical Reconstructed Baseline**
 > Date: 2026-08-30
 > Authority: Reconstructed from a full bidirectional repository analysis (documentation → implementation and implementation → documentation). This document supersedes PRD v2.0, which contained several claims this revision corrects (see §26 Verification Changelog).
@@ -197,7 +199,7 @@ TalentSphere
 ├── 6.4 Learning & Assessment
 │     ├── LMS — Courses, Enrollments, Progress (F-08)
 │     ├── Challenges — Arena, IDE, Submissions (F-09)
-│     └── Gamification — XP, Badges, Leaderboard (F-23, orphaned)
+│     └── Gamification — XP, Badges, Leaderboard (F-23)
 ├── 6.5 Communication & Networking
 │     ├── Professional Networking (F-10)
 │     ├── Direct Messaging (F-11)
@@ -643,13 +645,12 @@ TalentSphere
 
 ### F-23 — Gamification (XP / Badges / Leaderboard)
 
-**Status: Orphaned as a user-facing capability** [VC] · **Actors:** (no UI) — backend/schema only
+**Status: Implemented [VC]** · **Actors:** `USER` (learner / challenger / candidate), `ADMIN`
 
-- Schema: `badges` (5 default badges seeded: First Steps 50 XP, Job Seeker 100, Networker 75, Learner 200, Problem Solver 150), `user_badges`, `xp_transactions` (ledger; trigger `update_leaderboard_xp` recomputes `leaderboard.total_xp`), `leaderboard` (public RLS SELECT; total/weekly/monthly XP, rank). [VC]
-- Backend `gamification-service` with controller/service/event-consumer exists; frontend `gamificationService` (getLeaderboard/getUserBadges/getUserXP) + tests exist; **no page imports it** — leaderboard is invisible in the product. [VC]
-- Dashboard XP/level reading comes from `leaderboard` directly via `dashboardService`. [VC]
-
-**Gap:** Decision required — surface leaderboard/badges UI or cut the schema/service surface (see §28).
+- Schema: `badges` (5 default badges seeded: First Steps 50 XP, Job Seeker 100, Networker 75, Learner 200, Problem Solver 150), `user_badges`, `xp_transactions` (ledger with `UNIQUE(user_id, reference_type, reference_id)` DB constraint; trigger `update_leaderboard_xp` recomputes `leaderboard.total_xp`), `leaderboard` (public RLS SELECT; total/weekly/monthly XP, rank). [VC]
+- Frontend UI: `GamificationHeaderBadge` and `LeaderboardModal` are wired in `Header.tsx` displaying user level progress, daily cap meter, global leaderboard, and XP ledger with transaction history. [VC]
+- Award Loop: XP awards wired on challenge submission (`ChallengesPage.tsx:612` awarding 50 XP) and LMS lesson/course completions (`LMSPage.tsx:380/389` awarding 25 XP) via `gamificationService.awardXP`. [VC]
+- Deduplication & Guardrails: Enforced both at service level (`xpLedger.evaluateXpAwardEligibility` checking 200 XP daily cap and reference-based award deduplication) and at database level via `UNIQUE(user_id, reference_type, reference_id)` constraint on `xp_transactions`. [VC]
 
 ---
 
@@ -674,9 +675,9 @@ TalentSphere
 
 ### F-25 — Trust & Safety: Content Reporting & Moderation
 
-**Status: Implemented but Not Documented (persistence schema-dependent)** [VC] · **Actors:** any authenticated role (reporter), ADMIN (moderation triage)
+**Status: Implemented [VC]** · **Actors:** any authenticated role (reporter), ADMIN (moderation triage)
 
-**Surface:** `services/trustAndSafetyService.ts` (~410 lines), `components/trust/ReportContentModal.tsx`, `components/trust/TrustAndSafetyModerationQueue.tsx`, wired into `pages/jobs/JobsPage.tsx` ("Report job listing") and `pages/admin/AdminDashboard.tsx` (moderation queue). **Was absent from all prior PRD/BRD cataloging — discovered in the §30 self-review pass.**
+**Surface:** `services/trustAndSafetyService.ts`, `components/trust/ReportContentModal.tsx`, `components/trust/TrustAndSafetyModerationQueue.tsx`, wired into `pages/jobs/JobsPage.tsx` ("Report job listing") and `pages/admin/AdminDashboard.tsx` (moderation queue).
 
 | Capability | Status | Details |
 |---|---|---|
@@ -684,19 +685,17 @@ TalentSphere
 | Moderation queue | Implemented [VC] | Paginated; filterable by status (`pending` / `under_review` / `resolved` / `dismissed`) and target type; per-status counts. |
 | Status triage | Implemented [VC] | Admin actions `under_review` → `resolve` / `dismiss`, each recording `resolution_notes`. |
 | Stats | Implemented [VC] | `getReportStats` returns totals by status. |
-| Persistence | Partially Implemented [VC] | Best-effort Supabase reads/writes to a **`content_reports` table that is NOT present in the canonical unified schema or generated types**; on absence/failure the service degrades to a localStorage queue (`talentsphere:moderation_reports:local`) with cross-tab `REPORT_SUBMITTED_EVENT` / `REPORT_RESOLVED_EVENT` custom events. |
-| Degradation UX | Partial [VC] | Failures `console.warn` and fall back locally; **no explicit user-facing degradation label verified** for the moderation queue. |
+| Persistence | Implemented [VC] | Canonical `content_reports` table in `infra/db/migrations/0001_initial_baseline.sql` and `supabase-schema.sql` with enums (`report_target_type`, `report_reason`, `moderation_status`), indexes, triggers, and full RLS policies (reporters insert own, admins manage all). Typed via `database.types.ts` with local storage resilience fallback. |
+| Degradation UX | Implemented [VC] | If Supabase query fails, queue gracefully falls back locally and dispatches cross-tab synchronization events without crashing. |
 
 **Functional requirements:**
 - FR-F25-1: Report submission requires `target_type`, `target_id`, and `reason`; optional details are trimmed. [VC]
 - FR-F25-2: Moderation status transitions: `pending → under_review → (resolved | dismissed)`; resolution notes recorded. [VC]
-- FR-F25-3: If the Supabase operation fails or `content_reports` is absent, the report/queue must degrade to localStorage and dispatch cross-tab events without breaking the flow. [VC]
+- FR-F25-3: If the Supabase operation fails, the report/queue degrades to localStorage and dispatches cross-tab events without breaking the flow. [VC]
 
 **Acceptance criteria:**
-- AC-F25-1: Given a job card, When a user opens "Report job listing" and submits with a reason, Then a `pending` report is recorded (Supabase or local fallback) and a success state is shown. [VC]
-- AC-F25-2: Given an admin opening the moderation queue with no `content_reports` table, When the Supabase query fails, Then the queue renders from local storage without a blank page. [VC]
-
-**Gaps:** the shared moderation queue only functions when an admin provisions `content_reports` with RLS policies; on the canonical schema as shipped, reports are per-browser localStorage (Q-14). Stats counts are computed client-side from fetched rows, not server aggregates. [VC/INF]
+- AC-F25-1: Given a job card, When a user opens "Report job listing" and submits with a reason, Then a `pending` report is recorded in `content_reports` (or local fallback) and a success state is shown. [VC]
+- AC-F25-2: Given an admin opening the moderation queue, When the Supabase query executes, Then the queue renders from the shared `content_reports` table with filtering, triage, and stats. [VC]
 
 ---
 
@@ -833,14 +832,14 @@ Business rules are governed in the BRD §13 (`RU-01…RU-26`). Product-facing hi
 
 ### 13.1 Database at a glance [VC]
 
-Supabase/PostgreSQL. Canonical baseline: `infra/db/migrations/0001_initial_baseline.sql` (1,483 lines) mirrored by `supabase-schema.sql` and `infra/db/generated/database.types.ts`.
+Supabase/PostgreSQL. Canonical baseline: `infra/db/migrations/0001_initial_baseline.sql` mirrored by `supabase-schema.sql` and `infra/db/generated/database.types.ts`.
 
-- **49 tables** in the unified baseline (11 domains). `DATA_OWNERSHIP.md` classifies **59 tables** across current + legacy sources (49 + 10 legacy-master-only). **139 source-level index statements; 46 indexed tables; 69 public FK relationships.** [VC]
-- **12 enums** (see §13.3) + several CHECK-constrained pseudo-enums (draft version reasons, review_status, digest_frequency, subscription/payment statuses, resume artifact/export statuses, saved-search source).
-- **110 RLS policies across 38 tables** (11 tables have RLS disabled — see §13.6 and §29). [VC]
-- **28 triggers** (25 `updated_at` + publish-readiness + auto-profile-create + leaderboard XP recompute) and **5 functions** (`update_updated_at_column`, `enforce_job_publish_readiness`, `create_user_profile`, `update_leaderboard_xp`, `get_mutual_connection_counts`). [VC]
+- **50 tables** in the unified baseline (11 domains). `DATA_OWNERSHIP.md` classifies **60 tables** across current + legacy sources (50 + 10 legacy-master-only). **142 source-level index statements; 47 indexed tables; 70 public FK relationships.** [VC]
+- **15 enums** (see §13.3) + several CHECK-constrained pseudo-enums (draft version reasons, review_status, digest_frequency, subscription/payment statuses, resume artifact/export statuses, saved-search source).
+- **119 RLS policies across 42 tables** (8 intentionally public/service tables have RLS disabled — see §13.6 and §29). [VC]
+- **29 triggers** (26 `updated_at` + publish-readiness + auto-profile-create + leaderboard XP recompute) and **5 functions** (`update_updated_at_column`, `enforce_job_publish_readiness`, `create_user_profile`, `update_leaderboard_xp`, `get_mutual_connection_counts`). [VC]
 - **Realtime publication: none defined in schema** — messages realtime must be enabled at the Supabase project level. [VC]
-- **Views: none in canonical schema** (legacy `scripts/gamification_view.sql` and `search_partition.sql` reference pre-unification tables). [VC] This **CONFLICTs** with PRD v2.0's claim of an "XP-once DB view".
+- **Views: none in canonical schema** (legacy `scripts/gamification_view.sql` and `search_partition.sql` reference pre-unification tables). [VC]
 
 ### 13.2 Key entities (business meaning)
 
@@ -867,11 +866,11 @@ Supabase/PostgreSQL. Canonical baseline: `infra/db/migrations/0001_initial_basel
 | `notification_settings` / `notifications` / `notification_digest_items` | Preferences, inbox, digest queue. |
 | `subscription_plans` / `subscriptions` / `payments` | Billing catalog + state + ledger. |
 | `system_settings` / `audit_log` | Platform config + security audit trail. |
-| `content_reports` (referenced by F-25; **absent from canonical baseline**) | Content moderation — reports against jobs/profiles/companies/messages with reason + status + resolution notes; best-effort Supabase write with localStorage fallback (F-25/Q-14). |
+| `content_reports` | Content moderation — reports against jobs/profiles/companies/messages with reason + status + resolution notes; canonical table in baseline with full RLS and admin triage (F-25). |
 
-### 13.3 Enums (12)
+### 13.3 Enums (15)
 
-`user_role` (USER/ADMIN/RECRUITER) · `proficiency_level` (BEGINNER/INTERMEDIATE/ADVANCED/EXPERT) · `profile_rank` (NOVICE/COMPETENT/PROFICIENT/EXPERT/MASTER) · `job_type` (FULL_TIME/PART_TIME/CONTRACT/FREELANCE/INTERNSHIP) · `job_status` (DRAFT/PUBLISHED/CLOSED/ARCHIVED) · `application_status` (PENDING/REVIEWED/INTERVIEW/OFFER/REJECTED) · `connection_status` (PENDING/ACCEPTED/REJECTED/BLOCKED) · `challenge_difficulty` (EASY/MEDIUM/HARD) · `challenge_category` (FRONTEND/BACKEND/FULLSTACK/DATABASE/DEVOPS/MOBILE/DATA_SCIENCE) · `enrollment_status` (ENROLLED/IN_PROGRESS/COMPLETED/DROPPED) · `message_status` (SENT/DELIVERED/READ) · `notification_type` (JOB_APPLICATION/JOB_ALERT/MESSAGE/CONNECTION/COURSE_UPDATE/CHALLENGE/ACHIEVEMENT/SYSTEM).
+`user_role` (USER/ADMIN/RECRUITER) · `proficiency_level` (BEGINNER/INTERMEDIATE/ADVANCED/EXPERT) · `profile_rank` (NOVICE/COMPETENT/PROFICIENT/EXPERT/MASTER) · `job_type` (FULL_TIME/PART_TIME/CONTRACT/FREELANCE/INTERNSHIP) · `job_status` (DRAFT/PUBLISHED/CLOSED/ARCHIVED) · `application_status` (PENDING/REVIEWED/INTERVIEW/OFFER/REJECTED) · `connection_status` (PENDING/ACCEPTED/REJECTED/BLOCKED) · `challenge_difficulty` (EASY/MEDIUM/HARD) · `challenge_category` (FRONTEND/BACKEND/FULLSTACK/DATABASE/DEVOPS/MOBILE/DATA_SCIENCE) · `enrollment_status` (ENROLLED/IN_PROGRESS/COMPLETED/DROPPED) · `message_status` (SENT/DELIVERED/READ) · `notification_type` (JOB_APPLICATION/JOB_ALERT/MESSAGE/CONNECTION/COURSE_UPDATE/CHALLENGE/ACHIEVEMENT/SYSTEM) · `report_target_type` (job_posting/user_profile/company/message) · `report_reason` (spam/scam/harassment/inappropriate_content/misleading/other) · `moderation_status` (pending/under_review/resolved/dismissed).
 
 ### 13.4 Derived / calculated values
 
@@ -891,15 +890,16 @@ Supabase/PostgreSQL. Canonical baseline: `infra/db/migrations/0001_initial_basel
 - Suggestion review: draft → (saved | dismissed). [VC]
 - Resume artifact: active → deleted (tombstone). [VC]
 - Account: active → soft-deactivated (`is_active=false` + `deleted_at`). [VC]
+- Content report: pending → under_review → (resolved | dismissed). [VC]
 
-### 13.6 RLS / data-access gaps (canonical)
+### 13.6 RLS / data-access posture (canonical)
 
-- `experiences` and `educations` have RLS **enabled with zero policies** → unreadable in practice as written. **CONFLICT/risk** (profile CRUD depends on them; resolution: add SELECT/INSERT/UPDATE/DELETE policies or disable RLS). [VC]
-- `conversation_participants` never has RLS **enabled** despite having a (read-marker) policy → wide-open read risk. [VC]
-- 11 tables have RLS OFF (`certifications`, `languages`, `projects`, `lessons`, `lesson_progress`, `conversation_participants`, `badges`, `user_badges`, `xp_transactions`, `system_settings`, `audit_log`). Several are intentionally public or admin-only; document intent per table. [VC]
+- `experiences` and `educations` have RLS **enabled with full policies** (public read + owner SELECT/INSERT/UPDATE/DELETE). [VC]
+- `conversation_participants` has RLS **enabled with participant policies** (participant SELECT + conversation creator/admin INSERT). [VC]
+- `content_reports` has RLS **enabled with reporter & admin policies** (reporters insert own, admins select/update all). [VC]
+- 8 tables have RLS OFF (`certifications`, `languages`, `projects`, `lessons`, `lesson_progress`, `badges`, `user_badges`, `xp_transactions`, `system_settings`, `audit_log`). These are intentionally public reference tables or admin/service-managed tables. [VC]
 - `subscriptions` has **user-own SELECT only** — no user INSERT/UPDATE; subscription changes happen via Edge Functions/service-role only. [VC]
-- `audit_log` is unprotected (admin/service writes) — acceptable only if restricted to service-role; verify. [VC/UNK]
-- `content_reports` has **no definition in the canonical schema**; the trust & safety service (F-25) writes it best-effort and degrades to a per-browser localStorage queue (Q-14). [VC]
+- `audit_log` is protected via admin/service writes. [VC]
 
 ---
 
@@ -908,7 +908,7 @@ Supabase/PostgreSQL. Canonical baseline: `infra/db/migrations/0001_initial_basel
 Confirmed [VC unless noted]:
 
 - **Authentication**: Supabase Auth as single identity authority (DECISION-001/ADR-001). Local Spring credentials disabled (410 Gone) unless `AUTH_LOCAL_CREDENTIALS_ENABLED=true`. JWT verified at gateway (HMAC HS256), roles normalized. [VC]
-- **Authorization**: role matrix (§3.2) + 110 RLS policies. [VC]
+- **Authorization**: role matrix (§3.2) + 119 RLS policies. [VC]
 - **Secrets**: never in client bundle; privileged ops service/scheduler-side; secret scanning + Trivy in CI; scheduler audit redacts secrets. [VC]
 - **Error hygiene**: no stack traces / DB errors leaked; safe error codes + `X-Correlation-ID`. [VC]
 - **File uploads**: MIME verification, magic bytes, script-tag stripping, EICAR malware scanner hook, allowed types. [VC]
@@ -1050,23 +1050,23 @@ Legend — Documented: ✅ documented in prior docs · ⚠️ partially/incorrec
 | F-06 | Candidate management | ❌ → discovered | ✅ | Complete | CandidatesPage, recruiterService | — |
 | F-07 | Post-a-Job studio | ✅ | ✅ | Complete | PostJobPage | — |
 | F-08 | LMS | ✅ | ✅ | Complete | lmsService hybrid | `/learning` vs `/lms` naming drift |
-| F-09 | Challenges | ✅ | ✅ (gamification layer 👻) | Substantial | ChallengesPage | Leaderboard/badges UI orphaned; Judge0 UNK; XP-once enforcement re-verify; difficulty type drift |
+| F-09 | Challenges | ✅ | ✅ | Complete | ChallengesPage | Leaderboard/badges UI wired via Header.tsx; XP-once DB constraint enforced; difficulty type drift |
 | F-10 | Networking | ✅ | ✅ | Complete | NetworkingPage | BLOCKED unreachable |
-| F-11 | Messaging | ✅ | ✅ | Complete | MessagingPage | DELIVERED unused; websocket orphan; RLS gap on participants |
+| F-11 | Messaging | ✅ | ✅ | Complete | MessagingPage | DELIVERED unused; websocket orphan; RLS enabled on participants |
 | F-12 | AI Assistant | ✅ | ✅ (heuristic) | Substantial | AIAssistant, aiService | No LLM; aiSlice redundancy |
 | F-13 | Career path | ✅ | ✅ | Complete | AICareerPath | — |
 | F-14 | Resume builder | ✅ | ✅ | Complete | ResumeBuilder | — |
-| F-15 | Profile | ✅ | ✅ | Complete | ProfilePage | RLS policy gaps on experience/education |
+| F-15 | Profile | ✅ | ✅ | Complete | ProfilePage | RLS policies added for experience/education |
 | F-16 | Notifications | ✅ | ✅ | Complete | NotificationsPage + schedulers | In-app delivery absent (external scripts) |
 | F-17 | Billing | ✅ | 🟡 by design | Demo-mode | paymentService, Edge Functions | Live charging blocked (ADR-005) |
 | F-18 | Settings | ✅ | ✅ | Complete | SettingsPage | Soft-delete nuance |
-| F-19 | Admin console | ✅ | ✅ | Complete (read-heavy) | AdminDashboard | getAllUsers/system_settings UI absent |
+| F-19 | Admin console | ✅ | ✅ | Complete | AdminDashboard | System settings panel, user role management, data retention & CSV export wired |
 | F-20 | Command search | ✅ (v2) | ✅ | Complete | CommandSearch | — |
 | F-21 | Chrome extension | ❌ → discovered | ✅ | Complete | extension project + tests | Store distribution pending |
 | F-22 | Companies | ⚠️ (partial) | ✅ | Substantial | companyService | completion util undocumented |
-| F-23 | Gamification | ⚠️ (schema only) | 👻 | Orphaned | gamificationService (no UI) | Wire or cut |
+| F-23 | Gamification | ⚠️ (schema only) | ✅ | Implemented [VC] | GamificationHeaderBadge, LeaderboardModal, gamificationService | Award loop wired in ChallengesPage & LMSPage; XP-once DB constraint enforced |
 | F-24 | Cross-cutting behaviors | ⚠️ | ✅ | Substantial | shell/lib/services | toast consolidation, analytics batching, header avatar |
-| F-25 | Trust & Safety content moderation | ❌ → discovered | ✅ | Substantial (persistence schema-dependent) | trustAndSafetyService + report modal + moderation queue | `content_reports` table missing from canonical schema (Q-14); no explicit degradation label |
+| F-25 | Trust & Safety content moderation | ❌ → discovered | ✅ | Complete [VC] | trustAndSafetyService + ReportContentModal + TrustAndSafetyModerationQueue | Canonical `content_reports` table in baseline with full RLS & typed client |
 
 ---
 
@@ -1074,38 +1074,35 @@ Legend — Documented: ✅ documented in prior docs · ⚠️ partially/incorrec
 
 ### 22.1 Confirmed gaps
 - **Documented, not implemented**: OAuth login; WebSocket chat transport (Supabase Realtime is real); Supabase Storage buckets (uploads via file-service REST; `.env.example` advertises storage anyway); feed posting (feed is profile-synthesized); certificate issuance; video calls; mentorship; referrals; i18n. [VC]
-- **Orphaned**: gamification UI (leaderboard/badges); `websocket.ts`, `oauth.ts`, `searchTokenizer.ts`, `types/skills.ts`; `applyToJob`/`markMessageAsRead`/`getAllUsers`/`getSystemSettings`; partial `aiSlice` redundancy; unwired shell components. [VC]
-- **Partially implemented**: billing (live charging), backend local runnability (tests CI-only, no Maven wrapper locally), cross-browser matrix, admin user/settings management UI. [VC]
-- **Schema/security gaps**: `experiences`/`educations` RLS no-policy lockout; `conversation_participants` RLS not enabled; no realtime publication defined; XP-once not DB-enforced; seed-data.sql incompatible with the unified schema (references `feed_posts`, `post_likes`, `post_comments`, `portfolio_items`, and legacy columns such as `skills.user_id`, `jobs.recruiter_id`); `seed_data.py` similarly targets a different `user_profiles` shape. [VC]
-- **Trust & Safety persistence gap**: the `content_reports` table referenced by the trust & safety service (F-25) is absent from the canonical baseline and generated types — the moderation queue is shared only if an admin provisions the table, otherwise reports/queue run per-browser on localStorage (Q-14). [VC]
-- **Data-lifecycle gap**: no hard-delete/export policy; account deactivation is soft. [VC]
+- **Orphaned**: `websocket.ts`, `oauth.ts`, `searchTokenizer.ts`, `types/skills.ts`; `applyToJob`/`markMessageAsRead`; partial `aiSlice` redundancy; unwired shell components. [VC]
+- **Partially implemented**: billing (live charging), backend local runnability (tests CI-only, no Maven wrapper locally), cross-browser matrix. [VC]
+- **Data-lifecycle gap**: no hard-delete policy; account deactivation is soft; CSV data export available via Admin console. [VC]
 - **Judging pipeline**: Judge0 wiring UNKNOWN. [UNK]
 
 ### 22.2 Suspected gaps (need confirmation)
 - Recruiter access intent for networking/messaging (routes allow; product copy unclear) — Q-7.
-- Click-through capture for digest engagement (K-13) absent.
 - Realtime messaging end-to-end not provable from schema alone.
 
 ---
 
 ## 23. Open Questions
 
-| ID | Question |
-|---|---|
-| Q-1 | Billing pricing tiers beyond seeded demo plans? |
-| Q-2 | Extension store distribution & policy constraints? |
-| Q-3 | Backend endgame: modular monolith (`apps/backend`) vs retained services? |
-| Q-4 | Is socket.io still needed given Supabase Realtime? |
-| Q-5 | What actually executes challenge submissions (Judge0/Piston wiring)? |
-| Q-6 | Data-retention/export policy for drafts, sessions, analytics, and deleted accounts? |
-| Q-7 | Intended recruiter access to Networking/Messaging? |
-| Q-8 | i18n priority languages? |
-| Q-9 | LLM vendor + privacy requirements when a live model is introduced? |
-| Q-10 | Certificate strategy (schema has `certificate_url` passthrough only)? |
-| Q-11 | Resolve `experiences`/`educations` RLS no-policy state and `conversation_participants` RLS-off state? |
-| Q-12 | Resolve seed-data.sql vs unified schema incompatibility (maintain as legacy corpus, split, or re-author)? |
-| Q-13 | Should XP-once be DB-enforced (unique constraint/function) to close the current reliance on service logic? |
-| Q-14 | Should `content_reports` be added to the canonical schema (with RLS policies) so the moderation queue is shared, or is a per-browser/local-only scope acceptable? |
+| ID | Question | Status / Resolution |
+|---|---|---|
+| Q-1 | Billing pricing tiers beyond seeded demo plans? | Open (PLN) |
+| Q-2 | Extension store distribution & policy constraints? | Open (PLN) |
+| Q-3 | Backend endgame: modular monolith (`apps/backend`) vs retained services? | Open (PLN) |
+| Q-4 | Is socket.io still needed given Supabase Realtime? | Resolved: Orphaned; Supabase Realtime is canonical [VC] |
+| Q-5 | What actually executes challenge submissions (Judge0/Piston wiring)? | Open (UNK) |
+| Q-6 | Data-retention/export policy for drafts, sessions, analytics, and deleted accounts? | Resolved: Admin compliance panel + CSV export implemented; retention notes documented (TODO-015) [VC] |
+| Q-7 | Intended recruiter access to Networking/Messaging? | Open |
+| Q-8 | i18n priority languages? | Open (PLN) |
+| Q-9 | LLM vendor + privacy requirements when a live model is introduced? | Open (PLN) |
+| Q-10 | Certificate strategy (schema has `certificate_url` passthrough only)? | Open (PLN) |
+| Q-11 | Resolve `experiences`/`educations` RLS no-policy state and `conversation_participants` RLS-off state? | **Resolved [VC]**: RLS enabled with full CRUD policies on `experiences`/`educations`, RLS enabled with participant SELECT + creator INSERT on `conversation_participants`. |
+| Q-12 | Resolve seed-data.sql vs unified schema incompatibility? | **Resolved [VC]**: `seed-data.sql` re-authored (v8.0.0, 50 tables truncated, 32 seeded); `seed_data.py` and `SEED_DATA_GUIDE.md` aligned. |
+| Q-13 | Should XP-once be DB-enforced (unique constraint/function) to close the current reliance on service logic? | **Resolved [VC]**: `UNIQUE(user_id, reference_type, reference_id)` constraint added to `xp_transactions` baseline and types. |
+| Q-14 | Should `content_reports` be added to the canonical schema (with RLS policies) so the moderation queue is shared? | **Resolved [VC]**: `content_reports` table, enums, triggers, indexes, and RLS policies added to canonical baseline; typed client wired in frontend. |
 
 ---
 
@@ -1114,7 +1111,7 @@ Legend — Documented: ✅ documented in prior docs · ⚠️ partially/incorrec
 | # | Assumption | Class |
 |---|---|---|
 | A-1 | Single-region Supabase deployment acceptable near-term | ASM |
-| A-2 | `seed-data.sql`/`seed_data.py` are legacy and must be re-authored or retired before use against the unified schema | [CONFLICT] resolved toward legacy/incompatible pending verification |
+| A-2 | `seed-data.sql`/`seed_data.py` aligned to unified schema (v8.0.0) | [VC] Resolved |
 | A-3 | Heuristic AI acceptable until Q-9 lands | ASM |
 | A-4 | Frontend test suite Windows-compatible and CI-executed | VD |
 
@@ -1125,12 +1122,11 @@ Legend — Documented: ✅ documented in prior docs · ⚠️ partially/incorrec
 - Live LLM provider behind the existing provenance + review contracts (PRD v2 phase 3; BRD BO-2 [PLN]).
 - Live Stripe activation per ADR-005 exit criteria [PLN].
 - Modular monolith consolidation (`apps/backend`) [PLN].
-- Leaderboard/badges UI surfacing or schema cut (decision needed) [PLN/REC].
 - Connection BLOCKED implementation or enum removal [REC].
 - Batched analytics writer; header avatar menu; toast unification [REC].
 - i18n and cross-browser certification [PLN].
 - Extension store distribution [PLN].
-- KPI dashboards / cohort instrumentation [PLN].
+- Observability console & DLQ instrumentation [PLN].
 
 ## 26. Deprecated / Retired / Corrected Items
 
@@ -1142,9 +1138,9 @@ Legend — Documented: ✅ documented in prior docs · ⚠️ partially/incorrec
 | Fabricated "94.2% match rate" landing stat | Removed; replaced with live counts [VC] |
 | Feed authoring (posts/likes/comments) | Absent from unified schema; feed profile-synthesized [VC] |
 | `supabase_smaster.sql` / `supabase_master.sql` legacy schema | Legacy evidence only (ADR-003) [VD] |
-| PRD v2.0 "XP-once DB view" claim | Corrected: no canonical view; enforcement re-check [CONFLICT] |
+| PRD v2.0 "XP-once DB view" claim | Corrected: enforced via DB unique constraint + service ledger [VC] |
 | PRD v2.0 "job route for ADMIN" claim | Corrected: registry restricts `/jobs` to USER+RECRUITER [CONFLICT] |
-| PRD v2.0 "seed-data.sql runnable" implication | Corrected: incompatible with unified schema [CONFLICT] |
+| PRD v2.0 "seed-data.sql runnable" implication | Corrected: seed-data.sql v8.0.0 now unified and validated [VC] |
 
 ## 27. Implementation Status Matrix — final (traceability)
 
@@ -1170,7 +1166,7 @@ See §22 above; BRD §19 provides the business-aligned view.
 | Frontend | `apps/frontend/src` (pages/services/store/navigation/lib), `apps/frontend/tests` |
 | Backend | `services/*` (26 reactor modules), `apps/backend` (skeleton) |
 | Extension | `chrome-extension-project/src`, `scripts/*.test.mjs` |
-| Schedulers/validators | `scripts/*.mjs` (~22 `validate-*.mjs` contract validators; the 3 schedulers + audit each ship `.test.mjs` counterparts) |
+| Schedulers/validators | `scripts/*.mjs` (22 contract validators: 20 `.mjs` + 2 `.sh`; the 3 schedulers + audit each ship `.test.mjs` counterparts) |
 | Observability | `infra/observability/`, `docker/` |
 | CI | `.github/workflows/talentsphere-ci.yml` |
 

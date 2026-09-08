@@ -64,6 +64,22 @@ export interface ModerationStats {
 export const REPORT_SUBMITTED_EVENT = 'talentsphere:report-submitted';
 export const REPORT_RESOLVED_EVENT = 'talentsphere:report-resolved';
 
+type ContentReportRow = Database['public']['Tables']['content_reports']['Row'];
+
+const toModerationReport = (row: ContentReportRow): ModerationReport => ({
+  id: row.id,
+  reporter_id: row.reporter_id ?? undefined,
+  target_type: row.target_type,
+  target_id: row.target_id,
+  target_title: row.target_title ?? undefined,
+  reason: row.reason,
+  details: row.details ?? undefined,
+  status: row.status,
+  resolution_notes: row.resolution_notes ?? undefined,
+  created_at: row.created_at ?? '',
+  updated_at: row.updated_at ?? '',
+});
+
 const STORAGE_KEY = 'talentsphere:moderation_reports:local';
 
 const initialFallbackReports: ModerationReport[] = [
@@ -128,7 +144,7 @@ export const trustAndSafetyService = {
     }
 
     const newReport: ModerationReport = {
-      id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: crypto.randomUUID(),
       reporter_id: input.reporter_id,
       target_type: input.target_type,
       target_id: input.target_id,
@@ -155,7 +171,7 @@ export const trustAndSafetyService = {
 
     try {
       // Attempt supabase insert if content_reports table exists
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('content_reports')
         .insert({
           target_type: newReport.target_type,
@@ -173,7 +189,7 @@ export const trustAndSafetyService = {
         throw error;
       }
 
-      const created = (data as ModerationReport) || newReport;
+      const created = data ? toModerationReport(data) : newReport;
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent(REPORT_SUBMITTED_EVENT, { detail: { report: created } })
@@ -235,7 +251,7 @@ export const trustAndSafetyService = {
     }
 
     try {
-      let query = (supabase as any)
+      let query = supabase
         .from('content_reports')
         .select('*', { count: 'exact' });
 
@@ -256,7 +272,7 @@ export const trustAndSafetyService = {
         throw error;
       }
 
-      const allReports: ModerationReport[] = data || [];
+      const allReports: ModerationReport[] = (data || []).map(toModerationReport);
       const total = count ?? allReports.length;
 
       const pendingCount = allReports.filter((r) => r.status === 'pending').length;
@@ -345,7 +361,7 @@ export const trustAndSafetyService = {
     }
 
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('content_reports')
         .update({
           status: newStatus,
@@ -360,7 +376,7 @@ export const trustAndSafetyService = {
         throw error;
       }
 
-      const updated = data as ModerationReport;
+      const updated = toModerationReport(data);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent(REPORT_RESOLVED_EVENT, { detail: { report: updated } })

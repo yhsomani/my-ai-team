@@ -34,9 +34,19 @@ Current validated scope:
 
 | Metric | Count |
 | --- | ---: |
-| Tables classified | 59 |
-| Direct frontend Supabase tables | 45 |
-| SQL-defined tables | 59 |
+| Tables classified (total) | 60 |
+| Canonical baseline tables | 50 |
+| Legacy-only tables (`infra/supabase_master.sql`) | 10 |
+| Duplicate SQL-source tables | 15 |
+| Direct frontend Supabase tables | 46 |
+| Baseline RLS-enabled tables | 40 |
+| Baseline indexed tables | 47 |
+
+> **Schema Boundary Note (50 Canonical vs 60 Total with Legacy):**
+> - The canonical application baseline (`infra/db/migrations/0001_initial_baseline.sql` mirrored identically in `supabase-schema.sql`) defines exactly **50 tables** (including `content_reports` for Trust & Safety).
+> - `data-ownership-manifest.json` tracks a total of **60 tables**: the 50 canonical tables plus 10 `legacy-master-only` tables residing exclusively in historical `infra/supabase_master.sql`.
+> - 46 tables are accessed directly by the frontend via `typedSupabase`.
+> - Legacy chat tables (such as `chat_messages`, `chat_rooms`, `chat_room_members`) and historical auth tables in `infra/supabase_master.sql` are governed by ADR-004 and legacy disposition rules.
 
 ## Current Findings
 
@@ -54,7 +64,7 @@ Current validated scope:
 - Resolved 2026-06-27: Product analytics and automation suggestion audit helpers now use the generated typed Supabase client for `product_analytics_events` and `automation_suggestion_audit_events`; automation audit records without a user id stay local because the SQL table requires `user_id`.
 - Resolved 2026-06-27: `npm run validate:data-ownership` now rejects frontend production imports of the untyped compatibility Supabase export; auth bootstrap, OAuth, realtime, and remaining frontend Edge Function imports use `typedSupabase`, while AI generation uses the backend AI API; the untyped export remains only as a legacy/test compatibility surface.
 - Resolved 2026-06-27 at decision level: ADR-003 accepts migration-first Supabase/Postgres authority, generated TypeScript types, backend validation, and `infra/db/README.md` as the schema authority workspace marker.
-- Resolved 2026-06-27 at source-validation level: `infra/db/migrations/0001_initial_baseline.sql` mirrors `supabase-schema.sql`, `infra/db/generated/database.types.ts` provides source-derived database types generated from that migration with 69 public FK relationships and mutual-count RPC metadata, `apps/frontend/src/lib/supabaseClient.ts` exports a generated-`Database` typed `typedSupabase` migration boundary, and `npm run validate:schema-migrations` checks the 49-table baseline, 38 source-level RLS-enabled tables, 46 indexed tables, generated relationship metadata, generated RPC metadata, generated type drift, and typed-client boundary.
+- Resolved 2026-06-27 at source-validation level: `infra/db/migrations/0001_initial_baseline.sql` mirrors `supabase-schema.sql`, `infra/db/generated/database.types.ts` provides source-derived database types generated from that migration with 70 public FK relationships and mutual-count RPC metadata, `apps/frontend/src/lib/supabaseClient.ts` exports a generated-`Database` typed `typedSupabase` migration boundary, and `npm run validate:schema-migrations` checks the 50-table baseline (including `content_reports` and `xp_transactions` unique constraint), 40 source-level RLS-enabled tables, 47 indexed tables, generated relationship metadata, generated RPC metadata, generated type drift, and typed-client boundary.
 - Resolved 2026-06-27 at source-classification level: `infra/db/legacy-schema-disposition.json` classifies all 10 `legacy-master-only` tables and all 15 `multiple-reviewed-sql-sources` tables, including service-local migration evidence and required migration/retirement resolution.
 - Seed data safety source guard: `npm run validate:seed-data-safety` checks that `seed-data.sql` requires `app.seed_environment` plus destructive confirmation before `TRUNCATE`, that `scripts/seed_data.py` requires local/dev/test/CI environment confirmation before executing seed functions, and that `SEED_DATA_GUIDE.md`, package scripts, CI, and module manifest registration stay aligned.
 - Several tables exist in both `supabase-schema.sql` and `infra/supabase_master.sql`; their `migrationStatus` is `multiple-reviewed-sql-sources` until ADR-003 follow-up work migrates, retains with explicit status, or retires the legacy duplicate source.

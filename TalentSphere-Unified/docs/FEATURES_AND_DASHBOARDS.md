@@ -1,8 +1,8 @@
 # TalentSphere Feature And Dashboard Documentation
 
-> Documentation status: Current detailed feature, route, workflow, role, and UI reference. Keep synchronized with `../../PLAN.md`.
+> Documentation status: Current detailed feature, route, workflow, role, and UI reference (v3.0). Keep synchronized with `../../PLAN.md`.
 
-Last reviewed from code: 2026-06-29
+Last reviewed from code: 2026-09-06
 
 This file is the single detailed reference for TalentSphere features, dashboards, user inputs, outputs, workflows, data sources, backend endpoints, role access, and visible UI contents.
 
@@ -2915,14 +2915,30 @@ Backend support:
 | `PUT /api/v1/companies/{id}` | Company body | Updated company |
 | `POST /api/v1/companies/{id}/verify` | `id`, admin role | Verified company |
 
-### 5.15 Gamification
+### 5.15 Gamification (F-23)
 
-Frontend service: `gamificationService`
+Frontend service: `gamificationService`; shared domain logic in `lib/xpLedger.ts`.
 
 Purpose:
 
-- Track XP, levels, badges, achievements, and leaderboard position.
-- Feed dashboard XP/level and profile achievements.
+- Track XP, levels, badges, and leaderboard position via the `xp_transactions` ledger.
+- Surface status through the `GamificationHeaderBadge` (header XP/level) and `LeaderboardModal` (leaderboard + daily activity) wired in the global `Header.tsx`.
+- Award XP for challenge and LMS completions (F-09/F-08) through explicit `awardXP` call sites with anti-farm enforcement.
+
+XP award points (verified [VC]):
+
+| Activity | Reference type | XP reward |
+|---|---|---|
+| Challenge submission | `challenge` | `getChallengeXpReward` — default 50; difficulty-scaled (easy 25, medium 50, hard 100) |
+| Lesson completion | `lesson` | `getLessonXpReward` — default 10 |
+| Course completion | `course_completion` | `getCourseCompletionXpReward` — milestone 100 |
+| Any +N | n/a | `DAILY_XP_MAX_CAP` = **1000 XP** per UTC calendar day |
+
+Anti-farm rules (verified [VC]):
+
+- **XP-once dedup**: `evaluateXpAwardEligibility` rejects a second award for the same `(reference_type, reference_id)`; DB enforces `UNIQUE(user_id, reference_type, reference_id)` on `xp_transactions`.
+- **Daily cap**: total positive XP in the current UTC day cannot exceed 1000; an award exceeding the remaining cap is adjusted or skipped depending on remaining headroom.
+- **Level math**: `calculateLevel(xp) = Math.floor(xp / 100) + 1`; progress via `calculateLevelProgress` (100 XP per level, 1-indexed).
 
 Inputs:
 
@@ -2933,6 +2949,7 @@ Inputs:
 | User XP | `userId` |
 | User level | `userId` |
 | XP transactions | `userId`, optional `limit` |
+| Award XP | `userId`, `amount`, `referenceType`, `referenceId` |
 
 Outputs:
 
@@ -2943,8 +2960,9 @@ Outputs:
 | XP | Number |
 | Level | `Math.floor(xp / 100) + 1` |
 | XP transactions | Raw transaction rows |
+| Award XP | Eligibility result (granted amount, skip reason, remaining daily cap) |
 
-Backend support:
+Backend support (Spring Boot compatibility surface; primary XP reads/writes go frontend → Supabase `xp_transactions`):
 
 | Endpoint | Input | Output |
 |---|---|---|
@@ -3340,7 +3358,7 @@ User-control rule:
 | `challenge-service` | Challenges and submissions | Challenge, Submission |
 | `gamification-service` | XP, leaderboard, achievements | Stats, Achievement, LeaderboardEntry |
 | `messaging-service` | Direct messages | Message |
-| `chat-service` | WebSocket/channel chat | ChatMessage |
+| `chat-service` | Orphaned — WebSocket/channel chat removed per ADR-004 (one messaging domain boundary; not in the Maven reactor, Gateway, or deployments) | `ChatMessage` (non-active surface) |
 | `networking-service` | Connections and feed posts | Connection, Post |
 | `ai-service` | Resume analysis, match, chat, career path | AnalysisResult, maps/strings |
 | `notification-service` | Notifications and read state | Notification |

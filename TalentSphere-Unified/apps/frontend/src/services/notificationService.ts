@@ -74,13 +74,7 @@ const NOTIFICATION_TYPES: NotificationType[] = [
 
 const getLocalNotificationKey = (userId: string) => `${localNotificationPrefix}.${userId}`;
 
-const createNotificationId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `notification-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-};
+const createNotificationId = () => crypto.randomUUID();
 
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 

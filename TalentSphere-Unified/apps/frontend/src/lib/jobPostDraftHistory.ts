@@ -1,4 +1,5 @@
 import type { JobPostFormDraft } from './jobPostTemplates';
+import { appendHistory, compact, createHistoryId, mergeHistories, sanitizeHistory } from './historyManager';
 
 export type JobPostDraftHistoryReason = 'autosave' | 'template_applied' | 'reviewed' | 'saved' | 'restored';
 export type JobPostDraftHistoryPersistedTo = 'server' | 'local';
@@ -32,23 +33,8 @@ export interface JobPostDraftHistoryInput {
   updatedAt?: string;
 }
 
-type RawJobPostDraftHistoryEntry = Omit<JobPostDraftHistoryEntry, 'persistedTo'> & {
-  persistedTo?: unknown;
-};
-
 const defaultMaxHistoryItems = 5;
 const defaultAutosaveCoalesceMs = 60_000;
-
-const compact = (value?: string | null) => (value || '').trim();
-
-const createHistoryId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  const randomHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).slice(1);
-  return `${randomHex()}${randomHex()}-${randomHex()}-4${randomHex().slice(1)}-8${randomHex().slice(1)}-${randomHex()}${randomHex()}${randomHex()}`;
-};
 
 export const getJobPostDraftHistoryStorageKey = (recruiterId?: string) => (
   `talentsphere.jobPostDraftHistory.${recruiterId || 'guest'}`
@@ -131,61 +117,56 @@ export const isSameJobPostDraftSnapshot = (
   first.companyAttached === second.companyAttached
 );
 
+const isJobPostDraftHistoryEntry = (value: unknown): value is JobPostDraftHistoryEntry => (
+  Boolean(
+    value &&
+    typeof (value as JobPostDraftHistoryEntry).id === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).recruiterId === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).draftKey === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).title === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).description === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).location === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).salaryMin === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).salaryMax === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).requirements === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).jobType === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).companyAttached === 'boolean' &&
+    typeof (value as JobPostDraftHistoryEntry).createdAt === 'string' &&
+    typeof (value as JobPostDraftHistoryEntry).updatedAt === 'string' &&
+    (
+      (value as JobPostDraftHistoryEntry).reason === 'autosave'
+      || (value as JobPostDraftHistoryEntry).reason === 'template_applied'
+      || (value as JobPostDraftHistoryEntry).reason === 'reviewed'
+      || (value as JobPostDraftHistoryEntry).reason === 'saved'
+      || (value as JobPostDraftHistoryEntry).reason === 'restored'
+    )
+  )
+);
+
+const normalizeJobPostDraftEntry = (item: JobPostDraftHistoryEntry): JobPostDraftHistoryEntry => ({
+  ...item,
+  jobId: compact(item.jobId) || null,
+  companyId: compact(item.companyId) || null,
+  companyName: compact(item.companyName),
+  salaryRange: compact(item.salaryRange),
+  category: compact(item.category),
+  persistedTo: item.persistedTo === 'server' ? 'server' : 'local',
+});
+
+const createSanitizeOptions = (options: { recruiterId?: string; draftKey?: string; maxItems?: number } = {}) => ({
+  isItem: isJobPostDraftHistoryEntry,
+  normalize: normalizeJobPostDraftEntry,
+  filters: [
+    (item: JobPostDraftHistoryEntry) => !options.recruiterId || item.recruiterId === options.recruiterId,
+    (item: JobPostDraftHistoryEntry) => !options.draftKey || item.draftKey === options.draftKey,
+  ],
+  maxItems: options.maxItems ?? defaultMaxHistoryItems,
+});
+
 export const sanitizeJobPostDraftHistory = (
   value: unknown,
   options: { recruiterId?: string; draftKey?: string; maxItems?: number } = {}
-): JobPostDraftHistoryEntry[] => {
-  if (!Array.isArray(value)) return [];
-
-  const maxItems = options.maxItems ?? defaultMaxHistoryItems;
-  const seen = new Set<string>();
-
-  return value
-    .filter((item): item is RawJobPostDraftHistoryEntry => (
-      item &&
-      typeof item.id === 'string' &&
-      typeof item.recruiterId === 'string' &&
-      typeof item.draftKey === 'string' &&
-      typeof item.title === 'string' &&
-      typeof item.description === 'string' &&
-      typeof item.location === 'string' &&
-      typeof item.salaryMin === 'string' &&
-      typeof item.salaryMax === 'string' &&
-      typeof item.requirements === 'string' &&
-      typeof item.jobType === 'string' &&
-      typeof item.companyAttached === 'boolean' &&
-      typeof item.createdAt === 'string' &&
-      typeof item.updatedAt === 'string' &&
-      (
-        item.reason === 'autosave' ||
-        item.reason === 'template_applied' ||
-        item.reason === 'reviewed' ||
-        item.reason === 'saved' ||
-        item.reason === 'restored'
-      )
-    ))
-    .map((item): JobPostDraftHistoryEntry => {
-      const persistedTo: JobPostDraftHistoryPersistedTo = item.persistedTo === 'server' ? 'server' : 'local';
-      return {
-        ...item,
-        jobId: compact(item.jobId) || null,
-        companyId: compact(item.companyId) || null,
-        companyName: compact(item.companyName),
-        salaryRange: compact(item.salaryRange),
-        category: compact(item.category),
-        persistedTo,
-      };
-    })
-    .filter(item => !options.recruiterId || item.recruiterId === options.recruiterId)
-    .filter(item => !options.draftKey || item.draftKey === options.draftKey)
-    .filter(item => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    })
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, maxItems);
-};
+): JobPostDraftHistoryEntry[] => sanitizeHistory(value, createSanitizeOptions(options));
 
 export const appendJobPostDraftHistory = (
   history: JobPostDraftHistoryEntry[],
@@ -200,52 +181,32 @@ export const appendJobPostDraftHistory = (
     });
   }
 
-  const maxItems = options.maxItems ?? defaultMaxHistoryItems;
-  const autosaveCoalesceMs = options.autosaveCoalesceMs ?? defaultAutosaveCoalesceMs;
   const nextEntry = buildJobPostDraftHistoryEntry(input);
-  const current = sanitizeJobPostDraftHistory(history, {
-    recruiterId: nextEntry.recruiterId,
-    draftKey: nextEntry.draftKey,
-    maxItems,
+  return appendHistory(history, nextEntry, {
+    ...createSanitizeOptions({ maxItems: options.maxItems }),
+    autosaveCoalesceMs: options.autosaveCoalesceMs ?? defaultAutosaveCoalesceMs,
+    isSameSnapshot: isSameJobPostDraftSnapshot,
+    coalesce: (latest, next) => ({
+      ...latest,
+      title: next.title,
+      description: next.description,
+      location: next.location,
+      salaryMin: next.salaryMin,
+      salaryMax: next.salaryMax,
+      requirements: next.requirements,
+      jobType: next.jobType,
+      salaryRange: next.salaryRange,
+      category: next.category,
+      companyId: next.companyId,
+      companyName: next.companyName,
+      companyAttached: next.companyAttached,
+      updatedAt: next.updatedAt,
+    }),
   });
-  const [latest, ...rest] = current;
-
-  if (latest && isSameJobPostDraftSnapshot(latest, nextEntry)) {
-    return current;
-  }
-
-  if (
-    latest &&
-    latest.reason === 'autosave' &&
-    nextEntry.reason === 'autosave' &&
-    new Date(nextEntry.updatedAt).getTime() - new Date(latest.createdAt).getTime() < autosaveCoalesceMs
-  ) {
-    return [
-      {
-        ...latest,
-        title: nextEntry.title,
-        description: nextEntry.description,
-        location: nextEntry.location,
-        salaryMin: nextEntry.salaryMin,
-        salaryMax: nextEntry.salaryMax,
-        requirements: nextEntry.requirements,
-        jobType: nextEntry.jobType,
-        salaryRange: nextEntry.salaryRange,
-        category: nextEntry.category,
-        companyId: nextEntry.companyId,
-        companyName: nextEntry.companyName,
-        companyAttached: nextEntry.companyAttached,
-        updatedAt: nextEntry.updatedAt,
-      },
-      ...rest,
-    ].slice(0, maxItems);
-  }
-
-  return [nextEntry, ...current].slice(0, maxItems);
 };
 
 export const mergeJobPostDraftHistories = (
   primary: JobPostDraftHistoryEntry[],
   fallback: JobPostDraftHistoryEntry[],
   maxItems = defaultMaxHistoryItems
-) => sanitizeJobPostDraftHistory([...primary, ...fallback], { maxItems });
+) => mergeHistories(primary, fallback, createSanitizeOptions({ maxItems }));

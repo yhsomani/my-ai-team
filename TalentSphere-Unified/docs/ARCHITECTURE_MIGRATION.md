@@ -1,6 +1,6 @@
 # Architecture Migration Progress
 
-> Documentation status: Historical/stale progress note. Use `../../PLAN.md` and `ARCHITECTURE_STATUS_INDEX.md` before treating completion statements here as current evidence.
+> Documentation status: Historical/stale progress note (superseded by canonical PRD v3.0, BRD v3.0, and Unified Schema Baseline). Use `docs/ARCHITECTURE_STATUS_INDEX.md` and `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md` before treating completion statements here as current evidence. Microservices and Module Federation references reflect early iteration stages; canonical runtime is hybrid Supabase-first with Spring Boot microservices.
 
 ## Completed ✓
 

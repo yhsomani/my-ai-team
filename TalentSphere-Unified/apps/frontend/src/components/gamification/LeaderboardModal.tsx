@@ -132,10 +132,10 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
       <div className="space-y-5">
         {/* User Summary Banner */}
         {currentUserId && (
-          <div className="rounded-xl border border-[var(--border-default)] bg-gradient-to-r from-accent/10 via-[var(--bg-secondary)] to-accent/5 p-4">
+          <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/20 text-accent font-bold text-lg shadow-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/20 text-accent font-bold text-lg shadow-sm">
                   Lvl {levelProgress.level}
                 </div>
                 <div>
@@ -159,7 +159,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                 </div>
                 <div className="mt-1 h-2 w-36 overflow-hidden rounded-full bg-[var(--bg-secondary)]">
                   <div
-                    className="h-full bg-gradient-to-r from-accent to-emerald-500 transition-all duration-300"
+                    className="h-full bg-accent transition-all duration-300"
                     style={{ width: `${Math.min(100, Math.round((todayXpEarned / DAILY_XP_MAX_CAP) * 100))}%` }}
                   />
                 </div>
@@ -216,7 +216,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             <p className="mt-2 text-sm">Loading rankings and ledger...</p>
           </div>
         ) : error ? (
-          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center">
             <AlertCircle size={28} className="mx-auto text-destructive" aria-hidden="true" focusable="false" />
             <p className="mt-2 text-sm font-medium text-destructive">{error}</p>
             <AuraButton
@@ -231,7 +231,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         ) : activeTab === 'leaderboard' ? (
           <div className="space-y-2">
             {leaderboard.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border-default)] p-8 text-center text-[var(--text-muted)]">
+              <div className="rounded-lg border border-dashed border-[var(--border-default)] p-8 text-center text-[var(--text-muted)]">
                 <Trophy size={32} className="mx-auto mb-2 opacity-50" aria-hidden="true" focusable="false" />
                 <p className="text-sm font-medium">No leaderboard entries yet.</p>
                 <p className="mt-1 text-xs">Complete coding challenges and lessons to climb the ranks!</p>
@@ -245,7 +245,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                   return (
                     <div
                       key={entry.user_id || idx}
-                      className={`flex items-center justify-between rounded-xl border p-3 transition-colors ${
+                      className={`flex items-center justify-between rounded-lg border p-3 transition-colors ${
                         isCurrentUser
                           ? 'border-accent/40 bg-accent/10'
                           : 'border-[var(--border-default)] bg-[var(--bg-panel)] hover:bg-[var(--bg-secondary)]'
@@ -285,7 +285,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         ) : (
           <div className="space-y-2">
             {transactions.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border-default)] p-8 text-center text-[var(--text-muted)]">
+              <div className="rounded-lg border border-dashed border-[var(--border-default)] p-8 text-center text-[var(--text-muted)]">
                 <History size={32} className="mx-auto mb-2 opacity-50" aria-hidden="true" focusable="false" />
                 <p className="text-sm font-medium">No XP transactions recorded yet.</p>
                 <p className="mt-1 text-xs">Start solving coding challenges or completing course lessons to earn XP.</p>
@@ -295,7 +295,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                 {transactions.map((tx, idx) => (
                   <div
                     key={tx.id || idx}
-                    className="flex items-center justify-between rounded-xl border border-[var(--border-default)] bg-[var(--bg-panel)] p-3 text-sm"
+                    className="flex items-center justify-between rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-3 text-sm"
                   >
                     <div>
                       <p className="font-medium text-[var(--text-primary)]">

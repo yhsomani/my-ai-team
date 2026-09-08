@@ -24,7 +24,19 @@ export type DashboardOperationalAnalyticsAction =
   | 'admin_product_analytics_load_failed'
   | 'admin_product_analytics_retry_clicked'
   | 'admin_scheduler_status_loaded'
-  | 'admin_scheduler_status_refresh_clicked';
+  | 'admin_scheduler_status_refresh_clicked'
+  | 'admin_user_role_updated'
+  | 'admin_user_role_update_failed'
+  | 'admin_system_setting_updated'
+  | 'admin_system_setting_update_failed'
+  | 'admin_audit_csv_export_started'
+  | 'admin_audit_csv_export_completed'
+  | 'admin_audit_csv_export_failed'
+  | 'admin_retention_policy_updated'
+  | 'admin_retention_policy_update_failed'
+  | 'admin_feature_flag_override_set'
+  | 'admin_feature_flag_override_reset'
+  | 'admin_feature_flag_override_failed';
 
 export type DashboardOperationalRole = 'talent' | 'recruiter' | 'admin';
 
@@ -61,6 +73,14 @@ interface DashboardOperationalAnalyticsInput {
   schedulerLastRunFailedCount?: number;
   schedulerLastRunMissedCount?: number;
   errorCategory?: string;
+  targetUserId?: string;
+  roleFrom?: string;
+  roleTo?: string;
+  settingKey?: string;
+  settingAction?: string;
+  retentionTtlDays?: number;
+  flagName?: string;
+  flagEnabled?: boolean;
 }
 
 const adminActions = new Set<DashboardOperationalAnalyticsAction>([
@@ -78,6 +98,18 @@ const adminActions = new Set<DashboardOperationalAnalyticsAction>([
   'admin_product_analytics_retry_clicked',
   'admin_scheduler_status_loaded',
   'admin_scheduler_status_refresh_clicked',
+  'admin_user_role_updated',
+  'admin_user_role_update_failed',
+  'admin_system_setting_updated',
+  'admin_system_setting_update_failed',
+  'admin_audit_csv_export_started',
+  'admin_audit_csv_export_completed',
+  'admin_audit_csv_export_failed',
+  'admin_retention_policy_updated',
+  'admin_retention_policy_update_failed',
+  'admin_feature_flag_override_set',
+  'admin_feature_flag_override_reset',
+  'admin_feature_flag_override_failed',
 ]);
 
 const getArea = (action: DashboardOperationalAnalyticsAction): ProductAnalyticsArea => (
@@ -98,12 +130,24 @@ const getEventName = (action: DashboardOperationalAnalyticsAction): ProductAnaly
     case 'admin_audit_load_completed':
     case 'admin_product_analytics_loaded':
     case 'admin_scheduler_status_loaded':
+    case 'admin_audit_csv_export_completed':
+    case 'admin_retention_policy_updated':
       return 'task_completed';
     case 'admin_console_load_failed':
     case 'dashboard_data_load_failed':
     case 'admin_audit_load_failed':
     case 'admin_product_analytics_load_failed':
+    case 'admin_user_role_update_failed':
+    case 'admin_system_setting_update_failed':
+    case 'admin_audit_csv_export_failed':
+    case 'admin_retention_policy_update_failed':
+    case 'admin_feature_flag_override_failed':
       return 'task_failed';
+    case 'admin_user_role_updated':
+    case 'admin_system_setting_updated':
+    case 'admin_feature_flag_override_set':
+    case 'admin_feature_flag_override_reset':
+      return 'task_completed';
     case 'dashboard_primary_action_opened':
     case 'dashboard_checklist_action_opened':
     case 'dashboard_stat_card_opened':
@@ -138,6 +182,9 @@ const getObjectType = (action: DashboardOperationalAnalyticsAction) => {
     case 'admin_audit_load_more_clicked':
     case 'admin_audit_load_completed':
     case 'admin_audit_load_failed':
+    case 'admin_audit_csv_export_started':
+    case 'admin_audit_csv_export_completed':
+    case 'admin_audit_csv_export_failed':
       return 'audit_log';
     case 'admin_product_analytics_loaded':
     case 'admin_product_analytics_load_failed':
@@ -146,6 +193,19 @@ const getObjectType = (action: DashboardOperationalAnalyticsAction) => {
     case 'admin_scheduler_status_loaded':
     case 'admin_scheduler_status_refresh_clicked':
       return 'scheduled_automation_status';
+    case 'admin_user_role_updated':
+    case 'admin_user_role_update_failed':
+      return 'user_role';
+    case 'admin_system_setting_updated':
+    case 'admin_system_setting_update_failed':
+      return 'system_setting';
+    case 'admin_retention_policy_updated':
+    case 'admin_retention_policy_update_failed':
+      return 'data_retention';
+    case 'admin_feature_flag_override_set':
+    case 'admin_feature_flag_override_reset':
+    case 'admin_feature_flag_override_failed':
+      return 'feature_flag';
     case 'admin_console_loaded':
     case 'admin_console_load_failed':
     case 'admin_console_refresh_clicked':
@@ -163,8 +223,11 @@ const getObjectId = ({
   taskId,
   statKey,
   route,
-}: Pick<DashboardOperationalAnalyticsInput, 'serviceId' | 'taskId' | 'statKey' | 'route'>) => (
-  serviceId || taskId || statKey || route || undefined
+  targetUserId,
+  settingKey,
+  flagName,
+}: Pick<DashboardOperationalAnalyticsInput, 'serviceId' | 'taskId' | 'statKey' | 'route' | 'targetUserId' | 'settingKey' | 'flagName'>) => (
+  flagName || serviceId || targetUserId || settingKey || taskId || statKey || route || undefined
 );
 
 const getLatencyBand = (latencyMs?: number) => {
@@ -207,6 +270,14 @@ export const recordDashboardOperationalAnalytics = ({
   schedulerLastRunFailedCount,
   schedulerLastRunMissedCount,
   errorCategory,
+  targetUserId,
+  roleFrom,
+  roleTo,
+  settingKey,
+  settingAction,
+  retentionTtlDays,
+  flagName,
+  flagEnabled,
 }: DashboardOperationalAnalyticsInput) => {
   void productAnalytics.trackEvent({
     userId,
@@ -214,7 +285,7 @@ export const recordDashboardOperationalAnalytics = ({
     eventName: getEventName(action),
     source: getArea(action) === 'admin' ? 'admin_console' : 'dashboard_page',
     objectType: getObjectType(action),
-    objectId: getObjectId({ serviceId, taskId, statKey, route }),
+    objectId: getObjectId({ serviceId, targetUserId, settingKey, taskId, statKey, route, flagName }),
     metadata: {
       action,
       role,
@@ -247,13 +318,23 @@ export const recordDashboardOperationalAnalytics = ({
       schedulerLastRunFailedCount,
       schedulerLastRunMissedCount,
       errorCategory,
+      targetUserId,
+      roleFrom,
+      roleTo,
+      settingKey,
+      settingAction,
+      retentionTtlDays,
+      flagName,
+      flagEnabled,
       userControl: action.endsWith('_shown')
         || action.endsWith('_loaded')
         || action.endsWith('_failed')
         || action === 'admin_audit_load_completed'
         ? 'observed'
         : 'explicit',
-      mutationScope: 'read_only_operational_workflow',
+      mutationScope: ['admin_user_role_updated', 'admin_user_role_update_failed', 'admin_system_setting_updated', 'admin_system_setting_update_failed', 'admin_retention_policy_updated', 'admin_retention_policy_update_failed', 'admin_feature_flag_override_set', 'admin_feature_flag_override_reset', 'admin_feature_flag_override_failed'].includes(action)
+        ? 'admin_write'
+        : 'read_only_operational_workflow',
     },
   });
 };

@@ -9,6 +9,10 @@ import {
   summarizeProductAnalyticsEvents,
   type ProductAnalyticsInsightSummary
 } from '../lib/productAnalyticsInsights';
+import {
+  serializeRecordsToCsv,
+  buildAuditLogExportFilename,
+} from '../lib/csvExport';
 
 export interface SystemStats {
   totalUsers: number;
@@ -141,6 +145,31 @@ export interface PaginatedAuditLogsResult {
   offset: number;
   hasNext: boolean;
   nextCursor: string | null;
+}
+
+export interface SystemSetting {
+  key: string;
+  value: Json;
+  description?: string | null;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
+}
+
+const RETENTION_TTL_KEY = 'data_retention.audit_log_ttl_days';
+const RETENTION_NOTE_KEY = 'data_retention.policy_note';
+const DEFAULT_RETENTION_TTL_DAYS = 90;
+const DEFAULT_RETENTION_NOTE = 'Audit log records are retained for the configured TTL period. On-demand CSV export is available to data controllers to satisfy GDPR/CCPA subject-access and data-retention-disposition workflows.';
+
+export interface RetentionPolicy {
+  auditLogRetentionTtlDays: number;
+  policyNote: string;
+  updatedAt?: string | null;
+}
+
+export interface AuditLogExportResult {
+  csv: string;
+  rowCount: number;
+  filename: string;
 }
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -878,17 +907,23 @@ export const adminService = {
     return data;
   },
 
-  getSystemSettings: async () => {
+  getSystemSettings: async (): Promise<SystemSetting[]> => {
     const { data, error } = await supabase
       .from('system_settings')
       .select('*')
       .order('key');
-    
+
     if (error) throw error;
-    return data;
+    return (data || []).map((row) => ({
+      key: row.key,
+      value: row.value,
+      description: row.description,
+      updatedBy: row.updated_by,
+      updatedAt: row.updated_at,
+    }));
   },
 
-  updateSystemSetting: async (key: string, value: any, description?: string) => {
+  updateSystemSetting: async (key: string, value: unknown, description?: string): Promise<SystemSetting> => {
     const payload: SystemSettingsInsert = {
       key,
       value: value as Json,
@@ -901,9 +936,15 @@ export const adminService = {
       .upsert(payload)
       .select()
       .single();
-    
+
     if (error) throw error;
-    return data;
+    return {
+      key: data.key,
+      value: data.value,
+      description: data.description,
+      updatedBy: data.updated_by,
+      updatedAt: data.updated_at,
+    };
   },
 
   getAuditLogsPage: async (params?: AuditLogQueryParams): Promise<PaginatedAuditLogsResult> => {
@@ -1007,5 +1048,76 @@ export const adminService = {
 
   getScheduledAutomationStatus: async (): Promise<AdminScheduledAutomationStatusResult> => {
     return getScheduledAutomationStatus();
+  },
+
+  getRetentionPolicy: async (): Promise<RetentionPolicy> => {
+    const all = await adminService.getSystemSettings();
+    const ttlRow = all.find((s) => s.key === RETENTION_TTL_KEY);
+    const noteRow = all.find((s) => s.key === RETENTION_NOTE_KEY);
+
+    const ttlRaw = ttlRow?.value;
+    const parsedTtl = typeof ttlRaw === 'number'
+      ? ttlRaw
+      : typeof ttlRaw === 'string' && Number.isFinite(Number(ttlRaw))
+        ? Number(ttlRaw)
+        : undefined;
+
+    return {
+      auditLogRetentionTtlDays: Number.isFinite(parsedTtl) && (parsedTtl as number) > 0
+        ? Math.floor(parsedTtl as number)
+        : DEFAULT_RETENTION_TTL_DAYS,
+      policyNote: typeof noteRow?.value === 'string' && noteRow.value.trim()
+        ? noteRow.value.trim()
+        : typeof noteRow?.value === 'object' && noteRow.value !== null && 'note' in (noteRow.value as Record<string, unknown>)
+          ? String((noteRow.value as Record<string, unknown>).note)
+          : DEFAULT_RETENTION_NOTE,
+      updatedAt: ttlRow?.updatedAt || noteRow?.updatedAt || undefined,
+    };
+  },
+
+  saveRetentionPolicy: async (auditLogRetentionTtlDays: number, policyNote: string): Promise<RetentionPolicy> => {
+    const safeTtl = Math.max(1, Math.floor(auditLogRetentionTtlDays));
+    await Promise.all([
+      adminService.updateSystemSetting(RETENTION_TTL_KEY, safeTtl, 'Audit log retention TTL in days (GDPR/CCPA compliance).'),
+      adminService.updateSystemSetting(RETENTION_NOTE_KEY, policyNote, 'Platform retention and data-export policy note.'),
+    ]);
+    return adminService.getRetentionPolicy();
+  },
+
+  exportAuditLogCsv: async (limit = 500): Promise<AuditLogExportResult> => {
+    const logs = await adminService.getAuditLogs(limit);
+
+    const columns = ['id', 'created_at', 'action', 'entity_type', 'entity_id', 'actor_user_id', 'ip_address'];
+    const rows = logs.map((log) => [
+      log.id,
+      log.createdAt,
+      log.action,
+      log.entityType ?? '',
+      log.entityId ?? '',
+      log.userId ?? '',
+      log.ipAddress ?? '',
+    ]);
+
+    return {
+      csv: serializeRecordsToCsv(columns, rows),
+      rowCount: rows.length,
+      filename: buildAuditLogExportFilename(),
+    };
+  },
+};
+
+export const triggerCsvDownload = (csv: string, filename: string): void => {
+  try {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  } catch (error) {
+    console.warn('[Admin] CSV download failed. The file content was computed but the browser could not save it.', error);
   }
 };

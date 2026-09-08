@@ -1,11 +1,12 @@
 # TalentSphere — Single Source of Truth (SSOT)
 
-> Documentation status: Historical/stale. This document contains stale completion claims. Use `../PLAN.md` and `docs/ARCHITECTURE_STATUS_INDEX.md` for current architecture authority and document precedence.
+> Documentation status: Historical/archived reference. This document predates PRD v3.0 / BRD v3.0 and contains historical 19-service architecture claims. Authoritative current-state specifications are in `docs/PRD.md`, `docs/BRD.md`, `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md`, `PLAN.md`, and `docs/ARCHITECTURE_STATUS_INDEX.md`.
 
-**Version:** 6.1.0 (Production Ready & Decoupled)  
-**Last Updated:** 2026-05-07  
-**Status:** Authoritative Reference — Supersedes All Previous Documentation  
-**Implementation Status:** ✅ ALL PHASES COMPLETE  
+**Document Classification:** Historical Architecture Reference (Archived)  
+**Historical Version:** 6.1.0  
+**Superseded By:** PRD v3.0 / BRD v3.0 / Unified Schema Baseline (2026-09)  
+**Status:** Archived / Non-Authoritative  
+**Implementation Note:** Retained for historical reference only. Canonical schema authority resides in `infra/db/migrations/0001_initial_baseline.sql` and `docs/DATA_OWNERSHIP.md`.  
 
 ---
 

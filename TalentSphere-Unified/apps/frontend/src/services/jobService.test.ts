@@ -228,10 +228,20 @@ describe('jobService', () => {
         error: null
       }).then(res, rej));
 
-      const job = await jobService.getJobById('job-1');
+      const job = (await jobService.getJobById('job-1'))!;
       expect(job.id).toBe('job-1');
       expect(job.title).toBe('Software Engineer');
       expect(job.companyName).toBe('Tech Corp');
+    });
+
+    it('should return null when the job row is missing', async () => {
+      mockQueryBuilder.then = vi.fn().mockImplementation((res, rej) => Promise.resolve({
+        data: null,
+        error: { code: 'PGRST116', message: 'The result contains 0 rows' },
+      }).then(res, rej));
+
+      const job = await jobService.getJobById('missing-job');
+      expect(job).toBeNull();
     });
   });
 

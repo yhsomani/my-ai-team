@@ -22,6 +22,9 @@ CREATE TYPE challenge_category AS ENUM ('FRONTEND', 'BACKEND', 'FULLSTACK', 'DAT
 CREATE TYPE enrollment_status AS ENUM ('ENROLLED', 'IN_PROGRESS', 'COMPLETED', 'DROPPED');
 CREATE TYPE message_status AS ENUM ('SENT', 'DELIVERED', 'READ');
 CREATE TYPE notification_type AS ENUM ('JOB_APPLICATION', 'JOB_ALERT', 'MESSAGE', 'CONNECTION', 'COURSE_UPDATE', 'CHALLENGE', 'ACHIEVEMENT', 'SYSTEM');
+CREATE TYPE report_target_type AS ENUM ('job_posting', 'user_profile', 'company', 'message');
+CREATE TYPE report_reason AS ENUM ('spam', 'scam', 'harassment', 'inappropriate_content', 'misleading', 'other');
+CREATE TYPE moderation_status AS ENUM ('pending', 'under_review', 'resolved', 'dismissed');
 
 -- =============================================================================
 -- USERS & AUTH (Supabase auth.users is primary, this extends with app data)
@@ -606,6 +609,27 @@ CREATE INDEX idx_messages_sender_id ON public.messages(sender_id);
 CREATE INDEX idx_messages_created_at ON public.messages(created_at DESC);
 
 -- =============================================================================
+-- TRUST & SAFETY - CONTENT REPORTS
+-- =============================================================================
+CREATE TABLE public.content_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    reporter_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    target_type report_target_type NOT NULL,
+    target_id TEXT NOT NULL,
+    target_title TEXT,
+    reason report_reason NOT NULL,
+    details TEXT,
+    status moderation_status DEFAULT 'pending' NOT NULL,
+    resolution_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_content_reports_status_updated ON public.content_reports(status, updated_at DESC);
+CREATE INDEX idx_content_reports_target ON public.content_reports(target_type, target_id);
+CREATE INDEX idx_content_reports_reporter ON public.content_reports(reporter_id);
+
+-- =============================================================================
 -- LMS - COURSES
 -- =============================================================================
 CREATE TABLE public.courses (
@@ -781,7 +805,8 @@ CREATE TABLE public.xp_transactions (
     reason VARCHAR(200) NOT NULL,
     reference_type VARCHAR(50),
     reference_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, reference_type, reference_id)
 );
 
 CREATE INDEX idx_xp_transactions_user ON public.xp_transactions(user_id);
@@ -983,6 +1008,8 @@ ALTER TABLE public.notification_digest_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation_participants ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users can view all profiles but only update their own
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -996,6 +1023,18 @@ CREATE POLICY "Users can insert own profile" ON public.user_profiles FOR INSERT 
 -- Skills: View all, update own
 CREATE POLICY "Skills viewable by everyone" ON public.skills FOR SELECT USING (true);
 CREATE POLICY "Users can manage own skills" ON public.skills FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.user_profiles WHERE id = profile_id AND user_id = auth.uid())
+);
+
+-- Experiences: View all, manage own
+CREATE POLICY "Experiences viewable by everyone" ON public.experiences FOR SELECT USING (true);
+CREATE POLICY "Users can manage own experiences" ON public.experiences FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.user_profiles WHERE id = profile_id AND user_id = auth.uid())
+);
+
+-- Educations: View all, manage own
+CREATE POLICY "Educations viewable by everyone" ON public.educations FOR SELECT USING (true);
+CREATE POLICY "Users can manage own educations" ON public.educations FOR ALL USING (
     EXISTS (SELECT 1 FROM public.user_profiles WHERE id = profile_id AND user_id = auth.uid())
 );
 
@@ -1313,6 +1352,16 @@ CREATE POLICY "Participants can update own read marker" ON public.conversation_p
 ) WITH CHECK (
     user_id = auth.uid()
 );
+CREATE POLICY "Participants can view participants" ON public.conversation_participants FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.conversations WHERE id = conversation_id AND (
+        created_by = auth.uid()
+        OR EXISTS (SELECT 1 FROM public.conversation_participants cp WHERE cp.conversation_id = conversation_id AND cp.user_id = auth.uid())
+    ))
+);
+CREATE POLICY "Conversation creators and participants can add participants" ON public.conversation_participants FOR INSERT WITH CHECK (
+    user_id = auth.uid()
+    OR EXISTS (SELECT 1 FROM public.conversations WHERE id = conversation_id AND created_by = auth.uid())
+);
 
 -- Courses: Everyone can view published courses
 CREATE POLICY "Published courses viewable by everyone" ON public.courses FOR SELECT USING (is_published = true OR auth.uid() = instructor_id);
@@ -1350,6 +1399,21 @@ CREATE POLICY "Active subscription plans are viewable by everyone" ON public.sub
 CREATE POLICY "Users can view own subscriptions" ON public.subscriptions FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can view own payments" ON public.payments FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create own pending payments" ON public.payments FOR INSERT WITH CHECK (auth.uid() = user_id AND status = 'PENDING');
+
+-- Trust & Safety: users can submit reports; reporters and admins can view; admins moderate
+CREATE POLICY "Anyone can submit content reports" ON public.content_reports FOR INSERT WITH CHECK (
+    reporter_id = auth.uid() OR reporter_id IS NULL
+);
+CREATE POLICY "Reporters and admins can view content reports" ON public.content_reports FOR SELECT USING (
+    reporter_id = auth.uid() OR EXISTS (
+        SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'ADMIN'
+    )
+);
+CREATE POLICY "Admins can moderate content reports" ON public.content_reports FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'ADMIN')
+) WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'ADMIN')
+);
 
 -- =============================================================================
 -- TRIGGERS FOR UPDATED_AT
@@ -1430,6 +1494,7 @@ CREATE TRIGGER update_notification_digest_items_updated_at BEFORE UPDATE ON publ
 CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON public.subscription_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_content_reports_updated_at BEFORE UPDATE ON public.content_reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
 -- TRIGGER: Auto-create user_profile on profile creation
@@ -1470,7 +1535,9 @@ CREATE TRIGGER update_leaderboard_on_xp_transaction AFTER INSERT ON public.xp_tr
 -- Example: Insert system settings
 INSERT INTO public.system_settings (key, value, description) VALUES
 ('platform_config', '{"maintenance_mode": false, "registration_enabled": true, "max_file_size_mb": 10}', 'Platform-wide configuration'),
-('email_templates', '{"welcome": "Welcome to TalentSphere!", "job_applied": "Your application has been submitted."}', 'Email notification templates')
+('email_templates', '{"welcome": "Welcome to TalentSphere!", "job_applied": "Your application has been submitted."}', 'Email notification templates'),
+('feature_flags', '{"version":1,"defaults":{"enable_auth":true,"enable_user_management":true,"enable_profile_management":true,"enable_job_listings":true,"enable_job_search":true,"enable_job_recommendations":false,"enable_job_applications":true,"enable_application_tracking":false,"enable_company_profiles":true,"enable_company_verification":false,"enable_company_search":true,"enable_courses":true,"enable_course_enrollment":true,"enable_course_progress":true,"enable_learning_paths":false,"enable_course_certificates":false,"enable_coding_challenges":false,"enable_leaderboards":false,"enable_achievements":false,"enable_xp_system":false,"enable_ai_resume_analysis":false,"enable_ai_job_matching":false,"enable_ai_interview_prep":false,"enable_notifications":true,"enable_email_notifications":false,"enable_push_notifications":false,"enable_messaging":true,"enable_chat":false,"enable_connections":true,"enable_posts":false,"enable_global_search":true,"enable_elasticsearch":true,"enable_payments":false,"enable_subscriptions":false,"enable_premium_features":false,"enable_video_content":false,"enable_video_interviews":false,"enable_analytics":false,"enable_user_analytics":false,"enable_employer_analytics":false},"overrides":{}}', 'Feature-flag governance store: canonical Feature.java defaults mirrored in "defaults", runtime overrides persisted in "overrides", audited via admin UI.'),
+('feature_flag_descriptions', '{"enable_auth":"Authentication and authorization","enable_user_management":"User account management","enable_profile_management":"User profile CRUD operations","enable_job_listings":"Job posting and listing","enable_job_search":"Job search functionality","enable_job_recommendations":"AI-powered job recommendations","enable_job_applications":"Job application system","enable_application_tracking":"Application pipeline tracking","enable_company_profiles":"Company profile pages","enable_company_verification":"Company verification system","enable_company_search":"Search companies","enable_courses":"Course management","enable_course_enrollment":"Course enrollment","enable_course_progress":"Progress tracking","enable_learning_paths":"Learning path recommendations","enable_course_certificates":"Course completion certificates","enable_coding_challenges":"Coding challenge system","enable_leaderboards":"Gamification leaderboards","enable_achievements":"User achievements and badges","enable_xp_system":"Experience points system","enable_ai_resume_analysis":"AI resume analysis","enable_ai_job_matching":"AI job matching","enable_ai_interview_prep":"AI interview preparation","enable_notifications":"In-app notifications","enable_email_notifications":"Email notifications","enable_push_notifications":"Push notifications","enable_messaging":"Direct messaging","enable_chat":"Real-time chat","enable_connections":"Professional networking","enable_posts":"Social posts and feed","enable_global_search":"Global search across platform","enable_elasticsearch":"Elasticsearch-powered search","enable_payments":"Payment processing","enable_subscriptions":"Premium subscriptions","enable_premium_features":"Premium feature access","enable_video_content":"Video course content","enable_video_interviews":"Video interview system","enable_analytics":"Platform analytics","enable_user_analytics":"User activity analytics","enable_employer_analytics":"Employer dashboard analytics"}', 'Human-readable descriptions for each canonical feature flag (mirrors Feature.java).')
 ON CONFLICT (key) DO NOTHING;
 
 -- Example: Insert default badges

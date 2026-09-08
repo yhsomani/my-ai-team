@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { aiService } from '../../services/aiService';
 import { Skeleton } from '../../components/shared/Skeleton';
+import { aiHeuristicProvenance, getAIProvenanceSourceStatus } from '../../lib/aiProvenance';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 
 interface CareerPathData {
   recommendedPath: string;
@@ -136,6 +138,13 @@ const AICareerPath: React.FC = () => {
         title="Career Paths"
         description="Review generated career-path guidance before choosing any learning or profile action."
         badge={<Badge variant={careerPath ? 'default' : 'warning'}>{careerPath ? 'Generated Guidance' : 'Needs data'}</Badge>}
+        actions={
+          <SourceStatusBadge
+            status={getAIProvenanceSourceStatus(aiHeuristicProvenance.provenanceMode)}
+            label={aiHeuristicProvenance.sourceLabel}
+            description={aiHeuristicProvenance.sourceDetail}
+          />
+        }
       />
 
       {loadError && (

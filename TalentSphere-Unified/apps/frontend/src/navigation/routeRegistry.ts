@@ -6,6 +6,7 @@ import {
   FileText,
   GraduationCap,
   LayoutDashboard,
+  LayoutGrid,
   Layers,
   Milestone,
   MessageSquare,
@@ -126,6 +127,18 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
     },
   },
   {
+    id: 'portfolio',
+    path: '/portfolio',
+    label: 'Portfolio',
+    navSection: 'main',
+    icon: LayoutGrid,
+    mobilePriority: { default: 6, recruiter: 6 },
+    search: {
+      description: 'Browse the engineering case-study showcase by category',
+      keywords: 'portfolio showcase case studies projects engineering design ai data automation',
+    },
+  },
+  {
     id: 'ai',
     path: '/ai',
     label: 'AI Assistant',
@@ -243,6 +256,11 @@ export const appRouteRegistry: readonly AppRouteDefinition[] = [
       description: 'Create recruiter job drafts and templates',
       keywords: 'post job create listing draft template publish recruiter',
     },
+  },
+  {
+    id: 'job-detail',
+    path: '/jobs/:id',
+    label: 'Job Details',
   },
 ] as const;
 

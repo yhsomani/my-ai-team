@@ -46,13 +46,7 @@ const localAuditKey = 'talentsphere.automationSuggestionAudit.events';
 
 const compact = (value?: string | null) => (value || '').trim();
 
-const createAuditEventId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `automation-audit-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-};
+const createAuditEventId = () => crypto.randomUUID();
 
 const safeMetadata = (metadata?: unknown): Record<string, unknown> => (
   metadata && typeof metadata === 'object' && !Array.isArray(metadata)

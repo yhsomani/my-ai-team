@@ -77,7 +77,7 @@ const uniqueTables = new Set(tables);
 if (tables.length !== uniqueTables.size) {
   fail('baseline migration contains duplicate CREATE TABLE declarations');
 }
-if (tables.length !== 49) {
+if (tables.length !== 50) {
   fail(`baseline migration table count changed without validator review: ${tables.length}`);
 }
 
@@ -112,7 +112,7 @@ if (actualGeneratedTypes !== expectedGeneratedTypes) {
   fail('generated DB types are stale; run npm run report:db-types');
 }
 const generatedRelationshipCount = Array.from(expectedGeneratedTypes.matchAll(/foreignKeyName:/g)).length;
-if (generatedRelationshipCount !== 69) {
+if (generatedRelationshipCount !== 70) {
   fail(`generated DB relationship count changed without validator review: ${generatedRelationshipCount}`);
 }
 for (const requiredRelationship of [

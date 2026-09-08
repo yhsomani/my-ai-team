@@ -1,3 +1,5 @@
+import { compact, createHistoryId } from './historyManager';
+
 export type ResumeExportStatus = 'ready' | 'blocked';
 export type ResumeExportMethod = 'browser-print' | 'html-download' | 'native-pdf' | 'provider-pdf';
 export type ResumeExportPersistedTo = 'server' | 'local';
@@ -30,17 +32,6 @@ type RawResumeExportRecord = Omit<ResumeExportRecord, 'persistedTo'> & {
 
 const defaultMaxExportHistory = 5;
 
-const compact = (value?: string | null) => (value || '').trim();
-
-const createExportRecordId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  const randomHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).slice(1);
-  return `${randomHex()}${randomHex()}-${randomHex()}-4${randomHex().slice(1)}-8${randomHex().slice(1)}-${randomHex()}${randomHex()}${randomHex()}`;
-};
-
 export const buildResumeExportRecord = ({
   id,
   userId,
@@ -51,7 +42,7 @@ export const buildResumeExportRecord = ({
   detail,
   persistedTo = 'local',
 }: ResumeExportRecordInput): ResumeExportRecord => ({
-  id: id || createExportRecordId(),
+  id: id || createHistoryId(),
   userId: compact(userId),
   createdAt: createdAt || new Date().toISOString(),
   status,

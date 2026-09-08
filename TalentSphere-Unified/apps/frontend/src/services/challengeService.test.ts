@@ -102,4 +102,48 @@ describe('challengeService', () => {
       status: 'SUBMITTED',
     });
   });
+
+  it('persists evaluation results and maps status from the pass flag', async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        id: 'submission-1',
+        challenge_id: 'challenge-1',
+        user_id: 'user-1',
+        code_submitted: 'return input.toUpperCase();',
+        language: 'javascript',
+        passed_tests: true,
+        score: 100,
+        feedback: 'All 1 visible sample case matched.',
+        execution_time_ms: null,
+        memory_used_kb: null,
+        submitted_at: '2026-06-27T00:00:00Z',
+      },
+      error: null,
+    });
+    const select = vi.fn().mockReturnValue({ single });
+    const eq = vi.fn().mockReturnValue({ select });
+    const update = vi.fn().mockReturnValue({ eq });
+    (typedSupabase.from as any).mockReturnValue({ update });
+
+    const submission = await challengeService.updateSubmissionResult('submission-1', {
+      passedTests: true,
+      score: 100,
+      feedback: 'All 1 visible sample case matched.',
+    });
+
+    expect(typedSupabase.from).toHaveBeenCalledWith('challenge_submissions');
+    expect(update).toHaveBeenCalledWith({
+      passed_tests: true,
+      score: 100,
+      feedback: 'All 1 visible sample case matched.',
+    });
+    expect(eq).toHaveBeenCalledWith('id', 'submission-1');
+    expect(update.mock.calls[0][0]).not.toHaveProperty('passedTests');
+    expect(submission).toMatchObject({
+      id: 'submission-1',
+      status: 'PASSED',
+      score: 100,
+      feedback: 'All 1 visible sample case matched.',
+    });
+  });
 });

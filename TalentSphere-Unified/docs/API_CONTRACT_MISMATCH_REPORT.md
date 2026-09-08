@@ -20,7 +20,7 @@ The `Generated` value is preserved between runs unless `API_CONTRACT_REPORT_GENE
 | Total backend controller routes scanned | 126 |
 | Gateway route prefixes | 19 |
 | Security matcher paths | 19 |
-| Direct Supabase tables used by frontend | 45 |
+| Direct Supabase tables used by frontend | 46 |
 | Frontend calls without matching active controller | 0 |
 | Active controller routes without gateway prefix | 0 |
 | Legacy `/api/*` security matcher paths | 0 |
@@ -36,7 +36,7 @@ No unmatched frontend API client calls were found against active controller rout
 | POST | /api/v1/files/upload | POST /api/v1/files/upload | apps/frontend/src/services/fileUploadService.ts:46 | upload (services/file-service/src/main/java/com/talentsphere/file/controller/FileController.java:22) |
 | DELETE | /api/v1/files | DELETE /api/v1/files | apps/frontend/src/services/fileUploadService.ts:69 | delete (services/file-service/src/main/java/com/talentsphere/file/controller/FileController.java:40) |
 | GET | /api/v1/jobs | GET /api/v1/jobs | apps/frontend/src/services/jobService.ts:363 | getActiveJobs (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:18) |
-| GET | /api/v1/jobs/{id} | GET /api/v1/jobs/{id} | apps/frontend/src/services/jobService.ts:707 | getJobById (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:52) |
+| GET | /api/v1/jobs/{id} | GET /api/v1/jobs/{id} | apps/frontend/src/services/jobService.ts:713 | getJobById (services/job-service/src/main/java/com/talentsphere/job/controller/JobController.java:52) |
 | GET | /api/v1/lms/enrollments/{userId} | GET /api/v1/lms/enrollments/{userId} | apps/frontend/src/services/lmsService.ts:312 | getUserEnrollments (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:78) |
 | GET | /api/v1/lms/courses | GET /api/v1/lms/courses | apps/frontend/src/services/lmsService.ts:346 | list (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:21) |
 | GET | /api/v1/lms/courses/{courseId} | GET /api/v1/lms/courses/{courseId} | apps/frontend/src/services/lmsService.ts:407 | getById (services/lms-service/src/main/java/com/talentsphere/lms/controller/LmsController.java:32) |
@@ -51,7 +51,7 @@ No unmatched frontend API client calls were found against active controller rout
 | GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:434 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
 | GET | /api/v1/networking/feed | GET /api/v1/networking/feed | apps/frontend/src/services/networkingService.ts:507 | getFeed (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:51) |
 | GET | /api/v1/networking/connections/{param} | GET /api/v1/networking/connections/{userId} | apps/frontend/src/services/networkingService.ts:692 | getConnections (services/networking-service/src/main/java/com/talentsphere/networking/controller/NetworkingController.java:34) |
-| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:390 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
+| GET | /api/v1/notifications/user/{userId} | GET /api/v1/notifications/user/{userId} | apps/frontend/src/services/notificationService.ts:384 | getNotifications (services/notification-service/src/main/java/com/talentsphere/notification/controller/NotificationController.java:17) |
 
 ## Controller Routes Without Gateway Prefix
 
@@ -197,6 +197,7 @@ No legacy `/api/*` security matcher paths were found.
 | challenges | apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/challengeService.ts, apps/frontend/src/services/dashboardService.ts |
 | companies | apps/frontend/src/services/companyService.ts, apps/frontend/src/services/recruiterService.ts |
 | connections | apps/frontend/src/services/networkingService.ts |
+| content_reports | apps/frontend/src/services/trustAndSafetyService.ts |
 | conversation_participants | apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/messagingService.ts |
 | conversations | apps/frontend/src/services/messagingService.ts |
 | courses | apps/frontend/src/services/aiService.ts, apps/frontend/src/services/lmsService.ts |
@@ -224,7 +225,7 @@ No legacy `/api/*` security matcher paths were found.
 | saved_job_searches | apps/frontend/src/services/jobService.ts |
 | skills | apps/frontend/src/services/profileService.ts |
 | subscription_plans | apps/frontend/src/services/paymentService.ts |
-| subscriptions | apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts |
+| subscriptions | apps/frontend/src/services/entitlementService.ts, apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts |
 | system_settings | apps/frontend/src/services/adminService.ts |
 | user_badges | apps/frontend/src/services/gamificationService.ts |
 | user_profiles | apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/settingsService.ts |

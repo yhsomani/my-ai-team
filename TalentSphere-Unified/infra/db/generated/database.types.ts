@@ -1534,6 +1534,56 @@ export interface Database {
           }
         ]
       }
+      content_reports: {
+        Row: {
+          id: string
+          reporter_id: string | null
+          target_type: Database['public']['Enums']['report_target_type']
+          target_id: string
+          target_title: string | null
+          reason: Database['public']['Enums']['report_reason']
+          details: string | null
+          status: Database['public']['Enums']['moderation_status']
+          resolution_notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          reporter_id?: string | null
+          target_type: Database['public']['Enums']['report_target_type']
+          target_id: string
+          target_title?: string | null
+          reason: Database['public']['Enums']['report_reason']
+          details?: string | null
+          status?: Database['public']['Enums']['moderation_status']
+          resolution_notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          reporter_id?: string | null
+          target_type?: Database['public']['Enums']['report_target_type']
+          target_id?: string
+          target_title?: string | null
+          reason?: Database['public']['Enums']['report_reason']
+          details?: string | null
+          status?: Database['public']['Enums']['moderation_status']
+          resolution_notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       courses: {
         Row: {
           id: string
@@ -2454,6 +2504,9 @@ export interface Database {
       enrollment_status: 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED'
       message_status: 'SENT' | 'DELIVERED' | 'READ'
       notification_type: 'JOB_APPLICATION' | 'JOB_ALERT' | 'MESSAGE' | 'CONNECTION' | 'COURSE_UPDATE' | 'CHALLENGE' | 'ACHIEVEMENT' | 'SYSTEM'
+      report_target_type: 'job_posting' | 'user_profile' | 'company' | 'message'
+      report_reason: 'spam' | 'scam' | 'harassment' | 'inappropriate_content' | 'misleading' | 'other'
+      moderation_status: 'pending' | 'under_review' | 'resolved' | 'dismissed'
     }
     CompositeTypes: {
       [_ in never]: never

@@ -113,6 +113,34 @@ export const challengeService = {
     return mapSubmission(data);
   },
 
+  /**
+   * Persists the evaluation result (test pass state, score, feedback) for a
+   * submitted solution. Returns the updated submission with its mapped status
+   * (PASSED when all runnable visible sample cases matched, FAILED otherwise).
+   */
+  updateSubmissionResult: async (
+    submissionId: string,
+    result: { passedTests: boolean; score: number; feedback?: string }
+  ): Promise<ChallengeSubmission> => {
+    const { data, error } = await supabase
+      .from('challenge_submissions')
+      .update({
+        passed_tests: result.passedTests,
+        score: result.score,
+        feedback: result.feedback || null,
+      })
+      .eq('id', submissionId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating challenge submission result:', error);
+      throw new Error(`Failed to save submission result: ${error.message}`);
+    }
+
+    return mapSubmission(data);
+  },
+
   getUserSubmissions: async (userId: string, challengeId?: string): Promise<ChallengeSubmission[]> => {
     let query = supabase
       .from('challenge_submissions')

@@ -299,7 +299,7 @@ export const gamificationService = {
       didLevelUp,
       skipReason: eligibility.skipReason,
       message: eligibility.message,
-      transactionId: (txData as any)?.id,
+      transactionId: txData?.id,
     };
   },
 

@@ -14,12 +14,10 @@ import {
   type SettingsWorkflowAnalyticsAction,
 } from '../../lib/settingsWorkflowAnalytics';
 
-import {
-  ProfileSettings,
-  NotificationSettings,
-  SecuritySettings,
-  BillingSettings
-} from './components';
+import { ProfileSettings } from './components/ProfileSettings';
+import { NotificationSettings } from './components/NotificationSettings';
+import { SecuritySettings } from './components/SecuritySettings';
+import { BillingSettings } from './components/BillingSettings';
 
 const createDefaultNotificationSettings = (userId: string): NotificationSettingsType => ({
   user_id: userId,

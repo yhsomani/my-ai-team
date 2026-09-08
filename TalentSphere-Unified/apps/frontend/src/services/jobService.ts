@@ -681,7 +681,7 @@ export const jobService = {
   },
 
 
-  getJobById: async (id: string): Promise<Job> => {
+  getJobById: async (id: string): Promise<Job | null> => {
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -700,9 +700,15 @@ export const jobService = {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+      }
       return mapJobResponse(data);
     } catch (err) {
+      if ((err as { response?: { status?: number } })?.response?.status === 404) {
+        return null;
+      }
       console.warn(`[Jobs] getJobById failed for ${id}, trying API Gateway...`, err);
       const response = await apiClient.get(`/api/v1/jobs/${id}`);
       return mapJobResponse(response.data?.data || response.data);

@@ -1,11 +1,12 @@
 import React from 'react';
 import { configureStore } from '@reduxjs/toolkit';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../../components/shared/Toast';
 import authReducer from '../../store/slices/authSlice';
 import messagingReducer from '../../store/slices/messagingSlice';
+import { typedSupabase } from '../../lib/supabaseClient';
 import { messagingService } from '../../services/messagingService';
 import type { PaginatedConversationsResult, PaginatedMessagesResult } from '../../services/messagingService';
 import { fileUploadService } from '../../services/fileUploadService';
@@ -418,5 +419,52 @@ describe('MessagingPage', () => {
     expect(messagingService.markConversationMessagesAsRead).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(/service_role_token/i)).toBeNull();
     expect(screen.queryByText(/Read receipt update failed/i)).toBeNull();
+  });
+
+  it('appends messages delivered over the realtime channel into the open thread', async () => {
+    vi.mocked(messagingService.getConversationsPage).mockResolvedValue(conversationPage);
+    vi.mocked(messagingService.getMessagesPage).mockResolvedValue(messagePage);
+
+    renderMessagingPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /Lena Ortiz/ }).length).toBeGreaterThan(0);
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: /Lena Ortiz/ })[0]);
+    await waitFor(() => {
+      expect(screen.getByRole('log', { name: 'Messages with Lena Ortiz' })).toBeTruthy();
+    });
+
+    expect(typedSupabase.channel).toHaveBeenCalledWith(`public:messages:visible-conversations:${currentUserId}`);
+
+    const channel: { on: ReturnType<typeof vi.fn> } = vi.mocked(typedSupabase.channel).mock.results[0].value;
+    const insertCall = [...channel.on.mock.calls].reverse().find(
+      (call: any[]) => call[0] === 'postgres_changes' && (call[1] as { table?: string })?.table === 'messages',
+    );
+    const insertHandler = insertCall?.[2] as (payload: Record<string, any>) => void;
+    expect(insertHandler).toBeTypeOf('function');
+
+    act(() => {
+      insertHandler({
+        eventType: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        new: {
+          id: 'message-realtime-001',
+          conversation_id: conversationId,
+          sender_id: participantId,
+          content: 'Thanks for the extra detail!',
+          message_type: 'TEXT',
+          status: 'SENT',
+          created_at: '2026-06-27T09:05:00.000Z',
+          read_at: null,
+          attachment_url: null,
+        },
+      });
+    });
+
+    expect(
+      within(screen.getByRole('log', { name: 'Messages with Lena Ortiz' })).getByText('Thanks for the extra detail!'),
+    ).toBeTruthy();
   });
 });

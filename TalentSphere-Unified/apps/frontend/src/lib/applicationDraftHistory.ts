@@ -1,4 +1,5 @@
 import type { ApplicationDraftSource } from '../services/applicationService';
+import { appendHistory, compact, createHistoryId, mergeHistories, sanitizeHistory } from './historyManager';
 
 export type ApplicationDraftHistoryReason = 'autosave' | 'profile_applied' | 'ai_applied' | 'restored' | 'cleared';
 
@@ -28,17 +29,6 @@ export interface ApplicationDraftHistoryInput {
 
 const defaultMaxHistoryItems = 5;
 const defaultAutosaveCoalesceMs = 60_000;
-
-const compact = (value?: string | null) => (value || '').trim();
-
-const createHistoryId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  const randomHex = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).slice(1);
-  return `${randomHex()}${randomHex()}-${randomHex()}-4${randomHex().slice(1)}-8${randomHex().slice(1)}-${randomHex()}${randomHex()}${randomHex()}`;
-};
 
 export const hasApplicationDraftContent = (draft: Pick<ApplicationDraftHistoryInput, 'resumeUrl' | 'coverLetter'>) => (
   Boolean(compact(draft.resumeUrl) || compact(draft.coverLetter))
@@ -79,37 +69,35 @@ export const isSameApplicationDraftSnapshot = (
   first.source === second.source
 );
 
+const isApplicationDraftHistoryEntry = (item: unknown): item is ApplicationDraftHistoryEntry => (
+  Boolean(
+    item &&
+    typeof (item as ApplicationDraftHistoryEntry).id === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).userId === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).jobId === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).resumeUrl === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).coverLetter === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).createdAt === 'string' &&
+    typeof (item as ApplicationDraftHistoryEntry).updatedAt === 'string' &&
+    ((item as ApplicationDraftHistoryEntry).source === 'manual'
+      || (item as ApplicationDraftHistoryEntry).source === 'profile'
+      || (item as ApplicationDraftHistoryEntry).source === 'ai')
+  )
+);
+
+const createSanitizeOptions = (options: { userId?: string; jobId?: string; maxItems?: number } = {}) => ({
+  isItem: isApplicationDraftHistoryEntry,
+  filters: [
+    (item: ApplicationDraftHistoryEntry) => !options.userId || item.userId === options.userId,
+    (item: ApplicationDraftHistoryEntry) => !options.jobId || item.jobId === options.jobId,
+  ],
+  maxItems: options.maxItems ?? defaultMaxHistoryItems,
+});
+
 export const sanitizeApplicationDraftHistory = (
   value: unknown,
   options: { userId?: string; jobId?: string; maxItems?: number } = {}
-): ApplicationDraftHistoryEntry[] => {
-  if (!Array.isArray(value)) return [];
-
-  const maxItems = options.maxItems ?? defaultMaxHistoryItems;
-  const seen = new Set<string>();
-
-  return value
-    .filter((item): item is ApplicationDraftHistoryEntry => (
-      item &&
-      typeof item.id === 'string' &&
-      typeof item.userId === 'string' &&
-      typeof item.jobId === 'string' &&
-      typeof item.resumeUrl === 'string' &&
-      typeof item.coverLetter === 'string' &&
-      typeof item.createdAt === 'string' &&
-      typeof item.updatedAt === 'string' &&
-      (item.source === 'manual' || item.source === 'profile' || item.source === 'ai')
-    ))
-    .filter(item => !options.userId || item.userId === options.userId)
-    .filter(item => !options.jobId || item.jobId === options.jobId)
-    .filter(item => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    })
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, maxItems);
-};
+): ApplicationDraftHistoryEntry[] => sanitizeHistory(value, createSanitizeOptions(options));
 
 export const appendApplicationDraftHistory = (
   history: ApplicationDraftHistoryEntry[],
@@ -124,43 +112,22 @@ export const appendApplicationDraftHistory = (
     });
   }
 
-  const maxItems = options.maxItems ?? defaultMaxHistoryItems;
-  const autosaveCoalesceMs = options.autosaveCoalesceMs ?? defaultAutosaveCoalesceMs;
-  const nextEntry = buildApplicationDraftHistoryEntry(input);
-  const current = sanitizeApplicationDraftHistory(history, {
-    userId: nextEntry.userId,
-    jobId: nextEntry.jobId,
-    maxItems,
+  return appendHistory(history, buildApplicationDraftHistoryEntry(input), {
+    ...createSanitizeOptions({ maxItems: options.maxItems }),
+    autosaveCoalesceMs: options.autosaveCoalesceMs ?? defaultAutosaveCoalesceMs,
+    isSameSnapshot: isSameApplicationDraftSnapshot,
+    coalesce: (latest, next) => ({
+      ...latest,
+      resumeUrl: next.resumeUrl,
+      coverLetter: next.coverLetter,
+      source: next.source,
+      updatedAt: next.updatedAt,
+    }),
   });
-  const [latest, ...rest] = current;
-
-  if (latest && isSameApplicationDraftSnapshot(latest, nextEntry)) {
-    return current;
-  }
-
-  if (
-    latest &&
-    latest.reason === 'autosave' &&
-    nextEntry.reason === 'autosave' &&
-    new Date(nextEntry.updatedAt).getTime() - new Date(latest.createdAt).getTime() < autosaveCoalesceMs
-  ) {
-    return [
-      {
-        ...latest,
-        resumeUrl: nextEntry.resumeUrl,
-        coverLetter: nextEntry.coverLetter,
-        source: nextEntry.source,
-        updatedAt: nextEntry.updatedAt,
-      },
-      ...rest,
-    ].slice(0, maxItems);
-  }
-
-  return [nextEntry, ...current].slice(0, maxItems);
 };
 
 export const mergeApplicationDraftHistories = (
   primary: ApplicationDraftHistoryEntry[],
   fallback: ApplicationDraftHistoryEntry[],
   maxItems = defaultMaxHistoryItems
-) => sanitizeApplicationDraftHistory([...primary, ...fallback], { maxItems });
+) => mergeHistories(primary, fallback, createSanitizeOptions({ maxItems }));

@@ -163,7 +163,7 @@ export const ReportContentModal: React.FC<ReportContentModalProps> = ({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Metadata Banner */}
-          <div className="flex items-start gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
+          <div className="flex items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-3">
             <ShieldAlert size={20} className="mt-0.5 shrink-0 text-amber-500" aria-hidden="true" focusable="false" />
             <div className="min-w-0 flex-1 text-xs">
               <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export const ReportContentModal: React.FC<ReportContentModalProps> = ({
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
               <AlertTriangle size={16} className="shrink-0" aria-hidden="true" focusable="false" />
               <span>{error}</span>
             </div>
@@ -189,14 +189,14 @@ export const ReportContentModal: React.FC<ReportContentModalProps> = ({
 
           {/* Reason Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+            <label className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
               Select Reason <span className="text-destructive">*</span>
             </label>
             <div className="grid gap-2">
               {REASON_OPTIONS.map((opt) => (
                 <label
                   key={opt.value}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-2.5 transition-colors ${
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-2.5 transition-colors ${
                     selectedReason === opt.value
                       ? 'border-accent bg-accent/5'
                       : 'border-[var(--border-default)] bg-[var(--bg-panel)] hover:bg-[var(--bg-secondary)]'
@@ -226,7 +226,7 @@ export const ReportContentModal: React.FC<ReportContentModalProps> = ({
           {/* Details input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label htmlFor="report-details" className="font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+              <label htmlFor="report-details" className="font-semibold uppercase text-[var(--text-secondary)]">
                 Additional Context (Optional)
               </label>
               <span className="text-[10px] text-[var(--text-muted)]">
@@ -240,7 +240,7 @@ export const ReportContentModal: React.FC<ReportContentModalProps> = ({
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder="Provide any relevant details, links, or context to assist the review team..."
-              className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-panel)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-panel)] p-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 

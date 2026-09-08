@@ -7,7 +7,7 @@
     "apps/frontend"
   ],
   "scripts": {
-    "test": "npm run test:unit && npm run test:scheduler-audit && npm run test:notification-digests && npm run test:networking-reminders && npm run test:saved-search-digest-discovery",
+    "test": "npm run test:unit && npm run test:scheduler-audit && npm run test:notification-digests && npm run test:networking-reminders && npm run test:saved-search-digest-discovery && npm run test:kpi-aggregations",
     "dev": "npm run dev --workspace talentsphere-web",
     "build": "npm run build --workspace talentsphere-web",
     "lint": "npm run lint --workspace talentsphere-web",
@@ -49,6 +49,8 @@
     "test:notification-digests": "node scripts/run-notification-digests.test.mjs",
     "run:networking-reminders": "node scripts/run-networking-reminders.mjs",
     "test:networking-reminders": "node scripts/run-networking-reminders.test.mjs",
+    "run:kpi-aggregations": "node scripts/run-kpi-aggregations.mjs",
+    "test:kpi-aggregations": "node scripts/run-kpi-aggregations.test.mjs",
     "test:extension-messaging": "cd chrome-extension-project && npm run test:messaging",
     "test:extension-portal-fixtures": "cd chrome-extension-project && npm run test:portal-fixtures",
     "test:extension-options-ux": "cd chrome-extension-project && npm run test:options-ux",

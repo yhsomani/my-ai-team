@@ -138,6 +138,28 @@ const candidateReviewFocusOptions: Array<{ value: CandidateReviewFocus; label: s
   { value: 'sla_breached', label: 'SLA Breaches (≥7d idle)' },
   { value: 'sla_warning', label: 'SLA Warnings (4-6d idle)' },
 ];
+
+type CandidatePipelineStage = 'all' | 'applied' | 'screening' | 'interviewing' | 'offered' | 'rejected';
+const candidatePipelineStageOptions: Array<{ value: CandidatePipelineStage; label: string }> = [
+  { value: 'all', label: 'All stages' },
+  { value: 'applied', label: 'Applied' },
+  { value: 'screening', label: 'Screening' },
+  { value: 'interviewing', label: 'Interview' },
+  { value: 'offered', label: 'Offer' },
+  { value: 'rejected', label: 'Rejected' },
+];
+const matchesPipelineStage = (status: string | undefined, stage: CandidatePipelineStage): boolean => {
+  if (stage === 'all') return true;
+  const normalized = status?.toUpperCase() || 'PENDING';
+  switch (stage) {
+    case 'applied': return normalized === 'PENDING';
+    case 'screening': return normalized === 'REVIEWED';
+    case 'interviewing': return normalized === 'INTERVIEW';
+    case 'offered': return normalized === 'OFFER';
+    case 'rejected': return normalized === 'REJECTED';
+    default: return true;
+  }
+};
 const candidatePanelClassName = 'surface-panel p-3';
 const candidateMetricCardClassName = 'surface-panel flex min-h-32 flex-col justify-between px-4 py-3';
 const candidateRecordCardClassName = 'group flex min-h-32 flex-col gap-4 p-5 transition-colors hover:border-[var(--border-strong)] md:flex-row md:items-center md:justify-between';
@@ -273,6 +295,7 @@ const CandidatesPage: React.FC = () => {
   const [candidatePageSize, setCandidatePageSize] = useState(defaultCandidatePageSize);
   const [candidateSortMode, setCandidateSortMode] = useState<CandidateSortMode>('recent');
   const [candidateReviewFocus, setCandidateReviewFocus] = useState<CandidateReviewFocus>('all');
+  const [candidatePipelineStage, setCandidatePipelineStage] = useState<CandidatePipelineStage>('all');
   const [candidateTotal, setCandidateTotal] = useState<number | null>(null);
   const [candidateHasNext, setCandidateHasNext] = useState(false);
   const [candidatePageCursors, setCandidatePageCursors] = useState<Record<number, string>>({});
@@ -381,7 +404,7 @@ const CandidatesPage: React.FC = () => {
     setSelectedCandidateIds([]);
     setBulkStatusError(null);
     setBulkStatusTarget(null);
-  }, [candidatePage, candidatePageSize, candidateReviewFocus, normalizedSearchTerm]);
+  }, [candidatePage, candidatePageSize, candidateReviewFocus, candidatePipelineStage, normalizedSearchTerm]);
 
   useEffect(() => {
     setCandidateNotes(readLocalCandidateNotes());
@@ -763,13 +786,14 @@ const CandidatesPage: React.FC = () => {
   // ⚡ Bolt: Memoize filtered candidates and hoist lowercasing to prevent O(N) recalculations on every render
   const filtered = useMemo(() => {
     const lowerSearch = normalizedSearchTerm.toLowerCase();
-    const visibleCandidates = normalizedSearchTerm
+    const visibleCandidates = (normalizedSearchTerm
       ? candidates.filter(c => (
           c.user?.fullName?.toLowerCase().includes(lowerSearch) ||
           c.user?.email?.toLowerCase().includes(lowerSearch) ||
           c.job?.title?.toLowerCase().includes(lowerSearch)
         ))
-      : candidates;
+      : candidates
+    ).filter(c => matchesPipelineStage(c.status, candidatePipelineStage));
 
     const focusedCandidates = filterCandidatesByReviewFocus(
       visibleCandidates.map(candidate => ({
@@ -789,7 +813,7 @@ const CandidatesPage: React.FC = () => {
       if (signalDelta !== 0) return signalDelta;
       return new Date(b.appliedAt || 0).getTime() - new Date(a.appliedAt || 0).getTime();
     });
-  }, [candidateAdvisorySignals, candidateReviewFocus, candidateScorecards, candidateSlaMap, candidateSortMode, candidates, normalizedSearchTerm]);
+  }, [candidateAdvisorySignals, candidatePipelineStage, candidateReviewFocus, candidateScorecards, candidateSlaMap, candidateSortMode, candidates, normalizedSearchTerm]);
 
   const selectedCandidateSet = useMemo(() => new Set(selectedCandidateIds), [selectedCandidateIds]);
   const selectedCandidates = useMemo(
@@ -1322,6 +1346,20 @@ const CandidatesPage: React.FC = () => {
               >
                 {candidatePageSizeOptions.map(pageSize => (
                   <option key={pageSize} value={pageSize}>{pageSize}</option>
+                ))}
+              </select>
+              <select
+                id="candidate-pipeline-stage"
+                aria-label="Pipeline stage"
+                className="h-8 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                value={candidatePipelineStage}
+                onChange={(event) => {
+                  setCandidatePipelineStage(event.target.value as CandidatePipelineStage);
+                  setCandidatePage(1);
+                }}
+              >
+                {candidatePipelineStageOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <div className="flex items-center gap-1">

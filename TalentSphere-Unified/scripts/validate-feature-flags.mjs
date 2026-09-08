@@ -11,6 +11,8 @@ const files = {
   bomYaml: 'services/bom/application-feature-flags.yml',
   serviceTest: 'services/shared/src/test/java/com/talentsphere/shared/config/FeatureFlagServiceTest.java',
   controllerTest: 'services/api-gateway/src/test/java/com/talentsphere/gateway/controller/FeatureFlagControllerTest.java',
+  governanceSchema: 'supabase-schema.sql',
+  seedData: 'seed-data.sql',
 };
 
 const fail = (message) => {
@@ -37,6 +39,111 @@ const assertUnique = (label, values) => {
 };
 
 const featureNamePattern = /^enable_[a-z][a-z0-9_]*$/;
+
+// Governance contract keys persisted in the system_settings table.
+const GOVERNANCE_FLAGS_KEY = 'feature_flags';
+const GOVERNANCE_DESCRIPTIONS_KEY = 'feature_flag_descriptions';
+
+// Parse a single `('key', '<json>', '<description>')` row literal from a SQL seed file.
+const parseSystemSettingRow = (content, key) => {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matcher = new RegExp(`\\('${escapedKey}',\\s*'((?:[^']|'')*)'\\s*,\\s*'((?:[^']|'')*)'\\)`, 'g');
+  const rows = [];
+  let match;
+  while ((match = matcher.exec(content)) !== null) {
+    rows.push({
+      key,
+      value: match[1].replace(/''/g, "'"),
+      description: match[2].replace(/''/g, "'"),
+    });
+  }
+  return rows;
+};
+
+const parseJson = (text, label) => {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    fail(`${label} is not valid JSON: ${error.message}`);
+    return null;
+  }
+};
+
+const assertExactKeySet = (label, actualKeys, expectedKeys) => {
+  const expected = [...expectedKeys].sort();
+  const actual = [...actualKeys].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    const missing = expected.filter((name) => !actual.includes(name));
+    const extra = actual.filter((name) => !expected.includes(name));
+    const details = [
+      missing.length ? `missing: ${missing.join(', ')}` : '',
+      extra.length ? `extra: ${extra.join(', ')}` : '',
+    ].filter(Boolean).join('; ');
+    fail(`${label} does not mirror the canonical Feature.java flag set (${details})`);
+    return false;
+  }
+  return true;
+};
+
+// Verify a SQL seed file carries canonical feature-flag governance rows mirroring Feature.java.
+const verifyGovernanceInSeed = (relativePath, featuresByName) => {
+  const content = read(relativePath);
+  const canonicalNames = new Set(featuresByName.keys());
+
+  const flagsRows = parseSystemSettingRow(content, GOVERNANCE_FLAGS_KEY);
+  if (flagsRows.length !== 1) {
+    fail(`${relativePath} must seed exactly one system_settings '${GOVERNANCE_FLAGS_KEY}' row, found ${flagsRows.length}`);
+    return;
+  }
+  const flagsJson = parseJson(flagsRows[0].value, `${relativePath} ${GOVERNANCE_FLAGS_KEY}`);
+  if (flagsJson === null) return;
+
+  if (!Number.isInteger(flagsJson.version) || (flagsJson.version || 0) < 1) {
+    fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY} must declare a positive integer version`);
+  }
+
+  if (typeof flagsJson.defaults !== 'object' || flagsJson.defaults === null || Array.isArray(flagsJson.defaults)) {
+    fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY} must declare a 'defaults' object`);
+    return;
+  }
+  if (!assertExactKeySet(`${relativePath} ${GOVERNANCE_FLAGS_KEY}.defaults`, Object.keys(flagsJson.defaults), canonicalNames)) {
+    return;
+  }
+  for (const [name, feature] of featuresByName) {
+    if (flagsJson.defaults[name] !== feature.enabled) {
+      fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY}.defaults.${name} must match Feature.java default (${feature.enabled})`);
+    }
+  }
+
+  if (typeof flagsJson.overrides !== 'object' || flagsJson.overrides === null || Array.isArray(flagsJson.overrides)) {
+    fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY} must declare an 'overrides' object`);
+    return;
+  }
+  for (const overrideName of Object.keys(flagsJson.overrides)) {
+    if (!canonicalNames.has(overrideName)) {
+      fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY}.overrides declares non-canonical flag ${overrideName}`);
+    }
+  }
+  if (Object.keys(flagsJson.overrides).length !== 0) {
+    fail(`${relativePath} ${GOVERNANCE_FLAGS_KEY}.overrides must be empty in the canonical baseline seed`);
+  }
+
+  const descriptionRows = parseSystemSettingRow(content, GOVERNANCE_DESCRIPTIONS_KEY);
+  if (descriptionRows.length !== 1) {
+    fail(`${relativePath} must seed exactly one system_settings '${GOVERNANCE_DESCRIPTIONS_KEY}' row, found ${descriptionRows.length}`);
+    return;
+  }
+  const descriptionsJson = parseJson(descriptionRows[0].value, `${relativePath} ${GOVERNANCE_DESCRIPTIONS_KEY}`);
+  if (descriptionsJson === null) return;
+  if (!assertExactKeySet(`${relativePath} ${GOVERNANCE_DESCRIPTIONS_KEY}`, Object.keys(descriptionsJson), canonicalNames)) {
+    return;
+  }
+  for (const [name, feature] of featuresByName) {
+    if (descriptionsJson[name] !== feature.description) {
+      fail(`${relativePath} ${GOVERNANCE_DESCRIPTIONS_KEY}.${name} must match Feature.java description ('${feature.description}')`);
+    }
+  }
+};
 
 const parseFeatureEnum = (content) => {
   const enumBlock = content.slice(
@@ -154,6 +261,11 @@ const bomFlags = parseYamlFlags(read(files.bomYaml), files.bomYaml);
 compareYamlToEnum(files.runtimeYaml, runtimeFlags, features);
 compareYamlToEnum(files.bomYaml, bomFlags, features);
 
+// Governance: system_settings feature-flag store must mirror Feature.java in every seed source.
+const featuresByName = new Map(features.map((feature) => [feature.name, feature]));
+verifyGovernanceInSeed(files.governanceSchema, featuresByName);
+verifyGovernanceInSeed(files.seedData, featuresByName);
+
 const serviceTest = read(files.serviceTest);
 const controllerTest = read(files.controllerTest);
 
@@ -171,4 +283,4 @@ if (process.exitCode) {
   process.exit();
 }
 
-console.log(`feature-flag validation passed (${features.length} stable flags, runtime and BOM defaults aligned)`);
+console.log(`feature-flag validation passed (${features.length} stable flags, runtime and BOM defaults aligned, system_settings governance canonical in ${files.governanceSchema} and ${files.seedData})`);

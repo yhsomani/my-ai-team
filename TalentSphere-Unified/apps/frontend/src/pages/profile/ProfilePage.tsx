@@ -6,6 +6,7 @@ import { Button } from '../../components/shared/AuraButton';
 import { Input } from '../../components/shared/AuraInput';
 import { AuraModal } from '../../components/shared/AuraModal';
 import { Badge } from '../../components/shared/Badge';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { Tabs } from '../../components/shared/Tabs';
 import { Skeleton } from '../../components/shared/Skeleton';
 import { useAppSelector } from '../../store/hooks';
@@ -21,6 +22,7 @@ import {
   type ProfileAiDraftSuggestion,
 } from '../../lib/profileAiDrafts';
 import { recordAiWorkflowPrefillDecision } from '../../lib/aiWorkflowPrefillAudit';
+import { getAIProvenanceSourceStatus, normalizeAIProvenance } from '../../lib/aiProvenance';
 import {
   recordProfileWorkflowAnalytics,
   type ProfileWorkflowAnalyticsAction,
@@ -1343,9 +1345,19 @@ const ProfilePage: React.FC = () => {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)]">AI profile draft</p>
-                  <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-                    Source: {pendingAiProfileDraft.sourceLabel || 'TalentSphere AI assistant'}. These fields are editable and remain unsaved until you approve them.
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <SourceStatusBadge
+                      status={getAIProvenanceSourceStatus(normalizeAIProvenance({
+                        sourceLabel: pendingAiProfileDraft.sourceLabel,
+                        sourceDetail: pendingAiProfileDraft.sourceDetail,
+                      }).provenanceMode)}
+                      label={pendingAiProfileDraft.sourceLabel || 'TalentSphere AI assistant'}
+                      description={pendingAiProfileDraft.sourceDetail}
+                    />
+                    <span className="text-xs leading-relaxed text-[var(--text-secondary)]">
+                      These fields are editable and remain unsaved until you approve them.
+                    </span>
+                  </div>
                 </div>
                 <Badge variant="warning" className="w-fit shrink-0">Review before save</Badge>
               </div>

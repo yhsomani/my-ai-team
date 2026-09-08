@@ -1,3 +1,7 @@
+# LEGACY SCOPE: This runner targets the LEGACY per-service databases
+# (user_db, job_db, application_db) directly via psycopg2. It does NOT reflect
+# the unified Supabase/Postgres schema in infra/db/migrations/0001_initial_baseline.sql.
+# For unified-schema environments, use seed-data.sql (see SEED_DATA_GUIDE.md).
 import psycopg2
 from faker import Faker
 import uuid

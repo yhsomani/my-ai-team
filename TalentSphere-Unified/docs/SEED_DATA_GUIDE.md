@@ -25,11 +25,17 @@ The seed script creates comprehensive data for:
 
 ### Data Coverage
 
+> Unified schema note: `seed-data.sql` targets the canonical Supabase schema
+> (`infra/db/migrations/0001_initial_baseline.sql` == `supabase-schema.sql`).
+> The legacy feed tables (`feed_posts`, `post_likes`, `post_comments`) are not
+> part of the unified schema and are not seeded. `scripts/seed_data.py` is a
+> legacy per-service-database runner (see "Local Python Seed Runner" below).
+
 #### 1. **Profile Data**
 - ✅ Skills (varying proficiency levels)
 - ✅ Work Experience (current & past)
 - ✅ Education (completed & in-progress)
-- ✅ Projects & Portfolio items
+- ✅ Projects (with tech stack arrays)
 - ✅ Certifications (with expiry dates)
 - ✅ Languages
 
@@ -41,9 +47,8 @@ The seed script creates comprehensive data for:
 
 #### 3. **Networking**
 - ✅ Connections (accepted, pending)
-- ✅ Feed Posts (public, connections-only)
-- ✅ Likes & Comments
 - ✅ Real-time messaging conversations
+- ✅ Content reports (Trust & Safety moderation workflow)
 
 #### 4. **Learning (LMS)**
 - ✅ 3 Courses (published)
@@ -104,7 +109,7 @@ The seed script creates comprehensive data for:
      ```
      NOTICE: ========================================
      NOTICE: SEEDING COMPLETE
-     NOTICE: Users: 5, Jobs: 6, Posts: 4
+     NOTICE: Users: 5, Jobs: 6, Courses: 3, Challenges: 2, XP transactions: 4
      NOTICE: ========================================
      ```
 
@@ -123,7 +128,11 @@ psql "$NON_PRODUCTION_DATABASE_URL" \
 
 ### Option 3: Local Python Seed Runner
 
-The legacy Python seed runner targets local service databases and is also destructive. It refuses to run until environment scope and confirmation are present:
+The legacy Python seed runner (`scripts/seed_data.py`) targets the legacy
+per-service databases (`user_db`, `job_db`, `application_db`), not the unified
+Supabase schema. It is destructive and refuses to run until environment scope
+and confirmation are present. Prefer `seed-data.sql` for unified-schema
+environments.
 
 ```bash
 TALENTSPHERE_SEED_ENV=development \
@@ -187,7 +196,6 @@ The validator fails when destructive truncation is not guarded, when Python seed
 ### Empty States
 - New users with no profile data (create a 6th user manually to test)
 - Jobs with zero applications
-- Feed with no posts (temporarily truncate `feed_posts`)
 
 ### Boundary Values
 - Salary ranges: $20/hr (intern) to $200k/year (senior)
@@ -212,7 +220,7 @@ The validator fails when destructive truncation is not guarded, when Python seed
 ### Performance Testing
 - Large dataset simulation: Run script 10x to create 50 users, 60 jobs, etc.
 - Test pagination on jobs list
-- Test feed scrolling with many posts
+- Test leaderboard/LMS/challenges with many records
 
 ---
 
@@ -227,31 +235,29 @@ SELECT
   (SELECT count(*) FROM jobs) as jobs,
   (SELECT count(*) FROM companies) as companies,
   (SELECT count(*) FROM connections) as connections,
-  (SELECT count(*) FROM feed_posts) as posts,
   (SELECT count(*) FROM courses) as courses,
+  (SELECT count(*) FROM lessons) as lessons,
   (SELECT count(*) FROM challenges) as challenges;
 
--- Check user profiles completeness
+-- Check user profiles completeness (profile rows live in user_profiles)
 SELECT 
+  up.user_id,
   p.full_name,
   p.role,
-  count(DISTINCT s.id) as skills,
-  count(DISTINCT e.id) as experiences,
-  count(DISTINCT ed.id) as educations
-FROM profiles p
-LEFT JOIN skills s ON p.id = s.user_id
-LEFT JOIN experiences e ON p.id = e.user_id
-LEFT JOIN educations ed ON p.id = ed.user_id
-GROUP BY p.id, p.full_name, p.role;
+  (SELECT count(*) FROM skills s WHERE s.profile_id = up.id) as skills,
+  (SELECT count(*) FROM experiences ex WHERE ex.profile_id = up.id) as experiences,
+  (SELECT count(*) FROM educations ed WHERE ed.profile_id = up.id) as educations
+FROM user_profiles up
+JOIN profiles p ON p.id = up.user_id;
 
 -- Check job application funnel
 SELECT 
   j.title,
   j.status,
   count(a.id) as applications,
-  count(CASE WHEN a.status = 'pending' THEN 1 END) as pending,
-  count(CASE WHEN a.status = 'interview' THEN 1 END) as interview,
-  count(CASE WHEN a.status = 'rejected' THEN 1 END) as rejected
+  count(CASE WHEN a.status = 'PENDING' THEN 1 END) as pending,
+  count(CASE WHEN a.status = 'INTERVIEW' THEN 1 END) as interview,
+  count(CASE WHEN a.status = 'REJECTED' THEN 1 END) as rejected
 FROM jobs j
 LEFT JOIN job_applications a ON j.id = a.job_id
 GROUP BY j.id, j.title, j.status;
@@ -275,18 +281,24 @@ To remove all seeded data:
 ```sql
 -- Quick cleanup (same as script header)
 TRUNCATE TABLE 
-  xp_transactions, user_badges, badges, leaderboard,
-  lesson_progress, enrollments, lessons, courses,
-  challenge_submissions, challenges,
-  post_comments, post_likes, feed_posts,
-  messages, conversation_participants, conversations,
-  connections,
-  job_applications, jobs, companies,
-  certifications, languages, projects, portfolio_items, educations, experiences, skills,
-  user_profiles, profiles,
+  audit_log, system_settings,
   payments, subscriptions, subscription_plans,
-  notifications, notification_settings,
-  audit_log, system_settings
+  notification_digest_items, notifications, notification_settings,
+  content_reports,
+  xp_transactions, user_badges, badges, leaderboard,
+  challenge_submissions, challenges,
+  lesson_progress, enrollments, lessons, courses,
+  messages, conversation_participants, conversations,
+  networking_suggestion_preferences, connections,
+  product_analytics_events,
+  automation_suggestion_audit_events, automation_suggestions, ai_sessions,
+  hidden_explore_jobs, saved_job_searches,
+  candidate_scorecards, candidate_notes,
+  resume_artifacts, resume_export_events,
+  application_draft_versions, application_drafts, application_status_events,
+  job_applications, job_post_templates, job_post_draft_versions, jobs, companies,
+  projects, languages, certifications, educations, experiences, skills,
+  user_profiles, profiles
 CASCADE;
 ```
 
@@ -306,15 +318,16 @@ After successful seeding:
 |--------|-------|-------|
 | Users | 5 | All roles covered |
 | Companies | 3 | Tech, Fintech, Energy |
-| Jobs | 6 | 5 active, 1 closed/expired |
+| Jobs | 6 | 5 published, 1 closed/expired |
 | Applications | 3 | Mixed statuses |
 | Connections | 3 | 2 accepted, 1 pending |
-| Feed Posts | 4 | Public & connections-only |
-| Messages | 3+ | Across 2 conversations |
+| Messages | 4 | Across 2 conversations |
+| Content Reports | 2 | Moderation workflow (pending + under_review) |
 | Courses | 3 | Different levels |
 | Lessons | 9 | 3 per course |
 | Challenges | 2 | Easy & Medium |
 | Badges | 6 | Various criteria |
+| XP Transactions | 4 | Reference-type aware (app-compatible keys) |
 | Subscriptions | 1 | Pro plan active |
 
 ---
@@ -329,6 +342,6 @@ After successful seeding:
 
 ---
 
-**Version**: 7.0.0  
-**Last Updated**: May 2025  
-**Compatibility**: Supabase PostgreSQL
+**Version**: 8.0.0  
+**Last Updated**: 2026  
+**Compatibility**: Supabase PostgreSQL (unified schema per `infra/db/migrations/0001_initial_baseline.sql`)

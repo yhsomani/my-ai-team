@@ -13,6 +13,7 @@ import { AuraModal } from '../../components/shared/AuraModal';
 import { challengeService } from '../../services/challengeService';
 import { gamificationService } from '../../services/gamificationService';
 import { getChallengeXpReward } from '../../lib/xpLedger';
+import { evaluateSampleCases, type SampleCaseOutcome } from '../../lib/challengeEvaluation';
 import { Challenge, ChallengeSubmission, ChallengeTestCase } from '../../types/challenges';
 import {
   recordChallengeWorkflowAnalytics,
@@ -582,28 +583,56 @@ const ChallengesPage: React.FC = () => {
         language,
         solution.trim()
       );
-      setLastSubmission(submission);
+
+      let finalSubmission: ChallengeSubmission = submission;
+      let evaluationFeedback: string | undefined;
+
+      if (LOCAL_CHECK_SUPPORTED_LANGUAGES.has(language)) {
+        const runnableCases = getRunnableSampleCases(selectedChallenge).slice(0, 4);
+        if (runnableCases.length > 0) {
+          try {
+            const outcomes: SampleCaseOutcome[] = await Promise.all(runnableCases.map(async (testCase) => {
+              const result = await runLocalSampleCase(solution.trim(), getTestCaseInput(testCase));
+              if (result.error) return { passed: false, errored: true };
+              return { passed: normalizeSampleOutput(result.actual) === normalizeSampleOutput(getTestCaseExpectedOutput(testCase)), errored: false };
+            }));
+            const evaluation = evaluateSampleCases(runnableCases.length, outcomes);
+            finalSubmission = await challengeService.updateSubmissionResult(submission.id, {
+              passedTests: evaluation.passedTests,
+              score: evaluation.score,
+              feedback: evaluation.feedback,
+            });
+            evaluationFeedback = evaluation.feedback;
+          } catch (evaluationError) {
+            console.warn('Failed to persist submission evaluation:', evaluationError);
+            evaluationFeedback = 'Submission saved, but evaluation could not be persisted.';
+          }
+        }
+      }
+
+      setLastSubmission(finalSubmission);
       setSubmissionHistory(prev => [
-        submission,
-        ...prev.filter((item) => item.id !== submission.id),
+        finalSubmission,
+        ...prev.filter((item) => item.id !== finalSubmission.id),
       ]);
       setSubmissionHistoryError(null);
       recordChallengeAction('challenge_submission_completed', {
         ...getChallengeAnalyticsContext(selectedChallenge),
         language,
-        submissionStatus: submission.status,
-        submissionScoreBand: getSubmissionScoreBand(submission.score),
+        submissionStatus: finalSubmission.status,
+        submissionScoreBand: getSubmissionScoreBand(finalSubmission.score),
         attemptCount: submissionHistory.length + 1,
         hasPriorSubmission: submissionHistory.length > 0,
         solutionLength: solution.length,
       });
+
       addToast({
-        type: 'success',
-        title: 'Solution submitted',
-        message: 'Your challenge attempt has been saved.',
+        type: finalSubmission.status === 'PASSED' ? 'success' : 'info',
+        title: finalSubmission.status === 'PASSED' ? 'Solution passed' : 'Solution submitted',
+        message: evaluationFeedback || 'Your challenge attempt has been saved.',
       });
 
-      if (submission.status === 'ACCEPTED' || submission.status === 'COMPLETED' || (typeof submission.score === 'number' && submission.score > 0)) {
+      if (finalSubmission.status === 'PASSED' || finalSubmission.status === 'ACCEPTED' || finalSubmission.status === 'COMPLETED' || (typeof finalSubmission.score === 'number' && finalSubmission.score > 0)) {
         const xpReward = getChallengeXpReward(
           selectedChallenge.difficulty,
           (selectedChallenge as any).xp_reward || (selectedChallenge as any).xpReward

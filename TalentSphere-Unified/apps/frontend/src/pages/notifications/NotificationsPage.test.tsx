@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationsPage } from './NotificationsPage';
+import { recordNotificationsWorkflowAnalytics } from '../../lib/notificationsWorkflowAnalytics';
 
 const mockNavigate = vi.fn();
 const getNotificationsPageMock = vi.hoisted(() => vi.fn());
@@ -154,6 +155,62 @@ describe('NotificationsPage', () => {
       expect(markNotificationReadMock).toHaveBeenCalledWith('user-001', 'notification-001');
     });
     expect(mockNavigate).toHaveBeenCalledWith('/jobs');
+  });
+
+  it('records digest click-through telemetry with K-13 tracking metadata when a digest notification is opened', async () => {
+    getNotificationsPageMock.mockResolvedValue({
+      notifications: [
+        buildNotification({
+          id: 'notif-digest-1',
+          type: 'JOB_ALERT',
+          title: 'Daily Digest: 3 New Matches',
+          message: '3 new matches found for your saved searches.',
+          actionUrl: '/jobs?savedSearchId=search-1',
+          metadata: {
+            kind: 'saved_search_digest',
+            digestFrequency: 'daily',
+            digestItemIds: ['item-1', 'item-2', 'item-3'],
+            itemCount: 3,
+            totalNewMatches: 5,
+          },
+        }),
+      ],
+      total: 1,
+      limit: 15,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+      metadata: { source: 'account', degraded: false, message: 'Account notifications are synced.' },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Daily Digest: 3 New Matches')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Daily Digest: 3 New Matches. Unread. Opens related workspace.',
+    }));
+
+    await waitFor(() => {
+      expect(markNotificationReadMock).toHaveBeenCalledWith('user-001', 'notif-digest-1');
+    });
+
+    expect(recordNotificationsWorkflowAnalytics).toHaveBeenCalledWith({
+      userId: 'user-001',
+      action: 'notification_opened',
+      notificationId: 'notif-digest-1',
+      notificationType: 'JOB_ALERT',
+      notificationKind: 'saved_search_digest',
+      digestFrequency: 'daily',
+      digestItemIds: ['item-1', 'item-2', 'item-3'],
+      digestItemCount: 3,
+      digestTotalNewMatches: 5,
+      actionUrl: '/jobs?savedSearchId=search-1',
+      isDigestClick: true,
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/jobs?savedSearchId=search-1');
   });
 
   it('marks a single notification as read without navigating away', async () => {

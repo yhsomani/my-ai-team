@@ -7,6 +7,10 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { Users, Server, ShieldCheck, Activity, AlertTriangle, RefreshCw, Database, FileText, ExternalLink, BarChart3, TrendingUp, Clock } from 'lucide-react';
 import { Button } from '../../components/shared/AuraButton';
 import { TrustAndSafetyModerationQueue } from '../../components/trust/TrustAndSafetyModerationQueue';
+import { AdminUsersPanel } from '../../components/admin/AdminUsersPanel';
+import { SystemSettingsPanel } from '../../components/admin/SystemSettingsPanel';
+import { DataCompliancePanel } from '../../components/admin/DataCompliancePanel';
+import { FeatureFlagsPanel } from '../../components/admin/FeatureFlagsPanel';
 import { adminService, type AdminDashboardData, type AdminProductAnalyticsInsightsResult, type AdminScheduledAutomationStatusResult, type AuditLogEntry, type ScheduledAutomationRolloutStatus, type ScheduledAutomationRunStatus, type ServiceHealth, type ServiceObservabilityLink } from '../../services/adminService';
 import { useAppSelector } from '../../store/hooks';
 import { recordDashboardOperationalAnalytics } from '../../lib/dashboardOperationalAnalytics';
@@ -59,6 +63,13 @@ const AdminDashboard: React.FC = () => {
       ...extra,
     });
   }, [user?.id]);
+
+  const handlePanelAction = useCallback((action: string, extra?: Record<string, unknown>) => {
+    recordAdminAction(
+      action as Parameters<typeof recordDashboardOperationalAnalytics>[0]['action'],
+      (extra || {}) as Omit<Parameters<typeof recordDashboardOperationalAnalytics>[0], 'action' | 'userId' | 'role'>
+    );
+  }, [recordAdminAction]);
 
   const loadStats = useCallback(async () => {
     setError(null);
@@ -867,6 +878,14 @@ const AdminDashboard: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      <AdminUsersPanel onRecordAdminAction={handlePanelAction} />
+
+      <SystemSettingsPanel onRecordAdminAction={handlePanelAction} />
+
+      <FeatureFlagsPanel onRecordAdminAction={handlePanelAction} />
+
+      <DataCompliancePanel onRecordAdminAction={handlePanelAction} />
 
       <TrustAndSafetyModerationQueue />
 

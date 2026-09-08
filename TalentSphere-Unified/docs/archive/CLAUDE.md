@@ -1,6 +1,6 @@
 # TalentSphere — Shared Agent Context (CLAUDE.md)
 
-> Documentation status: Historical/stale agent context. Environment and Maven-wrapper assumptions are not current; use `../PLAN.md` and `docs/ARCHITECTURE_STATUS_INDEX.md`.
+> Documentation status: Historical/stale agent context. Environment assumptions (no Maven wrapper `./mvnw` or Docker CLI in current local environment), historical 19-service layout, and fixed-port registry are non-authoritative. Canonical architecture specifications reside in `docs/PRD.md`, `docs/BRD.md`, `docs/GAP_ANALYSIS_AND_IMPLEMENTATION_PLAN.md`, `../PLAN.md`, and `docs/ARCHITECTURE_STATUS_INDEX.md`. (Preserved as Architect-owned historical artifact).
 
 # This file is automatically loaded by EVERY agent in the team.
 # Do NOT modify it during a work session unless the Architect agent explicitly instructs it.

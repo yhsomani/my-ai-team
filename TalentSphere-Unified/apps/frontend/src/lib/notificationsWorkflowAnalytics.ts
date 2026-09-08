@@ -9,11 +9,18 @@ export type NotificationsWorkflowAnalyticsAction =
   | 'notifications_mark_all_read_confirmed'
   | 'notifications_mark_all_read_failed';
 
-interface NotificationsWorkflowAnalyticsInput {
+export interface NotificationsWorkflowAnalyticsInput {
   userId?: string | null;
   action: NotificationsWorkflowAnalyticsAction;
   notificationId?: string;
   notificationType?: string;
+  notificationKind?: string;
+  digestFrequency?: string;
+  digestItemIds?: string[];
+  digestItemCount?: number;
+  digestTotalNewMatches?: number;
+  actionUrl?: string;
+  isDigestClick?: boolean;
   unreadCount?: number;
   loadedCount?: number;
   errorCategory?: string;
@@ -42,6 +49,13 @@ export const recordNotificationsWorkflowAnalytics = ({
   action,
   notificationId,
   notificationType,
+  notificationKind,
+  digestFrequency,
+  digestItemIds,
+  digestItemCount,
+  digestTotalNewMatches,
+  actionUrl,
+  isDigestClick,
   unreadCount,
   loadedCount,
   errorCategory,
@@ -58,6 +72,13 @@ export const recordNotificationsWorkflowAnalytics = ({
     metadata: {
       action,
       notificationType,
+      notificationKind,
+      digestFrequency,
+      digestItemIds,
+      digestItemCount,
+      digestTotalNewMatches,
+      actionUrl,
+      isDigestClick,
       unreadCount,
       loadedCount,
       errorCategory,

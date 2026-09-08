@@ -167,13 +167,7 @@ const localAnalyticsKey = 'talentsphere.productAnalytics.events';
 
 const compact = (value?: string | null) => (value || '').trim();
 
-const createAnalyticsEventId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `analytics-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-};
+const createAnalyticsEventId = () => crypto.randomUUID();
 
 const safeMetadata = (metadata?: unknown): Record<string, unknown> => (
   metadata && typeof metadata === 'object' && !Array.isArray(metadata)

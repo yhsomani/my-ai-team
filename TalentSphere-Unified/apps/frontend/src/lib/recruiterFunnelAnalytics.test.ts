@@ -39,7 +39,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
         id: 'app-1',
         jobId: 'job-1',
         userId: 'user-1',
-        candidateId: 'user-1',
         status,
         appliedAt,
         updatedAt,
@@ -92,12 +91,12 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
     it('considers latest activity across candidate, note, and scorecard', () => {
       const candidate = mockApp('APPLIED', 12, 12); // candidate itself is 12 days old
       const note: CandidateNote = {
-        id: 'n-1',
         applicationId: 'app-1',
         recruiterId: 'rec-1',
-        content: 'Followed up with candidate',
+        note: 'Followed up with candidate',
         createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        source: 'server',
       };
 
       const sla = evaluateCandidateSla({ candidate, note, now: baseDate });
@@ -140,7 +139,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-fe',
           job: { title: 'Senior Frontend Engineer' },
           userId: 'u1',
-          candidateId: 'u1',
           status: 'OFFER',
           appliedAt: new Date(baseDate.getTime() - 10 * 86400000).toISOString(),
         },
@@ -149,7 +147,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-fe',
           job: { title: 'Senior Frontend Engineer' },
           userId: 'u2',
-          candidateId: 'u2',
           status: 'INTERVIEW',
           appliedAt: new Date(baseDate.getTime() - 8 * 86400000).toISOString(), // breached (8d)
         },
@@ -158,7 +155,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-fe',
           job: { title: 'Senior Frontend Engineer' },
           userId: 'u3',
-          candidateId: 'u3',
           status: 'REVIEWED',
           appliedAt: new Date(baseDate.getTime() - 5 * 86400000).toISOString(), // warning (5d)
         },
@@ -167,7 +163,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-fe',
           job: { title: 'Senior Frontend Engineer' },
           userId: 'u4',
-          candidateId: 'u4',
           status: 'APPLIED',
           appliedAt: new Date(baseDate.getTime() - 1 * 86400000).toISOString(), // healthy (1d)
         },
@@ -178,7 +173,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-be',
           job: { title: 'Backend Architect' },
           userId: 'u5',
-          candidateId: 'u5',
           status: 'INTERVIEW',
           appliedAt: new Date(baseDate.getTime() - 9 * 86400000).toISOString(), // breached (9d)
         },
@@ -187,7 +181,6 @@ describe('recruiterFunnelAnalytics (R-05)', () => {
           jobId: 'job-be',
           job: { title: 'Backend Architect' },
           userId: 'u6',
-          candidateId: 'u6',
           status: 'APPLIED',
           appliedAt: new Date(baseDate.getTime() - 2 * 86400000).toISOString(), // healthy (2d)
         },

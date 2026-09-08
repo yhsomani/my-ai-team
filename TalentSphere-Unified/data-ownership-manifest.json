@@ -62,6 +62,10 @@
     "admin": {
       "owner": "admin-ops-domain",
       "note": "Admin settings and audit logs require backend-owned authorization and redaction."
+    },
+    "moderation": {
+      "owner": "moderation-domain",
+      "note": "Report submission is user-facing; triage is admin-facing. Shared queue requires the content_reports table (now canonical) with admin-only moderation."
     }
   },
   "tables": [
@@ -71,7 +75,9 @@
       "targetOwner": "gamification-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -82,7 +88,9 @@
       "targetOwner": "ai-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -94,7 +102,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/aiService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -106,7 +116,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/applicationService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -118,7 +130,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/applicationService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -130,7 +144,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/applicationService.ts, apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -142,7 +158,9 @@
       "targetAccess": "backend-owned",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/adminService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -154,7 +172,9 @@
       "targetAccess": "append-only-ingestion",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/lib/automationSuggestionAudit.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -166,7 +186,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/aiService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -177,7 +199,9 @@
       "targetOwner": "gamification-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -189,7 +213,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -201,7 +227,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -212,7 +240,9 @@
       "targetOwner": "profile-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -224,7 +254,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/challengeService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -235,7 +267,9 @@
       "targetOwner": "challenge-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -247,7 +281,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/challengeService.ts, apps/frontend/src/services/dashboardService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -258,7 +295,9 @@
       "targetOwner": "messaging-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -270,7 +309,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/companyService.ts, apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -282,7 +324,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/networkingService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -294,10 +339,26 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/messagingService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
-      "rlsStatus": "not-verified",
+      "rlsStatus": "verified",
       "indexStatus": "not-verified"
+    },
+    {
+      "name": "content_reports",
+      "domain": "moderation",
+      "targetOwner": "moderation-domain",
+      "targetAccess": "admin-queue",
+      "directFrontendAccess": true,
+      "frontendUsage": "apps/frontend/src/services/trustAndSafetyService.ts",
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
+      "migrationStatus": "reviewed-sql",
+      "rlsStatus": "verified",
+      "indexStatus": "verified"
     },
     {
       "name": "conversations",
@@ -306,7 +367,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/messagingService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -318,7 +381,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/aiService.ts, apps/frontend/src/services/lmsService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -330,9 +396,12 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
-      "rlsStatus": "not-verified",
+      "rlsStatus": "verified",
       "indexStatus": "not-verified"
     },
     {
@@ -342,7 +411,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/lmsService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -354,9 +426,12 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
-      "rlsStatus": "not-verified",
+      "rlsStatus": "verified",
       "indexStatus": "not-verified"
     },
     {
@@ -366,7 +441,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/jobService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -378,7 +455,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/adminService.ts, apps/frontend/src/services/applicationService.ts, apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -390,7 +470,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/jobService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -402,7 +484,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/jobService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -414,7 +498,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/recruiterService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -425,7 +512,9 @@
       "targetOwner": "profile-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -437,7 +526,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/gamificationService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -449,7 +541,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/lmsService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -461,7 +555,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/lmsService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -473,7 +570,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/messagingService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -485,7 +585,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/networkingService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -497,7 +599,9 @@
       "targetAccess": "audited-service-role-job",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/notificationDigestService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -509,7 +613,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/settingsService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -521,7 +627,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/notificationService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -532,7 +641,9 @@
       "targetOwner": "auth-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -544,7 +655,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "source-validated-own-select",
       "indexStatus": "source-validated-user-status-provider"
@@ -556,7 +669,9 @@
       "targetAccess": "append-only-ingestion",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/lib/productAnalytics.ts, apps/frontend/src/services/adminService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -568,7 +683,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/pages/LandingPage.tsx, apps/frontend/src/services/adminService.ts, apps/frontend/src/services/aiService.ts, apps/frontend/src/services/gamificationService.ts, apps/frontend/src/services/messagingService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts, apps/frontend/src/services/recruiterService.ts, apps/frontend/src/services/settingsService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -579,7 +697,9 @@
       "targetOwner": "profile-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -590,7 +710,9 @@
       "targetOwner": "auth-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -602,7 +724,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -614,7 +738,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -625,7 +751,9 @@
       "targetOwner": "auth-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -637,7 +765,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/jobService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -649,7 +779,10 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["infra/supabase_master.sql", "supabase-schema.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql",
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "multiple-reviewed-sql-sources",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -660,7 +793,9 @@
       "targetOwner": "challenge-service",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -672,7 +807,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/paymentService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "source-validated-active-public-select",
       "indexStatus": "source-validated-active-price"
@@ -684,7 +821,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/paymentService.ts, apps/frontend/src/services/settingsService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "source-validated-own-select",
       "indexStatus": "source-validated-user-status-provider"
@@ -696,7 +835,9 @@
       "targetAccess": "backend-owned",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/adminService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -707,7 +848,9 @@
       "targetOwner": "auth-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -719,7 +862,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/gamificationService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -731,7 +876,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/dashboardService.ts, apps/frontend/src/services/jobService.ts, apps/frontend/src/services/networkingService.ts, apps/frontend/src/services/profileService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -742,7 +889,9 @@
       "targetOwner": "auth-boundary-decision",
       "targetAccess": "backend-owned",
       "directFrontendAccess": false,
-      "schemaSources": ["infra/supabase_master.sql"],
+      "schemaSources": [
+        "infra/supabase_master.sql"
+      ],
       "migrationStatus": "legacy-master-only",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"
@@ -754,7 +903,9 @@
       "targetAccess": "repository-adapter",
       "directFrontendAccess": true,
       "frontendUsage": "apps/frontend/src/services/gamificationService.ts",
-      "schemaSources": ["supabase-schema.sql"],
+      "schemaSources": [
+        "supabase-schema.sql"
+      ],
       "migrationStatus": "reviewed-sql",
       "rlsStatus": "not-verified",
       "indexStatus": "not-verified"

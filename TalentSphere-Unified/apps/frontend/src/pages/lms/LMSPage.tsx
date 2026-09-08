@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import Card from '../../components/shared/GlassCard';
 import { Button } from '../../components/shared/AuraButton';
 import { Badge } from '../../components/shared/Badge';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { Tabs } from '../../components/shared/Tabs';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -22,6 +23,7 @@ import {
   type LearningAiDraftSource,
 } from '../../lib/learningAiDrafts';
 import { recordAiWorkflowPrefillDecision } from '../../lib/aiWorkflowPrefillAudit';
+import { getAIProvenanceSourceStatus, normalizeAIProvenance } from '../../lib/aiProvenance';
 import {
   recordLmsWorkflowAnalytics,
   type LmsWorkflowAnalyticsAction,
@@ -673,9 +675,19 @@ const LMSPage: React.FC = () => {
                 <h2 id="ai-learning-draft-title" className="text-sm font-semibold text-[var(--text-primary)]">
                   Suggested catalog searches
                 </h2>
-                <p className="mt-1 max-w-2xl text-xs text-[var(--text-secondary)]">
-                  Source: {pendingAiLearningDraft.sourceLabel || 'TalentSphere AI assistant'}. Applying a suggestion changes the course search only; enrollment stays separate.
-                </p>
+                <div className="mt-1 flex max-w-2xl flex-wrap items-center gap-2">
+                  <SourceStatusBadge
+                    status={getAIProvenanceSourceStatus(normalizeAIProvenance({
+                      sourceLabel: pendingAiLearningDraft.sourceLabel,
+                      sourceDetail: pendingAiLearningDraft.sourceDetail,
+                    }).provenanceMode)}
+                    label={pendingAiLearningDraft.sourceLabel || 'TalentSphere AI assistant'}
+                    description={pendingAiLearningDraft.sourceDetail}
+                  />
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    Applying a suggestion changes the course search only; enrollment stays separate.
+                  </span>
+                </div>
               </div>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={handleDismissAiLearningDraft}>

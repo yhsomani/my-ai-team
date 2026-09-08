@@ -6,15 +6,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer from '../../store/slices/authSlice';
 import {
   adminService,
+  triggerCsvDownload,
   type AdminDashboardData,
   type AdminProductAnalyticsInsightsResult,
   type AdminScheduledAutomationStatusResult,
+  type AuditLogExportResult,
   type PaginatedAuditLogsResult,
+  type RetentionPolicy,
+  type SystemSetting,
 } from '../../services/adminService';
 import {
   trustAndSafetyService,
   type PaginatedModerationReportsResult,
 } from '../../services/trustAndSafetyService';
+import { recordDashboardOperationalAnalytics } from '../../lib/dashboardOperationalAnalytics';
 import AdminDashboard from './AdminDashboard';
 
 vi.mock('../../services/adminService', () => ({
@@ -23,7 +28,15 @@ vi.mock('../../services/adminService', () => ({
     getAuditLogsPage: vi.fn(),
     getProductAnalyticsInsights: vi.fn(),
     getScheduledAutomationStatus: vi.fn(),
+    getAllUsers: vi.fn(),
+    updateUserRole: vi.fn(),
+    getSystemSettings: vi.fn(),
+    updateSystemSetting: vi.fn(),
+    getRetentionPolicy: vi.fn(),
+    saveRetentionPolicy: vi.fn(),
+    exportAuditLogCsv: vi.fn(),
   },
+  triggerCsvDownload: vi.fn(),
 }));
 
 vi.mock('../../services/trustAndSafetyService', () => ({
@@ -183,6 +196,67 @@ const schedulerStatus: AdminScheduledAutomationStatusResult = {
   },
 };
 
+const adminUsers = [
+  {
+    id: 'user-001',
+    email: 'person@example.com',
+    full_name: 'Person Example',
+    role: 'USER',
+    created_at: '2026-06-01T00:00:00.000Z',
+    user_profiles: null,
+  },
+] as any[];
+
+const systemSettings: SystemSetting[] = [
+  {
+    key: 'enable_registrations',
+    value: true,
+    description: 'Allow new account registration.',
+    updatedBy: null,
+    updatedAt: null,
+  },
+  {
+    key: 'feature_flags',
+    value: {
+      version: 1,
+      defaults: {
+        enable_auth: true,
+        enable_user_management: true,
+        enable_profile_management: true,
+        enable_job_recommendations: false,
+      },
+      overrides: {},
+    },
+    description: 'Feature-flag governance store',
+    updatedBy: 'admin-user',
+    updatedAt: '2026-09-06T00:00:00.000Z',
+  },
+  {
+    key: 'feature_flag_descriptions',
+    value: {
+      enable_auth: 'Authentication and authorization',
+      enable_user_management: 'User account management',
+      enable_profile_management: 'User profile CRUD operations',
+      enable_job_recommendations: 'AI-powered job recommendations',
+    },
+    description: 'Human-readable descriptions',
+    updatedBy: 'admin-user',
+    updatedAt: '2026-09-06T00:00:00.000Z',
+  },
+];
+
+const retentionPolicy: RetentionPolicy = {
+  auditLogRetentionTtlDays: 90,
+  policyNote: 'Audit logs retained for 90 days.',
+  updatedAt: '2026-09-06T00:00:00.000Z',
+};
+
+const csvExportResult: AuditLogExportResult = {
+  csv: 'id,created_at,action,entity_type,entity_id,actor_user_id,ip_address\naudit-1,2026-06-28T00:05:00.000Z,admin.settings.reviewed,system_settings,settings-001,admin-user,203.0.113.10',
+  rowCount: 1,
+  filename: 'talentsphere-audit-log-2026-09-06-12-00-00.csv',
+};
+
 const expectSvgIconsDecorative = (container: ParentNode) => {
   const icons = Array.from(container.querySelectorAll('svg'));
   expect(icons.length).toBeGreaterThan(0);
@@ -223,9 +297,14 @@ const renderAdminDashboard = () => {
 describe('AdminDashboard', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.mocked(recordDashboardOperationalAnalytics).mockClear();
     vi.mocked(adminService.getAuditLogsPage).mockResolvedValue(auditLogResult);
     vi.mocked(adminService.getProductAnalyticsInsights).mockResolvedValue(analyticsInsights);
     vi.mocked(adminService.getScheduledAutomationStatus).mockResolvedValue(schedulerStatus);
+    vi.mocked(adminService.getAllUsers).mockResolvedValue(adminUsers);
+    vi.mocked(adminService.getSystemSettings).mockResolvedValue(systemSettings);
+    vi.mocked(adminService.getRetentionPolicy).mockResolvedValue(retentionPolicy);
+    vi.mocked(adminService.exportAuditLogCsv).mockResolvedValue(csvExportResult);
     vi.mocked(trustAndSafetyService.getModerationReports).mockResolvedValue({
       reports: [
         {
@@ -346,6 +425,244 @@ describe('AdminDashboard', () => {
       expect(screen.getByText('Total Users')).toBeTruthy();
     });
     expect(screen.queryByRole('heading', { name: 'Admin console could not load' })).toBeNull();
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('exposes user management and system settings write-side panels with semantic rows', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'User Management' })).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'System Settings Management' })).toBeTruthy();
+    });
+
+    expect(screen.getByRole('table', { name: 'Admin users' })).toBeTruthy();
+    expect(screen.getByRole('row', { name: 'person@example.com: role USER.' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Role for person@example.com' })).toBeTruthy();
+    expect(screen.getByLabelText('Value for enable_registrations')).toBeTruthy();
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('records admin_user_role_updated analytics when an admin promotes a user', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+    vi.mocked(adminService.updateUserRole).mockResolvedValue({ ...adminUsers[0], role: 'RECRUITER' });
+
+    renderAdminDashboard();
+
+    const userRegion = await screen.findByRole('region', { name: 'User Management' });
+    const roleSelect = await within(userRegion).findByRole('combobox', { name: 'Role for person@example.com' });
+    fireEvent.change(roleSelect, { target: { value: 'RECRUITER' } });
+    fireEvent.click(within(userRegion).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(adminService.updateUserRole).toHaveBeenCalledWith('user-001', 'RECRUITER');
+    });
+    expect(recordDashboardOperationalAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin_user_role_updated',
+        userId: 'admin-user',
+        role: 'admin',
+        targetUserId: 'user-001',
+        roleFrom: 'USER',
+        roleTo: 'RECRUITER',
+      }),
+    );
+    expect(within(userRegion).getByRole('status').textContent).toMatch(/Updated person@example.com to RECRUITER/i);
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('records admin_system_setting_updated analytics when an admin saves a setting value', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+    vi.mocked(adminService.updateSystemSetting).mockResolvedValue({
+      ...systemSettings[0],
+      value: false,
+      updatedAt: '2026-09-06T00:00:00.000Z',
+    });
+
+    renderAdminDashboard();
+
+    const settingsRegion = await screen.findByRole('region', { name: 'System Settings Management' });
+    const valueTextarea = await within(settingsRegion).findByLabelText('Value for enable_registrations');
+    const settingRow = valueTextarea.closest('tr')!;
+    fireEvent.change(valueTextarea, { target: { value: 'false' } });
+    fireEvent.click(within(settingRow).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(adminService.updateSystemSetting).toHaveBeenCalledWith(
+        'enable_registrations',
+        false,
+        'Allow new account registration.',
+      );
+    });
+    expect(recordDashboardOperationalAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin_system_setting_updated',
+        userId: 'admin-user',
+        role: 'admin',
+        settingKey: 'enable_registrations',
+        settingAction: 'update',
+      }),
+    );
+    expect(within(settingsRegion).getByRole('status').textContent).toMatch(/Updated enable_registrations/i);
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('shows safe failure copy when user or settings panels cannot load, without exposing raw errors', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+    vi.mocked(adminService.getAllUsers).mockRejectedValue(new Error('postgres password=supersecret leaked'));
+    vi.mocked(adminService.getSystemSettings).mockRejectedValue(new Error('service_role_token=topsecret'));
+
+    renderAdminDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('User list could not be loaded.')).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('System settings could not be loaded.')).toBeTruthy();
+    });
+
+    expect(screen.queryByText(/supersecret/i)).toBeNull();
+    expect(screen.queryByText(/topsecret/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Retry Users' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Retry Settings' })).toBeTruthy();
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('exposes the data export and retention panel with retention policy fields and GDPR/CCPA context', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+
+    renderAdminDashboard();
+
+    const complianceRegion = await screen.findByRole('region', { name: 'Data Export & Retention' });
+    expect(complianceRegion).toBeTruthy();
+
+    expect(await within(complianceRegion).findByLabelText('Audit log retention TTL in days')).toBeTruthy();
+    expect(await within(complianceRegion).findByLabelText('Retention policy note')).toBeTruthy();
+    expect(within(complianceRegion).getAllByText(/audit logs retained for 90 days/i).length).toBeGreaterThan(0);
+    expect(within(complianceRegion).getByRole('button', { name: 'Save Policy' })).toBeTruthy();
+    expect(within(complianceRegion).getByRole('button', { name: 'Export Audit Log CSV' })).toBeTruthy();
+    expect(within(complianceRegion).getByRole('heading', { name: 'Data Subject Access (GDPR/CCPA)' })).toBeTruthy();
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('records admin_retention_policy_updated analytics when an admin saves the retention TTL', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+    vi.mocked(adminService.saveRetentionPolicy).mockResolvedValue({
+      ...retentionPolicy,
+      auditLogRetentionTtlDays: 180,
+      updatedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    renderAdminDashboard();
+
+    const complianceRegion = await screen.findByRole('region', { name: 'Data Export & Retention' });
+    const ttlInput = await within(complianceRegion).findByLabelText('Audit log retention TTL in days');
+    fireEvent.change(ttlInput, { target: { value: '180' } });
+    fireEvent.click(within(complianceRegion).getByRole('button', { name: 'Save Policy' }));
+
+    await waitFor(() => {
+      expect(adminService.saveRetentionPolicy).toHaveBeenCalledWith(180, 'Audit logs retained for 90 days.');
+    });
+    expect(recordDashboardOperationalAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin_retention_policy_updated',
+        userId: 'admin-user',
+        role: 'admin',
+        settingKey: 'data_retention',
+        settingAction: 'update',
+        retentionTtlDays: 180,
+      }),
+    );
+    expect(within(complianceRegion).getByRole('status').textContent).toMatch(/180 days/i);
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('records admin_audit_csv_export_completed analytics when an admin exports the audit log as CSV', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+
+    renderAdminDashboard();
+
+    const complianceRegion = await screen.findByRole('region', { name: 'Data Export & Retention' });
+    fireEvent.click(await within(complianceRegion).findByRole('button', { name: 'Export Audit Log CSV' }));
+
+    await waitFor(() => {
+      expect(adminService.exportAuditLogCsv).toHaveBeenCalledTimes(1);
+    });
+    expect(triggerCsvDownload).toHaveBeenCalledWith(
+      csvExportResult.csv,
+      csvExportResult.filename,
+    );
+    expect(recordDashboardOperationalAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin_audit_csv_export_completed',
+        userId: 'admin-user',
+        role: 'admin',
+        visibleItemCount: 1,
+      }),
+    );
+    expect(within(complianceRegion).getByRole('status').textContent).toMatch(/1 audit log row/i);
+    expectSvgIconsDecorative(document.body);
+  });
+
+  it('records admin_feature_flag_override_set analytics when an admin toggles a feature flag in the governance panel', async () => {
+    vi.mocked(adminService.getDashboardStats).mockResolvedValue(adminDashboardData);
+    vi.mocked(adminService.updateSystemSetting).mockResolvedValue({
+      key: 'feature_flags',
+      value: {
+        version: 1,
+        defaults: {
+          enable_auth: true,
+          enable_user_management: true,
+          enable_profile_management: true,
+          enable_job_recommendations: false,
+        },
+        overrides: {
+          enable_job_recommendations: true,
+        },
+      },
+      description: 'Feature-flag governance store',
+      updatedBy: 'admin-user',
+      updatedAt: '2026-09-06T00:00:00.000Z',
+    });
+
+    renderAdminDashboard();
+
+    const flagsRegion = await screen.findByRole('region', { name: 'Feature Flag Governance' });
+    expect(flagsRegion).toBeTruthy();
+
+    const toggle = await within(flagsRegion).findByRole('switch', { name: 'Toggle enable_job_recommendations' });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(adminService.updateSystemSetting).toHaveBeenCalledWith(
+        'feature_flags',
+        expect.objectContaining({
+          version: 1,
+          overrides: {
+            enable_job_recommendations: true,
+          },
+        }),
+        expect.any(String),
+      );
+    });
+
+    expect(recordDashboardOperationalAnalytics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin_feature_flag_override_set',
+        userId: 'admin-user',
+        role: 'admin',
+        flagName: 'enable_job_recommendations',
+        flagEnabled: true,
+        settingKey: 'feature_flags',
+        settingAction: 'override_set',
+      }),
+    );
     expectSvgIconsDecorative(document.body);
   });
 });

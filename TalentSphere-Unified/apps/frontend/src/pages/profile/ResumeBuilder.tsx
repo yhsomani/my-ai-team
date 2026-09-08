@@ -7,6 +7,7 @@ import { Button } from '../../components/shared/AuraButton';
 import { Input } from '../../components/shared/AuraInput';
 import { Tabs } from '../../components/shared/Tabs';
 import { AuraModal } from '../../components/shared/AuraModal';
+import { SourceStatusBadge } from '../../components/shared/SourceStatusBadge';
 import { useToast } from '../../components/shared/Toast';
 import { useAppSelector } from '../../store/hooks';
 import { profileService } from '../../services/profileService';
@@ -26,6 +27,7 @@ import {
   type ResumeAiDraftSuggestion,
 } from '../../lib/resumeAiDrafts';
 import { recordAiWorkflowPrefillDecision } from '../../lib/aiWorkflowPrefillAudit';
+import { getAIProvenanceSourceStatus, normalizeAIProvenance } from '../../lib/aiProvenance';
 import {
   getImportDraftEntries,
   getResumeImportEducationSuggestions,
@@ -1788,9 +1790,19 @@ const ResumeBuilder: React.FC = () => {
             {pendingAiResumeDraft && (
               <div className="mb-3 rounded-lg border border-accent/20 bg-accent-muted p-3">
                 <p className="text-sm font-semibold text-[var(--text-primary)]">AI resume draft</p>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-                  Source: {pendingAiResumeDraft.sourceLabel || 'TalentSphere AI assistant'}. Applying selected fields only updates the editor draft; Save Changes is still required.
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <SourceStatusBadge
+                    status={getAIProvenanceSourceStatus(normalizeAIProvenance({
+                      sourceLabel: pendingAiResumeDraft.sourceLabel,
+                      sourceDetail: pendingAiResumeDraft.sourceDetail,
+                    }).provenanceMode)}
+                    label={pendingAiResumeDraft.sourceLabel || 'TalentSphere AI assistant'}
+                    description={pendingAiResumeDraft.sourceDetail}
+                  />
+                  <span className="text-xs leading-relaxed text-[var(--text-secondary)]">
+                    Applying selected fields only updates the editor draft; Save Changes is still required.
+                  </span>
+                </div>
               </div>
             )}
             <textarea
@@ -1805,9 +1817,21 @@ const ResumeBuilder: React.FC = () => {
             <div role="region" aria-label={pendingAiResumeDraft ? 'AI resume draft review' : 'Resume import review'} className="space-y-3">
               <div>
                 <p className="text-sm font-medium">{pendingAiResumeDraft ? 'Review AI draft fields' : 'Review detected fields'}</p>
-                <p className="text-xs text-[var(--text-muted)]">
-                  Source: {pendingAiResumeDraft?.sourceLabel || 'pasted resume text'}. Applying only updates the editor draft.
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {pendingAiResumeDraft && (
+                    <SourceStatusBadge
+                      status={getAIProvenanceSourceStatus(normalizeAIProvenance({
+                        sourceLabel: pendingAiResumeDraft.sourceLabel,
+                        sourceDetail: pendingAiResumeDraft.sourceDetail,
+                      }).provenanceMode)}
+                      label={pendingAiResumeDraft.sourceLabel || 'TalentSphere AI assistant'}
+                      description={pendingAiResumeDraft.sourceDetail}
+                    />
+                  )}
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {pendingAiResumeDraft ? 'Applying only updates the editor draft.' : `Source: pasted resume text. Applying only updates the editor draft.`}
+                  </span>
+                </div>
               </div>
               {importDraftEntries.length > 0 ? (
                 <div role="list" aria-label={pendingAiResumeDraft ? 'AI resume draft fields' : 'Detected resume fields'} className="space-y-3">

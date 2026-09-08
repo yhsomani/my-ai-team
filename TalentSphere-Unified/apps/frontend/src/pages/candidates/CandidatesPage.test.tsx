@@ -371,6 +371,59 @@ describe('CandidatesPage', () => {
     expectDecorativeSvgIcons(dialog);
   });
 
+  it('filters candidates by pipeline stage selector', async () => {
+    const interviewCandidate = buildCandidateFixture({
+      id: 'application-candidate-002',
+      userId: 'candidate-user-002',
+      user: { fullName: 'Ben Interview', email: 'ben.interview@example.com' },
+      job: { title: 'Backend Engineer' },
+      status: 'INTERVIEW',
+    });
+
+    vi.mocked(recruiterService.getApplicationsPage).mockResolvedValue({
+      applications: [candidateFixture, interviewCandidate],
+      total: 2,
+      limit: 10,
+      offset: 0,
+      hasNext: false,
+      nextCursor: null,
+    });
+
+    renderCandidatesPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ava Candidate' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Ben Interview' })).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Pipeline stage'), {
+      target: { value: 'interviewing' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ben Interview' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('heading', { name: 'Ava Candidate' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Pipeline stage'), {
+      target: { value: 'applied' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ava Candidate' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('heading', { name: 'Ben Interview' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Pipeline stage'), {
+      target: { value: 'all' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Ava Candidate' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Ben Interview' })).toBeTruthy();
+    });
+  });
+
   it('shows safe single-status failure copy and retries through the existing confirmation', async () => {
     vi.mocked(recruiterService.getApplicationsPage).mockResolvedValue({
       applications: [candidateFixture],
