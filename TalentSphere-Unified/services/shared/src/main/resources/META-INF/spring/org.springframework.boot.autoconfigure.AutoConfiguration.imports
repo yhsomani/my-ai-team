@@ -1,3 +1,0 @@
-com.talentsphere.shared.config.SharedAutoConfiguration
-com.talentsphere.shared.config.FeatureFlagAutoConfiguration
-com.talentsphere.shared.config.SharedSecurityConfig
