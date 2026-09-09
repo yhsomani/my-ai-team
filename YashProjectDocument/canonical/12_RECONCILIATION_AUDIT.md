@@ -29,7 +29,7 @@ All 106+ documentation artifacts classified, mapped, and assigned lifecycle stat
 | `reference/DESIGN_SYSTEM.md` | 235 | Design System | ✅ Canonical | `05_FRONTEND_SPEC.md` §3 | 0.98 |
 | `reference/FEATURES_AND_DASHBOARDS.md` | 3,418 | UX & Workflows | ✅ Canonical | `11_USER_FLOWS_AND_WORKFLOWS.md` | 0.98 |
 | `reference/USER_WORKFLOW_AUTOMATION_GUIDE.md` | 1,331 | Workflows | ✅ Canonical | `11_USER_FLOWS_AND_WORKFLOWS.md` | 0.95 |
-| `reference/DATABASE_SHARDING.md` | 385 | Database | ✅ Canonical | `03_DATABASE_SPEC.md` §8 | 0.92 |
+| `reference/DATABASE_SHARDING.md` | 385 | Database | ✅ Canonical | `03_DATABASE_SPEC.md` §9 (Proposal/UNVERIFIED) | 0.92 |
 | `reference/FEATURE_FLAG_SYSTEM.md` | 420 | Feature Flags | ✅ Canonical | `09_OPERATIONS_AND_DEPLOYMENT.md` | 0.95 |
 | `reference/DECISION.md` | 510 | Governance | ✅ Canonical | `10_TRACEABILITY_AND_DECISIONS.md` §4 | 0.98 |
 | `reference/UX_AUDIT_CHECKLIST.md` | 440 | UX/A11y | ✅ Canonical | `08_TESTING_AND_QUALITY.md` | 0.92 |
@@ -38,7 +38,7 @@ All 106+ documentation artifacts classified, mapped, and assigned lifecycle stat
 | `reference/DATA_OWNERSHIP.md` | 390 | Governance | ✅ Canonical | `03_DATABASE_SPEC.md` §7 | 0.92 |
 | `reference/MODULE_MANIFEST.md` | 450 | Architecture | ✅ Canonical | `02_SYSTEM_ARCHITECTURE.md` §3 | 0.98 |
 | `reference/LOCAL_SETUP_GUIDE.md` | 346 | Developer Guide | ✅ Canonical | `09_OPERATIONS_AND_DEPLOYMENT.md` §2 | 0.90 |
-| `reference/SEED_DATA_GUIDE.md` | 348 | Data/Testing | ✅ Canonical | `03_DATABASE_SPEC.md` §9 | 0.92 |
+| `reference/SEED_DATA_GUIDE.md` | 348 | Data/Testing | ✅ Canonical | `09_OPERATIONS_AND_DEPLOYMENT.md` §11 | 0.92 |
 | `reference/QUICK_PREVIEW.md` | 249 | Developer Guide | ✅ Canonical | `09_OPERATIONS_AND_DEPLOYMENT.md` §2 | 0.90 |
 | `adr/ADR-001.md` to `adr/ADR-006.md` | ~1,200 | Architecture | ✅ Binding | `10_TRACEABILITY_AND_DECISIONS.md` §3 | 1.00 |
 | `canonical/01_PRD.md` | ~700 | Product | ✅ Canonical | `01_PRD.md` (already canonical) | 0.99 |
@@ -90,12 +90,12 @@ CANONICAL SUITE (12 files, ~70,000+ words)
     |
     +--> 01_PRD.md ............ Product Vision, 39 Features, Personas
     +--> 02_SYSTEM_ARCHITECTURE.md . Dual-Plane Architecture, 26 Services
-    +--> 03_DATABASE_SPEC.md ...... 50 Tables, 119 RLS, Citus Sharding
+    +--> 03_DATABASE_SPEC.md ...... 50 Tables (incl. product_analytics_events), 119 RLS, Citus Sharding (§9)
     +--> 04_API_CONTRACT.md ....... 123 Endpoints, 19 Domains
     +--> 05_FRONTEND_SPEC.md ...... Aura Design System, 18 Components
     +--> 06_BACKEND_SPEC.md ....... Spring Boot Reactor, 26 Modules
     +--> 07_SECURITY_AND_COMPLIANCE.md . Auth, RLS, CSP, Trust & Safety
-    +--> 08_TESTING_AND_QUALITY.md .... 824 Unit, 235 E2E, 22 Validators
+    +--> 08_TESTING_AND_QUALITY.md .... 846 Unit, 235 E2E, 22 Validators
     +--> 09_OPERATIONS_AND_DEPLOYMENT.md . Docker, K8s, 13 Runbooks
     +--> 10_TRACEABILITY_AND_DECISIONS.md . ADRs, Decision Register
     +--> 11_USER_FLOWS_AND_WORKFLOWS.md ... 10 Workflows, 4 E2E Cases
@@ -121,7 +121,7 @@ CANONICAL SUITE (12 files, ~70,000+ words)
 | `reference/DESIGN_SYSTEM.md` | Aura tokens, component primitives | `05_FRONTEND_SPEC.md` §3 | Direct merge, deprecated Aurora classes removed |
 | `reference/FEATURES_AND_DASHBOARDS.md` | Dashboard layouts, workflow diagrams | `11_USER_FLOWS_AND_WORKFLOWS.md` | Flows extracted; dashboard specifics → §05 |
 | `reference/USER_WORKFLOW_AUTOMATION_GUIDE.md` | Step-by-step user guides | `11_USER_FLOWS_AND_WORKFLOWS.md` | Restructured into flow blueprints |
-| `reference/DATABASE_SHARDING.md` | Citus topology, shard keys, table lists | `03_DATABASE_SPEC.md` §8 | Direct merge |
+| `reference/DATABASE_SHARDING.md` | Citus topology, shard keys, table lists | `03_DATABASE_SPEC.md` §9 (Proposal/UNVERIFIED) | Direct merge with status banner |
 | `reference/FEATURE_FLAG_SYSTEM.md` | Flag engine spec, 40 flags | `09_OPERATIONS_AND_DEPLOYMENT.md` §3 | Direct merge |
 | `reference/DECISION.md` | Decision register DECISION-001..009 | `10_TRACEABILITY_AND_DECISIONS.md` §4 | Direct merge |
 | `reference/UX_AUDIT_CHECKLIST.md` | A11y audit, contrast checks, semantic | `08_TESTING_AND_QUALITY.md` §5 | Merged with E2E a11y test results |
@@ -132,7 +132,7 @@ CANONICAL SUITE (12 files, ~70,000+ words)
 | `reference/MASTER_TRUTH_MATRIX.md` | Truth matrix, conflict resolution | `10_TRACEABILITY_AND_DECISIONS.md` §5-7 | Merged with decision register |
 | `reference/CURRENT_STATE_AND_ACTION_PLAN.md` | Implementation status, action plan | `10_TRACEABILITY_AND_DECISIONS.md` §8 | Status consolidated |
 | `reference/LOCAL_SETUP_GUIDE.md` | Dev setup, Docker, prerequisites | `09_OPERATIONS_AND_DEPLOYMENT.md` §2 | Direct merge |
-| `reference/SEED_DATA_GUIDE.md` | Seed personas, fixtures, override | `03_DATABASE_SPEC.md` §9 | Direct merge |
+| `reference/SEED_DATA_GUIDE.md` | Seed personas, fixtures, override | `09_OPERATIONS_AND_DEPLOYMENT.md` §11 | Direct merge with safety warnings |
 | `reference/QUICK_PREVIEW.md` | Mock mode setup, offline preview | `09_OPERATIONS_AND_DEPLOYMENT.md` §2 | Merged with local setup |
 | `adr/ADR-001.md` to `ADR-006.md` | 6 binding ADRs | `10_TRACEABILITY_AND_DECISIONS.md` §3 | Direct merge |
 | `archive/SSOT_v3.1.0_FULL.md` | Historical architecture, old tables | Isolated in `archive/` | Concepts extracted; wrong architecture discarded |
@@ -165,6 +165,10 @@ All conflicts resolved using the **Truth Hierarchy**: Code > Tests > Config > Sc
 | C-08 | **Gamification UI** | Old gap log: "Missing UI" | Code: `GamificationHeaderBadge` exists | Verified implemented as F-23 | `10_TRACEABILITY_AND_DECISIONS.md` §8 |
 | C-09 | **Message DELIVERED status** | Old gap log: "Unused" | Code: renders at `MessagingPage.tsx:599` | Verified implemented | `10_TRACEABILITY_AND_DECISIONS.md` §8 |
 | C-10 | **Social OAuth** | Old docs: `lib/oauth.ts` | Git: file deleted | Dead code removed; Supabase native OAuth retained | `10_TRACEABILITY_AND_DECISIONS.md` §8 |
+| C-11 | **Database Table #30 Restore** | Prior draft: placeholder `#30 *(XP auto-award)` | Code/Rebuild-04: `product_analytics_events` is #38 (50 total) | Restored `product_analytics_events` into slot #30; DB now has 50 real tables | `03_DATABASE_SPEC.md` §2.6 |
+| C-12 | **API Contract Drift** | Baseline docs: 109 operations | Binding Contract: 123 operations (19 domains) | Rebuilt §2 summary & §3 catalog to 123 contract ops; preserved 46 legacy ops in §7 | `04_API_CONTRACT.md` §2, §3, §7 |
+| C-13 | **Citus Horizontal Scaling Status** | Prior draft: omitted / unmapped | Source: `DATABASE_SHARDING.md` marked "Proposal/unverified" | Preserved full content in §9 with explicit `[PROPOSAL / UNVERIFIED]` banner | `03_DATABASE_SPEC.md` §9 |
+| C-14 | **Seed Data Guide Home** | Prior retention matrix: mapped to `03 §9` (missing) | Source: `SEED_DATA_GUIDE.md` (347 lines) | Preserved full guide in `09_OPERATIONS` §11 with safety guardrails | `09_OPERATIONS_AND_DEPLOYMENT.md` §11 |
 
 ---
 
@@ -195,7 +199,7 @@ Cross-verification proving 100% retention from all 106+ source files into the 12
 | Triggers (29) | `supabase-schema.sql` | `03_DATABASE_SPEC.md` §5 | All trigger definitions | **100%** |
 | Stored Functions (5) | `supabase-schema.sql` | `03_DATABASE_SPEC.md` §6 | All function definitions | **100%** |
 | Indexes (116) | `supabase-schema.sql` | `03_DATABASE_SPEC.md` §4 | All index definitions | **100%** |
-| Citus Sharding Plan | `DATABASE_SHARDING.md` | `03_DATABASE_SPEC.md` §8 | Distributed/reference tables | **100%** |
+| Citus Sharding Plan | `DATABASE_SHARDING.md` | `03_DATABASE_SPEC.md` §9 | Distributed/reference tables (Proposal) | **100%** |
 | Legacy Tables (10) | `supabase_master.sql` | `03_DATABASE_SPEC.md` §10 | Isolated with disposition notes | **100%** |
 | API Endpoints (123) | `API_OPENAPI_CONTRACT.json`, `DATA_AND_API_SPEC` | `04_API_CONTRACT.md` | All endpoints with methods/auth | **100%** |
 | API Domains (19) | `API_OPENAPI_CONTRACT.json` | `04_API_CONTRACT.md` | All domain groupings | **100%** |
@@ -204,7 +208,7 @@ Cross-verification proving 100% retention from all 106+ source files into the 12
 | Route Tree (22+) | `FRONTEND_ARCHITECTURE.md` | `05_FRONTEND_SPEC.md` §2 | Full route hierarchy | **100%** |
 | Security Architecture | `SECURITY_AND_DEVOPS_SPECIFICATION` | `07_SECURITY_AND_COMPLIANCE.md` | Auth, RLS, CSP, CORS | **100%** |
 | Trust & Safety Flow | `SECURITY_AND_DEVOPS_SPECIFICATION` | `07_SECURITY_AND_COMPLIANCE.md` | Content report lifecycle | **100%** |
-| Test Suites (824+235) | `vitest.config`, `playwright.config`, `scripts/` | `08_TESTING_AND_QUALITY.md` | All test counts and frameworks | **100%** |
+| Test Suites (846+235) | `vitest.config`, `playwright.config`, `scripts/` | `08_TESTING_AND_QUALITY.md` | 846 Unit / 137 files / 28 E2E / 114 declarations | **100%** |
 | 20 Validators | `scripts/validate-*.mjs` | `08_TESTING_AND_QUALITY.md` §5 | All validator scripts | **100%** |
 | Docker/K8s Config | `docker-compose.yml`, `infra/k8s/` | `09_OPERATIONS_AND_DEPLOYMENT.md` §2 | Full topology | **100%** |
 | 13 Incident Runbooks | `INCIDENT_RUNBOOKS.md` | `09_OPERATIONS_AND_DEPLOYMENT.md` §6 | All 13 runbooks RB-01..RB-13 | **100%** |
@@ -212,7 +216,7 @@ Cross-verification proving 100% retention from all 106+ source files into the 12
 | Feature Flag System (40) | `FEATURE_FLAG_SYSTEM.md` | `09_OPERATIONS_AND_DEPLOYMENT.md` §3 | Full flag inventory | **100%** |
 | Chrome Extension MV3 | `chrome-extension-project/` | User Flows §2.5, `02_SYSTEM_ARCHITECTURE.md` §1 | Architecture, scraper, match engine | **100%** |
 | AI Heuristic Engine | `FEATURES_AND_DASHBOARDS.md`, `02_REQUIREMENTS` | `06_BACKEND_SPEC.md` §AI, `01_PRD.md` §14 | Engine spec, provenance badges | **100%** |
-| Seed Data Fixtures | `SEED_DATA_GUIDE.md` | `03_DATABASE_SPEC.md` §9 | All seed personas and override | **100%** |
+| Seed Data Fixtures | `SEED_DATA_GUIDE.md` | `09_OPERATIONS_AND_DEPLOYMENT.md` §11 | All seed personas, workflows, queries, safety | **100%** |
 | Current Implementation Status | `CURRENT_STATE_AND_ACTION_PLAN.md` | `10_TRACEABILITY_AND_DECISIONS.md` §8 | Status matrix, gap register | **100%** |
 | Master Truth Matrix | `MASTER_TRUTH_MATRIX.md` | `10_TRACEABILITY_AND_DECISIONS.md` §5-7 | Full reconciliation matrix | **100%** |
 | User Workflows (10) | `USER_WORKFLOW_AUTOMATION_GUIDE.md` | `11_USER_FLOWS_AND_WORKFLOWS.md` | All workflow blueprints | **100%** |
@@ -252,8 +256,8 @@ Cross-verification proving 100% retention from all 106+ source files into the 12
 |---|---|
 | Source files analyzed | 106+ |
 | Total source lines reviewed | ~56,000+ |
-| Conflicts identified | 10 |
-| Conflicts resolved | 10 (100%) |
+| Conflicts identified | 14 |
+| Conflicts resolved | 14 (100%) |
 | Duplications consolidated | 5 major areas |
 | Information loss events | **0 (zero)** |
 | Canonical files produced | 12 |
