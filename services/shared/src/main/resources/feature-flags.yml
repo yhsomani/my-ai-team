@@ -1,0 +1,87 @@
+# TalentSphere Feature Flags Configuration
+# ==========================================
+# Single Source of Truth - ALL feature flags defined here
+# Format: feature-flags.enable_<feature_name>: true|false
+# 
+# CORE FEATURES (Always Enabled - foundation of platform)
+# ----------------------------------------------------------------
+feature-flags:
+  enable_auth: true
+  enable_user_management: true
+  enable_profile_management: true
+
+  # Job & Application Features
+  # ----------------------------------------------------------------
+  enable_job_listings: true
+  enable_job_search: true
+  enable_job_recommendations: false
+  enable_job_applications: true
+  enable_application_tracking: false
+
+  # Company Features
+  # ----------------------------------------------------------------
+  enable_company_profiles: true
+  enable_company_verification: false
+  enable_company_search: true
+
+  # LMS & Learning Features
+  # ----------------------------------------------------------------
+  enable_courses: true
+  enable_course_enrollment: true
+  enable_course_progress: true
+  enable_learning_paths: false
+  enable_course_certificates: false
+
+  # Challenge & Gamification Features
+  # ----------------------------------------------------------------
+  enable_coding_challenges: false
+  enable_leaderboards: false
+  enable_achievements: false
+  enable_xp_system: false
+
+  # AI Features
+  # ----------------------------------------------------------------
+  enable_ai_resume_analysis: false
+  enable_ai_job_matching: false
+  enable_ai_interview_prep: false
+
+  # Notification Features
+  # ----------------------------------------------------------------
+  enable_notifications: true
+  enable_email_notifications: false
+  enable_push_notifications: false
+
+  # Messaging & Networking Features
+  # ----------------------------------------------------------------
+  enable_messaging: true
+  enable_chat: false
+  enable_connections: true
+  enable_posts: false
+
+  # Search Features
+  # ----------------------------------------------------------------
+  enable_global_search: true
+  enable_elasticsearch: true
+
+  # Payment Features
+  # ----------------------------------------------------------------
+  enable_payments: false
+  enable_subscriptions: false
+  enable_premium_features: false
+
+  # Video & Media Features
+  # ----------------------------------------------------------------
+  enable_video_content: false
+  enable_video_interviews: false
+
+  # Analytics Features
+  # ----------------------------------------------------------------
+  enable_analytics: false
+  enable_user_analytics: false
+  enable_employer_analytics: false
+
+# Feature Flag Service Configuration
+# ----------------------------------------------------------------
+feature-flag:
+  use-defaults: true
+  cache-enabled: true

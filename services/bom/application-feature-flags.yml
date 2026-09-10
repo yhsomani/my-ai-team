@@ -1,0 +1,73 @@
+# TalentSphere Feature Flags Configuration
+# Version: 1.0.0
+# Canonical 40-flag registry. Runtime defaults are validated against
+# services/shared/src/main/java/com/talentsphere/shared/config/Feature.java.
+
+feature-flags:
+  # Core features
+  enable_auth: true
+  enable_user_management: true
+  enable_profile_management: true
+
+  # Job and application features
+  enable_job_listings: true
+  enable_job_search: true
+  enable_job_recommendations: false
+  enable_job_applications: true
+  enable_application_tracking: false
+
+  # Company features
+  enable_company_profiles: true
+  enable_company_verification: false
+  enable_company_search: true
+
+  # LMS and learning features
+  enable_courses: true
+  enable_course_enrollment: true
+  enable_course_progress: true
+  enable_learning_paths: false
+  enable_course_certificates: false
+
+  # Challenge and gamification features
+  enable_coding_challenges: false
+  enable_leaderboards: false
+  enable_achievements: false
+  enable_xp_system: false
+
+  # AI features
+  enable_ai_resume_analysis: false
+  enable_ai_job_matching: false
+  enable_ai_interview_prep: false
+
+  # Notification features
+  enable_notifications: true
+  enable_email_notifications: false
+  enable_push_notifications: false
+
+  # Messaging and networking features
+  enable_messaging: true
+  enable_chat: false
+  enable_connections: true
+  enable_posts: false
+
+  # Search features
+  enable_global_search: true
+  enable_elasticsearch: true
+
+  # Payment features
+  enable_payments: false
+  enable_subscriptions: false
+  enable_premium_features: false
+
+  # Video and media features
+  enable_video_content: false
+  enable_video_interviews: false
+
+  # Analytics features
+  enable_analytics: false
+  enable_user_analytics: false
+  enable_employer_analytics: false
+
+feature-flag:
+  use-defaults: true
+  cache-enabled: true

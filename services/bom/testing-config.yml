@@ -1,0 +1,68 @@
+# TalentSphere Testing Pyramid Configuration
+# Version: 1.0.0
+# Enforces 75/20/5 testing distribution
+
+testing:
+  pyramid:
+    unit_tests: 75
+    integration_tests: 20
+    e2e_tests: 5
+    
+  quality_gates:
+    fail_on_eslint_errors: true
+    fail_on_typescript_errors: true
+    fail_on_security_high: true
+    fail_on_security_critical: true
+    
+  coverage:
+    global_target: 80
+    auth_service_target: 90
+    payment_service_target: 90
+    core_services_target: 85
+    # Core services: user-service, job-service, profile-service, company-service
+    
+  services:
+    auth-service:
+      coverage_target: 90
+      unit_tests_min: 50
+      integration_tests_min: 10
+      
+    payment-service:
+      coverage_target: 90
+      unit_tests_min: 40
+      integration_tests_min: 10
+      
+    user-service:
+      coverage_target: 85
+      unit_tests_min: 35
+      integration_tests_min: 8
+      
+    job-service:
+      coverage_target: 85
+      unit_tests_min: 30
+      integration_tests_min: 8
+      
+    profile-service:
+      coverage_target: 85
+      unit_tests_min: 25
+      integration_tests_min: 6
+      
+    company-service:
+      coverage_target: 85
+      unit_tests_min: 25
+      integration_tests_min: 6
+
+    # Other services with default 80%
+    default:
+      coverage_target: 80
+      unit_tests_min: 20
+      integration_tests_min: 4
+
+  e2e:
+    critical_paths:
+      - auth_login
+      - user_registration
+      - job_search
+      - job_application
+      - profile_update
+      - payment_checkout

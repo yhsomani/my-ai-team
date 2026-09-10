@@ -1,0 +1,11 @@
+**/node_modules
+**/target
+**/.git
+**/.idea
+**/.vscode
+**/.agents
+**/.gemini
+docker-compose.yml
+.env
+Dockerfile*
+*.md

@@ -1,0 +1,130 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: saved-search-digest-discovery
+  labels:
+    app: saved-search-digest-discovery
+    component: notification-digest
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: saved-search-digest-discovery
+            component: notification-digest
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: saved-search-digest-discovery
+              image: talentsphere/notification-digest-scheduler:latest
+              imagePullPolicy: IfNotPresent
+              command: ["npm", "run", "discover:saved-search-digests", "--", "--commit"]
+              envFrom:
+                - configMapRef:
+                    name: talentsphere-config
+                - secretRef:
+                    name: talentsphere-secrets
+              env:
+                - name: SAVED_SEARCH_DIGEST_MAX_SEARCHES
+                  value: "500"
+                - name: SAVED_SEARCH_DIGEST_MAX_JOBS
+                  value: "1000"
+              resources:
+                requests:
+                  memory: 128Mi
+                  cpu: 50m
+                limits:
+                  memory: 256Mi
+                  cpu: 250m
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: networking-reminder-delivery
+  labels:
+    app: networking-reminder-delivery
+    component: notification-reminders
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: networking-reminder-delivery
+            component: notification-reminders
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: networking-reminder-delivery
+              image: talentsphere/notification-digest-scheduler:latest
+              imagePullPolicy: IfNotPresent
+              command: ["npm", "run", "run:networking-reminders", "--", "--commit"]
+              envFrom:
+                - configMapRef:
+                    name: talentsphere-config
+                - secretRef:
+                    name: talentsphere-secrets
+              env:
+                - name: NETWORKING_REMINDER_MAX_ITEMS
+                  value: "500"
+              resources:
+                requests:
+                  memory: 128Mi
+                  cpu: 50m
+                limits:
+                  memory: 256Mi
+                  cpu: 250m
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: notification-digest-delivery
+  labels:
+    app: notification-digest-delivery
+    component: notification-digest
+spec:
+  schedule: "5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: notification-digest-delivery
+            component: notification-digest
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: notification-digest-delivery
+              image: talentsphere/notification-digest-scheduler:latest
+              imagePullPolicy: IfNotPresent
+              command: ["npm", "run", "run:notification-digests", "--", "--commit"]
+              envFrom:
+                - configMapRef:
+                    name: talentsphere-config
+                - secretRef:
+                    name: talentsphere-secrets
+              env:
+                - name: NOTIFICATION_DIGEST_MAX_ITEMS
+                  value: "500"
+              resources:
+                requests:
+                  memory: 128Mi
+                  cpu: 50m
+                limits:
+                  memory: 256Mi
+                  cpu: 250m

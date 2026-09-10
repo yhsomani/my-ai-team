@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-27",
+  "description": "Disposition matrix for tables that still appear only in infra/supabase_master.sql or in both the reviewed Supabase baseline and legacy master SQL. This is source classification, not runtime migration completion.",
+  "canonicalBaseline": "infra/db/migrations/0001_initial_baseline.sql",
+  "legacyMaster": "infra/supabase_master.sql",
+  "legacyMasterOnly": [
+    {
+      "table": "achievements",
+      "domain": "gamification",
+      "targetOwner": "gamification-service",
+      "disposition": "service-local-migration-retained",
+      "evidence": ["services/gamification-service/src/main/resources/db/migration/V1__Initial_Schema.sql"],
+      "requiredResolution": "Migrate achievement history into the canonical gamification schema or keep it service-owned with explicit migration and API boundaries."
+    },
+    {
+      "table": "ai_analysis_results",
+      "domain": "ai",
+      "targetOwner": "ai-service",
+      "disposition": "service-local-migration-retained",
+      "evidence": ["services/ai-service/src/main/resources/db/migration/V1__Initial_Schema.sql"],
+      "requiredResolution": "Decide whether historical analysis results are migrated into the canonical AI suggestion/session model or retained as an AI-service private table."
+    },
+    {
+      "table": "challenge_test_cases",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "disposition": "service-local-migration-retained",
+      "evidence": ["services/challenge-service/src/main/resources/db/migration/V1__Initial_Schema.sql"],
+      "requiredResolution": "Fold challenge test cases into the canonical challenge/judge schema before async judge rollout."
+    },
+    {
+      "table": "chat_messages",
+      "domain": "messaging",
+      "targetOwner": "messaging-boundary-decision",
+      "disposition": "orphaned-chat-service-retirement-pending",
+      "evidence": ["services/chat-service/src/main/resources/db/migration/V1__Initial_Schema.sql", "services/chat-service/src/main/java/com/talentsphere/chat/entity/ChatMessage.java"],
+      "requiredResolution": "Retire chat-service persistence or merge useful adapter behavior into messaging-service under ADR-004."
+    },
+    {
+      "table": "password_reset_tokens",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "disposition": "compatibility-auth-service-retained",
+      "evidence": ["services/auth-service/src/main/resources/db/migration/V1__Initial_Schema.sql"],
+      "requiredResolution": "Retain only if auth-service remains a bootstrap/compatibility boundary; otherwise retire with the local credential path."
+    },
+    {
+      "table": "refresh_tokens",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "disposition": "compatibility-auth-service-retained",
+      "evidence": ["services/auth-service/src/main/resources/db/migration/V1__Initial_Schema.sql", "services/auth-service/src/main/java/com/talentsphere/auth/entity/RefreshToken.java"],
+      "requiredResolution": "Retain only if auth-service remains a bootstrap/compatibility boundary; otherwise retire with the local credential path."
+    },
+    {
+      "table": "roles",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "disposition": "legacy-user-service-retained",
+      "evidence": ["services/user-service/src/main/resources/db/migration/V1__Initial_Schema.sql"],
+      "requiredResolution": "Replace with Supabase/App metadata role mapping or keep as a user-service private reference table with explicit sync rules."
+    },
+    {
+      "table": "submissions",
+      "domain": "challenges",
+      "targetOwner": "challenge-service",
+      "disposition": "service-local-migration-retained",
+      "evidence": ["services/challenge-service/src/main/resources/db/migration/V1__Initial_Schema.sql", "services/challenge-service/src/main/java/com/talentsphere/challenge/entity/Submission.java"],
+      "requiredResolution": "Migrate into canonical challenge_submissions or document a service-private submission store before async judge rollout."
+    },
+    {
+      "table": "token_denylist",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "disposition": "compatibility-auth-service-retained",
+      "evidence": ["services/auth-service/src/main/resources/db/migration/V1__Initial_Schema.sql", "services/auth-service/src/main/java/com/talentsphere/auth/entity/TokenDenylistEntry.java"],
+      "requiredResolution": "Retain only if auth-service remains a token compatibility boundary; otherwise retire with local JWT issuance."
+    },
+    {
+      "table": "users",
+      "domain": "identity",
+      "targetOwner": "auth-boundary-decision",
+      "disposition": "legacy-user-service-retained",
+      "evidence": ["services/user-service/src/main/resources/db/migration/V1__Initial_Schema.sql", "services/auth-service/src/main/java/com/talentsphere/auth/entity/User.java"],
+      "requiredResolution": "Replace with Supabase auth.users plus public.profiles, or keep as user-service private compatibility data with explicit sync rules."
+    }
+  ],
+  "duplicateReviewedSources": [
+    { "table": "challenges", "domain": "challenges", "targetOwner": "challenge-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/challenge-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local challenge schema into the canonical challenge migration set." },
+    { "table": "companies", "domain": "jobs", "targetOwner": "company-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/company-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local company schema into the canonical jobs/company migration set." },
+    { "table": "connections", "domain": "networking", "targetOwner": "networking-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/networking-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local connection schema with canonical networking lifecycle migrations." },
+    { "table": "courses", "domain": "learning", "targetOwner": "lms-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/lms-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local course schema with canonical learning catalog migrations." },
+    { "table": "educations", "domain": "profile", "targetOwner": "profile-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/profile-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local education schema with canonical profile migrations." },
+    { "table": "enrollments", "domain": "learning", "targetOwner": "lms-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/lms-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local enrollment schema with canonical learning progress migrations." },
+    { "table": "experiences", "domain": "profile", "targetOwner": "profile-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/profile-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local experience schema with canonical profile migrations." },
+    { "table": "job_applications", "domain": "applications", "targetOwner": "application-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/application-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local application schema with canonical application event lifecycle migrations." },
+    { "table": "jobs", "domain": "jobs", "targetOwner": "job-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/job-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local job schema with canonical publishing/readiness migrations." },
+    { "table": "leaderboard", "domain": "gamification", "targetOwner": "gamification-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/gamification-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local leaderboard schema with canonical gamification migrations." },
+    { "table": "lessons", "domain": "learning", "targetOwner": "lms-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/lms-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local lesson schema with canonical learning migrations." },
+    { "table": "messages", "domain": "messaging", "targetOwner": "messaging-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/messaging-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local direct-message schema with canonical conversation/message migrations under ADR-004." },
+    { "table": "notifications", "domain": "notifications", "targetOwner": "notification-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/notification-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local notification schema with canonical inbox/digest migrations." },
+    { "table": "profiles", "domain": "profile", "targetOwner": "profile-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/profile-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local profile schema with Supabase auth.users/public.profiles authority." },
+    { "table": "skills", "domain": "profile", "targetOwner": "profile-service", "disposition": "canonical-baseline-preferred", "serviceMigrationSources": ["services/profile-service/src/main/resources/db/migration/V1__Initial_Schema.sql"], "requiredResolution": "Reconcile service-local skill schema with canonical profile migrations." }
+  ]
+}
